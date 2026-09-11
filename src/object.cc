@@ -5207,7 +5207,8 @@ void _obj_fix_violence_settings(int* fid)
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = CritterFrmId(FrmId(*fid).frameId().critter, anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid)).fid();
+        const FrmId frmId = FrmId(*fid);
+        *fid = CritterFrmId(frmId.frameId().critter, anim, frmId.weaponAnimation(), rotationFromFid(*fid)).fid();
     }
 
     if (shouldResetViolenceLevel) {

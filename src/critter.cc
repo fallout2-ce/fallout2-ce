@@ -845,14 +845,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                frmId = FrmId(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                frmId = FrmId(critter, ANIM_FALL_FRONT_SF, critter->rotation + 1);
                 if (!frmId.exist()) {
                     back = true;
                 }
             }
 
             if (back) {
-                frmId = FrmId(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                frmId = FrmId(critter, ANIM_FALL_BACK_SF, critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -867,14 +867,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        frmId = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        frmId = FrmId(critter, anim, critter->rotation + 1);
         int violenceFixedFid = frmId.fid();
         _obj_fix_violence_settings(&violenceFixedFid);
         frmId = FrmId(violenceFixedFid);
         if (!frmId.exist()) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            frmId = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            frmId = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, critter->rotation + 1);
             violenceFixedFid = frmId.fid();
             _obj_fix_violence_settings(&violenceFixedFid);
             frmId = FrmId(violenceFixedFid);
@@ -1065,7 +1065,7 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
 
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return CritterFrmId(frameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), rotationFromFid(critter->fid));
+    return CritterFrmId(frameId, animationTypeFromFid(critter->fid), FrmId(critter->fid).weaponAnimation(), rotationFromFid(critter->fid));
 }
 
 // 0x42DE58 pc_load_data
@@ -1389,7 +1389,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    const FrmId frmId = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    const FrmId frmId = FrmId(obj, ANIM_STAND, obj->rotation + 1);
     objectSetFrmId(obj, frmId, nullptr);
 
     return 0;

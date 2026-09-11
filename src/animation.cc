@@ -692,7 +692,7 @@ int animationRegisterMoveToObject(Object* owner, Object* destination, int action
     animationDescription->actionPoints = actionPoints;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -741,7 +741,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
     animationDescription->actionPoints = actionPoints;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -774,7 +774,7 @@ int animationRegisterMoveToTile(Object* owner, int tile, int elevation, int acti
     animationDescription->actionPoints = actionPoints;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -824,7 +824,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
     animationDescription->actionPoints = actionPoints;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -859,7 +859,7 @@ int animationRegisterMoveToTileStraight(Object* object, int tile, int elevation,
     animationDescription->anim = anim;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(object, animationDescription->anim, weaponAnimationFromFid(object->fid), object->rotation + 1);
+    const FrmId frmId = FrmId(object, animationDescription->anim, object->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(object, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -893,7 +893,7 @@ int animationRegisterMoveToTileStraightAndWaitForComplete(Object* owner, int til
     animationDescription->anim = anim;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -921,7 +921,7 @@ int animationRegisterAnimate(Object* owner, AnimationType anim, int delay)
     animationDescription->anim = anim;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -950,7 +950,7 @@ int animationRegisterAnimateReversed(Object* owner, AnimationType anim, int dela
     animationDescription->delay = delay;
     animationDescription->artCacheKey = nullptr;
 
-    const FrmId frmId = FrmId(owner, animationDescription->anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, animationDescription->anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -979,7 +979,7 @@ int animationRegisterAnimateAndHide(Object* owner, AnimationType anim, int delay
     animationDescription->delay = delay;
     animationDescription->artCacheKey = nullptr;
 
-    const FrmId frmId = FrmId(owner, anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -1371,7 +1371,7 @@ int animationRegisterAnimateForever(Object* owner, AnimationType anim, int delay
     animationDescription->anim = anim;
     animationDescription->delay = delay;
 
-    const FrmId frmId = FrmId(owner, anim, weaponAnimationFromFid(owner->fid), owner->rotation + 1);
+    const FrmId frmId = FrmId(owner, anim, owner->rotation + 1);
 
     // NOTE: Uninline.
     if (_anim_preload(owner, frmId, &(animationDescription->artCacheKey)) == -1) {
@@ -2501,7 +2501,7 @@ static int _anim_move(Object* obj, int tile, int elev, int a3, AnimationType ani
     }
 
     sad->step = SAD_INIT;
-    sad->fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1).fid();
+    sad->fid = FrmId(obj, anim, obj->rotation + 1).fid();
     sad->animationTimestamp = 0;
     sad->ticksPerFrame = animationComputeTicksPerFrame(obj, FrmId(sad->fid));
     sad->targetTile = tile;
@@ -2537,7 +2537,7 @@ static int animateMoveObjectToTileStraight(Object* obj, int tile, int elevation,
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {
-        sad->fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1).fid();
+        sad->fid = FrmId(obj, anim, obj->rotation + 1).fid();
     }
     sad->step = SAD_INIT;
     sad->animationTimestamp = 0;
@@ -2579,7 +2579,7 @@ static int _anim_move_on_stairs(Object* obj, int tile, int elevation, AnimationT
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {
-        sad->fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1).fid();
+        sad->fid = FrmId(obj, anim, obj->rotation + 1).fid();
     }
     sad->step = SAD_INIT;
     sad->animationTimestamp = 0;
@@ -2614,7 +2614,7 @@ static int _check_for_falling(Object* obj, AnimationType anim, int a3)
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {
-        sad->fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1).fid();
+        sad->fid = FrmId(obj, anim, obj->rotation + 1).fid();
     }
     sad->step = SAD_INIT;
     sad->animationTimestamp = 0;
@@ -2649,7 +2649,7 @@ static void _object_move(int index)
         objectSetRotation(object, static_cast<Rotation>(sad->rotations[0]), &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-        const FrmId fid = FrmId(object, sad->anim, weaponAnimationFromFid(object->fid), object->rotation + 1);
+        const FrmId fid = FrmId(object, sad->anim, object->rotation + 1);
         objectSetFrmId(object, fid, &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
@@ -2827,7 +2827,7 @@ static int _anim_animate(Object* obj, AnimationType anim, int animationSequenceI
         frmId = FrmId(obj, ANIM_TAKE_OUT, static_cast<WeaponAnimation>(flags), obj->rotation + 1);
     } else {
         sad->flags = flags;
-        frmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        frmId = FrmId(obj, anim, obj->rotation + 1);
     }
 
     if (!frmId.exist()) {
@@ -3234,7 +3234,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     int x = 0;
     int y = 0;
 
-    WeaponAnimation weaponAnimationCode = weaponAnimationFromFid(obj->fid);
+    WeaponAnimation weaponAnimationCode = FrmId(obj->fid).weaponAnimation();
     if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
         if (!frmId.valid()) {
             FrmId takeOutFrmId = FrmId(obj, ANIM_TAKE_OUT, weaponAnimationCode, obj->rotation + 1);
@@ -3275,7 +3275,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
         } else {
             anim = ANIM_STAND;
         }
-        finalFrmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        finalFrmId = FrmId(obj, anim, obj->rotation + 1);
     }
 
     Rect temp;

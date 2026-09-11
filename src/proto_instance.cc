@@ -682,7 +682,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFrameId = FrmId(proto->fid).frameId().critter;
                 }
 
-                frmId = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
+                frmId = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), FrmId(critter->fid).weaponAnimation(), critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 3;
             }

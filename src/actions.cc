@@ -117,7 +117,7 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
     }
 
     if (hookAnim != originalAnim) {
-        const FrmId frmId = FrmId(user, hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
+        const FrmId frmId = FrmId(user, hookAnim, user->rotation + 1);
         if (!frmId.exist()) {
             hookAnim = originalAnim;
         }
@@ -137,7 +137,7 @@ int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation 
     }
 
     if (*anim == ANIM_FALL_FRONT) {
-        const FrmId frmId = FrmId(obj, *anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        const FrmId frmId = FrmId(obj, *anim, obj->rotation + 1);
         if (!frmId.exist()) {
             *anim = ANIM_FALL_BACK;
         }
@@ -202,7 +202,7 @@ AnimationType actionBlood(Object* obj, AnimationType anim, int delay)
         return anim;
     }
 
-    const FrmId frmId = FrmId(obj, bloodyAnim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    const FrmId frmId = FrmId(obj, bloodyAnim, obj->rotation + 1);
     if (frmId.exist()) {
         animationRegisterAnimate(obj, bloodyAnim, delay);
     } else {
@@ -308,7 +308,7 @@ AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLev
     FrmId frmId;
 
     if (settings.preferences.violence_level >= minViolenceLevel) {
-        frmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        frmId = FrmId(obj, anim, obj->rotation + 1);
         if (frmId.exist()) {
             return anim;
         }
@@ -318,7 +318,7 @@ AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLev
         return ANIM_FALL_BACK;
     }
 
-    frmId = FrmId(obj, ANIM_FALL_FRONT, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    frmId = FrmId(obj, ANIM_FALL_FRONT, obj->rotation + 1);
     // CE: fixed vanilla logic that returned ANIM_FALL_BACK if artExists for ANIM_FALL_FRONT returned true.
     if (!frmId.exist()) {
         return ANIM_FALL_BACK;
@@ -367,7 +367,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                     }
                 }
             } else {
-                frmId = FrmId(defender, ANIM_FIRE_DANCE, weaponAnimationFromFid(defender->fid), defender->rotation + 1);
+                frmId = FrmId(defender, ANIM_FIRE_DANCE, defender->rotation + 1);
                 if (frmId.exist()) {
                     sfx_name = sfxBuildCharName(defender, anim, CHARACTER_SOUND_EFFECT_UNUSED);
                     animationRegisterPlaySoundEffect(defender, sfx_name, delay);
@@ -445,10 +445,10 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                     anim = pickFallAnim(defender, anim);
                     animationRegisterAnimate(defender, anim, 0);
                 }
-            } else if ((flags & DAM_ON_FIRE) != DAM_NONE && FrmId(defender, ANIM_FIRE_DANCE, weaponAnimationFromFid(defender->fid), defender->rotation + 1).exist()) {
+            } else if ((flags & DAM_ON_FIRE) != DAM_NONE && FrmId(defender, ANIM_FIRE_DANCE, defender->rotation + 1).exist()) {
                 animationRegisterAnimate(defender, ANIM_FIRE_DANCE, delay);
 
-                frmId = FrmId(defender, ANIM_STAND, weaponAnimationFromFid(defender->fid), defender->rotation + 1);
+                frmId = FrmId(defender, ANIM_STAND, defender->rotation + 1);
                 animationRegisterSetFrmId(defender, frmId, -1);
             } else {
                 if (knockbackDistance != 0) {
@@ -460,7 +460,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                         animationRegisterAnimate(defender, ANIM_PRONE_TO_STANDING, -1);
                     }
                 } else {
-                    if (hitFromFront || !FrmId(defender, ANIM_HIT_FROM_BACK, weaponAnimationFromFid(defender->fid), defender->rotation + 1).exist()) {
+                    if (hitFromFront || !FrmId(defender, ANIM_HIT_FROM_BACK, defender->rotation + 1).exist()) {
                         anim = ANIM_HIT_FROM_FRONT;
                     } else {
                         anim = ANIM_HIT_FROM_BACK;
@@ -512,7 +512,7 @@ int _show_death(Object* obj, AnimationType anim)
 
     objectGetRect(obj, &dirtyRect);
     if (anim < ANIM_FALL_BACK_SF && anim > ANIM_FALL_FRONT_BLOOD_SF) {
-        const FrmId frmId = FrmId(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        const FrmId frmId = FrmId(obj, static_cast<AnimationType>(anim + 28), obj->rotation + 1);
         if (objectSetFrmId(obj, frmId, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
         }
@@ -646,7 +646,7 @@ int _action_melee(Attack* attack, AnimationType anim)
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     _register_priority(1);
 
-    frmId = FrmId(attack->attacker, anim, weaponAnimationFromFid(attack->attacker->fid), attack->attacker->rotation + 1);
+    frmId = FrmId(attack->attacker, anim, attack->attacker->rotation + 1);
     art = artLock(frmId, &cache_entry);
     if (art != nullptr) {
         delay = artGetActionFrame(art);
@@ -686,7 +686,7 @@ int _action_melee(Attack* attack, AnimationType anim)
             animationRegisterPlaySoundEffect(attack->attacker, sfx_name_temp, -1);
             animationRegisterAnimate(attack->attacker, anim, 0);
         } else {
-            frmId = FrmId(attack->defender, ANIM_DODGE_ANIM, weaponAnimationFromFid(attack->defender->fid), attack->defender->rotation + 1);
+            frmId = FrmId(attack->defender, ANIM_DODGE_ANIM, attack->defender->rotation + 1);
             art = artLock(frmId, &cache_entry);
             if (art != nullptr) {
                 int dodgeDelay = artGetActionFrame(art);
@@ -746,7 +746,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
     Object* weapon = attack->weapon;
     protoGetProto(weapon->pid, &weaponProto);
 
-    const FrmId frmId = FrmId(attack->attacker, anim, weaponAnimationFromFid(attack->attacker->fid), attack->attacker->rotation + 1);
+    const FrmId frmId = FrmId(attack->attacker, anim, attack->attacker->rotation + 1);
     CacheEntry* artHandle;
     Art* art = artLock(frmId, &artHandle);
     int delay = (art != nullptr) ? artGetActionFrame(art) : 0;
@@ -773,7 +773,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
     _combatai_msg(attack->attacker, attack, AI_MESSAGE_TYPE_ATTACK, 0);
 
     const char* sfx;
-    if ((weaponAnimationFromFid(attack->attacker->fid)) != WEAPON_ANIMATION_NONE) {
+    if ((FrmId(attack->attacker->fid).weaponAnimation()) != WEAPON_ANIMATION_NONE) {
         sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_ATTACK, weapon, attack->hitMode, attack->defender);
     } else {
         sfx = sfxBuildCharName(attack->attacker, anim, CHARACTER_SOUND_EFFECT_UNUSED);
@@ -1085,7 +1085,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
     animationRegisterRotateToTile(critter, ladder->tile);
     animationRegisterCallbackForced(critter, ladder, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
 
-    WeaponAnimation weaponAnimationCode = weaponAnimationFromFid(critter->fid);
+    WeaponAnimation weaponAnimationCode = FrmId(critter->fid).weaponAnimation();
     if (weaponAnimationCode != 0) {
         const char* puttingAwaySfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
         animationRegisterPlaySoundEffect(critter, puttingAwaySfx, -1);
@@ -1154,7 +1154,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
             animationRegisterCallback(user, targetObj, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
         }
 
-        WeaponAnimation weaponAnimCode = weaponAnimationFromFid(user->fid);
+        WeaponAnimation weaponAnimCode = FrmId(user->fid).weaponAnimation();
         if (weaponAnimCode != WEAPON_ANIMATION_NONE) {
             const char* sfx = sfxBuildCharName(user, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
             animationRegisterPlaySoundEffect(user, sfx, -1);
@@ -1233,7 +1233,7 @@ int actionPickUp(Object* critter, Object* item)
     if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item->pid)) {
         animationRegisterAnimate(critter, ANIM_MAGIC_HANDS_GROUND, 0);
 
-        const FrmId frmId = FrmId(critter, ANIM_MAGIC_HANDS_GROUND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        const FrmId frmId = FrmId(critter, ANIM_MAGIC_HANDS_GROUND, critter->rotation + 1);
 
         int actionFrame;
         CacheEntry* cacheEntry;
@@ -1252,8 +1252,8 @@ int actionPickUp(Object* critter, Object* item)
 
         animationRegisterCallback(critter, item, (AnimationCallback*)objectPickup, actionFrame);
     } else {
-        WeaponAnimation weaponAnimationCode = weaponAnimationFromFid(critter->fid);
-        if (weaponAnimationCode != 0) {
+        WeaponAnimation weaponAnimationCode = FrmId(critter->fid).weaponAnimation();
+        if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
             const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
             animationRegisterPlaySoundEffect(critter, sfx, -1);
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, -1);
@@ -1611,7 +1611,7 @@ AnimationType pickFallAnim(Object* obj, AnimationType anim)
     }
 
     if (anim == ANIM_FALL_FRONT) {
-        frmId = FrmId(obj, ANIM_FALL_FRONT, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        frmId = FrmId(obj, ANIM_FALL_FRONT, obj->rotation + 1);
         if (!frmId.exist()) {
             anim = ANIM_FALL_BACK;
         }

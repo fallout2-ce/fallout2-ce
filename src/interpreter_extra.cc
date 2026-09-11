@@ -422,7 +422,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         interfaceUpdateItems(animated, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }
 
-    WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
+    WeaponAnimation weaponCode = FrmId(critter->fid).weaponAnimation();
     FrmId newFrmId;
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
@@ -2071,7 +2071,7 @@ static void opMetarule3(Program* program)
             const FrmId frmId = FrmId(objectTypeFromFid(obj->fid),
                 frameId,
                 animationTypeFromFid(obj->fid),
-                weaponAnimationFromFid(obj->fid),
+                FrmId(obj->fid).weaponAnimation(),
                 rotationFromFid(obj->fid));
 
             Rect updatedRect;
@@ -2374,7 +2374,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            const FrmId frmId = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            const FrmId frmId = FrmId(critter, anim, critter->rotation + 1);
             if (!frmId.exist()) {
                 useStandardDeath = true;
             }
@@ -2384,7 +2384,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                const FrmId frmId = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                const FrmId frmId = FrmId(critter, ANIM_FALL_FRONT, critter->rotation + 1);
                 if (frmId.exist()) {
                     anim = ANIM_FALL_FRONT;
                 } else {
@@ -3450,7 +3450,7 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                const FrmId frmId = FrmId(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                const FrmId frmId = FrmId(obj, static_cast<AnimationType>(anim + 28), rotationFromFid(obj->fid));
                 animationRegisterSetFrmId(obj, frmId, -1);
             }
 
@@ -3458,13 +3458,13 @@ static void opAnim(Program* program)
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            FrmId frmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+            FrmId frmId = FrmId(obj, anim, rotationFromFid(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
-                frmId = FrmId(obj, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                frmId = FrmId(obj, ANIM_FALL_FRONT_SF, rotationFromFid(obj->fid));
             } else if (anim == ANIM_BACK_TO_STANDING) {
-                frmId = FrmId(obj, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                frmId = FrmId(obj, ANIM_FALL_BACK_SF, rotationFromFid(obj->fid));
             }
 
             if (combatData != nullptr) {
