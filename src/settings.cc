@@ -254,6 +254,14 @@ void initSettingsRegistry(bool isMapper)
     SETTING(console_output_path);
 #undef SECT
 
+#define SECT combatai
+    SETTING(smart_behavior);
+    SETTING(try_to_find_targets);
+    SETTING(avoid_premature_flee);
+    SETTING(find_firing_positions);
+    SETTING(hiding_tactics);
+#undef SECT
+
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);

@@ -190,6 +190,14 @@ struct QolSettings {
     bool fast_ammo_load = true;
 };
 
+struct CombatAiSettings {
+    bool smart_behavior = false;
+    bool try_to_find_targets = true;
+    bool avoid_premature_flee = true;
+    bool find_firing_positions = true;
+    bool hiding_tactics = true;
+};
+
 struct MapperSettings {
     bool override_librarian = false;
     bool librarian = false;
@@ -218,6 +226,7 @@ struct Settings {
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
+    CombatAiSettings combatai;
     QolSettings qol;
     MapperSettings mapper;
 };
