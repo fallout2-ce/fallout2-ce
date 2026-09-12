@@ -41,7 +41,7 @@ extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUN
 
 extern Cache gArtCache;
 
-#define ART_NAME_SIZE (13) 
+#define ART_NAME_SIZE (13)
 
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
