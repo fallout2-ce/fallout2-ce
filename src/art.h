@@ -129,6 +129,10 @@ public:
     {
     }
 
+    constexpr FrmId(Proto* proto) : FrmId(proto == nullptr ? kEmptyFid : proto->fid) { }
+
+    constexpr FrmId(Object* object) : FrmId(object == nullptr ? kEmptyFid : object->fid) { }
+
     constexpr FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : _objectType(OBJ_TYPE_MISC)
         , _fid(buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType))

@@ -708,7 +708,7 @@ void gameMouseRefresh()
                 Object* pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
                 if (pointedObject != nullptr) {
                     int primaryAction = -1;
-                    ObjectType objectType = FrmId(pointedObject->fid).objectType();
+                    ObjectType objectType = FrmId(pointedObject).objectType();
                     switch (objectType) {
                     case OBJ_TYPE_SCENERY:
                     case OBJ_TYPE_WALL:
@@ -801,7 +801,7 @@ void gameMouseRefresh()
                 }
 
                 if (pointedObject != nullptr) {
-                    bool pointedObjectIsCritter = FrmId(pointedObject->fid).objectType() == OBJ_TYPE_CRITTER;
+                    bool pointedObjectIsCritter = FrmId(pointedObject).objectType() == OBJ_TYPE_CRITTER;
 
                     if (settings.preferences.combat_looks) {
                         if (objectExamine(gDude, pointedObject) == -1) {
@@ -1020,7 +1020,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
             Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
             if (targetObj != nullptr) {
-                ObjectType objectType = FrmId(targetObj->fid).objectType();
+                ObjectType objectType = FrmId(targetObj).objectType();
                 switch (objectType) {
                 case OBJ_TYPE_WALL:
                 case OBJ_TYPE_SCENERY:
@@ -1049,7 +1049,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     break;
                 case OBJ_TYPE_CRITTER:
                     if (targetObj == gDude) {
-                        if (FrmId(gDude->fid).animationType() == ANIM_STAND) {
+                        if (FrmId(gDude).animationType() == ANIM_STAND) {
                             Rect dudeRect;
                             if (objectRotateClockwise(targetObj, &dudeRect) == 0) {
                                 tileWindowRefreshRect(&dudeRect, targetObj->elevation);
@@ -1148,7 +1148,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
             int actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
-            switch (FrmId(targetObj->fid).objectType()) {
+            switch (FrmId(targetObj).objectType()) {
             case OBJ_TYPE_ITEM:
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
@@ -1280,7 +1280,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         actionTalk(gDude, targetObj);
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE:
-                        switch (FrmId(targetObj->fid).objectType()) {
+                        switch (FrmId(targetObj).objectType()) {
                         case OBJ_TYPE_SCENERY:
                             _action_use_an_object(gDude, targetObj);
                             break;
@@ -1562,7 +1562,7 @@ int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId)
         return -1;
     }
 
-    if (FrmId(gGameMouseBouncingCursor->fid) == frmId) {
+    if (FrmId(gGameMouseBouncingCursor) == frmId) {
         return -1;
     }
 
@@ -1731,7 +1731,7 @@ Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, i
                 found = ptr->object;
                 if ((ptr->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
                     if ((ptr->flags & OBJECT_NO_SAVE) == OBJECT_NONE) {
-                        if (FrmId(ptr->object->fid).objectType() != OBJ_TYPE_CRITTER || (ptr->object->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) == 0) {
+                        if (FrmId(ptr->object).objectType() != OBJ_TYPE_CRITTER || (ptr->object->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) == 0) {
                             break;
                         }
                     }
@@ -2418,7 +2418,7 @@ static int gameMouse3dSetFlatFrmId(const InterfaceFrmId& frmId, Rect* rect)
 int gameMouseUpdateHexCursorFid(Rect* rect)
 {
     const InterfaceFrmId frmId = gGameMouseModeFrmIds[gGameMouseMode];
-    if (FrmId(gGameMouseHexCursor->fid) == frmId) {
+    if (FrmId(gGameMouseHexCursor) == frmId) {
         return -1;
     }
 
@@ -2434,7 +2434,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             int offsetX = 0;
             int offsetY = 0;
             CacheEntry* hexCursorFrmHandle;
-            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor->fid), &hexCursorFrmHandle);
+            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor), &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
                 artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
@@ -2519,7 +2519,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             int offsetX = 0;
             int offsetY = 0;
             CacheEntry* hexCursorFrmHandle;
-            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor->fid), &hexCursorFrmHandle);
+            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor), &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
                 artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
