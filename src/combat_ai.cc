@@ -2235,7 +2235,7 @@ static AiAttackPlan aiSelectAttackPlan(Object* attacker, Object* currentTarget, 
 
     if (bestPlan.target != currentTarget) {
         aiDebugPrint("\n[Combat AI/try_to_find_targets] %s: switching from %s to executable target %s"
-                   " (accuracy=%d, move=%d, score=%d)",
+                     " (accuracy=%d, move=%d, score=%d)",
             critterGetName(attacker),
             critterGetName(currentTarget),
             critterGetName(bestPlan.target),
@@ -2579,7 +2579,7 @@ static bool aiMoveToCover(Object* attacker, Object* defender)
 
     int movementPoints = attacker->data.critter.combat.ap;
     aiDebugPrint("\n[Combat AI/hiding_tactics] %s: searching for cover from %s"
-               " (coward=%d, damage_last_turn=%d, hp=%d, min_hp=%d, outmatched=%d, budget=%d AP, move_bonus=%d)",
+                 " (coward=%d, damage_last_turn=%d, hp=%d, min_hp=%d, outmatched=%d, budget=%d AP, move_bonus=%d)",
         critterGetName(attacker),
         critterGetName(defender),
         isCoward,
@@ -2599,7 +2599,7 @@ static bool aiMoveToCover(Object* attacker, Object* defender)
     }
 
     aiDebugPrint("\n[Combat AI/hiding_tactics] %s: selected cover tile %d from %s"
-               " (distance %d -> %d, up to %d AP)",
+                 " (distance %d -> %d, up to %d AP)",
         critterGetName(attacker),
         tile,
         critterGetName(defender),
@@ -3670,7 +3670,6 @@ static bool aiClearFriendlyMovePath(Object* source, Object* target, int actionPo
         if (pathfinderFindPath(source, source->tile, target->tile, nullptr, 0, _obj_blocking_at) != 0) {
             return true;
         }
-
     }
 
     return false;
@@ -4324,7 +4323,7 @@ static AiAttackOutcome aiExecuteAttackPlan(Object* attacker, const AiAttackPlan&
         && plan.firingTile != -1
         && plan.firingTile != attacker->tile) {
         aiDebugPrint("\n[Combat AI/smart_behavior] %s: executing attack plan against %s via tile %d"
-                   " (accuracy=%d, move=%d AP)",
+                     " (accuracy=%d, move=%d AP)",
             critterGetName(attacker),
             critterGetName(plan.target),
             plan.firingTile,
