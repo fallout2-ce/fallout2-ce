@@ -64,6 +64,8 @@ There are also dozens of small things that just work a little better than they d
 
 The main configuration file is `fallout2.cfg`. This contains original game config as well as new CE settings.
 
+See [Combat AI](COMBAT_AI.md) for a player-oriented guide to improved combat behavior and every `[combatai]` option.
+
 Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2.cfg` file (previously part of `f2_res.ini` from Mash's HRP).
 
 Here are some important settings in `fallout2.cfg` under the `[screen]` and `[ui]` sections.  See [the example config](https://github.com/fallout2-ce/fallout2-ce/tree/refs/heads/main/files/fallout2.cfg) for a full list of settings.

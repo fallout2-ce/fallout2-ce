@@ -190,6 +190,32 @@ struct QolSettings {
     bool fast_ammo_load = true;
 };
 
+enum class NpcNightPenaltyMode {
+    Off,
+    ExcludePartyTargets,
+    AllTargets,
+};
+
+struct CombatAiSettings {
+    bool smart_behavior = true;
+    bool debug = true;
+    int combat_descriptions = 0;
+    bool try_to_find_targets = true;
+    bool avoid_premature_flee = true;
+    bool find_firing_positions = true;
+    bool hiding_tactics = true;
+    NpcNightPenaltyMode npc_night_penalty = NpcNightPenaltyMode::ExcludePartyTargets;
+    bool ghost_perk_tweak = false;
+    bool item_pick_up_fix = true;
+    bool npc_push_on_move_block = true;
+    int looting_corpses = 1;
+    bool difficulty_mode = false;
+    bool npc_run_away_mode = false;
+    bool re_find_targets = false;
+    bool npc_attack_who_fix = false;
+    bool take_better_weapons = false;
+};
+
 struct MapperSettings {
     bool override_librarian = false;
     bool librarian = false;
@@ -218,6 +244,7 @@ struct Settings {
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
+    CombatAiSettings combatai;
     QolSettings qol;
     MapperSettings mapper;
 };

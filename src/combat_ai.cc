@@ -1,10 +1,13 @@
 #include "combat_ai.h"
 
+#include <algorithm>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unordered_set>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -51,9 +54,159 @@ static constexpr int kChemUseStimsHpRatio = 50;
 static constexpr int kChemUseSometimesChance = 25;
 static constexpr int kChemUseAnytimeChance = 75;
 static constexpr int kChemUseAlwaysChance = 100;
+static constexpr int kAiImmediateAttackScoreBonus = 25;
+static constexpr int kAiDistanceScorePenalty = 2;
+static constexpr int kAiMovementScorePenalty = 2;
+static constexpr int kAiFiringAccuracyScoreWeight = 2;
+static constexpr int kAiMaximumTacticalTileEvaluations = 96;
+static constexpr int kAiInvalidScore = -100000;
+static constexpr int kAiTryAttackRecoverable = -2; // Internal legacy bridge; use AiAttackOutcome outside _ai_try_attack.
 
 static constexpr int kRandomDrugPickingArraySize = 3;
 static std::unordered_set<Object*> burstDisabledCritters;
+static MessageList combatAiDescriptionsMessageList;
+static bool combatAiDescriptionsMessageListLoaded = false;
+static Object* aiDescriptionTurnActor = nullptr;
+static int aiDescriptionTurnCount = 0;
+static unsigned int aiDescriptionSequence = 0;
+
+static void aiDebugPrint(const char* format, ...);
+
+enum class AiDescription {
+    Cover,
+    FiringPosition,
+    TargetChange,
+    AimedShot,
+    WeaponChange,
+    ItemRetrieval,
+    PostKillTarget,
+    ClearPath,
+    DeterminedAttack,
+};
+
+struct AiDescriptionRange {
+    int firstMessage;
+    int count;
+    int minimumLevel;
+};
+
+static AiDescriptionRange aiGetDescriptionRange(AiDescription description)
+{
+    switch (description) {
+    case AiDescription::Cover:
+        return { 100, 4, 1 };
+    case AiDescription::FiringPosition:
+        return { 110, 4, 2 };
+    case AiDescription::TargetChange:
+        return { 120, 4, 1 };
+    case AiDescription::AimedShot:
+        return { 130, 4, 2 };
+    case AiDescription::WeaponChange:
+        return { 140, 4, 2 };
+    case AiDescription::ItemRetrieval:
+        return { 150, 4, 2 };
+    case AiDescription::PostKillTarget:
+        return { 160, 4, 1 };
+    case AiDescription::ClearPath:
+        return { 170, 4, 2 };
+    case AiDescription::DeterminedAttack:
+        return { 180, 4, 2 };
+    }
+
+    assert(false);
+    return { 0, 0, 2 };
+}
+
+static bool aiDescriptionActorIsVisible(Object* actor)
+{
+    if (actor == nullptr
+        || gDude == nullptr
+        || actor->elevation != gDude->elevation
+        || (actor->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
+        return false;
+    }
+
+    int x;
+    int y;
+    if (tileToScreenXY(actor->tile, &x, &y) == -1) {
+        return false;
+    }
+
+    return x + 31 >= 0
+        && y + 15 >= 0
+        && x < screenGetWidth()
+        && y < screenGetVisibleHeight();
+}
+
+static void aiDescribe(Object* actor, AiDescription description)
+{
+    int level = settings.combatai.combat_descriptions;
+    int turnLimit = level == 1 ? 1 : 3;
+    AiDescriptionRange range = aiGetDescriptionRange(description);
+    if (level < range.minimumLevel
+        || !combatAiDescriptionsMessageListLoaded
+        || actor == nullptr
+        || aiDescriptionTurnActor == nullptr
+        || actor != aiDescriptionTurnActor
+        || (aiDescriptionTurnCount >= turnLimit && description != AiDescription::Cover)
+        || !aiDescriptionActorIsVisible(actor)) {
+        return;
+    }
+
+    unsigned int variation = aiDescriptionSequence
+        + static_cast<unsigned int>(actor->id)
+        + static_cast<unsigned int>(description);
+    MessageListItem messageListItem;
+    messageListItem.num = range.firstMessage + variation % range.count;
+    if (!messageListGetItem(&combatAiDescriptionsMessageList, &messageListItem)) {
+        aiDebugPrint("\n[Combat AI/combat_descriptions] missing message %d", messageListItem.num);
+        return;
+    }
+
+    char text[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
+    snprintf(text, sizeof(text), messageListItem.text, critterGetName(actor));
+    displayMonitorAddMessage(text);
+    aiDescriptionTurnCount++;
+    aiDescriptionSequence++;
+}
+
+class AiDescriptionTurnScope {
+public:
+    explicit AiDescriptionTurnScope(Object* actor)
+        : previousActor_(aiDescriptionTurnActor)
+        , previousCount_(aiDescriptionTurnCount)
+    {
+        aiDescriptionTurnActor = actor;
+        aiDescriptionTurnCount = 0;
+    }
+
+    ~AiDescriptionTurnScope()
+    {
+        aiDescriptionTurnActor = previousActor_;
+        aiDescriptionTurnCount = previousCount_;
+    }
+
+private:
+    Object* previousActor_;
+    int previousCount_;
+};
+
+static void aiDebugPrint(const char* format, ...)
+{
+    if (!settings.combatai.debug) {
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+    char string[260];
+    int length = vsnprintf(string, sizeof(string), format, args);
+    va_end(args);
+
+    if (length >= 0) {
+        debugPrint("%s", string);
+    }
+}
 
 static_assert(AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT == sizeof(AiPacket::chem_primary_desire) / sizeof(AiPacket::chem_primary_desire[0]));
 
@@ -70,6 +223,59 @@ typedef struct AiRetargetData {
     int currentTileIndex;
     int sourceIntelligence;
 } AiRetargetData;
+
+struct AiAttackPlan {
+    Object* target = nullptr;
+    Object* weapon = nullptr;
+    HitMode hitMode = HIT_MODE_INVALID;
+    int firingTile = -1;
+    int movementCost = 0;
+    int accuracy = -1;
+    int score = kAiInvalidScore;
+    bool executable = false;
+};
+
+enum class AiAttackOutcome {
+    Finished,
+    RecoverableFailure,
+};
+
+static int aiGetDifficultyActionPointBonus(Object* critter)
+{
+    if (!settings.combatai.smart_behavior
+        || !settings.combatai.difficulty_mode
+        || objectIsPartyMember(critter)) {
+        return 0;
+    }
+
+    return settings.preferences.combat_difficulty * 2;
+}
+
+class AiTemporaryActionPointBonus {
+public:
+    explicit AiTemporaryActionPointBonus(Object* critter)
+        : critter_(critter)
+        , bonus_(0)
+    {
+        bonus_ = aiGetDifficultyActionPointBonus(critter_);
+        if (bonus_ != 0) {
+            critter_->data.critter.combat.ap += bonus_;
+            aiDebugPrint("\n[Combat AI/difficulty_mode] %s: granted %d temporary AP",
+                critterGetName(critter_),
+                bonus_);
+        }
+    }
+
+    ~AiTemporaryActionPointBonus()
+    {
+        int unusedBonus = std::min(bonus_, std::max(critter_->data.critter.combat.ap, 0));
+        critter_->data.critter.combat.ap -= unusedBonus;
+    }
+
+private:
+    Object* critter_;
+    int bonus_;
+};
 
 static void _parse_hurt_str(char* str, Dam* valuePtr);
 static int _cai_match_str_to_list(const char* str, const char** list, int count, int* out_value);
@@ -92,6 +298,9 @@ static Object* _ai_find_nearest_team(Object* a1, Object* a2, int flags);
 static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags);
 static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr);
 static Object* _ai_danger_source(Object* a1);
+static AiAttackPlan aiSelectAttackPlan(Object* attacker, Object* currentTarget, bool forceSearch = false);
+static bool aiMoveToFiringPosition(Object* attacker, Object* defender, HitMode hitMode);
+static bool aiMoveToCover(Object* attacker, Object* defender);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiWeaponAttackInRange(Object* critter, Object* weapon, Object* target);
@@ -101,8 +310,11 @@ static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiCanUseItem(Object* obj, Object* a2);
 static Object* _ai_search_environ(Object* critter, ItemType itemType);
+static bool aiCanLootCorpse(Object* critter);
+static Object* aiSearchCorpseInventory(Object* critter, ItemType itemType, Object* groundItem);
 static Object* _ai_retrieve_object(Object* critter, Object* item);
 static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender);
+static bool aiClearFriendlyMovePath(Object* source, Object* target, int actionPoints, int* destinationTilePtr);
 static int _ai_move_steps_closer(Object* a1, Object* a2, int actionPoints, bool taunt);
 static int _ai_move_closer(Object* a1, Object* a2, bool taunt);
 static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int* tilePtr);
@@ -111,8 +323,9 @@ static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object
 static int _ai_switch_weapons(Object* a1, HitMode* hitMode, Object** weapon, Object* a4);
 static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode hitMode);
 static int _ai_attack(Object* attacker, Object* defender, HitMode hitMode);
-static int _ai_try_attack(Object* a1, Object* a2);
+static int _ai_try_attack(Object* attacker, Object* defender, HitMode plannedHitMode = HIT_MODE_INVALID, bool forcePoorHitChance = false);
 static int _cai_get_min_hp(AiPacket* ai);
+static int aiGetEffectiveMinimumHitPoints(Object* critter, AiPacket* ai);
 static int _ai_print_msg(Object* critter, int type);
 static int _combatai_rating(Object* obj);
 static int aiMessageListInit();
@@ -507,6 +720,9 @@ err:
 void aiReset()
 {
     burstDisabledCritters.clear();
+    aiDescriptionTurnActor = nullptr;
+    aiDescriptionTurnCount = 0;
+    aiDescriptionSequence = 0;
 }
 
 // 0x4279FC
@@ -1660,7 +1876,9 @@ static Object* _ai_danger_source(Object* a1)
             break;
         }
     } else {
-        attackWho = ATTACK_WHO_INVALID;
+        attackWho = settings.combatai.npc_attack_who_fix
+            ? aiGetAttackWho(a1)
+            : ATTACK_WHO_INVALID;
     }
 
     Object* whoHitMe = a1->data.critter.combat.whoHitMe;
@@ -1668,9 +1886,11 @@ static Object* _ai_danger_source(Object* a1)
         targets[0] = nullptr;
     } else {
         if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
-            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID) {
+            if ((attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID)
+                && !settings.combatai.re_find_targets) {
                 return whoHitMe;
             }
+            targets[0] = whoHitMe;
         } else {
             if (whoHitMe->data.critter.combat.team != a1->data.critter.combat.team) {
                 targets[0] = _ai_find_nearest_team(a1, whoHitMe, 1);
@@ -1720,6 +1940,684 @@ static Object* _ai_danger_source(Object* a1)
     }
 
     return nullptr;
+}
+
+static HitMode aiGetPlanningHitMode(Object* weapon)
+{
+    // Candidate comparison uses a deterministic mode so evaluating additional
+    // targets does not consume combat randomness. Execution selects the actual
+    // primary/secondary mode through _ai_pick_hit_mode.
+    return weapon != nullptr ? HIT_MODE_RIGHT_WEAPON_PRIMARY : HIT_MODE_PUNCH;
+}
+
+static bool aiPlanningWeaponHasAmmo(Object* attacker, Object* weapon)
+{
+    if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+        return lightGetAmbientIntensity() > LIGHT_INTENSITY_MAX * 0.95;
+    }
+
+    if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) != ATTACK_TYPE_RANGED
+        || weaponHasAmmoForAttack(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
+        return true;
+    }
+
+    int inventoryIndex = -1;
+    while (true) {
+        Object* ammo = inventoryFindByType(attacker, ITEM_TYPE_AMMO, &inventoryIndex);
+        if (ammo == nullptr) {
+            return false;
+        }
+        if (weaponCanBeReloadedWith(weapon, ammo)) {
+            return true;
+        }
+    }
+}
+
+static Object* aiSearchBestWorldWeapon(Object* attacker, Object* defender, Object* currentBest)
+{
+    Object* bestWeapon = currentBest;
+    int maximumPathLength = attacker->data.critter.combat.ap + 1;
+
+    Object** objects = nullptr;
+    int count = objectListCreate(-1, attacker->elevation, OBJ_TYPE_ITEM, &objects);
+    for (int index = 0; index < count; index++) {
+        Object* candidate = objects[index];
+        if (itemGetType(candidate) != ITEM_TYPE_WEAPON
+            || !_ai_can_use_weapon(attacker, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY)
+            || !aiPlanningWeaponHasAmmo(attacker, candidate)) {
+            continue;
+        }
+
+        int pathLength = attacker->tile == candidate->tile
+            ? 0
+            : pathfinderFindPath(attacker, attacker->tile, candidate->tile, nullptr, 0, _obj_blocking_at);
+        if ((attacker->tile != candidate->tile && pathLength == 0)
+            || pathLength > maximumPathLength
+            || (!settings.combatai.take_better_weapons && pathLength > 1)) {
+            continue;
+        }
+
+        bestWeapon = _ai_best_weapon(attacker, bestWeapon, candidate, defender);
+    }
+    if (count > 0) {
+        objectListFree(objects);
+    }
+
+    if (!aiCanLootCorpse(attacker)) {
+        return bestWeapon;
+    }
+
+    objects = nullptr;
+    count = objectListCreate(-1, attacker->elevation, OBJ_TYPE_CRITTER, &objects);
+    for (int objectIndex = 0; objectIndex < count; objectIndex++) {
+        Object* corpse = objects[objectIndex];
+        if (!critterIsDead(corpse)
+            || corpse->data.inventory.length == 0
+            || critterFlagCheck(corpse->pid, CRITTER_NO_STEAL)) {
+            continue;
+        }
+
+        int pathLength = attacker->tile == corpse->tile
+            ? 0
+            : pathfinderFindPath(attacker, attacker->tile, corpse->tile, nullptr, 0, _obj_blocking_at);
+        if ((attacker->tile != corpse->tile && pathLength == 0)
+            || pathLength > maximumPathLength
+            || (!settings.combatai.take_better_weapons && pathLength > 1)) {
+            continue;
+        }
+
+        int inventoryIndex = -1;
+        while (true) {
+            Object* candidate = inventoryFindByType(corpse, ITEM_TYPE_WEAPON, &inventoryIndex);
+            if (candidate == nullptr) {
+                break;
+            }
+            if (_ai_can_use_weapon(attacker, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY)
+                && aiPlanningWeaponHasAmmo(attacker, candidate)) {
+                bestWeapon = _ai_best_weapon(attacker, bestWeapon, candidate, defender);
+            }
+        }
+    }
+    if (count > 0) {
+        objectListFree(objects);
+    }
+
+    return bestWeapon;
+}
+
+static void aiEquipBestPlanningWeapon(Object* attacker, Object* defender)
+{
+    Object* equippedWeapon = critterGetItem2(attacker);
+    if (equippedWeapon != nullptr && itemGetType(equippedWeapon) != ITEM_TYPE_WEAPON) {
+        equippedWeapon = nullptr;
+    }
+
+    Object* inventoryWeapon = _ai_search_inven_weap(attacker, true, defender);
+    Object* bestWeapon = _ai_best_weapon(attacker, equippedWeapon, inventoryWeapon, defender);
+    if (attacker->data.critter.combat.ap >= 3
+        && critterGetBodyType(attacker) == BODY_TYPE_BIPED
+        && !critterIsEncumbered(attacker)) {
+        bool shouldSearchWorld = true;
+        if (equippedWeapon != nullptr) {
+            AttackType attackType = weaponGetAttackTypeForHitMode(equippedWeapon, aiGetPlanningHitMode(equippedWeapon));
+            if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
+                int targetPath = pathfinderFindPath(attacker, attacker->tile, defender->tile, nullptr, 0, _obj_blocking_at);
+                int attackCost = weaponGetActionPointCost(attacker, aiGetPlanningHitMode(equippedWeapon), false);
+                if (targetPath != 0 && targetPath + attackCost <= attacker->data.critter.combat.ap) {
+                    shouldSearchWorld = false;
+                }
+            }
+        }
+
+        Object* worldWeapon = shouldSearchWorld
+            ? aiSearchBestWorldWeapon(attacker, defender, bestWeapon)
+            : nullptr;
+        if (worldWeapon != nullptr && worldWeapon != bestWeapon) {
+            Object* owner = worldWeapon->owner;
+            int itemTile = owner != nullptr ? owner->tile : worldWeapon->tile;
+            int pathLength = attacker->tile == itemTile
+                ? 0
+                : pathfinderFindPath(attacker, attacker->tile, itemTile, nullptr, 0, _obj_blocking_at);
+            bool reachable = attacker->tile == itemTile || pathLength > 0;
+            bool mayApproach = reachable
+                && (settings.combatai.take_better_weapons || pathLength <= 1);
+            if (settings.combatai.item_pick_up_fix
+                && pathLength + 3 > attacker->data.critter.combat.ap) {
+                mayApproach = false;
+            }
+
+            if (mayApproach && _ai_best_weapon(attacker, bestWeapon, worldWeapon, defender) == worldWeapon) {
+                bool preserveCurrentShot = true;
+                if (equippedWeapon != nullptr
+                    && weaponGetAttackTypeForHitMode(equippedWeapon, aiGetPlanningHitMode(equippedWeapon)) == ATTACK_TYPE_RANGED) {
+                    int currentAttackCost = weaponGetActionPointCost(attacker, aiGetPlanningHitMode(equippedWeapon), false);
+                    preserveCurrentShot = pathLength + 3 + currentAttackCost <= attacker->data.critter.combat.ap;
+                }
+
+                if (preserveCurrentShot) {
+                    Object* retrievedWeapon = _ai_retrieve_object(attacker, worldWeapon);
+                    if (retrievedWeapon != nullptr
+                        && weaponGetActionPointCost(attacker, aiGetPlanningHitMode(retrievedWeapon), false)
+                            <= attacker->data.critter.combat.ap) {
+                        bestWeapon = retrievedWeapon;
+                    }
+                }
+            }
+        }
+    }
+
+    if (bestWeapon == nullptr || bestWeapon == equippedWeapon) {
+        return;
+    }
+
+    if (inventoryEquip(attacker, bestWeapon, HAND_RIGHT) == -1) {
+        aiDebugPrint("\n[Combat AI/smart_behavior] %s: failed to equip planned weapon %s",
+            critterGetName(attacker),
+            objectGetName(bestWeapon));
+        return;
+    }
+
+    aiDebugPrint("\n[Combat AI/smart_behavior] %s: equipped %s before evaluating targets",
+        critterGetName(attacker),
+        objectGetName(bestWeapon));
+    aiDescribe(attacker, AiDescription::WeaponChange);
+    _combat_turn_run();
+}
+
+static AiAttackPlan aiBuildAttackPlan(Object* attacker, Object* target, Object* weapon)
+{
+    AiAttackPlan plan;
+    plan.target = target;
+    plan.weapon = weapon;
+    plan.hitMode = aiGetPlanningHitMode(weapon);
+    plan.firingTile = attacker->tile;
+
+    int minToHit = aiGetPacket(attacker)->min_to_hit;
+    CombatBadShot badShot = _combat_check_bad_shot(attacker, target, plan.hitMode, false);
+    if (badShot == COMBAT_BAD_SHOT_OK) {
+        plan.accuracy = _determine_to_hit(attacker, target, HIT_LOCATION_UNCALLED, plan.hitMode);
+    } else if (badShot == COMBAT_BAD_SHOT_OUT_OF_RANGE) {
+        int attackCost = weaponGetActionPointCost(attacker, plan.hitMode, false);
+        int movementBudget = attacker->data.critter.combat.ap - attackCost;
+        int range = weaponGetRange(attacker, plan.hitMode);
+        unsigned char rotations[800];
+        int pathLength = movementBudget > 0
+            ? pathfinderFindPath(attacker, attacker->tile, target->tile, rotations, 0, _obj_blocking_at)
+            : 0;
+        int tile = attacker->tile;
+        for (int step = 0; step < pathLength && step < movementBudget; step++) {
+            tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[step]), 1);
+            if (tileDistanceBetween(tile, target->tile) > range
+                || _combat_is_shot_blocked(attacker, tile, target->tile, target, nullptr)) {
+                continue;
+            }
+
+            int accuracy = _determine_to_hit_from_tile(attacker, tile, target, HIT_LOCATION_UNCALLED, plan.hitMode);
+            if (accuracy >= minToHit) {
+                plan.firingTile = tile;
+                plan.movementCost = step + 1;
+                plan.accuracy = accuracy;
+                break;
+            }
+        }
+    }
+
+    if (plan.accuracy >= minToHit) {
+        int distance = objectGetDistanceBetween(attacker, target);
+        plan.score = plan.accuracy
+            - distance * kAiDistanceScorePenalty
+            - plan.movementCost * kAiMovementScorePenalty;
+        if (plan.movementCost == 0) {
+            plan.score += kAiImmediateAttackScoreBonus;
+        }
+        plan.executable = true;
+    }
+
+    return plan;
+}
+
+static bool aiIsEligibleAlternative(Object* attacker, Object* currentTarget, Object* candidate, bool ignoreFleeingCritters)
+{
+    if (candidate == nullptr
+        || candidate == attacker
+        || candidate == currentTarget
+        || candidate->elevation != attacker->elevation
+        || candidate->data.critter.combat.team == attacker->data.critter.combat.team
+        || (candidate->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0
+        || isWithinPerceptionDetailed(attacker, candidate, PERCEPTION_AI_TARGET) == PERCEPTION_OUT_OF_RANGE
+        || (ignoreFleeingCritters && critterIsFleeing(candidate))) {
+        return false;
+    }
+
+    return candidate->data.critter.combat.team == currentTarget->data.critter.combat.team
+        || candidate->data.critter.combat.whoHitMe == attacker
+        || aiInfoGetLastTarget(candidate) == attacker;
+}
+
+static AiAttackPlan aiSelectAttackPlan(Object* attacker, Object* currentTarget, bool forceSearch)
+{
+    AiAttackPlan fallback;
+    fallback.target = currentTarget;
+    if (!settings.combatai.smart_behavior
+        || !settings.combatai.try_to_find_targets
+        || attacker == nullptr
+        || currentTarget == nullptr) {
+        return fallback;
+    }
+
+    Object* weapon = critterGetItem2(attacker);
+    if (weapon != nullptr && itemGetType(weapon) != ITEM_TYPE_WEAPON) {
+        weapon = nullptr;
+    }
+
+    AiAttackPlan currentPlan = aiBuildAttackPlan(attacker, currentTarget, weapon);
+    if (!forceSearch && currentPlan.executable) {
+        return currentPlan;
+    }
+
+    AiAttackPlan bestPlan = currentPlan;
+    Disposition disposition = aiGetDisposition(attacker);
+    bool ignoreFleeingCritters = objectIsPartyMember(attacker)
+        && disposition != DISPOSITION_NONE
+        && disposition != DISPOSITION_BERKSERK
+        && aiGetDistance(attacker) != DISTANCE_CHARGE;
+    for (int index = 0; index < _curr_crit_num; index++) {
+        Object* candidate = _curr_crit_list[index];
+        if (!aiIsEligibleAlternative(attacker, currentTarget, candidate, ignoreFleeingCritters)) {
+            continue;
+        }
+
+        AiAttackPlan candidatePlan = aiBuildAttackPlan(attacker, candidate, weapon);
+        if (candidatePlan.executable
+            && (!bestPlan.executable || candidatePlan.score > bestPlan.score)) {
+            bestPlan = candidatePlan;
+        }
+    }
+
+    if (bestPlan.target != currentTarget) {
+        aiDebugPrint("\n[Combat AI/try_to_find_targets] %s: switching from %s to executable target %s"
+                     " (accuracy=%d, move=%d, score=%d)",
+            critterGetName(attacker),
+            critterGetName(currentTarget),
+            critterGetName(bestPlan.target),
+            bestPlan.accuracy,
+            bestPlan.movementCost,
+            bestPlan.score);
+    }
+    return bestPlan;
+}
+
+static int aiScoreFiringTile(Object* attacker, Object* defender, HitMode hitMode, int tile, int path)
+{
+    if (tileDistanceBetween(tile, defender->tile) > weaponGetRange(attacker, hitMode)
+        || path + weaponGetActionPointCost(attacker, hitMode, false) > attacker->data.critter.combat.ap
+        || _combat_is_shot_blocked(attacker, tile, defender->tile, defender, nullptr)) {
+        return kAiInvalidScore;
+    }
+
+    int accuracy = _determine_to_hit_from_tile(attacker, tile, defender, HIT_LOCATION_UNCALLED, hitMode);
+    if (accuracy < aiGetPacket(attacker)->min_to_hit) {
+        return kAiInvalidScore;
+    }
+    return accuracy * kAiFiringAccuracyScoreWeight - path;
+}
+
+static int aiFindFiringTile(Object* attacker, Object* defender, HitMode hitMode, int maxDistance)
+{
+    if (maxDistance <= 0) {
+        return -1;
+    }
+
+    std::vector<int> frontier = { attacker->tile };
+    std::unordered_set<int> visited = { attacker->tile };
+    int bestTile = -1;
+    int bestScore = kAiInvalidScore;
+    int evaluatedTiles = 0;
+
+    for (int depth = 0; depth < maxDistance && evaluatedTiles < kAiMaximumTacticalTileEvaluations; depth++) {
+        std::vector<int> nextFrontier;
+        for (int origin : frontier) {
+            for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+                if (evaluatedTiles >= kAiMaximumTacticalTileEvaluations) {
+                    break;
+                }
+                int tile = tileGetTileInDirection(origin, static_cast<Rotation>(rotation), 1);
+                if (!tileIsValid(tile) || !visited.insert(tile).second) {
+                    continue;
+                }
+                nextFrontier.push_back(tile);
+
+                if (_obj_blocking_at(attacker, tile, attacker->elevation) != nullptr) {
+                    continue;
+                }
+
+                evaluatedTiles++;
+                int path = pathfinderFindPath(attacker, attacker->tile, tile, nullptr, 1, _obj_blocking_at);
+                if (path <= 0 || path > maxDistance) {
+                    continue;
+                }
+
+                int score = aiScoreFiringTile(attacker, defender, hitMode, tile, path);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestTile = tile;
+                }
+            }
+        }
+        frontier = std::move(nextFrontier);
+    }
+
+    return bestTile;
+}
+
+static bool aiCoverTileIsCrowded(const std::vector<Object*>& critters, int tile)
+{
+    int nearbyCritters = 0;
+    for (Object* critter : critters) {
+        if (tileDistanceBetween(tile, critter->tile) <= 3) {
+            nearbyCritters++;
+        }
+    }
+    return nearbyCritters >= 3;
+}
+
+static bool aiTileContainsObject(const std::vector<Object*>& objects, int tile)
+{
+    for (Object* object : objects) {
+        if (object->tile == tile) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool aiCoverTileHasWallPair(const std::vector<Object*>& walls, int tile, int elevation, Rotation first, Rotation second)
+{
+    int firstTile = tileGetTileInDirection(tile, first, 1);
+    int secondTile = tileGetTileInDirection(tile, second, 1);
+    return _obj_blocking_at(nullptr, firstTile, elevation) != nullptr
+        && aiTileContainsObject(walls, firstTile)
+        && _obj_blocking_at(nullptr, secondTile, elevation) != nullptr
+        && aiTileContainsObject(walls, secondTile);
+}
+
+static bool aiCoverTileIsDoorway(const std::vector<Object*>& doors, const std::vector<Object*>& walls, int tile, int elevation)
+{
+    if (aiTileContainsObject(doors, tile)
+        || aiCoverTileHasWallPair(walls, tile, elevation, ROTATION_SE, ROTATION_NW)) {
+        return true;
+    }
+    if (aiCoverTileHasWallPair(walls, tile, elevation, ROTATION_SW, ROTATION_E)
+        && !aiTileContainsObject(walls, tileGetTileInDirection(tile, ROTATION_SE, 1))) {
+        return true;
+    }
+    return aiCoverTileHasWallPair(walls, tile, elevation, ROTATION_W, ROTATION_NE)
+        && !aiTileContainsObject(walls, tileGetTileInDirection(tile, ROTATION_NW, 1));
+}
+
+static int aiFindObjectBackedCoverTile(Object* attacker, Object* defender, int movementPoints, bool allowFallback)
+{
+    std::vector<Object*> coverObjects;
+    std::vector<Object*> doors;
+    std::vector<Object*> walls;
+    for (ObjectType type : { OBJ_TYPE_WALL, OBJ_TYPE_SCENERY }) {
+        Object** objects = nullptr;
+        int count = objectListCreate(-1, attacker->elevation, type, &objects);
+        for (int index = 0; index < count; index++) {
+            if (objectGetDistanceBetween(attacker, objects[index]) <= attacker->data.critter.combat.ap + 1) {
+                coverObjects.push_back(objects[index]);
+            }
+            if (type == OBJ_TYPE_SCENERY) {
+                Proto* proto;
+                if (protoGetProto(objects[index]->pid, &proto) == 0
+                    && proto->scenery.type == SCENERY_TYPE_DOOR) {
+                    doors.push_back(objects[index]);
+                }
+            } else {
+                walls.push_back(objects[index]);
+            }
+        }
+        if (count > 0) {
+            objectListFree(objects);
+        }
+    }
+
+    std::sort(coverObjects.begin(), coverObjects.end(), [attacker](Object* lhs, Object* rhs) {
+        return objectGetDistanceBetween(attacker, lhs) < objectGetDistanceBetween(attacker, rhs);
+    });
+
+    std::vector<Object*> critters;
+    Object** critterList = nullptr;
+    int critterCount = objectListCreate(-1, attacker->elevation, OBJ_TYPE_CRITTER, &critterList);
+    if (critterCount > 0) {
+        critters.assign(critterList, critterList + critterCount);
+        objectListFree(critterList);
+    }
+
+    int fallbackTile = -1;
+    std::unordered_set<int> checkedTiles;
+    int initialExtraDistance = objectGetDistanceBetween(attacker, defender) <= 3 ? 3 : 0;
+    int passes = initialExtraDistance != 0 ? 2 : 1;
+    for (int pass = 0; pass < passes; pass++) {
+        int extraDistance = pass == 0 ? initialExtraDistance : 0;
+
+        int previousObjectTile = -1;
+        for (Object* object : coverObjects) {
+            if (object->tile == previousObjectTile) {
+                continue;
+            }
+            previousObjectTile = object->tile;
+
+            Rotation center = tileGetRotationTo(defender->tile, object->tile);
+            int side = randomBetween(0, 1) == 0 ? 1 : ROTATION_COUNT - 1;
+            Rotation directions[3] = {
+                center,
+                static_cast<Rotation>((center + side) % ROTATION_COUNT),
+                static_cast<Rotation>((center + ROTATION_COUNT - side) % ROTATION_COUNT),
+            };
+
+            for (int radius = 1; radius <= 2; radius++) {
+                int candidateTile = -1;
+                for (Rotation direction : directions) {
+                    int tile = tileGetTileInDirection(object->tile, direction, radius);
+                    if (hexGridTileIsValid(tile)
+                        && _obj_blocking_at(attacker, tile, attacker->elevation) == nullptr) {
+                        candidateTile = tile;
+                        break;
+                    }
+                }
+                if (candidateTile == -1 || checkedTiles.find(candidateTile) != checkedTiles.end()) {
+                    continue;
+                }
+
+                int sourceDistance = tileDistanceBetween(attacker->tile, candidateTile);
+                int targetDistance = tileDistanceBetween(defender->tile, candidateTile);
+                if (sourceDistance + extraDistance >= targetDistance) {
+                    if (extraDistance == 0) {
+                        checkedTiles.insert(candidateTile);
+                    }
+                    continue;
+                }
+                if (!_combat_is_shot_blocked(defender, defender->tile, candidateTile, nullptr, nullptr)
+                    || aiCoverTileIsCrowded(critters, candidateTile)
+                    || aiCoverTileIsDoorway(doors, walls, candidateTile, attacker->elevation)) {
+                    checkedTiles.insert(candidateTile);
+                    continue;
+                }
+
+                int pathLength = pathfinderFindPath(attacker, attacker->tile, candidateTile, nullptr, 1, _obj_blocking_at);
+                if (pathLength == 0) {
+                    checkedTiles.insert(candidateTile);
+                    continue;
+                }
+                if (pathLength <= movementPoints) {
+                    return candidateTile;
+                }
+                if (allowFallback && fallbackTile == -1) {
+                    fallbackTile = candidateTile;
+                }
+                checkedTiles.insert(candidateTile);
+            }
+        }
+    }
+
+    return fallbackTile;
+}
+
+static bool aiMoveToTacticalTile(Object* attacker, int tile, int actionPoints)
+{
+    if (tile == -1) {
+        return false;
+    }
+
+    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+    int registrationResult = animationRegisterMoveToTile(attacker, tile, attacker->elevation, actionPoints, 0);
+    int animationResult = reg_anim_end();
+    if (registrationResult == -1 || animationResult != 0) {
+        return false;
+    }
+    _combat_turn_run();
+    return true;
+}
+
+static bool aiMoveToFiringPosition(Object* attacker, Object* defender, HitMode hitMode)
+{
+    if (!settings.combatai.smart_behavior || !settings.combatai.find_firing_positions) {
+        return false;
+    }
+
+    int attackCost = weaponGetActionPointCost(attacker, hitMode, false);
+    int movementPoints = attacker->data.critter.combat.ap - attackCost;
+    int tile = aiFindFiringTile(attacker, defender, hitMode, movementPoints);
+    if (tile == -1) {
+        return false;
+    }
+
+    aiDebugPrint("\n[Combat AI/find_firing_positions] %s: moving to tile %d for a clear shot at %s (up to %d AP)",
+        critterGetName(attacker),
+        tile,
+        critterGetName(defender),
+        movementPoints);
+    bool moved = aiMoveToTacticalTile(attacker, tile, movementPoints);
+    if (moved) {
+        aiDescribe(attacker, AiDescription::FiringPosition);
+    }
+    return moved;
+}
+
+static bool aiMoveToCover(Object* attacker, Object* defender)
+{
+    if (!settings.combatai.smart_behavior
+        || !settings.combatai.hiding_tactics
+        || attacker->data.critter.combat.ap <= 0
+        || (attacker->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
+        || critterGetBodyType(attacker) != BODY_TYPE_BIPED
+        || defender == nullptr
+        || !critterIsActive(defender)) {
+        return false;
+    }
+
+    AiPacket* ai = aiGetPacket(attacker);
+    if (ai->distance == DISTANCE_STAY
+        || (ai->distance == DISTANCE_CHARGE
+            && objectGetDistanceBetween(attacker, defender)
+                > critterGetStat(attacker, STAT_MAXIMUM_ACTION_POINTS))
+        || ai->disposition == DISPOSITION_BERKSERK) {
+        return false;
+    }
+
+    if (critterGetKillType(attacker) == KILL_TYPE_GECKO) {
+        return false;
+    }
+
+    Object* weapon = critterGetItem2(attacker);
+    if (ai->disposition != DISPOSITION_COWARD) {
+        if (weapon == nullptr
+            || weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) != ATTACK_TYPE_RANGED) {
+            return false;
+        }
+
+        bool defenderHasRangedWeapon = false;
+        if (defender == gDude) {
+            Object* leftHandWeapon = critterGetItem1(defender);
+            if (leftHandWeapon != nullptr && itemGetType(leftHandWeapon) == ITEM_TYPE_WEAPON) {
+                AttackType attackType = weaponGetAttackTypeForHitMode(leftHandWeapon, HIT_MODE_LEFT_WEAPON_PRIMARY);
+                defenderHasRangedWeapon = attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW;
+            }
+        }
+        if (!defenderHasRangedWeapon) {
+            Object* rightHandWeapon = critterGetItem2(defender);
+            if (rightHandWeapon != nullptr && itemGetType(rightHandWeapon) == ITEM_TYPE_WEAPON) {
+                AttackType attackType = weaponGetAttackTypeForHitMode(rightHandWeapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+                defenderHasRangedWeapon = attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW;
+            }
+        }
+        if (!defenderHasRangedWeapon
+            || _combat_is_shot_blocked(defender, defender->tile, attacker->tile, attacker, nullptr)) {
+            return false;
+        }
+    }
+
+    bool isCoward = ai->disposition == DISPOSITION_COWARD;
+    bool wasHitLastTurn = attacker->data.critter.combat.damageLastTurn > 0;
+    int hitPoints = critterGetStat(attacker, STAT_CURRENT_HIT_POINTS);
+    int minimumHitPoints = aiGetEffectiveMinimumHitPoints(attacker, ai);
+    bool hasLowHealth = hitPoints < minimumHitPoints * 2;
+    bool isOutmatched = _combatai_rating(attacker) * 2 < _combatai_rating(defender);
+    bool useFallback = wasHitLastTurn && (hasLowHealth || isOutmatched);
+
+    int movementBonus = 0;
+    if (!objectIsPartyMember(attacker)) {
+        movementBonus = (settings.preferences.combat_difficulty + 1) * 2;
+        attacker->data.critter.combat.ap += movementBonus;
+    }
+
+    auto removeUnusedMovementBonus = [attacker, movementBonus]() {
+        int unusedBonus = std::min(movementBonus, std::max(attacker->data.critter.combat.ap, 0));
+        attacker->data.critter.combat.ap -= unusedBonus;
+    };
+
+    int movementPoints = attacker->data.critter.combat.ap;
+    aiDebugPrint("\n[Combat AI/hiding_tactics] %s: searching for cover from %s"
+                 " (coward=%d, damage_last_turn=%d, hp=%d, min_hp=%d, outmatched=%d, budget=%d AP, move_bonus=%d)",
+        critterGetName(attacker),
+        critterGetName(defender),
+        isCoward,
+        attacker->data.critter.combat.damageLastTurn,
+        hitPoints,
+        minimumHitPoints,
+        isOutmatched,
+        movementPoints,
+        movementBonus);
+
+    int tile = aiFindObjectBackedCoverTile(attacker, defender, movementPoints, useFallback);
+    if (tile == -1) {
+        removeUnusedMovementBonus();
+        aiDebugPrint("\n[Combat AI/hiding_tactics] %s: no reachable cover tile found",
+            critterGetName(attacker));
+        return false;
+    }
+
+    aiDebugPrint("\n[Combat AI/hiding_tactics] %s: selected cover tile %d from %s"
+                 " (distance %d -> %d, up to %d AP)",
+        critterGetName(attacker),
+        tile,
+        critterGetName(defender),
+        objectGetDistanceBetween(attacker, defender),
+        tileDistanceBetween(tile, defender->tile),
+        movementPoints);
+
+    bool moved = aiMoveToTacticalTile(attacker, tile, movementPoints);
+    removeUnusedMovementBonus();
+    aiDebugPrint("\n[Combat AI/hiding_tactics] %s: cover move to tile %d %s",
+        critterGetName(attacker),
+        tile,
+        moved ? "completed" : "failed");
+    if (moved) {
+        aiDescribe(attacker, AiDescription::Cover);
+    }
+    return moved;
 }
 
 // 0x4291C4
@@ -1910,7 +2808,8 @@ static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hit
         return 1;
     }
 
-    if (!canUseCurrentWeapon || weaponGetRange(attacker, HIT_MODE_PUNCH) >= objectGetDistanceBetween(attacker, defender)) {
+    if (!canUseCurrentWeapon
+        || weaponGetRange(attacker, HIT_MODE_PUNCH) >= objectGetDistanceBetween(attacker, defender)) {
         *hitMode = HIT_MODE_PUNCH;
         *weaponPtr = nullptr;
         return 0;
@@ -2298,10 +3197,10 @@ static Object* _ai_search_environ(Object* critter, ItemType itemType)
         return nullptr;
     }
 
-    Object** objects;
+    Object** objects = nullptr;
     int count = objectListCreate(-1, gElevation, OBJ_TYPE_ITEM, &objects);
-    if (count == 0) {
-        return nullptr;
+    if (count <= 0) {
+        return aiSearchCorpseInventory(critter, itemType, nullptr);
     }
 
     // NOTE: Uninline.
@@ -2322,6 +3221,26 @@ static Object* _ai_search_environ(Object* critter, ItemType itemType)
         if (itemGetType(item) == itemType) {
             switch (itemType) {
             case ITEM_TYPE_WEAPON:
+                if (settings.combatai.smart_behavior
+                    && settings.combatai.item_pick_up_fix
+                    && critter->data.critter.combat.ap
+                        == critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) + aiGetDifficultyActionPointBonus(critter)
+                    && critter->data.critter.combat.ap - distance < 3) {
+                    Object* equippedWeapon = critterGetItem2(critter);
+                    HitMode hitMode = equippedWeapon != nullptr
+                        ? aiGetPlanningHitMode(equippedWeapon)
+                        : HIT_MODE_PUNCH;
+                    AttackType attackType = weaponGetAttackTypeForHitMode(equippedWeapon, hitMode);
+                    if (attackType != ATTACK_TYPE_RANGED && attackType != ATTACK_TYPE_THROW) {
+                        aiDebugPrint("\n[Combat AI/item_pick_up_fix] %s: skipping unreachable weapon %s"
+                                     " (distance=%d, AP=%d)",
+                            critterGetName(critter),
+                            objectGetName(item),
+                            distance,
+                            critter->data.critter.combat.ap);
+                        break;
+                    }
+                }
                 if (_ai_can_use_weapon(critter, item, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
                     foundItem = item;
                 }
@@ -2349,12 +3268,167 @@ static Object* _ai_search_environ(Object* critter, ItemType itemType)
 
     objectListFree(objects);
 
+    return aiSearchCorpseInventory(critter, itemType, foundItem);
+}
+
+static bool aiCanLootCorpse(Object* critter)
+{
+    int mode = settings.combatai.looting_corpses;
+    return mode == 2 || (mode == 1 && !objectIsPartyMember(critter));
+}
+
+static Object* aiSearchCorpseInventory(Object* critter, ItemType itemType, Object* groundItem)
+{
+    if (!aiCanLootCorpse(critter)
+        || critterGetBodyType(critter) != BODY_TYPE_BIPED
+        || critterGetKillType(critter) == KILL_TYPE_GECKO) {
+        return groundItem;
+    }
+
+    Object* equippedWeapon = critterGetItem2(critter);
+    if (itemType == ITEM_TYPE_AMMO && equippedWeapon == nullptr) {
+        return groundItem;
+    }
+
+    int bestPathLength = 99999;
+    if (groundItem != nullptr) {
+        if (critter->tile == groundItem->tile) {
+            bestPathLength = 0;
+        } else {
+            int pathLength = pathfinderFindPath(critter, critter->tile, groundItem->tile, nullptr, 0, _obj_blocking_at);
+            if (pathLength != 0) {
+                bestPathLength = pathLength;
+            }
+        }
+    }
+
+    Object** objects = nullptr;
+    int count = objectListCreate(-1, critter->elevation, OBJ_TYPE_CRITTER, &objects);
+    if (count <= 0) {
+        return groundItem;
+    }
+
+    _ai_sort_list_distance(objects, count, critter);
+    int perception = critterGetStat(critter, STAT_PERCEPTION) + 5;
+    Object* foundItem = groundItem;
+
+    for (int objectIndex = 0; objectIndex < count; objectIndex++) {
+        Object* corpse = objects[objectIndex];
+        int distance = objectGetDistanceBetween(critter, corpse);
+        if (distance > perception) {
+            break;
+        }
+        if (!critterIsDead(corpse)
+            || corpse->data.inventory.length == 0
+            || critterFlagCheck(corpse->pid, CRITTER_NO_STEAL)) {
+            continue;
+        }
+
+        int pathLength = 0;
+        if (critter->tile != corpse->tile) {
+            pathLength = pathfinderFindPath(critter, critter->tile, corpse->tile, nullptr, 0, _obj_blocking_at);
+            if (pathLength == 0 || pathLength >= bestPathLength) {
+                continue;
+            }
+        }
+
+        int inventoryIndex = -1;
+        while (true) {
+            Object* item = inventoryFindByType(corpse, itemType, &inventoryIndex);
+            if (item == nullptr) {
+                break;
+            }
+
+            bool usable = false;
+            switch (itemType) {
+            case ITEM_TYPE_WEAPON:
+                usable = _ai_can_use_weapon(critter, item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+                break;
+            case ITEM_TYPE_AMMO:
+                usable = weaponCanBeReloadedWith(equippedWeapon, item);
+                break;
+            case ITEM_TYPE_DRUG:
+            case ITEM_TYPE_MISC:
+                usable = aiCanUseItem(critter, item);
+                break;
+            default:
+                break;
+            }
+
+            if (usable) {
+                foundItem = item;
+                bestPathLength = pathLength;
+                break;
+            }
+        }
+    }
+
+    objectListFree(objects);
+
+    if (foundItem != groundItem) {
+        aiDebugPrint("\n[Combat AI/looting_corpses] %s: found %s on %s",
+            critterGetName(critter),
+            objectGetName(foundItem),
+            critterGetName(foundItem->owner));
+    }
     return foundItem;
 }
 
 // 0x429D60
 static Object* _ai_retrieve_object(Object* critter, Object* item)
 {
+    Object* owner = item->owner;
+    if (owner != nullptr
+        && objectTypeFromPid(owner->pid) == OBJ_TYPE_CRITTER
+        && critterIsDead(owner)) {
+        static constexpr int kCorpsePickupActionPointCost = 3;
+        int movementPoints = critter->data.critter.combat.ap - kCorpsePickupActionPointCost;
+        if (movementPoints < 0) {
+            return nullptr;
+        }
+
+        if (objectGetDistanceBetween(critter, owner) > 1) {
+            _ai_move_steps_closer(critter, owner, movementPoints, false);
+        }
+        if (objectGetDistanceBetween(critter, owner) > 1
+            || critter->data.critter.combat.ap < kCorpsePickupActionPointCost) {
+            return nullptr;
+        }
+
+        int quantity = 1;
+        if (itemGetType(item) == ITEM_TYPE_AMMO) {
+            Object* weapon = critterGetItem2(critter);
+            if (weapon != nullptr) {
+                int packSize = ammoGetCapacity(item);
+                if (packSize > 0) {
+                    quantity += ammoGetCapacity(weapon) / packSize;
+                }
+                quantity = std::min(quantity, itemGetQuantity(owner, item));
+            }
+        }
+
+        int itemId = item->id;
+        if (itemMoveForce(owner, critter, item, quantity) != 0) {
+            return nullptr;
+        }
+
+        critter->data.critter.combat.ap -= kCorpsePickupActionPointCost;
+        reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+        animationRegisterAnimate(critter, ANIM_MAGIC_HANDS_GROUND, 0);
+        if (reg_anim_end() == 0) {
+            _combat_turn_run();
+        }
+
+        Object* retrievedItem = inventoryFindById(critter, itemId);
+        aiDebugPrint("\n[Combat AI/looting_corpses] %s: retrieved %s from %s (%d AP left)",
+            critterGetName(critter),
+            retrievedItem != nullptr ? objectGetName(retrievedItem) : "item",
+            critterGetName(owner),
+            critter->data.critter.combat.ap);
+        aiDescribe(critter, AiDescription::ItemRetrieval);
+        return retrievedItem;
+    }
+
     if (actionPickUp(critter, item) != 0) {
         return nullptr;
     }
@@ -2373,6 +3447,10 @@ static Object* _ai_retrieve_object(Object* critter, Object* item)
 
     // Save item NPC wants to pick up on the next turn.
     aiInfoSetLastItem(retrievedItem, item);
+
+    if (retrievedItem != nullptr) {
+        aiDescribe(critter, AiDescription::ItemRetrieval);
+    }
 
     return retrievedItem;
 }
@@ -2478,6 +3556,126 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
     return HIT_MODE_RIGHT_WEAPON_PRIMARY;
 }
 
+static Object* aiFriendlyMoveBlockingAt(Object* source, int tile, int elevation)
+{
+    Object* blocker = _obj_blocking_at(source, tile, elevation);
+    if (blocker != nullptr
+        && objectTypeFromPid(blocker->pid) == OBJ_TYPE_CRITTER
+        && blocker->data.critter.combat.team == source->data.critter.combat.team) {
+        return nullptr;
+    }
+
+    return blocker;
+}
+
+static int aiFindPushTile(Object* blocker, int precedingTile)
+{
+    Rotation direction = tileGetRotationTo(blocker->tile, precedingTile);
+    int side = randomBetween(0, 1) == 0 ? 1 : ROTATION_COUNT - 1;
+    Rotation candidates[3] = {
+        static_cast<Rotation>((direction + side) % ROTATION_COUNT),
+        static_cast<Rotation>((direction + ROTATION_COUNT - side) % ROTATION_COUNT),
+        direction,
+    };
+
+    for (Rotation candidateDirection : candidates) {
+        int tile = tileGetTileInDirection(blocker->tile, candidateDirection, 1);
+        if (hexGridTileIsValid(tile)
+            && _obj_blocking_at(blocker, tile, blocker->elevation) == nullptr) {
+            return tile;
+        }
+    }
+
+    return -1;
+}
+
+static bool aiPushBlockingCritter(Object* source, Object* blocker, int precedingTile)
+{
+    if (blocker == nullptr
+        || blocker == source
+        || objectTypeFromPid(blocker->pid) != OBJ_TYPE_CRITTER
+        || blocker->data.critter.combat.team != source->data.critter.combat.team
+        || blocker->data.critter.combat.ap <= 0
+        || !critterIsActive(blocker)) {
+        return false;
+    }
+
+    int tile = aiFindPushTile(blocker, precedingTile);
+    if (tile == -1) {
+        return false;
+    }
+
+    int savedFreeMove = _combat_free_move;
+    _combat_free_move = 0;
+    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+    animationRegisterMoveToTile(blocker, tile, blocker->elevation, 1, 0);
+    int registrationResult = reg_anim_end();
+    if (registrationResult == 0) {
+        _combat_turn_run();
+    }
+    _combat_free_move = savedFreeMove;
+
+    if (registrationResult != 0 || blocker->tile != tile) {
+        return false;
+    }
+
+    aiDebugPrint("\n[Combat AI/npc_push_on_move_block] %s: %s stepped aside to clear the path",
+        critterGetName(source),
+        critterGetName(blocker));
+    aiDescribe(source, AiDescription::ClearPath);
+    return true;
+}
+
+static bool aiClearFriendlyMovePath(Object* source, Object* target, int actionPoints, int* destinationTilePtr)
+{
+    if (!settings.combatai.npc_push_on_move_block
+        || critterGetBodyType(source) != BODY_TYPE_BIPED
+        || destinationTilePtr == nullptr) {
+        return false;
+    }
+
+    for (int attempt = 0; attempt < 10; attempt++) {
+        unsigned char rotations[800];
+        int pathLength = pathfinderFindPath(source, source->tile, target->tile, rotations, 0, aiFriendlyMoveBlockingAt);
+        if (pathLength == 0) {
+            return false;
+        }
+
+        int tile = source->tile;
+        int reachableSteps = std::min(pathLength, actionPoints);
+        bool foundBlocker = false;
+        for (int step = 0; step < reachableSteps; step++) {
+            int precedingTile = tile;
+            tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[step]), 1);
+            Object* blocker = _obj_blocking_at(source, tile, source->elevation);
+            if (blocker == nullptr) {
+                continue;
+            }
+
+            if (!aiPushBlockingCritter(source, blocker, precedingTile)) {
+                return false;
+            }
+
+            foundBlocker = true;
+            break;
+        }
+
+        if (!foundBlocker) {
+            if (tile != source->tile) {
+                *destinationTilePtr = tile;
+                return true;
+            }
+            return false;
+        }
+
+        if (pathfinderFindPath(source, source->tile, target->tile, nullptr, 0, _obj_blocking_at) != 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // 0x429FC8
 static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoints, bool taunt)
 {
@@ -2491,11 +3689,22 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
     }
 
     if (distance == DISTANCE_STAY_CLOSE) {
+        if (settings.combatai.smart_behavior
+            && critter->data.critter.combat.team != gDude->data.critter.combat.team
+            && objectGetDistanceBetween(critter, target) > 5) {
+            return -1;
+        }
+
         if (target != gDude) {
             int currentDistance = objectGetDistanceBetween(critter, gDude);
-            if (currentDistance > 5
+            bool exceedsSmartLeash = currentDistance > 5
+                || (objectGetDistanceBetween(target, gDude) > 5
+                    && currentDistance + actionPoints > 5);
+            bool exceedsLegacyLeash = currentDistance > 5
                 && objectGetDistanceBetween(target, gDude) > 5
-                && currentDistance + actionPoints > 5) {
+                && currentDistance + actionPoints > 5;
+            if ((settings.combatai.smart_behavior && exceedsSmartLeash)
+                || (!settings.combatai.smart_behavior && exceedsLegacyLeash)) {
                 return -1;
             }
         }
@@ -2503,12 +3712,6 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
 
     if (objectGetDistanceBetween(critter, target) <= 1) {
         return -1;
-    }
-
-    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-
-    if (taunt) {
-        _combatai_msg(critter, nullptr, AI_MESSAGE_TYPE_MOVE, 0);
     }
 
     Object* initialTarget = target;
@@ -2521,7 +3724,9 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         shouldUnhide = false;
     }
 
-    if (pathfinderFindPath(critter, critter->tile, target->tile, nullptr, 0, _obj_blocking_at) == 0) {
+    int clearedDestinationTile = -1;
+    if (pathfinderFindPath(critter, critter->tile, target->tile, nullptr, 0, _obj_blocking_at) == 0
+        && !aiClearFriendlyMovePath(critter, target, actionPoints, &clearedDestinationTile)) {
         _moveBlockObj = nullptr;
         if (pathfinderFindPath(critter, critter->tile, target->tile, nullptr, 0, _obj_ai_blocking_at) == 0
             && _moveBlockObj != nullptr
@@ -2544,9 +3749,15 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         target->flags &= ~OBJECT_HIDDEN;
     }
 
-    int tile = target->tile;
+    int tile = clearedDestinationTile != -1 ? clearedDestinationTile : target->tile;
     if (target == initialTarget) {
         _cai_retargetTileFromFriendlyFire(critter, target, &tile);
+    }
+
+    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+
+    if (taunt) {
+        _combatai_msg(critter, nullptr, AI_MESSAGE_TYPE_MOVE, 0);
     }
 
     if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFidShouldRun(critter->fid)) {
@@ -2766,7 +3977,17 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
     if (weaponGetActionPointCost(attacker, hitMode, true) <= attacker->data.critter.combat.ap) {
         if (critterCanAim(attacker, hitMode)) {
             AiPacket* ai = aiGetPacket(attacker);
-            if (randomBetween(1, ai->called_freq) == 1) {
+            bool useCalledShot = randomBetween(1, ai->called_freq) == 1;
+            BodyType bodyType = critterGetBodyType(attacker);
+            if (!useCalledShot
+                && settings.combatai.smart_behavior
+                && (bodyType == BODY_TYPE_BIPED || bodyType == BODY_TYPE_ROBOTIC)
+                && ai->called_freq <= 100
+                && objectGetDistanceBetween(attacker, defender) <= 5) {
+                useCalledShot = randomBetween(1, 2) == 1;
+            }
+
+            if (useCalledShot) {
                 int intelligenceRequired = 5;
                 switch (settings.preferences.combat_difficulty) {
                 case COMBAT_DIFFICULTY_EASY:
@@ -2789,6 +4010,14 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
                 }
             }
         }
+    }
+
+    if (hitLocation != HIT_LOCATION_TORSO) {
+        aiDebugPrint("\n[Combat AI/smart_behavior] %s: selected aimed location %d against %s",
+            critterGetName(attacker),
+            hitLocation,
+            critterGetName(defender));
+        aiDescribe(attacker, AiDescription::AimedShot);
     }
 
     return hitLocation;
@@ -2817,7 +4046,7 @@ static int _ai_attack(Object* attacker, Object* defender, HitMode hitMode)
 }
 
 // 0x42A7D8
-static int _ai_try_attack(Object* attacker, Object* defender)
+static int _ai_try_attack(Object* attacker, Object* defender, HitMode plannedHitMode, bool forcePoorHitChance)
 {
     critterSetWhoHitMe(attacker, defender);
 
@@ -2829,7 +4058,9 @@ static int _ai_try_attack(Object* attacker, Object* defender)
         weapon = nullptr;
     }
 
-    HitMode hitMode = _ai_pick_hit_mode(attacker, weapon, defender);
+    HitMode hitMode = plannedHitMode != HIT_MODE_INVALID
+        ? plannedHitMode
+        : _ai_pick_hit_mode(attacker, weapon, defender);
     int minToHit = aiGetPacket(attacker)->min_to_hit;
 
     int actionPoints = attacker->data.critter.combat.ap;
@@ -2958,9 +4189,19 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             int toHitNoRange = _determine_to_hit_no_range(attacker, defender, HIT_LOCATION_UNCALLED, hitMode, rotations);
             if (toHitNoRange < minToHit) {
                 // hit chance is too low even at point blank range (not taking range into account)
-                debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
-                _ai_run_away(attacker, defender);
-                return 0;
+                if (settings.combatai.smart_behavior
+                    && settings.combatai.avoid_premature_flee
+                    && !forcePoorHitChance) {
+                    aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: deferring flee after impossible shot against %s",
+                        critterGetName(attacker),
+                        critterGetName(defender));
+                    return kAiTryAttackRecoverable;
+                }
+                if (!forcePoorHitChance) {
+                    debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
+                    _ai_run_away(attacker, defender);
+                    return 0;
+                }
             }
 
             if (weapon != nullptr) {
@@ -2979,6 +4220,10 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             }
         } else if (reason == COMBAT_BAD_SHOT_AIM_BLOCKED) {
             // aim is blocked
+            if (aiMoveToFiringPosition(attacker, defender, hitMode)) {
+                taunt = false;
+                continue;
+            }
             if (_ai_move_steps_closer(attacker, defender, attacker->data.critter.combat.ap, taunt) == -1) {
                 return -1;
             }
@@ -2994,9 +4239,28 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             if (accuracy < minToHit) {
                 int toHitNoRange = _determine_to_hit_no_range(attacker, defender, HIT_LOCATION_UNCALLED, hitMode, rotations);
                 if (toHitNoRange < minToHit) {
-                    debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
-                    _ai_run_away(attacker, defender);
-                    return 0;
+                    if (settings.combatai.smart_behavior
+                        && settings.combatai.avoid_premature_flee
+                        && !forcePoorHitChance) {
+                        aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: deferring flee after impossible shot against %s",
+                            critterGetName(attacker),
+                            critterGetName(defender));
+                        return kAiTryAttackRecoverable;
+                    }
+                    if (!forcePoorHitChance) {
+                        debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
+                        _ai_run_away(attacker, defender);
+                        return 0;
+                    }
+
+                    aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: attacking %s despite poor hit chance",
+                        critterGetName(attacker),
+                        critterGetName(defender));
+                    if (_ai_attack(attacker, defender, hitMode) == -1
+                        || weaponGetActionPointCost(attacker, hitMode, false) > attacker->data.critter.combat.ap) {
+                        return -1;
+                    }
+                    continue;
                 }
 
                 if (actionPoints > 0) {
@@ -3028,6 +4292,12 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 }
 
                 if (_ai_move_steps_closer(attacker, defender, actionPointsToUse, taunt) == -1) {
+                    if (settings.combatai.smart_behavior && settings.combatai.avoid_premature_flee) {
+                        aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: deferring flee after failing to approach %s",
+                            critterGetName(attacker),
+                            critterGetName(defender));
+                        return kAiTryAttackRecoverable;
+                    }
                     debugPrint("%s: FLEEING: Can't possibly get closer to Target!", critterGetName(attacker));
                     _ai_run_away(attacker, defender);
                     return 0;
@@ -3046,6 +4316,36 @@ static int _ai_try_attack(Object* attacker, Object* defender)
     }
 
     return -1;
+}
+
+static AiAttackOutcome aiExecuteAttackPlan(Object* attacker, const AiAttackPlan& plan)
+{
+    if (plan.executable
+        && plan.firingTile != -1
+        && plan.firingTile != attacker->tile) {
+        aiDebugPrint("\n[Combat AI/smart_behavior] %s: executing attack plan against %s via tile %d"
+                     " (accuracy=%d, move=%d AP)",
+            critterGetName(attacker),
+            critterGetName(plan.target),
+            plan.firingTile,
+            plan.accuracy,
+            plan.movementCost);
+        if (!aiMoveToTacticalTile(attacker, plan.firingTile, plan.movementCost)) {
+            aiDebugPrint("\n[Combat AI/smart_behavior] %s: planned move to tile %d failed",
+                critterGetName(attacker),
+                plan.firingTile);
+            return AiAttackOutcome::RecoverableFailure;
+        }
+        aiDescribe(attacker, AiDescription::FiringPosition);
+    }
+
+    // The plan's deterministic primary mode is only an estimate for target and
+    // movement scoring. Preserve the established AI packet logic for choosing
+    // secondary attacks, bursts, and thrown-weapon modes at execution time.
+    int result = _ai_try_attack(attacker, plan.target);
+    return result == kAiTryAttackRecoverable
+        ? AiAttackOutcome::RecoverableFailure
+        : AiAttackOutcome::Finished;
 }
 
 // Something with using flare
@@ -3206,23 +4506,52 @@ static int _cai_get_min_hp(AiPacket* ai)
     return 0;
 }
 
+static int aiGetEffectiveMinimumHitPoints(Object* critter, AiPacket* ai)
+{
+    if (!settings.combatai.npc_run_away_mode
+        || objectIsPartyMember(critter)) {
+        return ai->min_hp;
+    }
+
+    int hitPointRatio;
+    if (ai->run_away_mode == RUN_AWAY_MODE_INVALID) {
+        hitPointRatio = std::clamp(ai->min_hp, 0, 100);
+    } else if (!runAwayModeIsValid(ai->run_away_mode)) {
+        return ai->min_hp;
+    } else if (ai->run_away_mode == RUN_AWAY_MODE_LAST) {
+        hitPointRatio = 100;
+    } else {
+        hitPointRatio = _hp_run_away_value[ai->run_away_mode];
+    }
+    int maximumHitPoints = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
+    return maximumHitPoints - maximumHitPoints * hitPointRatio / 100;
+}
+
 // 0x42B130
 void _combat_ai(Object* a1, Object* a2)
 {
     // 0x51820C
-    static const int aiPartyMemberDistances[DISTANCE_COUNT] = {
+    static const int legacyPartyMemberDistances[DISTANCE_COUNT] = {
         5,
         7,
         7,
         7,
         50000,
     };
+    static const int smartPartyMemberDistances[DISTANCE_COUNT] = {
+        5,
+        10,
+        12,
+        8,
+        5000,
+    };
+
+    AiDescriptionTurnScope descriptionTurnScope(a1);
+    AiTemporaryActionPointBonus temporaryActionPointBonus(a1);
 
     AiPacket* ai = aiGetPacket(a1);
-    int hpRatio = _cai_get_min_hp(ai);
+    int minimumHitPoints = aiGetEffectiveMinimumHitPoints(a1, ai);
     if (ai->run_away_mode != RUN_AWAY_MODE_INVALID) {
-        int v7 = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) * hpRatio / 100;
-        int minimumHitPoints = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) - v7;
         int currentHitPoints = critterGetStat(a1, STAT_CURRENT_HIT_POINTS);
         const char* name = critterGetName(a1);
         debugPrint("\n%s minHp = %d; curHp = %d", name, minimumHitPoints, currentHitPoints);
@@ -3231,7 +4560,7 @@ void _combat_ai(Object* a1, Object* a2)
     CritterCombatData* combatData = &(a1->data.critter.combat);
     if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
         || (combatData->results & ai->hurt_too_much) != DAM_NONE
-        || critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp) {
+        || critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < minimumHitPoints) {
         debugPrint("%s: FLEEING: I'm Hurt!", critterGetName(a1));
         _ai_run_away(a1, a2);
         return;
@@ -3245,10 +4574,103 @@ void _combat_ai(Object* a1, Object* a2)
             a2 = _ai_danger_source(a1);
         }
 
+        if (settings.combatai.smart_behavior && a2 != nullptr) {
+            aiEquipBestPlanningWeapon(a1, a2);
+        }
+
+        Object* previousTarget = a2;
+        AiAttackPlan attackPlan = aiSelectAttackPlan(a1, a2);
+        a2 = attackPlan.target;
+        if (a2 != nullptr && a2 != previousTarget) {
+            aiDescribe(a1, AiDescription::TargetChange);
+        }
+
         _cai_perform_distance_prefs(a1, a2);
 
-        if (a2 != nullptr) {
-            _ai_try_attack(a1, a2);
+        bool spentActionPointsAttacking = false;
+        for (int targetAttempt = 0; a2 != nullptr && targetAttempt < 10; targetAttempt++) {
+            if (settings.combatai.smart_behavior) {
+                Object* weapon = critterGetItem2(a1);
+                if (weapon != nullptr && itemGetType(weapon) != ITEM_TYPE_WEAPON) {
+                    weapon = nullptr;
+                }
+                attackPlan = aiBuildAttackPlan(a1, a2, weapon);
+            }
+
+            int actionPointsBeforeAttack = a1->data.critter.combat.ap;
+            AiAttackOutcome attackOutcome = aiExecuteAttackPlan(a1, attackPlan);
+            if (attackOutcome == AiAttackOutcome::RecoverableFailure) {
+                AiAttackPlan alternatePlan = aiSelectAttackPlan(a1, a2, true);
+                if (alternatePlan.target != a2) {
+                    attackPlan = alternatePlan;
+                    a2 = attackPlan.target;
+                    aiDescribe(a1, AiDescription::TargetChange);
+                    if (aiExecuteAttackPlan(a1, attackPlan) == AiAttackOutcome::RecoverableFailure) {
+                        aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: alternate attack failed; fleeing from %s",
+                            critterGetName(a1),
+                            critterGetName(a2));
+                        _ai_run_away(a1, a2);
+                    }
+                } else {
+                    Object* targetLastAttacker = aiInfoGetLastTarget(a2);
+                    bool targetIsOverwhelming = targetLastAttacker == a1
+                        && _combatai_rating(a2) > _combatai_rating(a1) * 2;
+                    if (targetIsOverwhelming) {
+                        aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: no alternate and %s is overwhelming; fleeing",
+                            critterGetName(a1),
+                            critterGetName(a2));
+                        _ai_run_away(a1, a2);
+                    } else {
+                        aiDebugPrint("\n[Combat AI/avoid_premature_flee] %s: no alternate; continuing low-chance attack against %s",
+                            critterGetName(a1),
+                            critterGetName(a2));
+                        aiDescribe(a1, AiDescription::DeterminedAttack);
+                        if (_ai_try_attack(a1, a2, HIT_MODE_INVALID, true) == kAiTryAttackRecoverable) {
+                            _ai_run_away(a1, a2);
+                        }
+                    }
+                }
+            }
+
+            spentActionPointsAttacking |= a1->data.critter.combat.ap < actionPointsBeforeAttack;
+            if (!settings.combatai.smart_behavior
+                || !critterIsActive(a1)
+                || (a2->data.critter.combat.results & DAM_DEAD) == DAM_NONE
+                || a1->data.critter.combat.ap < weaponGetActionPointCost(a1, HIT_MODE_PUNCH, false)) {
+                break;
+            }
+
+            Object* defeatedTarget = a2;
+            a2 = _ai_danger_source(a1);
+            if (a2 == nullptr
+                || a2 == defeatedTarget
+                || (a2->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
+                a2 = nullptr;
+                break;
+            }
+
+            aiDebugPrint("\n[Combat AI/smart_behavior] %s: retargeting %s after defeating %s with %d AP left",
+                critterGetName(a1),
+                critterGetName(a2),
+                critterGetName(defeatedTarget),
+                a1->data.critter.combat.ap);
+            aiEquipBestPlanningWeapon(a1, a2);
+            attackPlan = aiSelectAttackPlan(a1, a2);
+            a2 = attackPlan.target;
+            if (a2 != nullptr) {
+                Object* weapon = critterGetItem2(a1);
+                if (weapon != nullptr && itemGetType(weapon) != ITEM_TYPE_WEAPON) {
+                    weapon = nullptr;
+                }
+                HitMode hitMode = aiGetPlanningHitMode(weapon);
+                if (weaponGetActionPointCost(a1, hitMode, false) <= a1->data.critter.combat.ap) {
+                    aiDescribe(a1, AiDescription::PostKillTarget);
+                }
+            }
+        }
+
+        if (spentActionPointsAttacking && aiMoveToCover(a1, a2)) {
+            return;
         }
     }
 
@@ -3302,7 +4724,10 @@ void _combat_ai(Object* a1, Object* a2)
             // NOTE: Uninline
             DistanceMode distance = aiGetDistance(a1);
             if (distance != DISTANCE_INVALID) {
-                maxTeammateDistance = aiPartyMemberDistances[distance];
+                const int* partyMemberDistances = settings.combatai.smart_behavior
+                    ? smartPartyMemberDistances
+                    : legacyPartyMemberDistances;
+                maxTeammateDistance = partyMemberDistances[distance];
             }
         }
     }
@@ -3745,6 +5170,21 @@ static int aiMessageListInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, &gCombatAiMessageList);
 
+    if (combatAiDescriptionsMessageList.entries != nullptr) {
+        messageListFree(&combatAiDescriptionsMessageList);
+    }
+    combatAiDescriptionsMessageListLoaded = false;
+    if (messageListInit(&combatAiDescriptionsMessageList)
+        && messageListLoad(&combatAiDescriptionsMessageList, "game\\combat_ai.msg")) {
+        combatAiDescriptionsMessageListLoaded = true;
+        if (settings.preferences.language_filter) {
+            messageListFilterBadwords(&combatAiDescriptionsMessageList);
+        }
+    } else {
+        messageListFree(&combatAiDescriptionsMessageList);
+        aiDebugPrint("\n[Combat AI/combat_descriptions] could not load game\\combat_ai.msg");
+    }
+
     return 0;
 }
 
@@ -3754,6 +5194,8 @@ static int aiMessageListInit()
 static int aiMessageListFree()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, nullptr);
+    combatAiDescriptionsMessageListLoaded = false;
+    messageListFree(&combatAiDescriptionsMessageList);
     if (!messageListFree(&gCombatAiMessageList)) {
         return -1;
     }
@@ -3771,6 +5213,9 @@ void aiMessageListReloadIfNeeded()
 
         if (languageFilter == 1) {
             messageListFilterBadwords(&gCombatAiMessageList);
+            if (combatAiDescriptionsMessageListLoaded) {
+                messageListFilterBadwords(&combatAiDescriptionsMessageList);
+            }
         } else {
             // NOTE: Uninline.
             aiMessageListFree();

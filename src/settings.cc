@@ -254,6 +254,26 @@ void initSettingsRegistry(bool isMapper)
     SETTING(console_output_path);
 #undef SECT
 
+#define SECT combatai
+    SETTING(smart_behavior);
+    SETTING(debug);
+    SETTING_P(combat_descriptions, clamp(0, 2));
+    SETTING(try_to_find_targets);
+    SETTING(avoid_premature_flee);
+    SETTING(find_firing_positions);
+    SETTING(hiding_tactics);
+    SETTING_P(npc_night_penalty, clamp(NpcNightPenaltyMode::Off, NpcNightPenaltyMode::AllTargets));
+    SETTING(ghost_perk_tweak);
+    SETTING(item_pick_up_fix);
+    SETTING(npc_push_on_move_block);
+    SETTING_P(looting_corpses, clamp(0, 2));
+    SETTING(difficulty_mode);
+    SETTING(npc_run_away_mode);
+    SETTING(re_find_targets);
+    SETTING(npc_attack_who_fix);
+    SETTING(take_better_weapons);
+#undef SECT
+
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);
