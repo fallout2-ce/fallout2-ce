@@ -49,7 +49,7 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 static char artGetCritterWeaponCode(WeaponAnimation weaponType);
-static Art* artLock(int fid, CacheEntry** cache_entry);
+static Art* artLock(int fid, CacheEntry** handlePtr);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -564,6 +564,8 @@ int artCopyFileName(const FrmId& frmId, char* dest)
         return -1;
     }
 
+    assert(frmId.hasFid() && "artCopyFileName(const FrmId& frmId, char* dest) called with path based FrmId which is not supported!");
+
     ptr = &(gArtListDescriptions[frmId.objectType()]);
 
     if (frmId.frameId().id >= ptr->fileNamesLength) {
@@ -932,7 +934,7 @@ CritterFrameId _art_alias_num(CritterFrameId index)
 // 0x4199AC
 int artCritterFrmIdShouldRun(const FrmId& frmId)
 {
-    if (frmId.objectType() == OBJ_TYPE_CRITTER && frmId.valid()) {
+    if (frmId.objectType() == OBJ_TYPE_CRITTER && frmId.valid() && frmId.hasFid()) {
         return gArtCritterFidShoudRunData[frmId.frameId().id];
     }
 
