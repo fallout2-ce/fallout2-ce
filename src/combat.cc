@@ -4556,7 +4556,18 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
         toHit += 15;
     }
 
-    if (attacker == gDude) {
+    bool applyDarknessPenalty = attacker == gDude;
+    if (!applyDarknessPenalty && defender != nullptr && targetIsCritter) {
+        bool defenderIsPartyMember = defender == gDude || objectIsPartyMember(defender);
+        NpcNightPenaltyMode npcNightPenaltyMode = settings.combatai.npc_night_penalty;
+        applyDarknessPenalty = npcNightPenaltyMode == NpcNightPenaltyMode::AllTargets
+            || (npcNightPenaltyMode == NpcNightPenaltyMode::ExcludePartyTargets && !defenderIsPartyMember)
+            || (settings.combatai.ghost_perk_tweak
+                && defenderIsPartyMember
+                && perkHasRank(defender, PERK_GHOST));
+    }
+
+    if (applyDarknessPenalty) {
         int lightIntensity;
         if (defender != nullptr) {
             lightIntensity = objectGetLightIntensity(defender);
