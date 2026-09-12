@@ -423,7 +423,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
     }
 
     WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
-    FrmId newFid;
+    FrmId newFrmId;
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
         if (critter == gDude) {
@@ -443,19 +443,19 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         }
 
         if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
+            newFrmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
         }
     } else {
         if (critter == gDude) {
-            newFid = FrmId(_art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
+            newFrmId = FrmId(_art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
     }
 
-    if (newFid.valid()) {
+    if (newFrmId.valid()) {
         Rect rect;
-        objectSetFid(critter, newFid.fid(), &rect);
+        objectSetFrmId(critter, newFrmId, &rect);
         tileWindowRefreshRect(&rect, gElevation);
     }
 
@@ -879,7 +879,7 @@ static void opCreateObject(Program* program)
 
     Proto* proto;
     if (protoGetProto(pid, &proto) != -1) {
-        if (objectCreateWithFidPid(&object, proto->fid, pid) != -1) {
+        if (objectCreateWithFrmIdPid(&object, FrmId(proto->fid), pid) != -1) {
             if (tile == -1) {
                 tile = 0;
             }
@@ -2063,19 +2063,19 @@ static void opMetarule3(Program* program)
                 break;
             }
 
-            int frmId = param2.integerValue;
-            if (frmId > FrmId::kMaxFrameId) {
-                frmId = frameIdFromFid(frmId);
+            int frameId = param2.integerValue;
+            if (frameId > FrmId::kMaxFrameId) {
+                frameId = frameIdFromFid(frameId);
             }
 
-            FrmId fid = FrmId(objectTypeFromFid(obj->fid),
-                frmId,
+            const FrmId frmId = FrmId(objectTypeFromFid(obj->fid),
+                frameId,
                 animationTypeFromFid(obj->fid),
                 weaponAnimationFromFid(obj->fid),
                 rotationFromFid(obj->fid));
 
             Rect updatedRect;
-            objectSetFid(obj, fid.fid(), &updatedRect);
+            objectSetFrmId(obj, frmId, &updatedRect);
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
         break;

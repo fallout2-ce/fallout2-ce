@@ -2649,8 +2649,8 @@ static void _object_move(int index)
         objectSetRotation(object, static_cast<Rotation>(sad->rotations[0]), &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-        FrmId fid = FrmId(object, sad->anim, weaponAnimationFromFid(object->fid), object->rotation + 1);
-        objectSetFid(object, fid.fid(), &tempRect);
+        const FrmId fid = FrmId(object, sad->anim, weaponAnimationFromFid(object->fid), object->rotation + 1);
+        objectSetFrmId(object, fid, &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
         sad->step = 0;
@@ -2767,7 +2767,7 @@ static void _object_straight_move(int index)
     Rect tempRect;
 
     if (sad->step == SAD_INIT) {
-        objectSetFid(object, sad->fid, &dirtyRect);
+        objectSetFrmId(object, FrmId(sad->fid), &dirtyRect);
         sad->step = 0;
     } else {
         objectGetRect(object, &dirtyRect);
@@ -2977,7 +2977,7 @@ void _object_animate()
                 y = 0;
             }
 
-            objectSetFid(object, sad->fid, &tempRect);
+            objectSetFrmId(object, FrmId(sad->fid), &tempRect);
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
             art = artLock(object->fid, &cacheHandle);
@@ -3279,7 +3279,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     }
 
     Rect temp;
-    objectSetFid(obj, finalFrmId.fid(), &temp);
+    objectSetFrmId(obj, finalFrmId, &temp);
     rectUnion(&rect, &temp, &rect);
 
     objectSetLocation(obj, obj->tile, obj->elevation, &temp);
@@ -3355,7 +3355,7 @@ static int animationChangeFrmId(Object* obj, int animationSequenceIndex, const F
         Rect dirtyRect;
         Rect tempRect;
 
-        objectSetFid(obj, frmId.fid(), &dirtyRect);
+        objectSetFrmId(obj, frmId, &dirtyRect);
         objectSetFrame(obj, 0, &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
         tileWindowRefreshRect(&dirtyRect, obj->elevation);

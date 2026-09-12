@@ -215,7 +215,7 @@ public:
     }
 
     constexpr int fid() const { return _fid; }
-
+    constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
 
     constexpr ObjectType objectType() const
@@ -228,9 +228,7 @@ public:
 
     bool valid() const { return !empty() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
-    bool empty() const { return (*this) == Empty(); }
-
-    bool exist() const { return _fid != kEmptyFid && valid() && exist(_fid, _builtPath); }
+    bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
     constexpr const FrameId& frameId() const { return _frameId; }
 
@@ -274,6 +272,8 @@ private:
 
     const char* _path;
     mutable char _builtPath[COMPAT_MAX_PATH] {};
+
+    bool empty() const { return (*this) == Empty(); }
 
     static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
 
@@ -382,7 +382,7 @@ public:
 
     constexpr HeadFidget fidget() const
     {
-        if (fid() == kEmptyFid) {
+        if (!hasFid()) {
             return FIDGET_INVALID;
         }
         int fidget = (fid() & 0xFF0000) >> 16;
@@ -435,7 +435,7 @@ inline Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
         return nullptr;
     }
 
-    assert(frmId.fid() != FrmId::kEmptyFid && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
+    assert(frmId.hasFid() && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
 
     return artLock(frmId.fid(), handlePtr);
 }

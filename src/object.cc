@@ -353,7 +353,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFidPid(&gDude, dudeFrmId.fid(), 0x1000000);
+    objectCreateWithFrmIdPid(&gDude, dudeFrmId, 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -366,7 +366,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    objectCreateWithFidPid(&gEgg, eggFrmId.fid(), -1);
+    objectCreateWithFrmIdPid(&gEgg, eggFrmId, -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -909,7 +909,7 @@ void _obj_render_post_roof(Rect* rect, int elevation)
 }
 
 // 0x489A84 obj_new
-int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
+int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
 {
     ObjectListNode* objectListNode;
 
@@ -924,7 +924,11 @@ int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
         return -1;
     }
 
-    objectListNode->obj->fid = fid;
+    if (frmId.valid()) {
+        assert(frmId.hasFid() && "objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid) called with path based FrmId which is not supported!");
+    }
+
+    objectListNode->obj->fid = frmId.fid();
     _obj_insert(objectListNode);
 
     if (objectPtr) {
@@ -1010,7 +1014,7 @@ int objectCreateWithPid(Object** objectPtr, int pid)
         return -1;
     }
 
-    return objectCreateWithFidPid(objectPtr, proto->fid, pid);
+    return objectCreateWithFrmIdPid(objectPtr, FrmId(proto->fid), pid);
 }
 
 // 0x489CCC obj_copy
@@ -1540,7 +1544,7 @@ int _obj_reset_roof()
 // Sets object fid.
 //
 // 0x48AA3C obj_change_fid
-int objectSetFid(Object* obj, int fid, Rect* dirtyRect)
+int objectSetFrmId(Object* obj, const FrmId& frmId, Rect* dirtyRect)
 {
     Rect new_rect;
 
@@ -1548,15 +1552,19 @@ int objectSetFid(Object* obj, int fid, Rect* dirtyRect)
         return -1;
     }
 
+    if (frmId.valid()) {
+        assert(frmId.hasFid() && "objectSetFrmId(Object* obj, const FrmId& frmId, Rect* dirtyRect) called with path based FrmId which is not supported!");
+    }
+
     if (dirtyRect != nullptr) {
         objectGetRect(obj, dirtyRect);
 
-        obj->fid = fid;
+        obj->fid = frmId.fid();
 
         objectGetRect(obj, &new_rect);
         rectUnion(dirtyRect, &new_rect, dirtyRect);
     } else {
-        obj->fid = fid;
+        obj->fid = frmId.fid();
     }
 
     return 0;
@@ -5299,10 +5307,10 @@ void UniqueObject::reset(Object* p)
     _ptr = p;
 }
 
-int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid)
+int objectCreateWithFrmIdPid(UniqueObject& obj, const FrmId& frmId, int pid)
 {
     Object* raw;
-    int rc = objectCreateWithFidPid(&raw, fid, pid);
+    int rc = objectCreateWithFrmIdPid(&raw, frmId, pid);
     if (rc != -1) obj.reset(raw);
     return rc;
 }

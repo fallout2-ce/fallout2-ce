@@ -136,7 +136,7 @@ void map_scr_toggle_hexes()
                 }
 
                 Object* obj;
-                if (objectCreateWithFidPid(&obj, kMarkerFrmId.fid(), -1) != -1) {
+                if (objectCreateWithFrmIdPid(&obj, kMarkerFrmId, -1) != -1) {
                     obj->flags |= OBJECT_NO_SAVE;
                     Rect rect;
                     _obj_toggle_flat(obj, &rect);
@@ -314,7 +314,7 @@ int map_scr_add_spatial(int tile, int elevation)
 
     constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
     Object* obj;
-    if (objectCreateWithFidPid(&obj, kMarkerFrmId.fid(), -1) != -1) {
+    if (objectCreateWithFrmIdPid(&obj, kMarkerFrmId, -1) != -1) {
         obj->flags |= OBJECT_NO_SAVE;
         Rect rect;
         _obj_toggle_flat(obj, &rect);
@@ -342,7 +342,7 @@ void map_set_script(int scriptIndex)
     if (newIndex <= 0 || scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM) == -1) return;
 
     Object* obj;
-    objectCreateWithFidPid(&obj, MiscFrmId(MiscFrameId::ScrollBlocker).fid(), -1);
+    objectCreateWithFrmIdPid(&obj, MiscFrameId::ScrollBlocker, -1);
     obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
     objectSetLocation(obj, 1, 0, nullptr);
     obj->sid = gMapSid;

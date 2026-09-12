@@ -882,8 +882,8 @@ int _proto_dude_update_gender()
             weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
         }
 
-        FrmId fid = FrmId(_art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
-        objectSetFid(gDude, fid.fid(), nullptr);
+        const FrmId frmId = FrmId(_art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
+        objectSetFrmId(gDude, frmId, nullptr);
     }
 
     proto->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();

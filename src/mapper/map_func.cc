@@ -429,7 +429,7 @@ ObjectType pickToolbar(int topY)
 }
 
 // place_object_
-void placeObject(int pid, int fid)
+void placeObject(int pid, const FrmId& frmId)
 {
     int x, y;
     mouseGetPosition(&x, &y);
@@ -439,7 +439,7 @@ void placeObject(int pid, int fid)
     }
 
     Object* obj;
-    if (objectCreateWithFidPid(&obj, fid, pid) == -1) {
+    if (objectCreateWithFrmIdPid(&obj, frmId, pid) == -1) {
         return;
     }
 

@@ -433,7 +433,7 @@ static int protoInstAddToInven(int pid, int count)
     if (protoGetProto(pid, &proto) == -1) return 0;
 
     Object* newObj;
-    if (objectCreateWithFidPid(&newObj, proto->fid, pid) == -1) return 0;
+    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto->fid), pid) == -1) return 0;
 
     objectSetLocation(newObj, 0, 0, nullptr);
 

@@ -639,7 +639,7 @@ int objectPickup(Object* critter, Object* item)
 static int _obj_remove_from_inven(Object* critter, Object* item)
 {
     Rect updatedRect;
-    FrmId fid;
+    FrmId frmId;
     int appearanceUpdateType = 0;
     InvenSlot slot = InvenSlot::Armor;
     bool hasSlot = false;
@@ -659,16 +659,16 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                fid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
-                objectSetFid(critter, fid.fid(), &updatedRect);
+                frmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
                 appearanceUpdateType = 1;
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                fid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
-                objectSetFid(critter, fid.fid(), &updatedRect);
+                frmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
                 appearanceUpdateType = 1;
@@ -682,8 +682,8 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFrameId = FrmId(proto->fid).frameId().critter;
                 }
 
-                fid = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
-                objectSetFid(critter, fid.fid(), &updatedRect);
+                frmId = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
+                objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 3;
             }
         }
