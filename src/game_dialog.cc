@@ -30,6 +30,7 @@
 #include "item.h"
 #include "kb.h"
 #include "lips.h"
+#include "map.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
@@ -374,9 +375,6 @@ static int gameDialogGetBackgroundWindowY()
 
     return (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2;
 }
-
-// 0x5187C8 talk_need_to_center
-static bool _talk_need_to_center = true;
 
 // 0x5187CC can_start_new_fidget
 static bool _can_start_new_fidget = false;
@@ -725,6 +723,8 @@ static void _gdProcessUpdate();
 static int _gdCreateHeadWindow();
 static void _gdDestroyHeadWindow();
 static void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction);
+static void gameDialogBlitIsoWindowToDisplayBuffer();
+static void gameDialogRenderMapInDisplayBuffer();
 static void gameDialogWaitForFidgetToComplete();
 static void _gdPlayTransition(HeadAnimation animation);
 static void _reply_arrow_up(int btn, int keyCode);
@@ -809,6 +809,10 @@ int gameDialogExit()
 
 static void gameDialogRestoreCenterTile()
 {
+    if (gGameDialogOldCenterTile == -1) {
+        return;
+    }
+
     if (gGameDialogOldDudeTile != gDude->tile) {
         gGameDialogOldCenterTile = gDude->tile;
     }
@@ -1051,12 +1055,6 @@ int _gdialogInitFromScript(const HeadFrmId& headFrmId, HeadFidget reaction)
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     textObjectsReset();
 
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
-        _tile_scroll_to(gGameDialogSpeaker->tile, 2);
-    }
-
-    _talk_need_to_center = true;
-
     // CE: Fix Barter button.
     _gdCreateHeadWindow();
     tickersAdd(gameDialogTicker);
@@ -1101,10 +1099,6 @@ int _gdialogExitFromScript()
     gameDialogEndLips();
     dialogReviewEntriesClear();
     tickersRemove(gameDialogTicker);
-
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
-        gameDialogRestoreCenterTile();
-    }
 
     touch_set_touchscreen_mode(false);
 
@@ -2776,6 +2770,62 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
     gGameDialogFidgetUpdateDelay = 1000 / artGetFramesPerSecond(gGameDialogFidgetFrm);
 }
 
+static void gameDialogBlitIsoWindowToDisplayBuffer()
+{
+    unsigned char* src = windowGetBuffer(gIsoWindow);
+
+    // Usually rendering functions use `screenGetWidth`/`screenGetHeight` to
+    // determine rendering position. However in this case `windowGetHeight`
+    // is a must because isometric window's height can either include
+    // interface bar or not. Offset is updated accordingly (332 -> 232, the
+    // missing 100 is interface bar height, which is already accounted for
+    // when we're using `windowGetHeight`). `windowGetWidth` is used for
+    // consistency.
+    blitBufferToBuffer(
+        src + ((windowGetHeight(gIsoWindow) - 232) / 2) * windowGetWidth(gIsoWindow) + (windowGetWidth(gIsoWindow) - 388) / 2,
+        388,
+        200,
+        windowGetWidth(gIsoWindow),
+        gGameDialogDisplayBuffer,
+        GAME_DIALOG_WINDOW_WIDTH);
+}
+
+static void gameDialogRenderMapInDisplayBuffer()
+{
+    int oldCenterTile = gCenterTile;
+    bool changedCenter = false;
+    bool mapRefreshed = false;
+
+    if (gGameDialogSpeaker != nullptr
+        && objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM
+        && gGameDialogSpeaker->elevation == gElevation
+        && gGameDialogSpeaker->tile != oldCenterTile) {
+        if (tileSetCenter(gGameDialogSpeaker->tile,
+                TILE_SET_CENTER_REFRESH_WINDOW | TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS)
+            == 0) {
+            mapRefreshed = true;
+            changedCenter = gCenterTile != oldCenterTile;
+        } else {
+            // Legacy map borders cannot be bypassed. Preserve the old
+            // progressive behavior and capture from the closest valid center.
+            _tile_scroll_to(gGameDialogSpeaker->tile, 2);
+            changedCenter = gCenterTile != oldCenterTile;
+            mapRefreshed = changedCenter;
+        }
+    }
+
+    if (!mapRefreshed) {
+        tileWindowRefresh();
+    }
+
+    gameDialogBlitIsoWindowToDisplayBuffer();
+
+    if (changedCenter) {
+        tileSetCenter(oldCenterTile,
+            TILE_SET_CENTER_REFRESH_WINDOW | TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
+    }
+}
+
 // 0x447598
 void gameDialogWaitForFidgetToComplete()
 {
@@ -3211,7 +3261,9 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
         }
 
         for (; strips >= 0; strips--) {
-            sharedFpsLimiter.mark();
+            if (!instantScrollUp) {
+                sharedFpsLimiter.mark();
+            }
 
             soundContinueAll();
             blitBufferToBuffer(windowFrmData,
@@ -3225,10 +3277,11 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
             height += stripHeight;
             dest -= stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
 
-            delay_ms(delayMs);
-
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            if (!instantScrollUp) {
+                delay_ms(delayMs);
+                renderPresent();
+                sharedFpsLimiter.throttle();
+            }
         }
     } else {
         rect.right = GAME_DIALOG_WINDOW_WIDTH - 1;
@@ -4871,27 +4924,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             debugPrint("\tError getting head data in display...\n");
         }
     } else {
-        if (_talk_need_to_center) {
-            _talk_need_to_center = false;
-            tileWindowRefresh();
-        }
-
-        unsigned char* src = windowGetBuffer(gIsoWindow);
-
-        // Usually rendering functions use `screenGetWidth`/`screenGetHeight` to
-        // determine rendering position. However in this case `windowGetHeight`
-        // is a must because isometric window's height can either include
-        // interface bar or not. Offset is updated accordingly (332 -> 232, the
-        // missing 100 is interface bar height, which is already accounted for
-        // when we're using `windowGetHeight`). `windowGetWidth` is used for
-        // consistency.
-        blitBufferToBuffer(
-            src + ((windowGetHeight(gIsoWindow) - 232) / 2) * windowGetWidth(gIsoWindow) + (windowGetWidth(gIsoWindow) - 388) / 2,
-            388,
-            200,
-            windowGetWidth(gIsoWindow),
-            gGameDialogDisplayBuffer,
-            GAME_DIALOG_WINDOW_WIDTH);
+        gameDialogRenderMapInDisplayBuffer();
     }
 
     int yOffset = gameDialogHrArtYOffset();
