@@ -41,6 +41,8 @@ extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUN
 
 extern Cache gArtCache;
 
+#define ART_NAME_SIZE (13)
+
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
@@ -218,15 +220,11 @@ public:
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
 
-    constexpr ObjectType objectType() const
-    {
-        assert(hasObjectType());
-        return _objectType;
-    }
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
 
     const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
 
-    bool valid() const { return !empty() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
+    bool valid() const { return !empty() && hasObjectType() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
@@ -421,29 +419,14 @@ char* artGetObjectTypeName(ObjectType objectType);
 int artIsObjectTypeHidden(ObjectType objectType);
 void artToggleObjectTypeHidden(ObjectType objectType);
 int artGetFidgetCount(const HeadFrmId& frmId);
-void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
-int art_list_str(int fid, char* name);
-Art* artLock(int fid, CacheEntry** cache_entry);
+void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch);
 
 // works for fid based FrmIds only, to be replaced by FrmImage::lock
-inline Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
-{
-    if (!frmId.valid()) {
-        if (handlePtr != nullptr) {
-            *handlePtr = nullptr;
-        }
-        return nullptr;
-    }
+Art* artLock(const FrmId& frmId, CacheEntry** handlePtr);
 
-    assert(frmId.hasFid() && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
-
-    return artLock(frmId.fid(), handlePtr);
-}
-
-unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(ObjectType objectType, int id, char* dest);
+int artCopyFileName(const FrmId& frmId, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
@@ -458,7 +441,7 @@ unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 CritterFrameId _art_alias_num(CritterFrameId index);
-int artCritterFidShouldRun(int fid);
+int artCritterFrmIdShouldRun(const FrmId& frmId);
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);

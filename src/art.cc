@@ -49,6 +49,7 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 static char artGetCritterWeaponCode(WeaponAnimation weaponType);
+static Art* artLock(int fid, CacheEntry** handlePtr);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -254,7 +255,7 @@ int artInit()
             _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_FEMALE] = critterFrameId;
         }
 
-        critterFileNames += 13;
+        critterFileNames += ART_NAME_SIZE;
     }
 
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
@@ -285,7 +286,7 @@ int artInit()
         if (compat_stricmp(tileFileNames, "grid001.frm") == 0) {
             _art_mapper_blank_tile = tileIndex;
         }
-        tileFileNames += 13;
+        tileFileNames += ART_NAME_SIZE;
     }
 
     gHeadDescriptions = (HeadDescription*)internal_malloc(sizeof(*gHeadDescriptions) * gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength);
@@ -423,7 +424,7 @@ int artGetFidgetCount(const HeadFrmId& frmId)
 }
 
 // 0x418FFC
-void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
+void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch)
 {
     // NOTE: Original code is different. For unknown reason it directly calls
     // many art functions, for example instead of [artLock] it calls lower level
@@ -432,15 +433,15 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
     // not. I've replaced these calls with higher level functions where
     // appropriate.
 
-    CacheEntry* handle;
-    Art* frm = artLock(fid, &handle);
-    if (frm == nullptr) {
+    FrmImage frmImage;
+
+    if (!frmImage.lock(frmId)) {
         return;
     }
 
-    unsigned char* frameData = artGetFrameData(frm);
-    int frameWidth = artGetWidth(frm);
-    int frameHeight = artGetHeight(frm);
+    unsigned char* frameData = frmImage.getData();
+    int frameWidth = frmImage.getWidth();
+    int frameHeight = frmImage.getHeight();
 
     int remainingWidth = width - frameWidth;
     int remainingHeight = height - frameHeight;
@@ -473,15 +474,7 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
             pitch);
     }
 
-    artUnlock(handle);
-}
-
-// mapper2.exe: 0x40A03C
-int art_list_str(int fid, char* name)
-{
-    // TODO: Incomplete.
-
-    return -1;
+    frmImage.unlock();
 }
 
 int artListIndex(ObjectType objectType, const char* name)
@@ -489,20 +482,20 @@ int artListIndex(ObjectType objectType, const char* name)
     if (!objectTypeIsValid(objectType)) return -1;
     if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
 
-    char upperName[13] = { 0 };
-    strncpy(upperName, name, 12);
-    upperName[12] = '\0';
+    char upperName[ART_NAME_SIZE] = { 0 };
+    strncpy(upperName, name, ART_NAME_SIZE - 1);
+    upperName[ART_NAME_SIZE - 1] = '\0';
     compat_strupr(upperName);
 
     int length = gArtListDescriptions[objectType].fileNamesLength;
     const char* fileNames = gArtListDescriptions[objectType].fileNames;
 
     for (int index = 0; index < length; index++) {
-        const char* entry = fileNames + index * 13;
+        const char* entry = fileNames + index * ART_NAME_SIZE;
 
-        char upperEntry[13];
-        strncpy(upperEntry, entry, 12);
-        upperEntry[12] = '\0';
+        char upperEntry[ART_NAME_SIZE];
+        strncpy(upperEntry, entry, ART_NAME_SIZE - 1);
+        upperEntry[ART_NAME_SIZE - 1] = '\0';
         compat_strupr(upperEntry);
 
         char* p = upperEntry;
@@ -519,7 +512,7 @@ int artListIndex(ObjectType objectType, const char* name)
 }
 
 // 0x419160
-Art* artLock(int fid, CacheEntry** handlePtr)
+static Art* artLock(int fid, CacheEntry** handlePtr)
 {
     if (handlePtr == nullptr) {
         return nullptr;
@@ -535,26 +528,19 @@ Art* artLock(int fid, CacheEntry** handlePtr)
     return art;
 }
 
-// 0x419188
-unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** handlePtr)
+// works for fid based FrmIds only, to be replaced by FrmImage::lock
+Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
 {
-    Art* art;
-    ArtFrame* frm;
-
-    art = nullptr;
-    if (handlePtr) {
-        cacheLock(&gArtCache, fid, (void**)&art, handlePtr);
-    }
-
-    if (art != nullptr) {
-        frm = artGetFrame(art, frame, rotation);
-        if (frm != nullptr) {
-
-            return artFrameData(frm);
+    if (!frmId.valid()) {
+        if (handlePtr != nullptr) {
+            *handlePtr = nullptr;
         }
+        return nullptr;
     }
 
-    return nullptr;
+    assert(frmId.hasFid() && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
+
+    return artLock(frmId.fid(), handlePtr);
 }
 
 // 0x419260
@@ -570,21 +556,23 @@ int artCacheFlush()
 }
 
 // 0x4192B0
-int artCopyFileName(ObjectType objectType, int id, char* dest)
+int artCopyFileName(const FrmId& frmId, char* dest)
 {
     ArtListDescription* ptr;
 
-    if (!objectTypeIsValid(objectType) || id < FrmId::kMinFrameId) {
+    if (!frmId.valid()) {
         return -1;
     }
 
-    ptr = &(gArtListDescriptions[objectType]);
+    assert(frmId.hasFid() && "artCopyFileName(const FrmId& frmId, char* dest) called with path based FrmId which is not supported!");
 
-    if (id >= ptr->fileNamesLength) {
+    ptr = &(gArtListDescriptions[frmId.objectType()]);
+
+    if (!frmId.hasFid() || frmId.frameId().id >= ptr->fileNamesLength) {
         return -1;
     }
 
-    strcpy(dest, ptr->fileNames + id * 13);
+    strcpy(dest, ptr->fileNames + frmId.frameId().id * ART_NAME_SIZE);
 
     return 0;
 }
@@ -704,7 +692,7 @@ char* FrmId::buildPath(int fid, char* path)
         return nullptr;
     }
 
-    int fileNameOffset = frmId * 13;
+    int fileNameOffset = frmId * ART_NAME_SIZE;
 
     if (objectType == OBJ_TYPE_CRITTER) {
         char critterWeaponCode;
@@ -750,7 +738,7 @@ static int artReadList(const char* path, char** artListPtr, int* artListSizePtr)
 
     *artListSizePtr = count;
 
-    char* artList = (char*)internal_malloc(13 * count);
+    char* artList = (char*)internal_malloc(ART_NAME_SIZE * count);
     *artListPtr = artList;
     if (artList == nullptr) {
         fileClose(stream);
@@ -763,10 +751,10 @@ static int artReadList(const char* path, char** artListPtr, int* artListSizePtr)
             *brk = '\0';
         }
 
-        strncpy(artList, string, 12);
-        artList[12] = '\0';
+        strncpy(artList, string, ART_NAME_SIZE - 1);
+        artList[ART_NAME_SIZE - 1] = '\0';
 
-        artList += 13;
+        artList += ART_NAME_SIZE;
 
         count--;
     }
@@ -944,10 +932,10 @@ CritterFrameId _art_alias_num(CritterFrameId index)
 }
 
 // 0x4199AC
-int artCritterFidShouldRun(int fid)
+int artCritterFrmIdShouldRun(const FrmId& frmId)
 {
-    if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[frameIdFromFid(fid)];
+    if (frmId.objectType() == OBJ_TYPE_CRITTER && frmId.valid() && frmId.hasFid()) {
+        return gArtCritterFidShoudRunData[frmId.frameId().id];
     }
 
     return 0;

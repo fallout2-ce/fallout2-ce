@@ -983,7 +983,7 @@ void gameDialogStartLips(const char* audioFileName)
     }
 
     char name[16];
-    if (artCopyFileName(OBJ_TYPE_HEAD, gGameDialogHeadFrmId.frameId().id, name) == -1) {
+    if (artCopyFileName(gGameDialogHeadFrmId, name) == -1) {
         return;
     }
 

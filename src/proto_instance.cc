@@ -1674,7 +1674,7 @@ static int _check_door_state(Object* door, Object* obj2)
         }
 
         CacheEntry* artHandle;
-        Art* art = artLock(door->fid, &artHandle);
+        Art* art = artLock(FrmId(door->fid), &artHandle);
         if (art == nullptr) {
             return -1;
         }
@@ -1708,7 +1708,7 @@ static int _check_door_state(Object* door, Object* obj2)
         tileWindowRefresh();
 
         CacheEntry* artHandle;
-        Art* art = artLock(door->fid, &artHandle);
+        Art* art = artLock(FrmId(door->fid), &artHandle);
         if (art == nullptr) {
             return -1;
         }
@@ -2076,7 +2076,7 @@ bool objectIsOpenable(Object* obj)
 
     // Sfall: stricter "openable" check.  In Sfall it is implemented in the obj_is_openable opcode.
     CacheEntry* artHandle;
-    Art* art = artLock(obj->fid, &artHandle);
+    Art* art = artLock(FrmId(obj->fid), &artHandle);
     if (art == nullptr) {
         return false;
     }

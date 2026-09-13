@@ -68,7 +68,7 @@ int itemGetCost(Object* obj);
 int objectGetCost(Object* obj);
 int objectGetInventoryWeight(Object* obj);
 bool dudeIsWeaponDisabled(Object* weapon);
-int itemGetInventoryFid(Object* obj);
+FrmId itemGetInventoryFrmId(Object* obj);
 Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode);
 int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming);
 int itemGetQuantity(Object* obj, Object* item);

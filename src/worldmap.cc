@@ -5757,9 +5757,12 @@ static int wmTileGrabArt(int tileIdx)
         return 0;
     }
 
-    tile->data = artLockFrameData(tile->fid, 0, ROTATION_NE, &(tile->handle));
-    if (tile->data != nullptr) {
-        return 0;
+    Art* art = artLock(FrmId(tile->fid), &(tile->handle));
+    if (art != nullptr) {
+        tile->data = artGetFrameData(art, 0, ROTATION_NE);
+        if (tile->data != nullptr) {
+            return 0;
+        }
     }
 
     wmInterfaceExit();

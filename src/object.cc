@@ -1345,7 +1345,7 @@ int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5)
     CacheEntry* cacheHandle;
     int width;
     int height;
-    Art* art = artLock(a1->fid, &cacheHandle);
+    Art* art = artLock(FrmId(a1->fid), &cacheHandle);
     if (art != nullptr) {
         artGetSize(art, a1->frame, a1->rotation, &width, &height);
         a1->sx = a2 - width / 2;
@@ -1584,7 +1584,7 @@ int objectSetFrame(Object* obj, int frame, Rect* rect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = artLock(FrmId(obj->fid), &cache_entry);
     if (art == nullptr) {
         return -1;
     }
@@ -1621,7 +1621,7 @@ int objectSetNextFrame(Object* obj, Rect* dirtyRect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = artLock(FrmId(obj->fid), &cache_entry);
     if (art == nullptr) {
         return -1;
     }
@@ -1665,7 +1665,7 @@ int objectSetPrevFrame(Object* obj, Rect* dirtyRect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = artLock(FrmId(obj->fid), &cache_entry);
     if (art == nullptr) {
         return -1;
     }
@@ -2357,7 +2357,7 @@ void objectGetRect(Object* obj, Rect* rect)
     bool isOutlined = objectHasOutline(obj);
 
     CacheEntry* artHandle;
-    Art* art = artLock(obj->fid, &artHandle);
+    Art* art = artLock(FrmId(obj->fid), &artHandle);
     if (art == nullptr) {
         rect->left = 0;
         rect->top = 0;
@@ -2953,7 +2953,7 @@ ObjectFlags _obj_intersects_with(Object* object, int x, int y)
 
     if (object == gEgg || (object->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
         CacheEntry* handle;
-        Art* art = artLock(object->fid, &handle);
+        Art* art = artLock(FrmId(object->fid), &handle);
         if (art != nullptr) {
             int width;
             int height;
@@ -3245,13 +3245,13 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
     }
 
     CacheEntry* cache_handle;
-    if (artLock(*gObjectFids, &cache_handle) != nullptr) {
+    if (artLock(FrmId(*gObjectFids), &cache_handle) != nullptr) {
         artUnlock(cache_handle);
     }
 
     for (int i = 1; i < v11; i++) {
         if (gObjectFids[i - 1] != gObjectFids[i]) {
-            if (artLock(gObjectFids[i], &cache_handle) != nullptr) {
+            if (artLock(FrmId(gObjectFids[i]), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }
@@ -3267,7 +3267,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (int i = v11; i < gObjectFidsLength; i++) {
         if (gObjectFids[i - 1] != gObjectFids[i]) {
-            if (artLock(gObjectFids[i], &cache_handle) != nullptr) {
+            if (artLock(FrmId(gObjectFids[i]), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }
@@ -3917,11 +3917,11 @@ static void _obj_insert(ObjectListNode* objectListNode)
                 if ((obj->flags & OBJECT_FLAT) == (objectListNode->obj->flags & OBJECT_FLAT)) {
                     bool v11 = false;
                     CacheEntry* a2;
-                    Art* v12 = artLock(obj->fid, &a2);
+                    Art* v12 = artLock(FrmId(obj->fid), &a2);
                     if (v12 != nullptr) {
 
                         if (art == nullptr) {
-                            art = artLock(objectListNode->obj->fid, &cacheHandle);
+                            art = artLock(FrmId(objectListNode->obj->fid), &cacheHandle);
                         }
 
                         // TODO: Incomplete.
@@ -4691,7 +4691,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
 static void objectDrawOutline(Object* object, Rect* rect)
 {
     CacheEntry* cacheEntry;
-    Art* art = artLock(object->fid, &cacheEntry);
+    Art* art = artLock(FrmId(object->fid), &cacheEntry);
     if (art == nullptr) {
         return;
     }
@@ -4962,7 +4962,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     }
 
     CacheEntry* cacheEntry;
-    Art* art = artLock(object->fid, &cacheEntry);
+    Art* art = artLock(FrmId(object->fid), &cacheEntry);
     if (art == nullptr) {
         return;
     }
@@ -5057,7 +5057,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
             if (v17) {
                 CacheEntry* eggHandle;
-                Art* egg = artLock(gEgg->fid, &eggHandle);
+                Art* egg = artLock(FrmId(gEgg->fid), &eggHandle);
                 if (egg == nullptr) {
                     return;
                 }

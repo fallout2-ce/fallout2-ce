@@ -1124,7 +1124,7 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
     if (item1 == leftItemState->item && leftItemState->item != nullptr) {
         if (leftItemState->item != nullptr) {
             leftItemState->isDisabled = dudeIsWeaponDisabled(item1);
-            leftItemState->itemFid = itemGetInventoryFid(item1);
+            leftItemState->itemFid = itemGetInventoryFrmId(item1).fid();
         }
     } else {
         Object* oldItem = leftItemState->item;
@@ -1148,7 +1148,7 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
                 leftItemState->action = leftItemAction;
             }
 
-            leftItemState->itemFid = itemGetInventoryFid(item1);
+            leftItemState->itemFid = itemGetInventoryFrmId(item1).fid();
         } else {
             leftItemState->isDisabled = 0;
             leftItemState->isWeapon = 1;
@@ -1173,7 +1173,7 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
     if (item2 == rightItemState->item && rightItemState->item != nullptr) {
         if (rightItemState->item != nullptr) {
             rightItemState->isDisabled = dudeIsWeaponDisabled(rightItemState->item);
-            rightItemState->itemFid = itemGetInventoryFid(rightItemState->item);
+            rightItemState->itemFid = itemGetInventoryFrmId(rightItemState->item).fid();
         }
     } else {
         Object* oldItem = rightItemState->item;
@@ -1196,7 +1196,7 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
             } else {
                 rightItemState->action = rightItemAction;
             }
-            rightItemState->itemFid = itemGetInventoryFid(item2);
+            rightItemState->itemFid = itemGetInventoryFrmId(item2).fid();
         } else {
             rightItemState->isDisabled = 0;
             rightItemState->isWeapon = 1;
