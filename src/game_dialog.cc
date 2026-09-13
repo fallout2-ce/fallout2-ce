@@ -2805,6 +2805,12 @@ static void gameDialogRenderMapInDisplayBuffer()
             == 0) {
             mapRefreshed = true;
             changedCenter = gCenterTile != oldCenterTile;
+        } else {
+            // Legacy map borders cannot be bypassed. Preserve the old
+            // progressive behavior and capture from the closest valid center.
+            _tile_scroll_to(gGameDialogSpeaker->tile, 2);
+            changedCenter = gCenterTile != oldCenterTile;
+            mapRefreshed = changedCenter;
         }
     }
 
