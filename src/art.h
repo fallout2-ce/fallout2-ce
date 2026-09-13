@@ -221,21 +221,19 @@ public:
         assert(objectTypeIsValid(objType));
     }
 
-    constexpr int fid() const { return _fid; }
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     constexpr bool hasWeaponAnimation() const { return hasFid() && weaponAnimationIsValid(weaponAnimationFromFid(_fid)); }
     constexpr bool hasRotation() const { return hasFid() && rotationIsValid(rotationFromFid(_fid)); }
     constexpr bool hasAnimationType() const { return hasFid() && animationTypeIsValid(animationTypeFromFid(_fid)); }
 
-    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
-
-    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
-
     bool valid() const { return !empty() && hasObjectType() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
+    constexpr int fid() const { return _fid; }
+    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
     constexpr const FrameId& frameId() const { return _frameId; }
     constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WEAPON_ANIMATION_INVALID; }
     constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
