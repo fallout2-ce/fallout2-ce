@@ -112,12 +112,6 @@ inline bool weaponAnimationIsValid(int weaponAnimation)
     return weaponAnimation >= WEAPON_ANIMATION_NONE && weaponAnimation < WEAPON_ANIMATION_COUNT;
 }
 
-inline WeaponAnimation weaponAnimationFromFid(int fid)
-{
-    int anim = (fid & 0xF000) >> 12;
-    return static_cast<WeaponAnimation>(anim);
-}
-
 enum class SkillDexFrameId : int {
     Invalid = -1, // invalid frame id
     Strength = 0, // strength.frm - strength (basic stat)

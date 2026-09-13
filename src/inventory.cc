@@ -3891,7 +3891,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, FrmId(critter->fid).weaponAnimation(), critter->rotation + 1);
                 animationRegisterSetFrmId(critter, frmId, 0);
             }
         } else {
@@ -3968,7 +3968,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         }
 
         if (hand == handIndex) {
-            if (weaponAnimationFromFid(critter->fid) != WEAPON_ANIMATION_NONE) {
+            if (FrmId(critter->fid).weaponAnimation() != WEAPON_ANIMATION_NONE) {
                 if (animate) {
                     if (!isoIsDisabled()) {
                         const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
@@ -4038,7 +4038,7 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
         item->flags &= ~OBJECT_IN_ANY_HAND;
     }
 
-    if (activeHand == hand && (weaponAnimationFromFid(critter->fid) != WEAPON_ANIMATION_NONE)) {
+    if (activeHand == hand && (FrmId(critter->fid).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
         if (animate && !isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
@@ -5266,7 +5266,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = FrmId(targetObj, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
+                            targetObj->fid = FrmId(targetObj, WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;

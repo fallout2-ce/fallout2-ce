@@ -1793,9 +1793,9 @@ static void _map_place_dude_and_mouse()
     _obj_clear_seen();
 
     if (gDude != nullptr) {
-        if (animationTypeFromFid(gDude->fid) != ANIM_STAND) {
+        if (FrmId(gDude->fid).animationType() != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = FrmId(gDude, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1).fid();
+            gDude->fid = FrmId(gDude, ANIM_STAND, gDude->rotation + 1).fid();
         }
 
         if (gDude->tile == -1) {

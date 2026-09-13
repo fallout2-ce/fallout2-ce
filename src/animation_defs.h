@@ -107,12 +107,6 @@ inline bool animationTypeIsValid(int anim)
     return anim >= ANIM_FIRST && anim < ANIM_COUNT;
 }
 
-inline AnimationType animationTypeFromFid(int fid)
-{
-    int anim = (fid & 0xFF0000) >> 16;
-    return static_cast<AnimationType>(anim);
-}
-
 } // namespace fallout
 
 #endif /* ANIMATION_DEFS_H */

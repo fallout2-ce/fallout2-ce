@@ -3576,7 +3576,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, HitMode hitM
 int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
-        const FrmId frmId = FrmId(attacker, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
+        const FrmId frmId = FrmId(attacker, ANIM_KICK_LEG);
         if (frmId.exist()) {
             hitMode = HIT_MODE_KICK;
         }

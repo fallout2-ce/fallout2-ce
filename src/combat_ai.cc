@@ -2837,7 +2837,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
     int actionPointsToUse = 0;
     if (weapon != nullptr
         || (critterGetBodyType(defender) == BODY_TYPE_BIPED
-            && (weaponAnimationFromFid(defender->fid) == WEAPON_ANIMATION_NONE)
+            && (FrmId(defender->fid).weaponAnimation() == WEAPON_ANIMATION_NONE)
             && FrmId(attacker, ANIM_THROW_PUNCH, WEAPON_ANIMATION_NONE, attacker->rotation + 1).exist())) {
         // SFALL: Check the safety of weapons based on the selected attack mode
         // instead of always the primary weapon hit mode.

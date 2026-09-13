@@ -659,7 +659,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                frmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                frmId = FrmId(critter, WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -667,7 +667,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                frmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                frmId = FrmId(critter, WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -682,7 +682,8 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFrameId = FrmId(proto->fid).frameId().critter;
                 }
 
-                frmId = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
+                const FrmId dudeFrmId = FrmId(critter->fid);
+                frmId = FrmId(defaultFrameId, dudeFrmId.animationType(), dudeFrmId.weaponAnimation(), critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 3;
             }
