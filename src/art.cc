@@ -568,7 +568,7 @@ int artCopyFileName(const FrmId& frmId, char* dest)
 
     ptr = &(gArtListDescriptions[frmId.objectType()]);
 
-    if (frmId.frameId().id >= ptr->fileNamesLength) {
+    if (!frmId.hasFid() || frmId.frameId().id >= ptr->fileNamesLength) {
         return -1;
     }
 

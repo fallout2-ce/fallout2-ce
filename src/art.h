@@ -220,15 +220,11 @@ public:
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
 
-    constexpr ObjectType objectType() const
-    {
-        assert(hasObjectType());
-        return _objectType;
-    }
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
 
     const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
 
-    bool valid() const { return !empty() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
+    bool valid() const { return !empty() && hasObjectType() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
