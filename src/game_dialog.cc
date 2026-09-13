@@ -3261,7 +3261,9 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
         }
 
         for (; strips >= 0; strips--) {
-            sharedFpsLimiter.mark();
+            if (!instantScrollUp) {
+                sharedFpsLimiter.mark();
+            }
 
             soundContinueAll();
             blitBufferToBuffer(windowFrmData,
@@ -3275,10 +3277,11 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
             height += stripHeight;
             dest -= stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
 
-            delay_ms(delayMs);
-
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            if (!instantScrollUp) {
+                delay_ms(delayMs);
+                renderPresent();
+                sharedFpsLimiter.throttle();
+            }
         }
     } else {
         rect.right = GAME_DIALOG_WINDOW_WIDTH - 1;
