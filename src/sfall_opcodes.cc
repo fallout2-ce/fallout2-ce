@@ -1999,7 +1999,7 @@ static void op_set_fake_trait(Program* program)
     int image = programStackPopInteger(program);
     int active = programStackPopInteger(program);
     char* name = programStackPopString(program);
-    
+
     programPrintError("set_fake_trait: not implemented!");
 }
 
