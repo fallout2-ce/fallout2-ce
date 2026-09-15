@@ -748,7 +748,7 @@ void MapperInit()
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
 {
-    lbm_buf = (unsigned char*)internal_malloc(lbmBufWidth * lbmBufHeight);
+    lbm_buf = (unsigned char*)internal_malloc(static_cast<size_t>(lbmBufWidth) * lbmBufHeight);
     return load_lbm_to_buf("data\\mapper2.lbm",
         lbm_buf,
         0,
@@ -816,7 +816,7 @@ int mapper_edit_init(int argc, char** argv)
 
     setup_map_dirs();
     mapper_load_toolbar(OBJ_TYPE_TILE, nullptr);
-    art_shape = (unsigned char*)internal_malloc(art_scale_height * art_scale_width);
+    art_shape = (unsigned char*)internal_malloc(static_cast<size_t>(art_scale_height) * art_scale_width);
     if (art_shape == nullptr) {
         printf("Can't malloc memory!!\n");
         exit(1);
