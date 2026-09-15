@@ -187,8 +187,13 @@ public:
 
     // cannot be made constexpr as internally calls FrmId::exist and that checks file system
     FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
-    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
     explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
+
+    explicit FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation);
+    explicit FrmId(Object* object, AnimationType animType, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType);
 
     constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : _objectType(OBJ_TYPE_HEAD)
@@ -216,19 +221,23 @@ public:
         assert(objectTypeIsValid(objType));
     }
 
-    constexpr int fid() const { return _fid; }
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
-
-    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
-
-    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
+    constexpr bool hasWeaponAnimation() const { return hasFid() && weaponAnimationIsValid(weaponAnimationFromFid(_fid)); }
+    constexpr bool hasRotation() const { return hasFid() && rotationIsValid(rotationFromFid(_fid)); }
+    constexpr bool hasAnimationType() const { return hasFid() && animationTypeIsValid(animationTypeFromFid(_fid)); }
 
     bool valid() const { return !empty() && hasObjectType() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
+    constexpr int fid() const { return _fid; }
+    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
     constexpr const FrameId& frameId() const { return _frameId; }
+    constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WEAPON_ANIMATION_INVALID; }
+    constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
+    constexpr AnimationType animationType() const { return hasAnimationType() ? animationTypeFromFid(_fid) : ANIM_INVALID; }
 
     bool operator==(const FrmId& other) const
     {
@@ -272,6 +281,24 @@ private:
     mutable char _builtPath[COMPAT_MAX_PATH] {};
 
     bool empty() const { return (*this) == Empty(); }
+
+    static constexpr WeaponAnimation weaponAnimationFromFid(int fid)
+    {
+        int anim = (fid & 0xF000) >> 12;
+        return static_cast<WeaponAnimation>(anim);
+    }
+
+    static constexpr Rotation rotationFromFid(int fid)
+    {
+        int rotation = (fid & 0x70000000) >> 28;
+        return static_cast<Rotation>(rotation);
+    }
+
+    static constexpr AnimationType animationTypeFromFid(int fid)
+    {
+        int anim = (fid & 0xFF0000) >> 16;
+        return static_cast<AnimationType>(anim);
+    }
 
     static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
 

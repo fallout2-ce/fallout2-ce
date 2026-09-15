@@ -1338,7 +1338,8 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
     char weaponCode;
     char animationCode;
 
-    if (artCopyFileName(FrmId(a1->fid), artName) == -1) {
+    const FrmId frmId = FrmId(a1->fid);
+    if (artCopyFileName(frmId, artName) == -1) {
         return nullptr;
     }
 
@@ -1347,7 +1348,7 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
             return nullptr;
         }
     } else {
-        if (_art_get_code(anim, weaponAnimationFromFid(a1->fid), &weaponCode, &animationCode) == -1) {
+        if (_art_get_code(anim, frmId.weaponAnimation(), &weaponCode, &animationCode) == -1) {
             return nullptr;
         }
     }

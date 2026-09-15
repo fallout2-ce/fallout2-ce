@@ -102,15 +102,9 @@ enum AnimationType : int {
     LAST_SF_DEATH_ANIM = ANIM_FALL_FRONT_BLOOD_SF,
 };
 
-inline bool animationTypeIsValid(int anim)
+constexpr inline bool animationTypeIsValid(int anim)
 {
     return anim >= ANIM_FIRST && anim < ANIM_COUNT;
-}
-
-inline AnimationType animationTypeFromFid(int fid)
-{
-    int anim = (fid & 0xFF0000) >> 16;
-    return static_cast<AnimationType>(anim);
 }
 
 } // namespace fallout

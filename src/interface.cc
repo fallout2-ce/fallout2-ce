@@ -1225,7 +1225,7 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
                 }
             }
 
-            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(weaponAnimationFromFid(gDude->fid), animationCode);
+            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(FrmId(gDude->fid).weaponAnimation(), animationCode);
 
             return 0;
         }
@@ -1254,7 +1254,7 @@ int interfaceBarSwapHands(bool animated)
             }
         }
 
-        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(weaponAnimationFromFid(gDude->fid), animationCode);
+        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(FrmId(gDude->fid).weaponAnimation(), animationCode);
     } else {
         interfaceBarRefreshMainAction();
     }

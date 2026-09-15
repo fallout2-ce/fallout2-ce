@@ -462,7 +462,7 @@ int objectRead(Object* obj, File* stream)
             constexpr int kExitGridCount = kExit3Grid8FrameId - kExit2Grid1FrameId + 1;
             const FrmId frmId = FrmId(obj->fid);
             if (frmId.valid() && frmId.frameId().id < kExit2Grid1FrameId) {
-                obj->fid = MiscFrmId(static_cast<MiscFrameId>(frmId.frameId().id + kExitGridCount), animationTypeFromFid(obj->fid)).fid();
+                obj->fid = MiscFrmId(static_cast<MiscFrameId>(frmId.frameId().id + kExitGridCount), frmId.animationType()).fid();
             }
         }
     } else {
@@ -5202,12 +5202,13 @@ void _obj_fix_violence_settings(int* fid)
         break;
     }
 
-    AnimationType anim = animationTypeFromFid(*fid);
+    const FrmId frmId = FrmId(*fid);
+    AnimationType anim = frmId.animationType();
     if (anim >= start && anim <= end) {
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = CritterFrmId(FrmId(*fid).frameId().critter, anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid)).fid();
+        *fid = CritterFrmId(frmId.frameId().critter, anim, frmId.weaponAnimation(), frmId.rotation()).fid();
     }
 
     if (shouldResetViolenceLevel) {

@@ -2673,7 +2673,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE);
     animationRegisterSetFrmId(obj, frmId, 0);
 
     return reg_anim_end();
