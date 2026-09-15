@@ -1184,6 +1184,18 @@ static int _ai_check_drugs(Object* critter)
     return 0;
 }
 
+static void aiFinishMovement(Object* critter)
+{
+    _combat_turn_run();
+
+    // SFALL: Animation processing can incapacitate the actor through scripts.
+    // Clear AP before AI can schedule more movement or retry its turn.
+    CritterCombatData& combatData = critter->data.critter.combat;
+    if ((combatData.results & (DAM_DEAD | DAM_KNOCKED_OUT | DAM_LOSE_TURN)) != DAM_NONE) {
+        combatData.ap = 0;
+    }
+}
+
 // 0x428868 ai_run_away
 static void _ai_run_away(Object* a1, Object* a2)
 {
@@ -1224,7 +1236,7 @@ static void _ai_run_away(Object* a1, Object* a2)
             _combatai_msg(a1, nullptr, AI_MESSAGE_TYPE_RUN, 0);
             animationRegisterRunToTile(a1, destination, a1->elevation, combatData->ap, 0);
             if (reg_anim_end() == 0) {
-                _combat_turn_run();
+                aiFinishMovement(a1);
             }
         }
     } else {
@@ -1270,7 +1282,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
             animationRegisterMoveToTile(a1, destination, a1->elevation, actionPoints, 0);
             if (reg_anim_end() == 0) {
-                _combat_turn_run();
+                aiFinishMovement(a1);
             }
         }
     }
@@ -1661,7 +1673,8 @@ static Object* _ai_danger_source(Object* a1)
         case ATTACK_WHO_WEAKEST:
         case ATTACK_WHO_CLOSEST:
             targets[0] = a1->data.critter.combat.whoHitMe;
-            if (targets[0] != nullptr && (targets[0]->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
+            if (targets[0] == a1
+                || (targets[0] != nullptr && (targets[0]->data.critter.combat.results & DAM_DEAD) != DAM_NONE)) {
                 targets[0] = nullptr;
             }
             preservedPartyTarget = true;
@@ -2580,7 +2593,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         return -1;
     }
 
-    _combat_turn_run();
+    aiFinishMovement(critter);
 
     return 0;
 }

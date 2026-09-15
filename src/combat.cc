@@ -3451,6 +3451,12 @@ static bool _combat_should_end()
             continue;
         }
 
+        // CE: Knocked-out targets leave the active combatant list and cannot
+        // keep combat running through another critter's stale target pointer.
+        if ((critterWhoHitMe->data.critter.combat.results & DAM_KNOCKED_OUT) != DAM_NONE) {
+            continue;
+        }
+
         // Match sfall's combat_should_end_check_fix: a different team alone
         // does not establish hostility. Check the critter's current target.
         bool targetAlive = (critterWhoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE;
