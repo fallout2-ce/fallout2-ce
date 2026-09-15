@@ -3324,7 +3324,24 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
                     tileWindowRefreshRect(&rect, obj->elevation);
                 }
 
-                _combat_ai(obj, _gcsd != nullptr ? _gcsd->defender : nullptr);
+                int retryMinAp = settings.combat_ai.npcs_try_to_spend_extra_ap;
+                int lastRetryAp = 0;
+                Object* target = _gcsd != nullptr ? _gcsd->defender : nullptr;
+                while (true) {
+                    _combat_ai(obj, target);
+                    if (retryMinAp <= 0) {
+                        break;
+                    }
+                    _combat_turn_run();
+                    int remainingAp = obj->data.critter.combat.ap;
+                    if ((obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE
+                        || remainingAp < retryMinAp
+                        || remainingAp == lastRetryAp) {
+                        break;
+                    }
+                    lastRetryAp = remainingAp;
+                    target = nullptr;
+                }
             }
         }
 
@@ -3429,13 +3446,23 @@ static bool _combat_should_end()
 
     for (index = 0; index < _list_com; index++) {
         Object* critter = _combat_list[index];
-        if (critter->data.critter.combat.team != team) {
-            break;
+        Object* critterWhoHitMe = critter->data.critter.combat.whoHitMe;
+        if (critterWhoHitMe == nullptr) {
+            continue;
         }
 
-        Object* critterWhoHitMe = critter->data.critter.combat.whoHitMe;
-        if (critterWhoHitMe != nullptr && critterWhoHitMe->data.critter.combat.team == team) {
-            break;
+        // Match sfall's combat_should_end_check_fix: a different team alone
+        // does not establish hostility. Check the critter's current target.
+        bool targetAlive = (critterWhoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE;
+        if (critter->data.critter.combat.team == team) {
+            if ((critterWhoHitMe->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) == CRITTER_MANEUVER_NONE
+                && targetAlive) {
+                break;
+            }
+        } else {
+            if (critterWhoHitMe->data.critter.combat.team == team || targetAlive) {
+                break;
+            }
         }
     }
 
