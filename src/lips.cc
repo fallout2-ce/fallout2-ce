@@ -210,6 +210,7 @@ int lipsStart()
 
         soundStop(gLipsData.sound);
         gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+        return -1;
     }
 
     return 0;
@@ -340,13 +341,40 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
     }
 
     // Check the serialized arrays before allocating or indexing them.
-    long remaining = fileGetSize(stream) - fileTell(stream);
-    if (gLipsData.phonemeCount <= 0 || gLipsData.markerCount <= 0
-        || remaining < gLipsData.phonemeCount
-        || gLipsData.markerCount > (remaining - gLipsData.phonemeCount) / 8) {
+    if (gLipsData.phonemeCount <= 0 || gLipsData.markerCount <= 0) {
         debugPrint("lips_load_file: Invalid phoneme or marker count.\n");
         fileClose(stream);
         return -1;
+    }
+
+    if (stream->type == XFILE_TYPE_GZFILE) {
+        // Gzip streams have no reported size. Check that the decompressed
+        // arrays exist before allocating, then return to their start.
+        long arrayOffset = fileTell(stream);
+        long long remaining = gLipsData.phonemeCount + 8LL * gLipsData.markerCount;
+        unsigned char buffer[4096];
+        while (remaining > 0) {
+            size_t chunkSize = remaining < sizeof(buffer) ? static_cast<size_t>(remaining) : sizeof(buffer);
+            if (fileRead(buffer, 1, chunkSize, stream) != chunkSize) {
+                break;
+            }
+            remaining -= chunkSize;
+        }
+
+        // The gzip seek implementation returns the resulting offset.
+        if (arrayOffset < 0 || remaining != 0 || fileSeek(stream, arrayOffset, SEEK_SET) < 0) {
+            debugPrint("lips_load_file: Invalid or truncated compressed arrays.\n");
+            fileClose(stream);
+            return -1;
+        }
+    } else {
+        long remaining = fileGetSize(stream) - fileTell(stream);
+        if (remaining < gLipsData.phonemeCount
+            || gLipsData.markerCount > (remaining - gLipsData.phonemeCount) / 8) {
+            debugPrint("lips_load_file: Invalid phoneme or marker count.\n");
+            fileClose(stream);
+            return -1;
+        }
     }
 
     gLipsData.phonemes = (unsigned char*)internal_malloc(gLipsData.phonemeCount);
@@ -433,7 +461,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
     strcpy(gLipsData.textExtension, "TXT");
     strcpy(gLipsData.lipExtension, "LIP");
 
-    _lips_make_speech();
+    if (_lips_make_speech() == -1) return -1;
 
     _head_marker_current = 0;
     gLipsCurrentPhoneme = lipsGetPhoneme(0);
@@ -478,8 +506,6 @@ static int _lips_make_speech()
         debugPrint("%s -- file probably doesn't exist.\n", path);
         return -1;
     }
-
-    gLipsData.field_34 = 8 * (gLipsData.field_1C / gLipsData.markerCount);
 
     return 0;
 }

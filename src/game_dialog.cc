@@ -987,13 +987,12 @@ void gameDialogStartLips(const char* audioFileName)
         return;
     }
 
-    if (lipsLoad(audioFileName, name) == -1) {
+    if (lipsLoad(audioFileName, name) == -1 || lipsStart() == -1) {
+        lipsFree();
         return;
     }
 
     gameDialogLipSyncStarted = true;
-
-    lipsStart();
 
     debugPrint("Starting lipsynch speech");
 }
