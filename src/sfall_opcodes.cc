@@ -1993,6 +1993,16 @@ static void op_charcode(Program* program)
     }
 }
 
+static void op_set_fake_trait(Program* program)
+{
+    char* desc = programStackPopString(program);
+    int image = programStackPopInteger(program);
+    int active = programStackPopInteger(program);
+    char* name = programStackPopString(program);
+
+    programPrintError("set_fake_trait: not implemented!");
+}
+
 static void op_show_iface_tag(Program* program)
 {
     int tag = programStackPopInteger(program);
@@ -2485,6 +2495,7 @@ void sfallOpcodesInit()
 
     // 0x81bb - void set_fake_perk(string name, int level, int image, string desc)
     // 0x81bc - void set_fake_trait(string name, int active, int image, string desc)
+    interpreterRegisterOpcode(0x81BC, op_set_fake_trait);
     // 0x81bd - void set_selectable_perk(string name, int active, int image, string desc)
     // 0x81be - void set_perkbox_title(string title)
     // 0x81bf - void hide_real_perks()
