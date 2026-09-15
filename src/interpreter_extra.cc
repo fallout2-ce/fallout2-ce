@@ -1489,6 +1489,7 @@ static void opTileDistanceBetweenObjects(Program* program)
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
     Object* object1 = static_cast<Object*>(programStackPopPointer(program));
 
+    // used as no path value within scripts
     int distance = TILE_MAX_DISTANCE;
     if (object1 != nullptr && object2 != nullptr) {
         if ((uintptr_t)object2 >= HEX_GRID_SIZE && (uintptr_t)object1 >= HEX_GRID_SIZE) {

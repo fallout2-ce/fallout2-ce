@@ -2639,7 +2639,7 @@ static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int
     _ai_sort_list_distance(aiRetargetData.critterList, aiRetargetData.critterCount, source);
 
     if (_cai_retargetTileFromFriendlyFireSubFunc(&aiRetargetData, *tilePtr) == 0) {
-        int minDistance = TILE_MAX_DISTANCE;
+        int minDistance = TILE_MAX_DISTANCE + 1;
         int minDistanceIndex = -1;
 
         for (int index = 0; index < 32; index++) {
