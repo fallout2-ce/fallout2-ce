@@ -102,7 +102,7 @@ enum AnimationType : int {
     LAST_SF_DEATH_ANIM = ANIM_FALL_FRONT_BLOOD_SF,
 };
 
-inline bool animationTypeIsValid(int anim)
+constexpr inline bool animationTypeIsValid(int anim)
 {
     return anim >= ANIM_FIRST && anim < ANIM_COUNT;
 }

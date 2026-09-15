@@ -107,7 +107,7 @@ enum WeaponAnimation : int {
     CHARACTER_SOUND_EFFECT_CONTACT = WEAPON_ANIMATION_SPEAR,
 };
 
-inline bool weaponAnimationIsValid(int weaponAnimation)
+constexpr inline bool weaponAnimationIsValid(int weaponAnimation)
 {
     return weaponAnimation >= WEAPON_ANIMATION_NONE && weaponAnimation < WEAPON_ANIMATION_COUNT;
 }
