@@ -429,6 +429,8 @@ int critterAdjustRadiation(Object* obj, int amount)
         return -1;
     }
 
+    amount = scriptHooks_AdjustRads(obj, amount);
+
     Proto* proto;
     protoGetProto(gDude->pid, &proto);
 

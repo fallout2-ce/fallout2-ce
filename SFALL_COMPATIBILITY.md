@@ -180,7 +180,7 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | TargetObject | `HOOK_TARGETOBJECT` | 🚫 | (maybe) |
 | Encounter | `HOOK_ENCOUNTER` | ✅ | - |
 | AdjustPoison | `HOOK_ADJUSTPOISON` | 🚫 | (maybe) |
-| AdjustRads | `HOOK_ADJUSTRADS` | 🚫 | (maybe) |
+| AdjustRads | `HOOK_ADJUSTRADS` | ✅ | - |
 | RollCheck | `HOOK_ROLLCHECK` | 🚫 | - |
 | BestWeapon | `HOOK_BESTWEAPON` | 🚫 | - |
 | CanUseWeapon | `HOOK_CANUSEWEAPON` | ✅ | - |

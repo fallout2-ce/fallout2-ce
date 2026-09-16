@@ -1,0 +1,39 @@
+#include "sfall.h"
+#include "define_lite.h"
+#include "../test_utils.h"
+
+variable hook_calls := 0;
+variable expected_amount := 0;
+
+procedure adjustrads_handler begin
+    variable args := get_sfall_args;
+
+    hook_calls++;
+    call assertEquals("adjustrads arg count", len_array(args), 2);
+    call assertEquals("adjustrads critter", args[0], dude_obj);
+    call assertEquals("adjustrads amount", args[1], expected_amount);
+
+    set_sfall_return(0);
+end
+
+procedure start begin
+    variable original_rads;
+
+    if (not game_loaded) then return;
+
+    test_suite_errors := 0;
+    original_rads := get_critter_stat(dude_obj, STAT_current_rad);
+    register_hook_proc(HOOK_ADJUSTRADS, adjustrads_handler);
+
+    expected_amount := 10;
+    radiation_inc(dude_obj, expected_amount);
+    call assertEquals("adjustrads suppresses increase", get_critter_stat(dude_obj, STAT_current_rad), original_rads);
+
+    expected_amount := -4;
+    radiation_dec(dude_obj, -expected_amount);
+    call assertEquals("adjustrads suppresses decrease", get_critter_stat(dude_obj, STAT_current_rad), original_rads);
+
+    call assertEquals("adjustrads call count", hook_calls, 2);
+    call report_test_results("hook_adjustrads");
+    signal_close_game;
+end
