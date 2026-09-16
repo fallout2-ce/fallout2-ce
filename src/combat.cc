@@ -4778,10 +4778,6 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
         }
     }
 
-    // SFALL: Fix zero damage instadeath criticals
-    if ((attack->defenderFlags & DAM_DEAD) != DAM_NONE && attack->defenderDamage <= 0) {
-        attack->defenderDamage = 1;
-    }
     scriptHooks_ComputeDamage(attack, numRounds, baseDamageMult);
 }
 
