@@ -62,6 +62,7 @@ bool is_implemented_hook(int hookId)
     case 40: // HOOK_STDPROCEDURE
     case 41: // HOOK_STDPROCEDURE_END
     case 43: // HOOK_ENCOUNTER
+    case 45: // HOOK_ADJUSTRADS
     case 48: // HOOK_CANUSEWEAPON
         return true;
     default:

@@ -994,6 +994,26 @@ AnimationType scriptHooks_UseAnimObj(Object* user, Object* target, AnimationType
 }
 
 /*
+Runs when a critter's radiation level is changed.
+
+Critter arg0 - The critter (usually dude_obj)
+int     arg1 - The amount of radiation being added/removed
+
+int     ret0 - The new amount of radiation being added/removed
+*/
+int scriptHooks_AdjustRads(Object* critter, int amount)
+{
+    ScriptHookCall hook(HOOK_ADJUSTRADS, 1, { critter, amount });
+    hook.call();
+
+    if (hook.numReturnValues() > 0) {
+        amount = hook.getReturnValueAt(0).asInt();
+    }
+
+    return amount;
+}
+
+/*
 Runs when an object is removed from a container or critter's inventory for any reason.
 
 Obj     arg0 - the owner that the object is being removed from

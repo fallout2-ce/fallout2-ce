@@ -143,7 +143,8 @@ typedef enum {
     HOOK_ENCOUNTER = 43,
 
     //    HOOK_ADJUSTPOISON = 44,
-    //    HOOK_ADJUSTRADS = 45,
+    // A critter's radiation level is changed.
+    HOOK_ADJUSTRADS = 45,
 
     // Any random roll. Has various uses for advanced scripts.
     HOOK_ROLLCHECK = 46,
@@ -371,6 +372,7 @@ int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBon
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 AnimationType scriptHooks_UseAnimObj(Object* user, Object* target, AnimationType anim);
+int scriptHooks_AdjustRads(Object* critter, int amount);
 void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
