@@ -1478,13 +1478,7 @@ static void opTileDistanceBetween(Program* program)
     int tile2 = programStackPopInteger(program);
     int tile1 = programStackPopInteger(program);
 
-    int distance;
-
-    if (tile1 != -1 && tile2 != -1) {
-        distance = tileDistanceBetween(tile1, tile2);
-    } else {
-        distance = 9999;
-    }
+    int distance = tileDistanceBetween(tile1, tile2);
 
     programStackPushInteger(program, distance);
 }
@@ -1496,13 +1490,12 @@ static void opTileDistanceBetweenObjects(Program* program)
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
     Object* object1 = static_cast<Object*>(programStackPopPointer(program));
 
-    int distance = 9999;
+    // used as no path value within scripts
+    int distance = TILE_MAX_DISTANCE;
     if (object1 != nullptr && object2 != nullptr) {
         if ((uintptr_t)object2 >= HEX_GRID_SIZE && (uintptr_t)object1 >= HEX_GRID_SIZE) {
             if (object1->elevation == object2->elevation) {
-                if (object1->tile != -1 && object2->tile != -1) {
-                    distance = tileDistanceBetween(object1->tile, object2->tile);
-                }
+                distance = tileDistanceBetween(object1->tile, object2->tile);
             }
         } else {
             scriptPredefinedError(program, "tile_distance_objs", SCRIPT_ERROR_FOLLOWS);
