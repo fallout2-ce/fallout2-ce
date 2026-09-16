@@ -900,19 +900,19 @@ int squareTileFromTile(int tile)
 // 0x4B185C tile_dist
 int tileDistanceBetween(int tile1, int tile2)
 {
-    if (tile1 == -1 || tile2 == -1) {
-        return 9999;
+    if (!tileIsValid(tile1) || !tileIsValid(tile2)) {
+        return TILE_MAX_DISTANCE;
     }
 
-    int step = 0;
+    int distance = 0;
     int curTile = tile1;
-    for (; curTile != tile2; step++) {
+    for (; curTile != tile2 && distance < TILE_MAX_DISTANCE; distance++) {
         int dir = tileGetRotationTo(curTile, tile2);
 
         curTile += _dir_tile[curTile % gHexGridWidth & 1][dir];
     }
 
-    return step;
+    return distance;
 }
 
 // 0x4B1994 tile_in_front_of
