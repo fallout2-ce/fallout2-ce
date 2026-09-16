@@ -1049,7 +1049,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     break;
                 case OBJ_TYPE_CRITTER:
                     if (targetObj == gDude) {
-                        if (animationTypeFromFid(gDude->fid) == ANIM_STAND) {
+                        if (FrmId(gDude->fid).animationType() == ANIM_STAND) {
                             Rect dudeRect;
                             if (objectRotateClockwise(targetObj, &dudeRect) == 0) {
                                 tileWindowRefreshRect(&dudeRect, targetObj->elevation);

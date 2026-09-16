@@ -879,7 +879,7 @@ int _proto_dude_update_gender()
     if (critterGetArmor(gDude) == nullptr) {
         WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
         if (critterGetItem2(gDude) != nullptr || critterGetItem1(gDude) != nullptr) {
-            weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
+            weaponAnimationCode = FrmId(gDude->fid).weaponAnimation();
         }
 
         const FrmId frmId = FrmId(_art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);

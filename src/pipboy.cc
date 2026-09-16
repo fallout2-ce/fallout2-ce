@@ -1511,7 +1511,7 @@ static void pipboyRenderHolodiskText()
     if (_view_page != 0) {
         int page = 0;
         int numberOfLines = 0;
-        for (; holodiskTextId < holodiskTextId + 500; holodiskTextId += 1) {
+        for (; holodiskTextId < holodisk->description + 500; holodiskTextId += 1) {
             const char* line = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodiskTextId);
             if (strcmp(line, "**END-DISK**") == 0) {
                 debugPrint("\nPIPBOY: Premature page end in holodisk page search!\n");

@@ -839,20 +839,20 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
     bool shouldChangeFid = false;
     FrmId frmId;
     if (critterIsProne(critter)) {
-        AnimationType current = animationTypeFromFid(critter->fid);
+        AnimationType current = FrmId(critter->fid).animationType();
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
             bool back = false;
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                frmId = FrmId(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                frmId = FrmId(critter, ANIM_FALL_FRONT_SF, critter->rotation + 1);
                 if (!frmId.exist()) {
                     back = true;
                 }
             }
 
             if (back) {
-                frmId = FrmId(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                frmId = FrmId(critter, ANIM_FALL_BACK_SF, critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -867,14 +867,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        frmId = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        frmId = FrmId(critter, anim, critter->rotation + 1);
         int violenceFixedFid = frmId.fid();
         _obj_fix_violence_settings(&violenceFixedFid);
         frmId = FrmId(violenceFixedFid);
         if (!frmId.exist()) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            frmId = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            frmId = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, critter->rotation + 1);
             violenceFixedFid = frmId.fid();
             _obj_fix_violence_settings(&violenceFixedFid);
             frmId = FrmId(violenceFixedFid);
@@ -1006,7 +1006,7 @@ bool critterIsProne(Object* critter)
         return false;
     }
 
-    AnimationType anim = animationTypeFromFid(critter->fid);
+    AnimationType anim = FrmId(critter->fid).animationType();
 
     return (critter->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN)) != 0
         || (anim >= FIRST_KNOCKDOWN_AND_DEATH_ANIM && anim <= LAST_KNOCKDOWN_AND_DEATH_ANIM)
@@ -1063,9 +1063,11 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
 
     assert(critter->pid == PROTO_ID_GORIS);
 
+    const FrmId frmId = FrmId(critter->fid);
+
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return CritterFrmId(frameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), rotationFromFid(critter->fid));
+    return CritterFrmId(frameId, frmId.animationType(), frmId.weaponAnimation(), frmId.rotation());
 }
 
 // 0x42DE58 pc_load_data
@@ -1389,7 +1391,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    const FrmId frmId = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    const FrmId frmId = FrmId(obj, ANIM_STAND, obj->rotation + 1);
     objectSetFrmId(obj, frmId, nullptr);
 
     return 0;

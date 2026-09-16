@@ -1593,6 +1593,38 @@ FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnima
 {
 }
 
+FrmId::FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animationTypeFromFid(object->fid), weaponAnimation, rotation))
+    , _frameId { object == nullptr ? kInvalidFrameId : buildFrameId(object->fid) }
+    , _path(nullptr)
+{
+}
+
+FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation)
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotationFromFid(object->fid)))
+    , _frameId { object == nullptr ? kInvalidFrameId : buildFrameId(object->fid) }
+    , _path(nullptr)
+{
+}
+
+FrmId::FrmId(Object* object, AnimationType animType, Rotation rotation)
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotation))
+    , _frameId { object == nullptr ? kInvalidFrameId : buildFrameId(object->fid) }
+    , _path(nullptr)
+{
+}
+
+FrmId::FrmId(Object* object, AnimationType animType)
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotationFromFid(object->fid)))
+    , _frameId { object == nullptr ? kInvalidFrameId : buildFrameId(object->fid) }
+    , _path(nullptr)
+{
+}
+
 // 0x419C88
 // animType doesn't have to be of AnimationType enum only but also HeadAnimation
 // weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags

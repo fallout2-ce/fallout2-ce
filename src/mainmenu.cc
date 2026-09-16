@@ -416,7 +416,7 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
         buttonNormalData = mainMenuButtonNormalFrmImage.getData();
         buttonPressedData = mainMenuButtonPressedFrmImage.getData();
     } else {
-        mainMenuScaledButtonData.assign(buttonWidth * buttonHeight * 2, 0);
+        mainMenuScaledButtonData.assign(static_cast<size_t>(buttonWidth) * buttonHeight * 2, 0);
         buttonNormalData = mainMenuScaledButtonData.data();
         buttonPressedData = buttonNormalData + buttonWidth * buttonHeight;
 

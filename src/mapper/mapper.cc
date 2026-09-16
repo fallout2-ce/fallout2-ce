@@ -748,7 +748,7 @@ void MapperInit()
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
 {
-    lbm_buf = (unsigned char*)internal_malloc(lbmBufWidth * lbmBufHeight);
+    lbm_buf = (unsigned char*)internal_malloc(static_cast<size_t>(lbmBufWidth) * lbmBufHeight);
     return load_lbm_to_buf("data\\mapper2.lbm",
         lbm_buf,
         0,
@@ -816,7 +816,7 @@ int mapper_edit_init(int argc, char** argv)
 
     setup_map_dirs();
     mapper_load_toolbar(OBJ_TYPE_TILE, nullptr);
-    art_shape = (unsigned char*)internal_malloc(art_scale_height * art_scale_width);
+    art_shape = (unsigned char*)internal_malloc(static_cast<size_t>(art_scale_height) * art_scale_width);
     if (art_shape == nullptr) {
         printf("Can't malloc memory!!\n");
         exit(1);
@@ -2673,7 +2673,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE);
     animationRegisterSetFrmId(obj, frmId, 0);
 
     return reg_anim_end();
