@@ -3582,7 +3582,7 @@ int gameDialogCreateBarterWindow()
     bartererTableObj->flags |= OBJECT_HIDDEN;
 
     UniqueObject bartererTempObj;
-    if (objectCreateWithFrmIdPid(bartererTempObj, FrmId(gGameDialogSpeaker->fid), -1) == -1) return -1;
+    if (objectCreateWithFrmIdPid(bartererTempObj, FrmId(gGameDialogSpeaker), -1) == -1) return -1;
     bartererTempObj->flags |= OBJECT_HIDDEN | OBJECT_NO_SAVE;
     bartererTempObj->sid = -1;
 

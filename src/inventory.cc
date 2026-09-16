@@ -1548,15 +1548,15 @@ void inventorySetDude(Object* obj, int pid)
 // TODO(CE): move to more generic location
 FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
 {
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
-        return FrmId(critter->fid);
+    if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
+        return FrmId(critter);
     }
 
     Proto* proto = nullptr;
 
     CritterFrameId inventoryFrameId = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
-        inventoryFrameId = FrmId(proto->fid).frameId().critter;
+        inventoryFrameId = FrmId(proto).frameId().critter;
     }
 
     if (armor != nullptr) {
@@ -3414,7 +3414,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
     gInventoryWindowDudeFrmId = FrmId(critter, ANIM_STAND, animationCode, ROTATION_NE);
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_inventory(0, -1, inventoryWindowType);
-    _display_body(FrmId(target->fid), inventoryWindowType);
+    _display_body(FrmId(target), inventoryWindowType);
 }
 
 // 0x471CA0
@@ -3891,7 +3891,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, FrmId(critter->fid).weaponAnimation(), critter->rotation + 1);
+                const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, FrmId(critter).weaponAnimation(), critter->rotation + 1);
                 animationRegisterSetFrmId(critter, frmId, 0);
             }
         } else {
@@ -3968,7 +3968,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         }
 
         if (hand == handIndex) {
-            if (FrmId(critter->fid).weaponAnimation() != WEAPON_ANIMATION_NONE) {
+            if (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE) {
                 if (animate) {
                     if (!isoIsDisabled()) {
                         const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
@@ -4038,7 +4038,7 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
         item->flags &= ~OBJECT_IN_ANY_HAND;
     }
 
-    if (activeHand == hand && (FrmId(critter->fid).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
+    if (activeHand == hand && (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
         if (animate && !isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
@@ -4732,15 +4732,15 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    if (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    if (FrmId(target).objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
     }
 
-    if (objectTypeFromFid(target->fid) == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
+    if (FrmId(target).objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
         if (target->frame == 0) {
             CacheEntry* handle;
-            Art* frm = artLock(FrmId(target->fid), &handle);
+            Art* frm = artLock(FrmId(target), &handle);
             if (frm != nullptr) {
                 int frameCount = artGetFrameCount(frm);
                 artUnlock(handle);
@@ -4800,7 +4800,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     int critterCount = 0;
     int critterIndex = 0;
     if (!_gIsSteal) {
-        if (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER) {
+        if (FrmId(target).objectType() == OBJ_TYPE_CRITTER) {
             critterCount = objectListCreate(target->tile, target->elevation, OBJ_TYPE_CRITTER, &critters);
             int endIndex = critterCount - 1;
             for (int index = 0; index < critterCount; index++) {
@@ -4879,7 +4879,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
     _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
     gInventoryWindowDudeRotationTimestamp = 0;
-    _display_body(FrmId(target->fid), INVENTORY_WINDOW_TYPE_LOOT);
+    _display_body(FrmId(target), INVENTORY_WINDOW_TYPE_LOOT);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
 
     // Trigger game mode change _after_ window and loot_obj are set up
@@ -5746,7 +5746,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
     _display_inventory(_stack_offset[0], -1, INVENTORY_WINDOW_TYPE_TRADE);
-    _display_body(FrmId(barterer->fid), INVENTORY_WINDOW_TYPE_TRADE);
+    _display_body(FrmId(barterer), INVENTORY_WINDOW_TYPE_TRADE);
     windowRefresh(gInventoryBarterBackgroundWindow);
     barterDisplayTables(win, playerTable, bartererTable, -1);
 
@@ -6024,7 +6024,7 @@ static void _container_enter(int keyCode, int inventoryWindowType)
 
                 _target_pud = &(item->data.inventory);
 
-                _display_body(FrmId(item->fid), inventoryWindowType);
+                _display_body(FrmId(item), inventoryWindowType);
                 _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, inventoryWindowType);
                 windowRefresh(gInventoryWindow);
             }
@@ -6068,7 +6068,7 @@ static void _container_exit(int keyCode, int inventoryWindowType)
             _target_curr_stack -= 1;
             Object* target = _target_stack[_target_curr_stack];
             _target_pud = &(target->data.inventory);
-            _display_body(FrmId(target->fid), inventoryWindowType);
+            _display_body(FrmId(target), inventoryWindowType);
             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, inventoryWindowType);
             windowRefresh(gInventoryWindow);
         }

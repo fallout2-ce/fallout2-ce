@@ -730,7 +730,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
     animationDescription->owner = owner;
     animationDescription->destination = destination;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
+    if ((FrmId(owner).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
@@ -813,7 +813,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
     animationDescription->tile = tile;
     animationDescription->elevation = elevation;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
+    if ((FrmId(owner).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
@@ -1684,7 +1684,7 @@ static int _anim_set_end(int animationSequenceIndex)
                     continue;
                 }
 
-                if (objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER) {
+                if (FrmId(owner).objectType() == OBJ_TYPE_CRITTER) {
                     int j = 0;
                     for (; j < i; j++) {
                         AnimationDescription* ad = &(animationSequence->animations[j]);
@@ -1754,11 +1754,11 @@ static bool canUseDoor(Object* critter, Object* door)
         }
     }
 
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return false;
     }
 
-    if (objectTypeFromFid(door->fid) != OBJ_TYPE_SCENERY) {
+    if (FrmId(door).objectType() != OBJ_TYPE_SCENERY) {
         return false;
     }
 
@@ -2545,7 +2545,7 @@ static int animateMoveObjectToTileStraight(Object* obj, int tile, int elevation,
     sad->animationSequenceIndex = animationSequenceIndex;
 
     int v15;
-    const FrmId frmId = FrmId(obj->fid);
+    const FrmId frmId = FrmId(obj);
     if (frmId.objectType() == OBJ_TYPE_CRITTER) {
         if (frmId.animationType() == ANIM_JUMP_BEGIN)
             v15 = 16;
@@ -2663,7 +2663,7 @@ static void _object_move(int index)
     int frameY;
 
     CacheEntry* cacheHandle;
-    Art* art = artLock(FrmId(object->fid), &cacheHandle);
+    Art* art = artLock(FrmId(object), &cacheHandle);
     if (art != nullptr) {
         artGetFrameOffsets(art, object->frame, object->rotation, &frameX, &frameY);
         artUnlock(cacheHandle);
@@ -2717,7 +2717,7 @@ static void _object_move(int index)
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
             bool cannotMove = false;
-            if (isInCombat() && objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER) {
+            if (isInCombat() && FrmId(object).objectType() == OBJ_TYPE_CRITTER) {
                 int actionPointsRequired = critterGetMovementPointCostAdjustedForCrippledLegs(object, 1);
                 if (actionPointsRequired > _combat_free_move) {
                     actionPointsRequired -= _combat_free_move;
@@ -2775,7 +2775,7 @@ static void _object_straight_move(int index)
     }
 
     CacheEntry* cacheHandle;
-    Art* art = artLock(FrmId(object->fid), &cacheHandle);
+    Art* art = artLock(FrmId(object), &cacheHandle);
     if (art != nullptr) {
         int lastFrame = artGetFrameCount(art) - 1;
         artUnlock(cacheHandle);
@@ -2908,7 +2908,7 @@ void _object_animate()
         if (object->fid == sad->fid) {
             if ((sad->flags & ANIM_SAD_REVERSE) == 0) {
                 CacheEntry* cacheHandle;
-                Art* art = artLock(FrmId(object->fid), &cacheHandle);
+                Art* art = artLock(FrmId(object), &cacheHandle);
                 if (art != nullptr) {
                     if ((sad->flags & ANIM_SAD_FOREVER) == 0 && object->frame == artGetFrameCount(art) - 1) {
                         sad->step = ANIM_COMPLETE;
@@ -2946,7 +2946,7 @@ void _object_animate()
                 int y = 0;
 
                 CacheEntry* cacheHandle;
-                Art* art = artLock(FrmId(object->fid), &cacheHandle);
+                Art* art = artLock(FrmId(object), &cacheHandle);
                 if (art != nullptr) {
                     artGetFrameOffsets(art, object->frame, object->rotation, &x, &y);
                     artUnlock(cacheHandle);
@@ -2969,7 +2969,7 @@ void _object_animate()
             int y;
 
             CacheEntry* cacheHandle;
-            Art* art = artLock(FrmId(object->fid), &cacheHandle);
+            Art* art = artLock(FrmId(object), &cacheHandle);
             if (art != nullptr) {
                 artGetRotationOffsets(art, object->rotation, &x, &y);
                 artUnlock(cacheHandle);
@@ -2981,7 +2981,7 @@ void _object_animate()
             objectSetFrmId(object, FrmId(sad->fid), &tempRect);
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-            art = artLock(FrmId(object->fid), &cacheHandle);
+            art = artLock(FrmId(object), &cacheHandle);
             if (art != nullptr) {
                 int frame;
                 if ((sad->flags & ANIM_SAD_REVERSE) != 0) {
@@ -3169,7 +3169,7 @@ void _dude_fidget()
             break;
         }
 
-        const FrmId frmId = FrmId(object->fid);
+        const FrmId frmId = FrmId(object);
         if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && frmId.objectType() == OBJ_TYPE_CRITTER && frmId.animationType() == ANIM_STAND && !critterIsDead(object)) {
             Rect rect;
             objectGetRect(object, &rect);
@@ -3196,7 +3196,7 @@ void _dude_fidget()
         } else {
             char fileName[16];
             fileName[0] = '\0';
-            artCopyFileName(FrmId(object->fid), fileName);
+            artCopyFileName(FrmId(object), fileName);
             if (fileName[0] == 'm' || fileName[0] == 'M') {
                 if (objectGetDistanceBetween(object, gDude) < critterGetStat(gDude, STAT_PERCEPTION) * 2) {
                     shoudPlaySound = true;
@@ -3236,7 +3236,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     int x = 0;
     int y = 0;
 
-    WeaponAnimation weaponAnimationCode = FrmId(obj->fid).weaponAnimation();
+    WeaponAnimation weaponAnimationCode = FrmId(obj).weaponAnimation();
     if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
         if (!frmId.valid()) {
             FrmId takeOutFrmId = FrmId(obj, ANIM_TAKE_OUT, weaponAnimationCode, obj->rotation + 1);
@@ -3272,7 +3272,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     FrmId finalFrmId = frmId;
     if (!finalFrmId.valid()) {
         AnimationType anim;
-        if (FrmId(obj->fid).animationType() == ANIM_FIRE_DANCE) {
+        if (FrmId(obj).animationType() == ANIM_FIRE_DANCE) {
             anim = ANIM_FIRE_DANCE;
         } else {
             anim = ANIM_STAND;
@@ -3302,7 +3302,7 @@ void _dude_standup(Object* a1)
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
     AnimationType anim;
-    if (FrmId(a1->fid).animationType() == ANIM_FALL_BACK) {
+    if (FrmId(a1).animationType() == ANIM_FALL_BACK) {
         anim = ANIM_BACK_TO_STANDING;
     } else {
         anim = ANIM_PRONE_TO_STANDING;

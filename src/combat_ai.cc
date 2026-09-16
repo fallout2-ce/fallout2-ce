@@ -881,7 +881,7 @@ bool aiIsBurstDisabled(Object* critter)
 
 void aiSetBurstDisabled(Object* critter, bool disable)
 {
-    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER || critter == gDude) {
+    if (critter == nullptr || FrmId(critter).objectType() != OBJ_TYPE_CRITTER || critter == gDude) {
         return;
     }
 
@@ -2549,7 +2549,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         _cai_retargetTileFromFriendlyFire(critter, target, &tile);
     }
 
-    if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFrmIdShouldRun(FrmId(critter->fid))) {
+    if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFrmIdShouldRun(FrmId(critter))) {
         if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
             animationRegisterRunToObject(critter, target, actionPoints, 0);
         } else {
@@ -2837,7 +2837,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
     int actionPointsToUse = 0;
     if (weapon != nullptr
         || (critterGetBodyType(defender) == BODY_TYPE_BIPED
-            && (FrmId(defender->fid).weaponAnimation() == WEAPON_ANIMATION_NONE)
+            && (FrmId(defender).weaponAnimation() == WEAPON_ANIMATION_NONE)
             && FrmId(attacker, ANIM_THROW_PUNCH, WEAPON_ANIMATION_NONE, attacker->rotation + 1).exist())) {
         // SFALL: Check the safety of weapons based on the selected attack mode
         // instead of always the primary weapon hit mode.
@@ -3614,7 +3614,7 @@ static int _combatai_rating(Object* obj)
         return 0;
     }
 
-    if (objectTypeFromFid(obj->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(obj).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
 

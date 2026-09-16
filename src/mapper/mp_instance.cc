@@ -149,7 +149,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, in
     unsigned char* buf = windowGetBuffer(win);
     bufferDrawRect(buf + 12899, kWinWidth, 0, 0, 65, 49, COLOR_BLACK);
     bufferFill(buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth, COLOR_BLUE_2);
-    artRender(FrmId(obj->fid), buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth);
+    artRender(FrmId(obj), buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth);
 
     // Script section
     int scriptY = y + 83;
@@ -433,7 +433,7 @@ static int protoInstAddToInven(int pid, int count)
     if (protoGetProto(pid, &proto) == -1) return 0;
 
     Object* newObj;
-    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto->fid), pid) == -1) return 0;
+    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto), pid) == -1) return 0;
 
     objectSetLocation(newObj, 0, 0, nullptr);
 

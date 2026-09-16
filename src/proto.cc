@@ -501,7 +501,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
     proto->critter.team = 0;
-    if (!FrmId(proto->fid).exist()) {
+    if (!FrmId(proto).exist()) {
         proto->fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
     }
 
@@ -879,7 +879,7 @@ int _proto_dude_update_gender()
     if (critterGetArmor(gDude) == nullptr) {
         WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
         if (critterGetItem2(gDude) != nullptr || critterGetItem1(gDude) != nullptr) {
-            weaponAnimationCode = FrmId(gDude->fid).weaponAnimation();
+            weaponAnimationCode = FrmId(gDude).weaponAnimation();
         }
 
         const FrmId frmId = FrmId(_art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);

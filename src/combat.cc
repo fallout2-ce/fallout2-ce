@@ -3671,7 +3671,7 @@ static bool _check_ranged_miss(Attack* attack)
             _make_straight_path_func(attack->attacker, curr, to, nullptr, &critter, 32, _obj_shoot_blocking_at);
             if (critter != nullptr) {
                 if ((critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
-                    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+                    if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
                         roll = ROLL_SUCCESS;
                         break;
                     }
@@ -3728,7 +3728,7 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, AnimationT
         _make_straight_path_func(attack->attacker, currentTile, endTile, nullptr, &critter, 32, _obj_shoot_blocking_at);
 
         if (critter != nullptr) {
-            if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+            if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
                 break;
             }
 
@@ -4162,7 +4162,7 @@ void _compute_explosion_on_extras(Attack* attack, bool isFromAttacker, bool isGr
 
         Object* obstacle = _obj_blocking_at(targetObj, tile, attack->attacker->elevation);
         if (obstacle != nullptr
-            && objectTypeFromFid(obstacle->fid) == OBJ_TYPE_CRITTER
+            && FrmId(obstacle).objectType() == OBJ_TYPE_CRITTER
             && (obstacle->data.critter.combat.results & DAM_DEAD) == DAM_NONE
             && (obstacle->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE
             && !_combat_is_shot_blocked(obstacle, obstacle->tile, explosionTile, nullptr, nullptr)) {
@@ -4429,7 +4429,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
     Object* weapon = critterGetWeaponForHitMode(attacker, hitMode);
 
     bool targetIsCritter = defender != nullptr
-        ? objectTypeFromFid(defender->fid) == OBJ_TYPE_CRITTER
+        ? FrmId(defender).objectType() == OBJ_TYPE_CRITTER
         : false;
 
     bool isRangedWeapon = false;
@@ -4634,7 +4634,7 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
 
     *damagePtr = 0;
 
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
         // This is to match sfall behavior as it wraps attackComputeDamage call and always invokes hook, even in this case.
         scriptHooks_ComputeDamage(attack, numRounds, baseDamageMult);
         return;
@@ -4796,7 +4796,7 @@ void attackComputeDeathFlags(Attack* attack)
 void _apply_damage(Attack* attack, bool animated)
 {
     Object* attacker = attack->attacker;
-    bool attackerIsCritter = attacker != nullptr && objectTypeFromFid(attacker->fid) == OBJ_TYPE_CRITTER;
+    bool attackerIsCritter = attacker != nullptr && FrmId(attacker).objectType() == OBJ_TYPE_CRITTER;
     bool hitUnintendedTarget = attack->defender != attack->intendedTarget;
 
     if (attackerIsCritter && (attacker->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
@@ -4810,7 +4810,7 @@ void _apply_damage(Attack* attack, bool animated)
     }
 
     Object* defender = attack->defender;
-    bool defenderIsCritter = defender != nullptr && objectTypeFromFid(defender->fid) == OBJ_TYPE_CRITTER;
+    bool defenderIsCritter = defender != nullptr && FrmId(defender).objectType() == OBJ_TYPE_CRITTER;
 
     if (!defenderIsCritter && !hitUnintendedTarget) {
         bool shouldRunDamageProc = !objectIsPartyMember(attack->defender) || !objectIsPartyMember(attack->attacker);
@@ -4847,7 +4847,7 @@ void _apply_damage(Attack* attack, bool animated)
 
     for (int index = 0; index < attack->extrasLength; index++) {
         Object* obj = attack->extras[index];
-        if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER && (obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
+        if (FrmId(obj).objectType() == OBJ_TYPE_CRITTER && (obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
             _set_new_results(obj, attack->extrasFlags[index]);
 
             if (defenderIsCritter) {
@@ -4894,7 +4894,7 @@ static void _set_new_results(Object* critter, Dam flags)
         return;
     }
 
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -4935,7 +4935,7 @@ static void _damage_object(Object* target, int damage, bool animated, int hitUni
         return;
     }
 
-    if (objectTypeFromFid(target->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(target).objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -5065,7 +5065,7 @@ void _combat_display(Attack* attack)
         && attack->intendedTarget != nullptr
         && attack->defender != attack->intendedTarget
         && (attack->attackerFlags & DAM_HIT) != DAM_NONE) {
-        if (objectTypeFromFid(attack->defender->fid) == OBJ_TYPE_CRITTER) {
+        if (FrmId(attack->defender).objectType() == OBJ_TYPE_CRITTER) {
             if (attack->intendedTarget == gDude) {
                 // 608 (male) - Oops! %s was hit instead of you!
                 // 708 (female) - Oops! %s was hit instead of you!
@@ -5121,7 +5121,7 @@ void _combat_display(Attack* attack)
         if (v21 != nullptr && (v21->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
             text[0] = '\0';
 
-            if (objectTypeFromFid(v21->fid) == OBJ_TYPE_CRITTER) {
+            if (FrmId(v21).objectType() == OBJ_TYPE_CRITTER) {
                 if (attack->defenderHitLocation == HIT_LOCATION_TORSO) {
                     if ((attack->attackerFlags & DAM_CRITICAL) != DAM_NONE) {
                         switch (attack->defenderDamage) {
@@ -5548,7 +5548,7 @@ static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation)
 {
     MessageListItem messageListItem;
-    messageListItem.num = 1000 + 10 * static_cast<int>(_art_alias_num(FrmId(critter->fid).frameId().critter)) + hitLocation;
+    messageListItem.num = 1000 + 10 * static_cast<int>(_art_alias_num(FrmId(critter).frameId().critter)) + hitLocation;
     if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
         return messageListItem.text;
     }
@@ -6016,7 +6016,7 @@ bool _combat_is_shot_blocked(Object* sourceObj, int from, int to, Object* target
     while (obstacle != nullptr && current != to) {
         _make_straight_path_func(sourceObj, current, to, nullptr, &obstacle, 32, _obj_shoot_blocking_at);
         if (obstacle != nullptr) {
-            if (objectTypeFromFid(obstacle->fid) != OBJ_TYPE_CRITTER && obstacle != targetObj) {
+            if (FrmId(obstacle).objectType() != OBJ_TYPE_CRITTER && obstacle != targetObj) {
                 return true;
             }
 

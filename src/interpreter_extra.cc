@@ -422,7 +422,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         interfaceUpdateItems(animated, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }
 
-    const FrmId frmId = FrmId(critter->fid);
+    const FrmId frmId = FrmId(critter);
     WeaponAnimation weaponCode = frmId.weaponAnimation();
     FrmId newFrmId;
 
@@ -880,7 +880,7 @@ static void opCreateObject(Program* program)
 
     Proto* proto;
     if (protoGetProto(pid, &proto) != -1) {
-        if (objectCreateWithFrmIdPid(&object, FrmId(proto->fid), pid) != -1) {
+        if (objectCreateWithFrmIdPid(&object, FrmId(proto), pid) != -1) {
             if (tile == -1) {
                 tile = 0;
             }
@@ -1259,7 +1259,7 @@ static void opGetObjectType(Program* program)
 
     ObjectType objectType = OBJ_TYPE_INVALID;
     if (object != nullptr) {
-        objectType = objectTypeFromFid(object->fid);
+        objectType = FrmId(object).objectType();
     }
 
     programStackPushInteger(program, objectType);
@@ -2062,7 +2062,7 @@ static void opMetarule3(Program* program)
                 frameId = frameIdFromFid(frameId);
             }
 
-            const FrmId frmId = FrmId(obj->fid);
+            const FrmId frmId = FrmId(obj);
             const FrmId newFrmId = FrmId(frmId.objectType(),
                 frameId,
                 frmId.animationType(),
@@ -2427,7 +2427,7 @@ static void opKillCritterType(Program* program)
 
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (FrmId(obj->fid).animationType() < ANIM_FALL_BACK_SF) {
+        if (FrmId(obj).animationType() < ANIM_FALL_BACK_SF) {
             if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE && obj->pid == pid && !critterIsDead(obj)) {
                 if (obj == previousObj || count > 200) {
                     scriptPredefinedError(program, "kill_critter_type", SCRIPT_ERROR_FOLLOWS);
@@ -2773,7 +2773,7 @@ static void opGetCritterState(Program* program)
         if (critterIsActive(critter)) {
             state = CRITTER_STATE_NORMAL;
 
-            AnimationType anim = FrmId(critter->fid).animationType();
+            AnimationType anim = FrmId(critter).animationType();
             if (anim >= ANIM_FALL_BACK_SF && anim <= ANIM_FALL_FRONT_SF) {
                 state = CRITTER_STATE_PRONE;
             }
@@ -3353,7 +3353,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (FrmId(object->fid) == MiscFrameId::RocketExplosion) {
+                if (FrmId(object) == MiscFrameId::RocketExplosion) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }

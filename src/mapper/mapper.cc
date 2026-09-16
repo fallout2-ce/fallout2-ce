@@ -1304,9 +1304,9 @@ void edit_mapper()
                     if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
+                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor));
                             } else {
-                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
+                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor));
                             }
                         }
                     } else if (_screen_obj != nullptr) {
@@ -1346,9 +1346,9 @@ void edit_mapper()
                     } else if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
+                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor));
                             } else {
-                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
+                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor));
                             }
                         }
                     } else {
@@ -1469,7 +1469,7 @@ void edit_mapper()
                         // Set mouse cursor to proto's art FID
                         Proto* proto;
                         if (protoGetProto(pid, &proto) != -1) {
-                            const FrmId artFrmId = FrmId(proto->fid);
+                            const FrmId artFrmId = FrmId(proto);
                             if (artFrmId.exist()) {
                                 gGameMouseBouncingCursor->fid = artFrmId.fid();
                                 Rect mouseRect;
@@ -2530,7 +2530,7 @@ void update_art(ObjectType type, int offset)
             Proto* proto;
             int pid = toolbar_proto(type, i);
             if (protoGetProto(pid, &proto) == -1) continue;
-            frmId = FrmId(proto->fid);
+            frmId = FrmId(proto);
         }
         artRender(frmId, p, art_scale_width, art_scale_height, screen_width);
     }

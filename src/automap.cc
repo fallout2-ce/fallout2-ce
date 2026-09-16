@@ -536,7 +536,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
             continue;
         }
 
-        ObjectType objectType = objectTypeFromFid(object->fid);
+        ObjectType objectType = FrmId(object).objectType();
         Color objectColor;
 
         if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
@@ -1102,7 +1102,7 @@ static void _decode_map_data(int elevation)
         if (object->tile != -1 && (object->flags & OBJECT_SEEN) != OBJECT_NONE) {
             int contentType;
 
-            ObjectType objectType = objectTypeFromFid(object->fid);
+            ObjectType objectType = FrmId(object).objectType();
             if (objectType == OBJ_TYPE_SCENERY && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
                 contentType = 2;
             } else if (objectType == OBJ_TYPE_WALL) {

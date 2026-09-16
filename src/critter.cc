@@ -839,7 +839,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
     bool shouldChangeFid = false;
     FrmId frmId;
     if (critterIsProne(critter)) {
-        AnimationType current = FrmId(critter->fid).animationType();
+        AnimationType current = FrmId(critter).animationType();
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
             bool back = false;
             if (current == ANIM_FALL_BACK) {
@@ -1006,7 +1006,7 @@ bool critterIsProne(Object* critter)
         return false;
     }
 
-    AnimationType anim = FrmId(critter->fid).animationType();
+    AnimationType anim = FrmId(critter).animationType();
 
     return (critter->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN)) != 0
         || (anim >= FIRST_KNOCKDOWN_AND_DEATH_ANIM && anim <= LAST_KNOCKDOWN_AND_DEATH_ANIM)
@@ -1063,7 +1063,7 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
 
     assert(critter->pid == PROTO_ID_GORIS);
 
-    const FrmId frmId = FrmId(critter->fid);
+    const FrmId frmId = FrmId(critter);
 
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
@@ -1406,7 +1406,7 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
         return -1;
     }
 
-    if (hitMe != nullptr && objectTypeFromFid(hitMe->fid) != OBJ_TYPE_CRITTER) {
+    if (hitMe != nullptr && FrmId(hitMe).objectType() != OBJ_TYPE_CRITTER) {
         return -1;
     }
 

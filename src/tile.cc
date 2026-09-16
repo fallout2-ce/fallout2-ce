@@ -1401,7 +1401,7 @@ static void tileRenderRoof(const TileFrmId& frmId, int x, int y, Rect* rect, int
         tileFrmBuffer += tileWidth * (tileRect.top - y) + (tileRect.left - x);
 
         CacheEntry* eggFrmHandle;
-        Art* eggFrm = artLock(FrmId(gEgg->fid), &eggFrmHandle);
+        Art* eggFrm = artLock(FrmId(gEgg), &eggFrmHandle);
         if (eggFrm != nullptr) {
             int eggWidth = artGetWidth(eggFrm);
             int eggHeight = artGetHeight(eggFrm);

@@ -725,7 +725,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
         }
     }
 
-    ObjectType newType = objectTypeFromFid(newFid);
+    ObjectType newType = FrmId(newFid).objectType();
     if (newType == OBJ_TYPE_CRITTER || newType == OBJ_TYPE_MISC) {
         objectSetRotation(copy, rotation, nullptr);
     }
@@ -769,7 +769,7 @@ void copyObject(int filterType)
                     || obj == gGameMouseBouncingCursor
                     || obj == gGameMouseHexCursor
                     || (obj->flags & OBJECT_HIDDEN) != OBJECT_NONE
-                    || filterType != -1 && objectTypeFromFid(obj->fid) != filterType) continue;
+                    || filterType != -1 && FrmId(obj).objectType() != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
                     _win_msg("Too many objects in region!", 80, 80, COLOR_RED | DRAW_TEXT_FLAG_NONE);
@@ -954,7 +954,7 @@ void eraseObject()
 
                     if (hit != nullptr) {
                         // Don't destroy exit-grid markers (interface art, id=3).
-                        if (FrmId(hit->fid) != InterfaceFrameId::ExitGridMarker) {
+                        if (FrmId(hit) != InterfaceFrameId::ExitGridMarker) {
                             Rect rect;
                             int elev = hit->elevation;
                             reg_anim_clear(hit);
