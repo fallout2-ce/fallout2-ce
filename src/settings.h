@@ -184,6 +184,7 @@ struct DebugSettings {
 
 struct QolSettings {
     int use_walk_distance = 3;
+    bool walk_when_sneaking = false;
     bool auto_open_doors = false;
     bool party_trade_from_menu = true;
     bool party_loot_and_barter = false;

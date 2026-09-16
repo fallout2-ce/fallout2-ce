@@ -3116,7 +3116,7 @@ int _dude_run(int actionPoints)
         return -1;
     }
 
-    if (!perkGetRank(gDude, PERK_SILENT_RUNNING)) {
+    if (!settings.qol.walk_when_sneaking && !perkGetRank(gDude, PERK_SILENT_RUNNING)) {
         dudeDisableState(DUDE_STATE_SNEAKING);
     }
 
