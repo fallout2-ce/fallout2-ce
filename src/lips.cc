@@ -18,12 +18,13 @@ namespace fallout {
 static char* lips_fix_string(const char* fileName, size_t length);
 static int lipsReadV1(LipsData* lipsData, File* stream);
 static int _lips_make_speech();
+static unsigned char lipsGetPhoneme(int index);
 
 // 0x519240 head_phoneme_current
 unsigned char gLipsCurrentPhoneme = 0;
 
 // 0x519241 head_phoneme_drawn
-static unsigned char gLipsPreviousPhoneme = 0;
+static unsigned char lipsPreviousPhoneme = 0;
 
 // 0x519244 head_marker_current
 static int _head_marker_current = 0;
@@ -76,71 +77,89 @@ static char* lips_fix_string(const char* fileName, size_t length)
     return tmp_str;
 }
 
+static unsigned char lipsGetPhoneme(int index)
+{
+    // The terminal marker has no corresponding phoneme.
+    if (gLipsData.phonemes == nullptr || index < 0 || index >= gLipsData.phonemeCount) {
+        return 0;
+    }
+
+    unsigned char phoneme = gLipsData.phonemes[index];
+    return phoneme < PHONEME_COUNT ? phoneme : 0;
+}
+
 // 0x47AAD8 lips_bkg_proc
 void lipsTicker()
 {
-    int v0;
+    int markerIndex;
     SpeechMarker* speech_marker;
-    int v5;
+    int wrapCheckMarkerIndex;
 
-    v0 = _head_marker_current;
+    markerIndex = _head_marker_current;
 
-    if ((gLipsData.flags & LIPS_FLAG_0x02) != 0) {
-        int v1 = _soundGetPosition(gLipsData.sound);
+    if (gLipsData.sound == nullptr || gLipsData.markers == nullptr
+        || markerIndex < 0 || markerIndex >= gLipsData.markerCount) {
+        gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+        gLipsCurrentPhoneme = 0;
+        markerIndex = 0;
+    }
 
-        speech_marker = &(gLipsData.markers[v0]);
-        while (v1 > speech_marker->position) {
-            gLipsCurrentPhoneme = gLipsData.phonemes[v0];
-            v0++;
+    if ((gLipsData.flags & LIPS_FLAG_PLAYING) != 0) {
+        int audioPosition = _soundGetPosition(gLipsData.sound);
 
-            if (v0 >= gLipsData.field_2C) {
-                v0 = 0;
-                gLipsCurrentPhoneme = gLipsData.phonemes[0];
+        speech_marker = &(gLipsData.markers[markerIndex]);
+        while (audioPosition > speech_marker->position) {
+            gLipsCurrentPhoneme = lipsGetPhoneme(markerIndex);
+            markerIndex++;
 
-                if ((gLipsData.flags & LIPS_FLAG_0x01) == 0) {
+            if (markerIndex >= gLipsData.markerCount) {
+                markerIndex = 0;
+                gLipsCurrentPhoneme = lipsGetPhoneme(0);
+
+                if ((gLipsData.flags & LIPS_FLAG_LOOPING) == 0) {
                     _head_marker_current = 0;
                     soundStop(gLipsData.sound);
-                    v0 = _head_marker_current;
-                    gLipsData.flags &= ~(LIPS_FLAG_0x01 | LIPS_FLAG_0x02);
+                    markerIndex = _head_marker_current;
+                    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
                 }
 
                 break;
             }
 
-            speech_marker = &(gLipsData.markers[v0]);
+            speech_marker = &(gLipsData.markers[markerIndex]);
         }
 
-        if (v0 >= gLipsData.field_2C - 1) {
-            _head_marker_current = v0;
+        if (markerIndex >= gLipsData.markerCount - 1) {
+            _head_marker_current = markerIndex;
 
-            v5 = 0;
-            if (gLipsData.field_2C <= 5) {
+            wrapCheckMarkerIndex = 0;
+            if (gLipsData.markerCount <= 5) {
                 debugPrint("Error: Too few markers to stop speech!");
             } else {
-                v5 = 3;
+                wrapCheckMarkerIndex = 3;
             }
 
-            speech_marker = &(gLipsData.markers[v5]);
-            if (v1 < speech_marker->position) {
-                v0 = 0;
-                gLipsCurrentPhoneme = gLipsData.phonemes[0];
+            speech_marker = &(gLipsData.markers[wrapCheckMarkerIndex]);
+            if (audioPosition < speech_marker->position) {
+                markerIndex = 0;
+                gLipsCurrentPhoneme = lipsGetPhoneme(0);
 
-                if ((gLipsData.flags & LIPS_FLAG_0x01) == 0) {
+                if ((gLipsData.flags & LIPS_FLAG_LOOPING) == 0) {
                     _head_marker_current = 0;
                     soundStop(gLipsData.sound);
-                    v0 = _head_marker_current;
-                    gLipsData.flags &= ~(LIPS_FLAG_0x01 | LIPS_FLAG_0x02);
+                    markerIndex = _head_marker_current;
+                    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
                 }
             }
         }
     }
 
-    if (gLipsPreviousPhoneme != gLipsCurrentPhoneme) {
-        gLipsPreviousPhoneme = gLipsCurrentPhoneme;
+    if (lipsPreviousPhoneme != gLipsCurrentPhoneme) {
+        lipsPreviousPhoneme = gLipsCurrentPhoneme;
         gLipsPhonemeChanged = true;
     }
 
-    _head_marker_current = v0;
+    _head_marker_current = markerIndex;
 
     soundContinueAll();
 }
@@ -148,25 +167,37 @@ void lipsTicker()
 // 0x47AC2C lips_play_speech
 int lipsStart()
 {
-    gLipsData.flags |= LIPS_FLAG_0x02;
+    gLipsData.flags &= ~LIPS_FLAG_PLAYING;
     _head_marker_current = 0;
 
-    if (_soundSetPosition(gLipsData.sound, gLipsData.field_20) != 0) {
+    if (gLipsData.sound == nullptr || gLipsData.markers == nullptr || gLipsData.markerCount <= 0) {
+        return -1;
+    }
+
+    if (_soundSetPosition(gLipsData.sound, gLipsData.startOffset) != 0) {
         debugPrint("Failed set of start_offset!\n");
     }
 
-    int v2 = _head_marker_current;
-    while (1) {
-        _head_marker_current = v2;
+    int markerIndex = _head_marker_current;
+    while (markerIndex < gLipsData.markerCount) {
+        _head_marker_current = markerIndex;
 
-        SpeechMarker* speechEntry = &(gLipsData.markers[v2]);
-        if (gLipsData.field_20 <= speechEntry->position) {
+        SpeechMarker* speechEntry = &(gLipsData.markers[markerIndex]);
+        if (gLipsData.startOffset <= speechEntry->position) {
             break;
         }
 
-        gLipsCurrentPhoneme = gLipsData.phonemes[v2];
-        v2++;
+        gLipsCurrentPhoneme = lipsGetPhoneme(markerIndex);
+        markerIndex++;
     }
+
+    if (markerIndex == gLipsData.markerCount) {
+        _head_marker_current = 0;
+        soundStop(gLipsData.sound);
+        return -1;
+    }
+
+    gLipsData.flags |= LIPS_FLAG_PLAYING;
 
     int speechVolume = speechGetVolume();
     soundSetVolume(gLipsData.sound, (int)(speechVolume * 0.69));
@@ -178,7 +209,8 @@ int lipsStart()
         _head_marker_current = 0;
 
         soundStop(gLipsData.sound);
-        gLipsData.flags &= ~(LIPS_FLAG_0x01 | LIPS_FLAG_0x02);
+        gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+        return -1;
     }
 
     return 0;
@@ -200,10 +232,10 @@ static int lipsReadV1(LipsData* lipsData, File* stream)
     if (fileReadInt32(stream, &(field_14)) == -1) return -1;
     if (fileReadInt32(stream, &(phonemes)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_1C)) == -1) return -1;
-    if (fileReadInt32(stream, &(lipsData->field_20)) == -1) return -1;
-    if (fileReadInt32(stream, &(lipsData->field_24)) == -1) return -1;
+    if (fileReadInt32(stream, &(lipsData->startOffset)) == -1) return -1;
+    if (fileReadInt32(stream, &(lipsData->phonemeCount)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_28)) == -1) return -1;
-    if (fileReadInt32(stream, &(lipsData->field_2C)) == -1) return -1;
+    if (fileReadInt32(stream, &(lipsData->markerCount)) == -1) return -1;
     if (fileReadInt32(stream, &(markers)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_34)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_38)) == -1) return -1;
@@ -212,10 +244,10 @@ static int lipsReadV1(LipsData* lipsData, File* stream)
     if (fileReadInt32(stream, &(lipsData->field_44)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_48)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_4C)) == -1) return -1;
-    if (fileReadFixedLengthString(stream, lipsData->file_name, 8) == -1) return -1;
-    if (fileReadFixedLengthString(stream, lipsData->field_58, 4) == -1) return -1;
-    if (fileReadFixedLengthString(stream, lipsData->field_5C, 4) == -1) return -1;
-    if (fileReadFixedLengthString(stream, lipsData->field_60, 4) == -1) return -1;
+    if (fileReadFixedLengthString(stream, lipsData->fileName, 8) == -1) return -1;
+    if (fileReadFixedLengthString(stream, lipsData->audioExtension, 4) == -1) return -1;
+    if (fileReadFixedLengthString(stream, lipsData->textExtension, 4) == -1) return -1;
+    if (fileReadFixedLengthString(stream, lipsData->lipExtension, 4) == -1) return -1;
     if (fileReadFixedLengthString(stream, lipsData->field_64, 260) == -1) return -1;
 
     // NOTE: Original code is different. For unknown reason it assigns values
@@ -261,16 +293,19 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
         *sep = '\0';
     }
 
-    strncpy(gLipsData.file_name, audioBaseName, sizeof(gLipsData.file_name));
+    strncpy(gLipsData.fileName, audioBaseName, sizeof(gLipsData.fileName));
 
-    strcat(path, lips_fix_string(gLipsData.file_name, sizeof(gLipsData.file_name)));
+    strcat(path, lips_fix_string(gLipsData.fileName, sizeof(gLipsData.fileName)));
     strcat(path, ".");
-    strcat(path, gLipsData.field_60);
+    strcat(path, gLipsData.lipExtension);
 
     lipsFree();
 
     // FIXME: stream is not closed if any error is encountered during reading.
     File* stream = fileOpen(path, "rb");
+    if (stream == nullptr) {
+        return -1;
+    }
     if (stream != nullptr) {
         if (fileReadInt32(stream, &(gLipsData.version)) == -1) {
             return -1;
@@ -293,31 +328,70 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
             if (fileReadInt32(stream, &(gLipsData.flags)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.field_10)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.field_1C)) == -1) return -1;
-            if (fileReadInt32(stream, &(gLipsData.field_24)) == -1) return -1;
+            if (fileReadInt32(stream, &(gLipsData.phonemeCount)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.field_28)) == -1) return -1;
-            if (fileReadInt32(stream, &(gLipsData.field_2C)) == -1) return -1;
-            if (fileReadFixedLengthString(stream, gLipsData.file_name, 8) == -1) return -1;
-            if (fileReadFixedLengthString(stream, gLipsData.field_58, 4) == -1) return -1;
+            if (fileReadInt32(stream, &(gLipsData.markerCount)) == -1) return -1;
+            if (fileReadFixedLengthString(stream, gLipsData.fileName, 8) == -1) return -1;
+            if (fileReadFixedLengthString(stream, gLipsData.audioExtension, 4) == -1) return -1;
         } else {
             debugPrint("\nError: Lips file WRONG version: %s!", path);
+            fileClose(stream);
+            return -1;
         }
     }
 
-    gLipsData.phonemes = (unsigned char*)internal_malloc(gLipsData.field_24);
+    // Check the serialized arrays before allocating or indexing them.
+    if (gLipsData.phonemeCount <= 0 || gLipsData.markerCount <= 0) {
+        debugPrint("lips_load_file: Invalid phoneme or marker count.\n");
+        fileClose(stream);
+        return -1;
+    }
+
+    if (stream->type == XFILE_TYPE_GZFILE) {
+        // Gzip streams have no reported size. Check that the decompressed
+        // arrays exist before allocating, then return to their start.
+        long arrayOffset = fileTell(stream);
+        long long remaining = gLipsData.phonemeCount + 8LL * gLipsData.markerCount;
+        unsigned char buffer[4096];
+        while (remaining > 0) {
+            size_t chunkSize = remaining < sizeof(buffer) ? static_cast<size_t>(remaining) : sizeof(buffer);
+            if (fileRead(buffer, 1, chunkSize, stream) != chunkSize) {
+                break;
+            }
+            remaining -= chunkSize;
+        }
+
+        // The gzip seek implementation returns the resulting offset.
+        if (arrayOffset < 0 || remaining != 0 || fileSeek(stream, arrayOffset, SEEK_SET) < 0) {
+            debugPrint("lips_load_file: Invalid or truncated compressed arrays.\n");
+            fileClose(stream);
+            return -1;
+        }
+    } else {
+        long remaining = fileGetSize(stream) - fileTell(stream);
+        if (remaining < gLipsData.phonemeCount
+            || gLipsData.markerCount > (remaining - gLipsData.phonemeCount) / 8) {
+            debugPrint("lips_load_file: Invalid phoneme or marker count.\n");
+            fileClose(stream);
+            return -1;
+        }
+    }
+
+    gLipsData.phonemes = (unsigned char*)internal_malloc(gLipsData.phonemeCount);
     if (gLipsData.phonemes == nullptr) {
         debugPrint("Out of memory in lips_load_file.'\n");
         return -1;
     }
 
     if (stream != nullptr) {
-        for (i = 0; i < gLipsData.field_24; i++) {
+        for (i = 0; i < gLipsData.phonemeCount; i++) {
             if (fileReadUInt8(stream, &(gLipsData.phonemes[i])) == -1) {
                 debugPrint("lips_load_file: Error reading phoneme type.\n");
                 return -1;
             }
         }
 
-        for (i = 0; i < gLipsData.field_24; i++) {
+        for (i = 0; i < gLipsData.phonemeCount; i++) {
             unsigned char phoneme = gLipsData.phonemes[i];
             if (phoneme >= PHONEME_COUNT) {
                 debugPrint("\nLoad error: Speech phoneme %d is invalid (%d)!", i, phoneme);
@@ -325,21 +399,21 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
         }
     }
 
-    gLipsData.markers = (SpeechMarker*)internal_malloc(sizeof(*speech_marker) * gLipsData.field_2C);
+    gLipsData.markers = (SpeechMarker*)internal_malloc(sizeof(*speech_marker) * gLipsData.markerCount);
     if (gLipsData.markers == nullptr) {
         debugPrint("Out of memory in lips_load_file.'\n");
         return -1;
     }
 
     if (stream != nullptr) {
-        for (i = 0; i < gLipsData.field_2C; i++) {
+        for (i = 0; i < gLipsData.markerCount; i++) {
             speech_marker = &(gLipsData.markers[i]);
 
             if (fileReadInt32(stream, &(speech_marker->marker)) == -1) break;
             if (fileReadInt32(stream, &(speech_marker->position)) == -1) break;
         }
 
-        if (i != gLipsData.field_2C) {
+        if (i != gLipsData.markerCount) {
             debugPrint("lips_load_file: Error reading marker type.");
             return -1;
         }
@@ -354,7 +428,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
             debugPrint("Load error: Speech marker 0 has invalid position(%d)!", speech_marker->position);
         }
 
-        for (i = 1; i < gLipsData.field_2C; i++) {
+        for (i = 1; i < gLipsData.markerCount; i++) {
             speech_marker = &(gLipsData.markers[i]);
             prev_speech_marker = &(gLipsData.markers[i - 1]);
 
@@ -375,7 +449,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
     gLipsData.field_38 = 0;
     gLipsData.field_34 = 0;
     gLipsData.field_48 = 0;
-    gLipsData.field_20 = 0;
+    gLipsData.startOffset = 0;
     gLipsData.field_3C = 50;
     gLipsData.field_40 = 100;
 
@@ -383,14 +457,14 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
         gLipsData.field_4 = 22528;
     }
 
-    strcpy(gLipsData.field_58, "ACM");
-    strcpy(gLipsData.field_5C, "TXT");
-    strcpy(gLipsData.field_60, "LIP");
+    strcpy(gLipsData.audioExtension, "ACM");
+    strcpy(gLipsData.textExtension, "TXT");
+    strcpy(gLipsData.lipExtension, "LIP");
 
-    _lips_make_speech();
+    if (_lips_make_speech() == -1) return -1;
 
     _head_marker_current = 0;
-    gLipsCurrentPhoneme = gLipsData.phonemes[0];
+    gLipsCurrentPhoneme = lipsGetPhoneme(0);
 
     return 0;
 }
@@ -405,8 +479,8 @@ static int _lips_make_speech()
     }
 
     char path[COMPAT_MAX_PATH];
-    char* v1 = lips_fix_string(gLipsData.file_name, sizeof(gLipsData.file_name));
-    snprintf(path, sizeof(path), "%s%s\\%s.%s", "SOUND\\SPEECH\\", _lips_subdir_name, v1, "ACM");
+    char* audioBaseName = lips_fix_string(gLipsData.fileName, sizeof(gLipsData.fileName));
+    snprintf(path, sizeof(path), "%s%s\\%s.%s", "SOUND\\SPEECH\\", _lips_subdir_name, audioBaseName, "ACM");
 
     if (gLipsData.sound != nullptr) {
         soundDelete(gLipsData.sound);
@@ -433,14 +507,18 @@ static int _lips_make_speech()
         return -1;
     }
 
-    gLipsData.field_34 = 8 * (gLipsData.field_1C / gLipsData.field_2C);
-
     return 0;
 }
 
 // 0x47B730 lips_free_speech
 int lipsFree()
 {
+    _head_marker_current = 0;
+    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+    gLipsCurrentPhoneme = 0;
+    lipsPreviousPhoneme = 0;
+    gLipsPhonemeChanged = true;
+
     if (gLipsData.field_14 != nullptr) {
         internal_free(gLipsData.field_14);
         gLipsData.field_14 = nullptr;
