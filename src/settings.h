@@ -182,6 +182,11 @@ struct DebugSettings {
     std::string console_output_path;
 };
 
+struct CombatAiSettings {
+    // Sfall NPCsTryToSpendExtraAP: minimum remaining AP for an AI retry; 0 disables.
+    int npcs_try_to_spend_extra_ap = 0;
+};
+
 struct QolSettings {
     int use_walk_distance = 3;
     bool walk_when_sneaking = false;
@@ -219,6 +224,7 @@ struct Settings {
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
+    CombatAiSettings combat_ai;
     QolSettings qol;
     MapperSettings mapper;
 };

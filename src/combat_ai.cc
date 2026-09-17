@@ -90,7 +90,7 @@ static int _compare_weakness(const void* a1, const void* a2);
 static void _ai_sort_list_weakness(Object** critterList, int length);
 static Object* _ai_find_nearest_team(Object* a1, Object* a2, int flags);
 static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags);
-static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr);
+static int aiFindAttackers(Object* critter, Object* (&targets)[4]);
 static Object* _ai_danger_source(Object* a1);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode);
@@ -1184,6 +1184,18 @@ static int _ai_check_drugs(Object* critter)
     return 0;
 }
 
+static void aiFinishMovement(Object* critter)
+{
+    _combat_turn_run();
+
+    // SFALL: Animation processing can incapacitate the actor through scripts.
+    // Clear AP before AI can schedule more movement or retry its turn.
+    CritterCombatData& combatData = critter->data.critter.combat;
+    if ((combatData.results & (DAM_DEAD | DAM_KNOCKED_OUT | DAM_LOSE_TURN)) != DAM_NONE) {
+        combatData.ap = 0;
+    }
+}
+
 // 0x428868 ai_run_away
 static void _ai_run_away(Object* a1, Object* a2)
 {
@@ -1224,7 +1236,7 @@ static void _ai_run_away(Object* a1, Object* a2)
             _combatai_msg(a1, nullptr, AI_MESSAGE_TYPE_RUN, 0);
             animationRegisterRunToTile(a1, destination, a1->elevation, combatData->ap, 0);
             if (reg_anim_end() == 0) {
-                _combat_turn_run();
+                aiFinishMovement(a1);
             }
         }
     } else {
@@ -1270,7 +1282,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
             animationRegisterMoveToTile(a1, destination, a1->elevation, actionPoints, 0);
             if (reg_anim_end() == 0) {
-                _combat_turn_run();
+                aiFinishMovement(a1);
             }
         }
     }
@@ -1469,19 +1481,20 @@ static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags
 }
 
 // 0x428DB0
-static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr)
+static int aiFindAttackers(Object* critter, Object* (&targets)[4])
 {
-    if (whoHitMePtr != nullptr) {
-        *whoHitMePtr = nullptr;
-    }
+    targets[1] = nullptr;
+    targets[2] = nullptr;
+    targets[3] = nullptr;
 
-    if (whoHitFriendPtr != nullptr) {
-        *whoHitFriendPtr = nullptr;
-    }
-
-    if (whoHitByFriendPtr != nullptr) {
-        *whoHitByFriendPtr = nullptr;
-    }
+    auto targetExists = [&targets](Object* target) {
+        for (Object* existing : targets) {
+            if (existing == target) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     if (_curr_crit_num == 0) {
         return 0;
@@ -1493,42 +1506,46 @@ static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHi
     int foundTargetCount = 0;
     int team = critter->data.critter.combat.team;
 
-    // SFALL: Add `continue` to fix for one candidate being reported in more
-    // than one category.
+    // Match sfall's TargetExistInList checks across all four slots, including
+    // the preserved target. Reject duplicates before filling a category so
+    // later roster entries can still supply a distinct enemy.
     for (int index = 0; foundTargetCount < 3 && index < _curr_crit_num; index++) {
         Object* candidate = _curr_crit_list[index];
         if (candidate != critter) {
-            if (whoHitMePtr != nullptr && *whoHitMePtr == nullptr) {
+            if (targets[1] == nullptr) {
                 if ((candidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE
-                    && candidate->data.critter.combat.whoHitMe == critter) {
+                    && candidate->data.critter.combat.whoHitMe == critter
+                    && !targetExists(candidate)) {
                     foundTargetCount++;
-                    *whoHitMePtr = candidate;
+                    targets[1] = candidate;
                     continue;
                 }
             }
 
-            if (whoHitFriendPtr != nullptr && *whoHitFriendPtr == nullptr) {
+            if (targets[2] == nullptr) {
                 if (team == candidate->data.critter.combat.team) {
                     Object* whoHitCandidate = candidate->data.critter.combat.whoHitMe;
                     if (whoHitCandidate != nullptr
                         && whoHitCandidate != critter
                         && team != whoHitCandidate->data.critter.combat.team
-                        && (whoHitCandidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
+                        && (whoHitCandidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE
+                        && !targetExists(whoHitCandidate)) {
                         foundTargetCount++;
-                        *whoHitFriendPtr = whoHitCandidate;
+                        targets[2] = whoHitCandidate;
                         continue;
                     }
                 }
             }
 
-            if (whoHitByFriendPtr != nullptr && *whoHitByFriendPtr == nullptr) {
+            if (targets[3] == nullptr) {
                 if (candidate->data.critter.combat.team != team
                     && (candidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
                     Object* whoHitCandidate = candidate->data.critter.combat.whoHitMe;
                     if (whoHitCandidate != nullptr
-                        && whoHitCandidate->data.critter.combat.team == team) {
+                        && whoHitCandidate->data.critter.combat.team == team
+                        && !targetExists(candidate)) {
                         foundTargetCount++;
-                        *whoHitByFriendPtr = candidate;
+                        targets[3] = candidate;
                         continue;
                     }
                 }
@@ -1551,6 +1568,7 @@ static Object* _ai_danger_source(Object* a1)
     AttackWho attackWho;
     Object* targets[4];
     targets[0] = nullptr;
+    bool preservedPartyTarget = false;
 
     if (objectIsPartyMember(a1)) {
         Disposition disposition = aiGetDisposition(a1);
@@ -1654,6 +1672,12 @@ static Object* _ai_danger_source(Object* a1)
         case ATTACK_WHO_STRONGEST:
         case ATTACK_WHO_WEAKEST:
         case ATTACK_WHO_CLOSEST:
+            targets[0] = a1->data.critter.combat.whoHitMe;
+            if (targets[0] == a1
+                || (targets[0] != nullptr && (targets[0]->data.critter.combat.results & DAM_DEAD) != DAM_NONE)) {
+                targets[0] = nullptr;
+            }
+            preservedPartyTarget = true;
             a1->data.critter.combat.whoHitMe = nullptr;
             break;
         default:
@@ -1664,23 +1688,25 @@ static Object* _ai_danger_source(Object* a1)
     }
 
     Object* whoHitMe = a1->data.critter.combat.whoHitMe;
-    if (whoHitMe == nullptr || a1 == whoHitMe) {
-        targets[0] = nullptr;
-    } else {
-        if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
-            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID) {
-                return whoHitMe;
-            }
+    if (!preservedPartyTarget) {
+        if (whoHitMe == nullptr || a1 == whoHitMe) {
+            targets[0] = nullptr;
         } else {
-            if (whoHitMe->data.critter.combat.team != a1->data.critter.combat.team) {
-                targets[0] = _ai_find_nearest_team(a1, whoHitMe, 1);
+            if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
+                if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID) {
+                    return whoHitMe;
+                }
             } else {
-                targets[0] = nullptr;
+                if (whoHitMe->data.critter.combat.team != a1->data.critter.combat.team) {
+                    targets[0] = _ai_find_nearest_team(a1, whoHitMe, 1);
+                } else {
+                    targets[0] = nullptr;
+                }
             }
         }
     }
 
-    aiFindAttackers(a1, &(targets[1]), &(targets[2]), &(targets[3]));
+    aiFindAttackers(a1, targets);
 
     if (ignoreFleeingCritters) {
         for (int index = 0; index < 4; index++) {
@@ -2567,7 +2593,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         return -1;
     }
 
-    _combat_turn_run();
+    aiFinishMovement(critter);
 
     return 0;
 }

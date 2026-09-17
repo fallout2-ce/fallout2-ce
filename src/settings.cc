@@ -254,6 +254,10 @@ void initSettingsRegistry(bool isMapper)
     SETTING(console_output_path);
 #undef SECT
 
+#define SECT combat_ai
+    SETTING(npcs_try_to_spend_extra_ap);
+#undef SECT
+
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(walk_when_sneaking);
