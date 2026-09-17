@@ -3,11 +3,6 @@
 
 namespace fallout {
 
-constexpr inline int frameIdFromFid(int fid)
-{
-    return fid & 0xFFF;
-}
-
 constexpr inline int frameIdFromPid(int pid)
 {
     return pid & 0xFFFFFF;
@@ -306,6 +301,7 @@ enum class TileFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm
     Grid = 1, // grid000.frm
+    Last = 4095 // last possible frame id in tile.lst
 };
 
 enum class MiscFrameId : int {

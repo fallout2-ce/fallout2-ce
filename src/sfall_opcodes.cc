@@ -1399,17 +1399,22 @@ static void op_get_tile_fid(Program* program)
         return;
     }
 
-    int squareData = _square[elevation]->fid[squareTile];
+    int squareData = _square[elevation]->floorAndRoofFids[squareTile];
 
+    // Sfall's FRM Limit patch extended FrameId from 12 bits (mask 0xFFF) to 14 bits (mask 0x3FFF), but code doesn't support it yet.
+    // Check the sfall versions prior 4.3.9
     switch (mode) {
     case 1:
-        programStackPushInteger(program, (squareData >> 16) & 0x3FFF);
+        // roof tile frame id
+        programStackPushInteger(program, (squareData >> 16) & 0xFFF);
         break;
     case 2:
+        // floor tile and root tile fid
         programStackPushInteger(program, squareData);
         break;
     default:
-        programStackPushInteger(program, squareData & 0x3FFF);
+        // floor tile frame id
+        programStackPushInteger(program, squareData & 0xFFF);
         break;
     }
 }

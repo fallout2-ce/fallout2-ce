@@ -1479,15 +1479,15 @@ static int _map_save_file(File* stream)
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            TileFrmId frmId;
+            TileFrameId frameId;
 
-            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile]));
-            if (frmId != TileFrameId::Grid) {
+            frameId = FrmId(_square[elevation]->floorAndRoofFids[tile] & 0xFFFF).frameId().tile;
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (frmId != TileFrameId::Grid) {
+            frameId = FrmId((_square[elevation]->floorAndRoofFids[tile] >> 16) & 0xFFFF).frameId().tile;
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
         }
@@ -1529,7 +1529,7 @@ static int _map_save_file(File* stream)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            _db_fwriteLongCount(stream, _square[elevation]->fid, SQUARE_GRID_SIZE);
+            _db_fwriteLongCount(stream, _square[elevation]->floorAndRoofFids, SQUARE_GRID_SIZE);
         }
     }
 
@@ -1830,17 +1830,17 @@ static void _square_reset()
     constexpr int kGridFrameId = static_cast<int>(TileFrameId::Grid);
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        int* p = _square[elevation]->fid;
+        int* p = _square[elevation]->floorAndRoofFids;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
                 // TODO: Strange math, initially right, but need to figure it out and
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = ((kGridFrameId | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((kGridFrameId | (((fid >> 16) & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
-                int tileFlags = (fid & 0xF000) >> 12;
+                int tileFlags = (fid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
                 int updatedLowerTile = kGridFrameId | tileFlags;
 
                 fid &= ~0xFFFF;
@@ -1856,31 +1856,29 @@ static void _square_reset()
 // 0x48431C
 static int _square_load(File* stream, MapHeaderFlags flags)
 {
-    int upperTileWord;
-    int upperTileFlags;
-    int upperTileArtId;
-    int lowerTileWord;
+    int roofTileFid;
+    int roofTileFlags;
+    int roofTileArtId;
+    int floorTileFid;
 
     _square_reset();
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            int* arr = _square[elevation]->fid;
+            int* arr = _square[elevation]->floorAndRoofFids;
             if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                upperTileWord = arr[tile];
-                upperTileWord &= ~(0xFFFF);
-                upperTileWord >>= 16;
+                roofTileFid = (arr[tile] >> 16) & 0xFFFF;
 
-                upperTileFlags = (upperTileWord & 0xF000) >> 12;
-                upperTileFlags &= ~(0x01);
+                roofTileFlags = (roofTileFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
+                roofTileFlags &= ~(0x01);
 
-                upperTileArtId = frameIdFromFid(upperTileWord);
-                lowerTileWord = arr[tile] & 0xFFFF;
-                arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
+                roofTileArtId = roofTileFid & FrmId::kFrameIdMask;
+                floorTileFid = arr[tile] & 0xFFFF;
+                arr[tile] = ((roofTileArtId | (roofTileFlags << FrmId::kWeaponAnimationMaskPosition)) << 16) | floorTileFid;
             }
         }
     }
