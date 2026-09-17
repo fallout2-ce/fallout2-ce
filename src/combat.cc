@@ -3517,6 +3517,13 @@ void _combat(CombatStartData* csd)
             _combatNumTurns += 1;
         } while (!_combat_should_end());
 
+        // An elevation change can finish after combat input stops because the
+        // player has no action points left. Consume the request before cleanup
+        // so combat end behavior does not depend on animation timing.
+        if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
+        }
+
         if (_combat_end_due_to_load) {
             gameUiEnable();
             gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
@@ -3544,10 +3551,6 @@ void _combat(CombatStartData* csd)
         }
 
         _combat_end_due_to_load = 0;
-
-        if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
-            _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
-        }
     }
 }
 
