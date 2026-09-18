@@ -57,7 +57,9 @@ static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat
 static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate);
 static bool _drug_effect_allowed(Object* critter, int pid);
 static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid);
+static WithdrawalEvent* withdrawalGetEvent(Object* obj, int pid);
 static int _item_wd_clear_all(Object* obj, void* data);
+static int itemClearJetWithdrawal(Object* obj, void* data);
 static void performWithdrawalStart(Object* obj, Perk perk, int pid);
 static void performWithdrawalEnd(Object* obj, Perk perk);
 static int drugGetAddictionGvarByPid(int drugPid);
@@ -2970,8 +2972,20 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
     protoGetProto(item->pid, &proto);
 
     if (item->pid == PROTO_ID_JET_ANTIDOTE) {
-        if (dudeIsAddicted(PROTO_ID_JET)) {
-            performWithdrawalEnd(critter, PERK_JET_ADDICTION);
+        WithdrawalEvent* withdrawalEvent = withdrawalGetEvent(critter, PROTO_ID_JET);
+        bool isLegacyDudeAddiction = critter == gDude
+            && withdrawalEvent == nullptr
+            && dudeIsAddicted(PROTO_ID_JET);
+
+        if (withdrawalEvent != nullptr || isLegacyDudeAddiction) {
+            if (withdrawalEvent == nullptr || !withdrawalEvent->active) {
+                performWithdrawalEnd(critter, PERK_JET_ADDICTION);
+            }
+
+            if (withdrawalEvent != nullptr) {
+                _wd_obj = critter;
+                queueClearByEventType(EVENT_TYPE_WITHDRAWAL, itemClearJetWithdrawal);
+            }
 
             if (critter == gDude) {
                 // NOTE: Uninline.
@@ -3002,7 +3016,14 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
         }
     }
 
-    if (!dudeIsAddicted(item->pid)) {
+    bool isAddicted = withdrawalGetEvent(critter, item->pid) != nullptr;
+    if (critter == gDude) {
+        // Preserve addictions from saves created before permanent Jet
+        // withdrawal events were kept in the queue.
+        isAddicted = isAddicted || dudeIsAddicted(item->pid);
+    }
+
+    if (!isAddicted) {
         int addictionChance = proto->item.data.drug.addictionChance;
         if (critter == gDude) {
             if (traitIsSelectedAndActive(TRAIT_CHEM_RELIANT)) {
@@ -3116,6 +3137,16 @@ static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, 
     return 0;
 }
 
+static WithdrawalEvent* withdrawalGetEvent(Object* obj, int pid)
+{
+    WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)queueFindFirstEvent(obj, EVENT_TYPE_WITHDRAWAL);
+    while (withdrawalEvent != nullptr && withdrawalEvent->pid != pid) {
+        withdrawalEvent = (WithdrawalEvent*)queueFindNextEvent(obj, EVENT_TYPE_WITHDRAWAL);
+    }
+
+    return withdrawalEvent;
+}
+
 // 0x47A2FC
 int withdrawalClear(Object* obj, void* data)
 {
@@ -3157,6 +3188,13 @@ static int _item_wd_clear_all(Object* obj, void* data)
     return 1;
 }
 
+static int itemClearJetWithdrawal(Object* obj, void* data)
+{
+    WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
+
+    return obj == _wd_obj && withdrawalEvent->pid == PROTO_ID_JET;
+}
+
 // 0x47A384
 int withdrawalEventProcess(Object* obj, void* data)
 {
@@ -3166,6 +3204,12 @@ int withdrawalEventProcess(Object* obj, void* data)
         performWithdrawalStart(obj, withdrawalEvent->perk, withdrawalEvent->pid);
     } else {
         if (withdrawalEvent->perk == PERK_JET_ADDICTION) {
+            // TODO: Support sfall's Drugs.ini JetWithdrawal setting, which can
+            // make Jet withdrawal expire like other drug withdrawals.
+            // SFALL: Keep a queue entry for permanent Jet addiction. Besides
+            // preserving the addiction state, this lets UI code distinguish an
+            // addicted critter from one whose withdrawal has ended.
+            _insert_withdrawal(obj, 0, 10080, withdrawalEvent->perk, withdrawalEvent->pid);
             return 0;
         }
 
