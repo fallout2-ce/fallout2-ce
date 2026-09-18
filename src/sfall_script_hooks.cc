@@ -1097,6 +1097,11 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
     if (numRets > 4) {
         attack->defenderKnockback = hook.getReturnValueAt(4).asInt();
     }
+
+    // SFALL: Fix zero damage instadeath criticals
+    if ((attack->defenderFlags & DAM_DEAD) != DAM_NONE && attack->defenderDamage <= 0) {
+        attack->defenderDamage = 1;
+    }
 }
 
 /**
