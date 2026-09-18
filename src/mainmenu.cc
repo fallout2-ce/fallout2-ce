@@ -55,8 +55,8 @@ namespace fallout {
 #define MAIN_MENU_OVERLAY_WINDOW_HEIGHT 480
 #define MAIN_MENU_OVERLAY_DIM_TARGET_INTENSITY 0x8000
 #define MAIN_MENU_OVERLAY_DIM_CLEAR_INTENSITY 0x10000
-#define MAIN_MENU_OVERLAY_DIM_ANIMATION_STEPS 8
-#define MAIN_MENU_OVERLAY_DIM_FRAME_DELAY 20
+#define MAIN_MENU_OVERLAY_DIM_ANIMATION_STEPS 4
+#define MAIN_MENU_OVERLAY_DIM_FRAME_DELAY 15
 
 typedef enum MainMenuButton {
     MAIN_MENU_BUTTON_INTRO,
@@ -943,9 +943,15 @@ static void mainMenuSetOverlayDimIntensity(int intensity)
 static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)
 {
     for (int step = 0; step < MAIN_MENU_OVERLAY_DIM_ANIMATION_STEPS; step++) {
+        _GNW95_process_message();
+        _mouse_info();
+
         int intensity = startIntensity + (endIntensity - startIntensity) * (step + 1) / MAIN_MENU_OVERLAY_DIM_ANIMATION_STEPS;
         mainMenuSetOverlayDimIntensity(intensity);
-        delay_ms(MAIN_MENU_OVERLAY_DIM_FRAME_DELAY);
+
+        if (step + 1 < MAIN_MENU_OVERLAY_DIM_ANIMATION_STEPS) {
+            delay_ms(MAIN_MENU_OVERLAY_DIM_FRAME_DELAY);
+        }
     }
 }
 
