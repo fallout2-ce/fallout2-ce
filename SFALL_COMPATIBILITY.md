@@ -30,6 +30,7 @@ The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) inst
 | `Misc` | `DisplayKarmaChanges` | `ui` | `display_karma_changes` |
 | `Misc` | `DisplayBonusDamage` | `ui` | `display_bonus_damage` |
 | `Misc` | `NumbersInDialogue` | `ui` | `numbers_in_dialogue` |
+| `Misc` | `PartyMemberExtraInfo` | `ui` | `party_member_extra_info` |
 | `Misc` | `AutoQuickSave` | `ui` | `auto_quick_save` |
 | `Main` | `EnableHighResolutionStencil` | `ui` | `enable_high_resolution_stencil` |
 | `Misc` | `ConsoleOutputPath` | `debug` | `console_output_path` |
