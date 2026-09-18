@@ -1467,6 +1467,22 @@ bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse)
     return partyMemberDescription->chemUse[chemUse];
 }
 
+// 0x495FF0 partyMemberGetCurLevel
+int partyMemberGetCurrentLevel(Object* object)
+{
+    if (object == nullptr) {
+        return 0;
+    }
+
+    for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberPids[index] == object->pid) {
+            return _partyMemberLevelUpInfoList[index].level;
+        }
+    }
+
+    return 0;
+}
+
 // partyMemberIncLevels
 // 0x495B60 partyMemberIncLevels
 int _partyMemberIncLevels()

@@ -34,6 +34,7 @@ bool objectIsPartyMember(Object* object);
 bool partyMemberPidCanEquipArmor(int pid);
 int _getPartyMemberCount();
 int _partyMemberPrepItemSaveAll();
+int partyMemberGetCurrentLevel(Object* object);
 Skill partyMemberGetBestSkill(Object* object);
 Object* partyMemberGetBestInSkill(Skill skill);
 int partyGetBestSkillValue(Skill skill);
