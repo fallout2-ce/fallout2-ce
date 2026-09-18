@@ -2778,7 +2778,8 @@ void _combat_update_critter_outline_for_los(Object* critter, bool enableOutline)
 // 0x421EFC
 static void _combat_over()
 {
-    if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
+    if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE
+        || _game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
         for (int index = 0; index < _list_com; index++) {
             Object* critter = _combat_list[index];
             if (critter != gDude) {
