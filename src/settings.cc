@@ -620,4 +620,52 @@ bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& v
     return true;
 }
 
+void settingsApplySchemaDescriptors(const std::vector<SettingDescriptor>& schemaDescriptors)
+{
+    for (const auto& schemaDesc : schemaDescriptors) {
+        auto it = std::find_if(settingsRegistry.begin(), settingsRegistry.end(), [&schemaDesc](const SettingRegistryEntry& entry) {
+            return entry.descriptor.id == schemaDesc.id;
+        });
+        if (it == settingsRegistry.end()) {
+            debugPrint("Options schema setting is not registered: %s\n", schemaDesc.id.c_str());
+            continue;
+        }
+
+        SettingDescriptor& descriptor = it->descriptor;
+        if (descriptor.source != schemaDesc.source) {
+            debugPrint("Options schema source does not match registered setting: %s\n", schemaDesc.id.c_str());
+            continue;
+        }
+
+        bool typeMatches = descriptor.valueType == schemaDesc.valueType
+            || (descriptor.valueType == SettingValueType::Integer
+                && (schemaDesc.valueType == SettingValueType::Choice
+                    || schemaDesc.valueType == SettingValueType::KeyBinding));
+        if (!typeMatches) {
+            debugPrint("Options schema type does not match registered setting: %s\n", schemaDesc.id.c_str());
+            continue;
+        }
+
+        descriptor.valueType = schemaDesc.valueType;
+        descriptor.category = schemaDesc.category;
+        descriptor.subsection = schemaDesc.subsection;
+        descriptor.applyPolicy = schemaDesc.applyPolicy;
+        descriptor.labelMessageId = schemaDesc.labelMessageId;
+        descriptor.descriptionMessageId = schemaDesc.descriptionMessageId;
+        descriptor.fallbackLabel = schemaDesc.fallbackLabel;
+        descriptor.fallbackDescription = schemaDesc.fallbackDescription;
+        descriptor.asset = schemaDesc.asset;
+        descriptor.choices = schemaDesc.choices;
+        descriptor.vanillaValue = schemaDesc.vanillaValue;
+
+        auto descIt = std::find_if(settingDescriptors.begin(), settingDescriptors.end(), [&schemaDesc](const SettingDescriptor& desc) {
+            return desc.id == schemaDesc.id;
+        });
+        assert(descIt != settingDescriptors.end());
+        if (descIt != settingDescriptors.end()) {
+            *descIt = descriptor;
+        }
+    }
+}
+
 } // namespace fallout
