@@ -2,12 +2,74 @@
 #define FALLOUT_SETTINGS_H_
 
 #include <string>
+#include <optional>
+#include <variant>
+#include <vector>
 
 #include "character_editor.h"
 #include "game_config.h"
 #include "svga.h"
 
 namespace fallout {
+
+enum class SettingValueType {
+    Boolean,
+    Integer,
+    Real,
+    Text,
+    Choice,
+    KeyBinding,
+};
+
+enum class SettingCategory {
+    Uncategorized,
+    System,
+    Screen,
+    Interface,
+    Gameplay,
+    Preferences,
+    Audio,
+    Debug,
+    CombatAi,
+    QualityOfLife,
+    Mapper,
+};
+
+enum class SettingApplyPolicy {
+    OnClose,
+    NextGame,
+    Restart,
+};
+
+using SettingValue = std::variant<bool, int, double, std::string>;
+
+struct SettingChoice {
+    int value;
+    std::string fallbackLabel;
+};
+
+struct SettingDescriptor {
+    std::string id;
+    std::string source = "fallout2.cfg";
+    std::string section;
+    std::string key;
+    SettingValueType valueType = SettingValueType::Boolean;
+    SettingCategory category = SettingCategory::Uncategorized;
+    SettingApplyPolicy applyPolicy = SettingApplyPolicy::Restart;
+    SettingValue defaultValue;
+    bool readOnly = false;
+    bool sensitive = false;
+    bool applicable = true;
+    bool commandLineOverride = false;
+    int categoryOrder = 0;
+    int labelMessageId = -1;
+    int descriptionMessageId = -1;
+    std::string fallbackLabel;
+    std::string fallbackDescription;
+    std::string asset;
+    std::vector<SettingChoice> choices;
+    std::optional<SettingValue> vanillaValue;
+};
 
 struct SystemSettings {
     std::string executable = "game";
@@ -240,6 +302,10 @@ bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
 void settingsWriteToConfig(bool onlyAdd = false);
 bool settingsExit(bool shouldSave);
+const std::vector<SettingDescriptor>& settingsGetDescriptors();
+SettingValue settingsGetValue(const SettingDescriptor& descriptor);
+bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
+bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
 
 } // namespace fallout
 

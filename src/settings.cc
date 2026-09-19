@@ -5,6 +5,7 @@
 #include "platform_compat.h"
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <string>
 #include <type_traits>
@@ -14,12 +15,17 @@ namespace fallout {
 
 bool SystemSettings::executableIsMapper() const { return compat_stricmp(executable.c_str(), "mapper") == 0; }
 
-struct SettingDescriptor {
+struct SettingRegistryEntry {
+    SettingDescriptor descriptor;
     std::function<void()> read;
     std::function<void(bool onlyAdd)> write;
+    std::function<SettingValue()> getValue;
+    std::function<void(const SettingValue&)> setValue;
+    std::function<bool(const SettingValue&)> validateValue;
 };
 
-static std::vector<SettingDescriptor> settingsRegistry;
+static std::vector<SettingRegistryEntry> settingsRegistry;
+static std::vector<SettingDescriptor> settingDescriptors;
 
 Settings settings;
 
@@ -104,29 +110,118 @@ static void normalizePath(std::string& value, const char* section, const char* k
 }
 
 template <typename T>
-static std::function<void(T&, const char*, const char*)> clamp(T min, T max)
-{
-    return [min, max](T& value, const char* section, const char* key) {
+class Clamp {
+public:
+    Clamp(T min, T max)
+        : min_(min)
+        , max_(max)
+    {
+    }
+
+    explicit operator bool() const { return true; }
+
+    void operator()(T& value, const char* section, const char* key) const
+    {
         const T origValue = value;
-        value = std::clamp(value, min, max);
+        value = std::clamp(value, min_, max_);
         if (value != origValue) {
             debugPrint("config value %s.%s was clamped.\n", section, key);
         }
-    };
+    }
+
+private:
+    T min_;
+    T max_;
+};
+
+template <typename T>
+static Clamp<T> clamp(T min, T max)
+{
+    return Clamp<T>(min, max);
+}
+
+template <typename T, typename P>
+static bool validatePostProcess(const P&, const T&, const char*, const char*)
+{
+    return true;
+}
+
+template <typename T>
+static bool validatePostProcess(const Clamp<T>& constraint, const T& value, const char* section, const char* key)
+{
+    T processed = value;
+    constraint(processed, section, key);
+    return processed == value;
+}
+
+template <typename T>
+static SettingValueType settingValueType()
+{
+    if constexpr (std::is_same_v<T, bool>) {
+        return SettingValueType::Boolean;
+    } else if constexpr (std::is_integral_v<T> || std::is_enum_v<T>) {
+        return SettingValueType::Integer;
+    } else if constexpr (std::is_floating_point_v<T>) {
+        return SettingValueType::Real;
+    } else {
+        return SettingValueType::Text;
+    }
+}
+
+template <typename T>
+static SettingValue makeSettingValue(const T& value)
+{
+    if constexpr (std::is_enum_v<T>) {
+        return static_cast<int>(value);
+    } else {
+        return value;
+    }
+}
+
+template <typename T>
+static void assignSettingValue(T& target, const SettingValue& value)
+{
+    if constexpr (std::is_enum_v<T>) {
+        target = static_cast<T>(std::get<int>(value));
+    } else {
+        target = std::get<T>(value);
+    }
 }
 
 template <typename T, typename P = std::function<void(T&, const char*, const char*)>>
-void registerSetting(const char* section, const char* key, T& variable, P postProcess = {})
+void registerSetting(const char* section,
+    const char* key,
+    T& variable,
+    P postProcess = {})
 {
+    SettingDescriptor descriptor;
+    descriptor.id = std::string(section) + "." + key;
+    descriptor.source = "fallout2.cfg";
+    descriptor.section = section;
+    descriptor.key = key;
+    descriptor.valueType = settingValueType<T>();
+    descriptor.defaultValue = makeSettingValue(variable);
+    descriptor.categoryOrder = static_cast<int>(settingDescriptors.size());
+
     settingsRegistry.push_back(
-        { [&, section, key, postProcess]() {
+        { descriptor,
+            [&, section, key, postProcess]() {
              settingsRead(section, key, variable);
              if (postProcess) postProcess(variable, section, key);
-         },
+            },
             [&, section, key](bool onlyAdd) {
                 if (onlyAdd && settingsKeyExists(section, key)) return;
                 settingsWrite(section, key, variable);
+            },
+            [&variable]() { return makeSettingValue(variable); },
+            [&variable](const SettingValue& value) { assignSettingValue(variable, value); },
+            [section, key, postProcess](const SettingValue& value) {
+                T candidate;
+                assignSettingValue(candidate, value);
+                return validatePostProcess(postProcess, candidate, section, key);
             } });
+
+    settingDescriptors.push_back(std::move(descriptor));
 }
 
 // SECT must be defined to the settings sub-struct name, which equals the config section string.
@@ -288,6 +383,15 @@ void initSettingsRegistry(bool isMapper)
         SETTING(use_grid_item_picker);
 #undef SECT
     }
+
+    for (size_t index = 0; index < settingDescriptors.size(); index++) {
+        const SettingDescriptor& descriptor = settingDescriptors[index];
+        assert(!descriptor.id.empty());
+        assert(settingsValidateValue(descriptor, descriptor.defaultValue));
+        for (size_t otherIndex = index + 1; otherIndex < settingDescriptors.size(); otherIndex++) {
+            assert(descriptor.id != settingDescriptors[otherIndex].id);
+        }
+    }
 }
 
 #undef SETTING
@@ -303,8 +407,8 @@ bool settingsInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
-    for (const auto& descriptor : settingsRegistry) {
-        descriptor.read();
+    for (const auto& entry : settingsRegistry) {
+        entry.read();
     }
 
     return true;
@@ -312,8 +416,8 @@ bool settingsInit(bool isMapper, int argc, char** argv)
 
 void settingsWriteToConfig(bool onlyAdd)
 {
-    for (const auto& descriptor : settingsRegistry) {
-        descriptor.write(onlyAdd);
+    for (const auto& entry : settingsRegistry) {
+        entry.write(onlyAdd);
     }
 }
 
@@ -330,6 +434,82 @@ bool settingsExit(bool shouldSave)
     }
 
     return gameConfigExit(shouldSave);
+}
+
+const std::vector<SettingDescriptor>& settingsGetDescriptors()
+{
+    return settingDescriptors;
+}
+
+static const SettingRegistryEntry* settingsFindEntry(const SettingDescriptor& descriptor)
+{
+    auto it = std::find_if(settingsRegistry.begin(), settingsRegistry.end(), [&descriptor](const SettingRegistryEntry& entry) {
+        return entry.descriptor.id == descriptor.id;
+    });
+    return it != settingsRegistry.end() ? &*it : nullptr;
+}
+
+SettingValue settingsGetValue(const SettingDescriptor& descriptor)
+{
+    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    assert(entry != nullptr);
+    return entry != nullptr ? entry->getValue() : descriptor.defaultValue;
+}
+
+bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error)
+{
+    bool typeMatches = (descriptor.valueType == SettingValueType::Boolean && std::holds_alternative<bool>(value))
+        || ((descriptor.valueType == SettingValueType::Integer
+                || descriptor.valueType == SettingValueType::Choice
+                || descriptor.valueType == SettingValueType::KeyBinding)
+            && std::holds_alternative<int>(value))
+        || (descriptor.valueType == SettingValueType::Real && std::holds_alternative<double>(value))
+        || (descriptor.valueType == SettingValueType::Text && std::holds_alternative<std::string>(value));
+    if (!typeMatches) {
+        if (error != nullptr) *error = "Value has the wrong type.";
+        return false;
+    }
+
+    if (!descriptor.choices.empty() && std::holds_alternative<int>(value)) {
+        int selectedValue = std::get<int>(value);
+        bool validChoice = std::any_of(descriptor.choices.begin(), descriptor.choices.end(), [selectedValue](const SettingChoice& choice) {
+            return choice.value == selectedValue;
+        });
+        if (!validChoice) {
+            if (error != nullptr) *error = "Value is not an available choice.";
+            return false;
+        }
+    }
+
+    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    if (entry != nullptr && !entry->validateValue(value)) {
+        if (error != nullptr) *error = "Value is outside the allowed range.";
+        return false;
+    }
+    return true;
+}
+
+bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error)
+{
+    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    if (entry == nullptr) {
+        if (error != nullptr) *error = "Setting is not registered.";
+        return false;
+    }
+    if (entry->descriptor.readOnly) {
+        if (error != nullptr) *error = "Setting is read-only.";
+        return false;
+    }
+    if (entry->descriptor.commandLineOverride) {
+        if (error != nullptr) *error = "Setting is overridden by the command line.";
+        return false;
+    }
+    if (!settingsValidateValue(entry->descriptor, value, error)) {
+        return false;
+    }
+
+    entry->setValue(value);
+    return true;
 }
 
 } // namespace fallout
