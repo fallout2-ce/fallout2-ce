@@ -302,10 +302,11 @@ static int interfaceFontGetCharacterWidthImpl(int ch)
         return 0;
     }
 
-    if (ch == ' ') {
+    unsigned char character = static_cast<unsigned char>(ch);
+    if (character == ' ') {
         width = gCurrentInterfaceFontDescriptor->wordSpacing;
     } else {
-        width = gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+        width = gCurrentInterfaceFontDescriptor->glyphs[character].width;
     }
 
     return width;
