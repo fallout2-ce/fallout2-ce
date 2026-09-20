@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <limits>
+
 #include "debug.h"
 #include "memory_defs.h"
 
@@ -33,6 +35,7 @@ typedef struct MemoryBlockFooter {
 static void* memoryBlockMallocImpl(size_t size);
 static void* memoryBlockReallocImpl(void* ptr, size_t size);
 static void memoryBlockFreeImpl(void* ptr);
+static bool memoryBlockGetAllocationSize(size_t dataSize, size_t* allocationSizePtr);
 static void* mem_prep_block(void* block, size_t size);
 static void memoryBlockValidate(void* block);
 
@@ -80,8 +83,10 @@ static void* memoryBlockMallocImpl(size_t size)
     void* ptr = nullptr;
 
     if (size != 0) {
-        size += sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
-        size += sizeof(int) - size % sizeof(int);
+        if (!memoryBlockGetAllocationSize(size, &size)) {
+            debugPrint("Allocation size overflow.\n");
+            return nullptr;
+        }
 
         unsigned char* block = (unsigned char*)malloc(size);
         if (block != nullptr) {
@@ -113,6 +118,12 @@ void* internal_realloc(void* ptr, size_t size)
 static void* memoryBlockReallocImpl(void* ptr, size_t size)
 {
     if (ptr != nullptr) {
+        size_t allocationSize = 0;
+        if (size != 0 && !memoryBlockGetAllocationSize(size, &allocationSize)) {
+            debugPrint("Realloc size overflow.\n");
+            return nullptr;
+        }
+
         unsigned char* block = (unsigned char*)ptr - sizeof(MemoryBlockHeader);
 
         MemoryBlockHeader* header = (MemoryBlockHeader*)block;
@@ -122,29 +133,26 @@ static void* memoryBlockReallocImpl(void* ptr, size_t size)
 
         memoryBlockValidate(block);
 
-        if (size != 0) {
-            size += sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
-            size += sizeof(int) - size % sizeof(int);
+        if (size == 0) {
+            free(block);
+            gMemoryBlocksCurrentCount--;
+            return nullptr;
         }
 
-        unsigned char* newBlock = (unsigned char*)realloc(block, size);
+        unsigned char* newBlock = (unsigned char*)realloc(block, allocationSize);
         if (newBlock != nullptr) {
-            gMemoryBlocksCurrentSize += size;
+            gMemoryBlocksCurrentSize += allocationSize;
             if (gMemoryBlocksCurrentSize > gMemoryBlocksMaximumSize) {
                 gMemoryBlocksMaximumSize = gMemoryBlocksCurrentSize;
             }
 
             // NOTE: Uninline.
-            ptr = mem_prep_block(newBlock, size);
+            ptr = mem_prep_block(newBlock, allocationSize);
         } else {
-            if (size != 0) {
-                gMemoryBlocksCurrentSize += oldSize;
+            gMemoryBlocksCurrentSize += oldSize;
 
-                debugPrint("%s,%u: ", __FILE__, __LINE__); // "Memory.c", 195
-                debugPrint("Realloc failure.\n");
-            } else {
-                gMemoryBlocksCurrentCount--;
-            }
+            debugPrint("%s,%u: ", __FILE__, __LINE__); // "Memory.c", 195
+            debugPrint("Realloc failure.\n");
             ptr = nullptr;
         }
     } else {
@@ -152,6 +160,25 @@ static void* memoryBlockReallocImpl(void* ptr, size_t size)
     }
 
     return ptr;
+}
+
+static bool memoryBlockGetAllocationSize(size_t dataSize, size_t* allocationSizePtr)
+{
+    constexpr size_t overhead = sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
+    constexpr size_t alignment = sizeof(int);
+
+    if (dataSize > std::numeric_limits<size_t>::max() - overhead) {
+        return false;
+    }
+
+    size_t allocationSize = dataSize + overhead;
+    size_t padding = alignment - allocationSize % alignment;
+    if (allocationSize > std::numeric_limits<size_t>::max() - padding) {
+        return false;
+    }
+
+    *allocationSizePtr = allocationSize + padding;
+    return true;
 }
 
 // 0x4C5C24 mem_free
