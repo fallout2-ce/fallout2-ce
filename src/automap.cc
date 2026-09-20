@@ -966,6 +966,7 @@ static int automapLoadEntry(Map map, int elevation)
 
     bool success = true;
     int fileSize = -1;
+    long headerEndOffset = -1;
     long entryDataOffset = -1;
 
     File* stream = fileOpen(path, "r+b");
@@ -981,13 +982,18 @@ static int automapLoadEntry(Map map, int elevation)
         return -1;
     }
 
+    headerEndOffset = fileTell(stream);
+
     if (gAutomapHeader.offsets[map][elevation] <= 0) {
         success = false;
         goto out;
     }
 
     fileSize = fileGetSize(stream);
-    if (fileSize < 0 || gAutomapHeader.offsets[map][elevation] > fileSize - 5) {
+    if (headerEndOffset < 0
+        || fileSize < 0
+        || gAutomapHeader.offsets[map][elevation] < headerEndOffset
+        || gAutomapHeader.offsets[map][elevation] > fileSize - 5) {
         success = false;
         goto out;
     }

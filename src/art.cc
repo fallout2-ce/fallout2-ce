@@ -1091,13 +1091,33 @@ static int artReadHeader(Art* art, File* stream)
 
     long frameDataOffset = fileTell(stream);
     int fileSize = fileGetSize(stream);
-    if (frameDataOffset < 0 || fileSize < frameDataOffset || art->frameCount < 0) {
+    if (frameDataOffset < 0 || fileSize < 0 || art->frameCount < 0) {
         return -1;
     }
 
-    int payloadSize = fileSize - static_cast<int>(frameDataOffset);
-    if (art->dataSize < 0 || art->dataSize > payloadSize) {
-        return -1;
+    int payloadSize;
+    if (fileSize != 0) {
+        if (fileSize < frameDataOffset) {
+            return -1;
+        }
+
+        payloadSize = fileSize - static_cast<int>(frameDataOffset);
+        if (art->dataSize < 0 || art->dataSize > payloadSize) {
+            return -1;
+        }
+
+        // The file payload is authoritative. Some compatible FRMs contain all six
+        // rotations but incorrectly report the size of only the first one.
+        art->dataSize = payloadSize;
+    } else {
+        // The decompressed size is unavailable for gzip streams. Keep the header
+        // size as the boundary; frame reads below still validate every source and
+        // destination range and fail if the stream is truncated.
+        if (art->dataSize <= 0) {
+            return -1;
+        }
+
+        payloadSize = art->dataSize;
     }
 
     for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
@@ -1107,10 +1127,6 @@ static int artReadHeader(Art* art, File* stream)
             return -1;
         }
     }
-
-    // The file payload is authoritative. Some compatible FRMs contain all six
-    // rotations but incorrectly report the size of only the first one.
-    art->dataSize = payloadSize;
 
     return 0;
 }
