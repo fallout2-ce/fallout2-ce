@@ -107,6 +107,7 @@ struct UISettings {
     bool display_karma_changes = false;
     bool display_bonus_damage = false;
     bool numbers_in_dialogue = false;
+    bool party_member_extra_info = false;
 
     // Whether to use high resolution art for dialog borders.
     bool dialog_border = true;

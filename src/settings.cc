@@ -189,6 +189,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(display_karma_changes);
     SETTING(display_bonus_damage);
     SETTING(numbers_in_dialogue);
+    SETTING(party_member_extra_info);
     SETTING(dialog_border);
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
