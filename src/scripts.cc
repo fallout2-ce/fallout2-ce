@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -89,7 +91,7 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition);
 static int scriptWrite(Script* scr, File* stream);
 static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
-static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream);
+static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream);
 static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
 static int scriptGetNewId(int scriptType);
 static int scriptsRemoveLocalVars(Script* script);
@@ -2385,7 +2387,7 @@ static int scriptRead(Script* scr, File* stream)
 }
 
 // 0x4A5BE8
-static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream)
+static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream)
 {
     for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
         Script* scr = &(scriptExtent->scripts[index]);
@@ -2395,6 +2397,13 @@ static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream)
     }
 
     if (fileReadInt32(stream, &(scriptExtent->length)) != 0) {
+        return -1;
+    }
+
+    if (scriptExtent->length != expectedLength) {
+        debugPrint("\nError loading scripts: invalid extent length %d (expected %d).\n",
+            scriptExtent->length,
+            expectedLength);
         return -1;
     }
 
@@ -2456,6 +2465,11 @@ int scriptLoadAll(File* stream)
             goto cleanup;
         }
 
+        if (scriptsCount < 0) {
+            debugPrint("\nError loading scripts: invalid script count %d.\n", scriptsCount);
+            goto cleanup;
+        }
+
         if (scriptsCount != 0) {
             scriptList->length = scriptsCount / SCRIPT_LIST_EXTENT_SIZE;
 
@@ -2463,25 +2477,9 @@ int scriptLoadAll(File* stream)
                 scriptList->length++;
             }
 
-            ScriptListExtent* extent = (ScriptListExtent*)internal_malloc(sizeof(*extent));
-
-            if (extent == nullptr) {
-                goto cleanup;
-            }
-
-            extent->next = nullptr;
-
-            scriptList->head = extent;
-            scriptList->tail = extent;
-
-            if (scriptListExtentRead(extent, stream) != 0) {
-                goto cleanup;
-            }
-
-            scriptListExtentClearRuntimeState(extent);
-
-            ScriptListExtent* prevExtent = extent;
-            for (int extentIndex = 1; extentIndex < scriptList->length; extentIndex++) {
+            int remainingScripts = scriptsCount;
+            ScriptListExtent* prevExtent = nullptr;
+            for (int extentIndex = 0; extentIndex < scriptList->length; extentIndex++) {
                 ScriptListExtent* extent = (ScriptListExtent*)internal_malloc(sizeof(*extent));
                 if (extent == nullptr) {
                     goto cleanup;
@@ -2489,17 +2487,23 @@ int scriptLoadAll(File* stream)
 
                 extent->next = nullptr;
 
-                if (scriptListExtentRead(extent, stream) != 0) {
+                if (prevExtent != nullptr) {
+                    prevExtent->next = extent;
+                } else {
+                    scriptList->head = extent;
+                }
+                scriptList->tail = extent;
+
+                int expectedLength = std::min(remainingScripts, SCRIPT_LIST_EXTENT_SIZE);
+                if (scriptListExtentRead(extent, expectedLength, stream) != 0) {
                     goto cleanup;
                 }
 
                 scriptListExtentClearRuntimeState(extent);
 
-                prevExtent->next = extent;
                 prevExtent = extent;
+                remainingScripts -= expectedLength;
             }
-
-            scriptList->tail = prevExtent;
         } else {
             scriptList->head = nullptr;
             scriptList->tail = nullptr;
