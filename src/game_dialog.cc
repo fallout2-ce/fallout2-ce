@@ -1290,6 +1290,10 @@ int gameDialogSetMessageReply(Program* program, int messageListId, int messageId
 // 0x44567C
 int gameDialogSetTextReply(Program* program, int messageListId, const char* text)
 {
+    if (text == nullptr) {
+        text = "";
+    }
+
     gameDialogAddReviewText(text);
 
     dialogReplyProgram = program;
@@ -1297,7 +1301,7 @@ int gameDialogSetTextReply(Program* program, int messageListId, const char* text
     dialogReplyMessageListId = -4;
     dialogReplyMessageId = -4;
 
-    strcpy(dialogReplyText, text);
+    snprintf(dialogReplyText, sizeof(dialogReplyText), "%s", text);
 
     gameDialogOptionEntriesLength = 0;
 

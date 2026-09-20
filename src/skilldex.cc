@@ -21,6 +21,7 @@
 #include "object.h"
 #include "platform_compat.h"
 #include "skill.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -329,7 +330,7 @@ static int skilldexWindowInit()
     int nameY = ((_skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getHeight() - lineHeight) / 2) + 1;
     for (int index = 0; index < SKILLDEX_SKILL_COUNT; index++) {
         char name[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
-        strcpy(name, getmsg(&gSkilldexMessageList, &gSkilldexMessageListItem, 102 + index));
+        stringCopy(name, getmsg(&gSkilldexMessageList, &gSkilldexMessageListItem, 102 + index));
 
         int nameX = ((_skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() - fontGetStringWidth(name)) / 2) + 1;
         if (nameX < 0) {

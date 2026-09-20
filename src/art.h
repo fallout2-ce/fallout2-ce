@@ -2,6 +2,7 @@
 #define ART_H
 
 #include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <memory>
 #include <type_traits>
@@ -487,7 +488,7 @@ CritterFrameId _art_alias_num(CritterFrameId index);
 int artCritterFrmIdShouldRun(const FrmId& frmId);
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
-int artRead(const char* path, unsigned char* data);
+int artRead(const char* path, unsigned char* data, size_t size);
 int artWrite(const char* path, unsigned char* data);
 
 using ArtPtr = InternalPtr<Art>;

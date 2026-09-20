@@ -29,6 +29,7 @@
 #include "settings.h"
 #include "skill.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "trait.h"
@@ -632,7 +633,7 @@ static bool characterSelectorWindowRenderStats()
 
     // NAME
     str = objectGetName(gDude);
-    strcpy(text, str);
+    stringCopy(text, str);
 
     length = fontGetStringWidth(text);
     fontDrawText(gCharacterSelectorWindowBuffer + CS_WINDOW_WIDTH * y + CS_WINDOW_NAME_MID_X - (length / 2), text, 160, CS_WINDOW_WIDTH, COLOR_GREEN);
@@ -764,7 +765,7 @@ static bool characterSelectorWindowRenderStats()
     messageListItem.num = 16;
     text[0] = '\0';
     if (messageListGetItem(&gMiscMessageList, &messageListItem)) {
-        strcpy(text, messageListItem.text);
+        stringCopy(text, messageListItem.text);
     }
 
     length = fontGetStringWidth(text);
@@ -780,7 +781,7 @@ static bool characterSelectorWindowRenderStats()
     y += vh;
 
     str = statGetName(STAT_ARMOR_CLASS);
-    strcpy(text, str);
+    stringCopy(text, str);
 
     length = fontGetStringWidth(text);
     fontDrawText(gCharacterSelectorWindowBuffer + CS_WINDOW_WIDTH * y + CS_WINDOW_SECONDARY_STAT_MID_X - length, text, length, CS_WINDOW_WIDTH, COLOR_GREEN);
@@ -797,7 +798,7 @@ static bool characterSelectorWindowRenderStats()
     messageListItem.num = 15;
     text[0] = '\0';
     if (messageListGetItem(&gMiscMessageList, &messageListItem)) {
-        strcpy(text, messageListItem.text);
+        stringCopy(text, messageListItem.text);
     }
 
     length = fontGetStringWidth(text);
@@ -813,7 +814,7 @@ static bool characterSelectorWindowRenderStats()
     y += vh;
 
     str = statGetName(STAT_MELEE_DAMAGE);
-    strcpy(text, str);
+    stringCopy(text, str);
 
     length = fontGetStringWidth(text);
     fontDrawText(gCharacterSelectorWindowBuffer + CS_WINDOW_WIDTH * y + CS_WINDOW_SECONDARY_STAT_MID_X - length, text, length, CS_WINDOW_WIDTH, COLOR_GREEN);
@@ -834,7 +835,7 @@ static bool characterSelectorWindowRenderStats()
         y += vh;
 
         str = skillGetName(skills[index]);
-        strcpy(text, str);
+        stringCopy(text, str);
 
         length = fontGetStringWidth(text);
         fontDrawText(gCharacterSelectorWindowBuffer + CS_WINDOW_WIDTH * y + CS_WINDOW_SECONDARY_STAT_MID_X - length, text, length, CS_WINDOW_WIDTH, COLOR_GREEN);
@@ -855,7 +856,7 @@ static bool characterSelectorWindowRenderStats()
         if (str == nullptr) {
             continue;
         }
-        strcpy(text, str);
+        stringCopy(text, str);
 
         y += vh;
 

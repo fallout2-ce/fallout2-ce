@@ -17,6 +17,7 @@
 #include "mouse.h"
 #include "preferences.h"
 #include "settings.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -502,7 +503,7 @@ int showPause(bool preserveWorldState)
     fontSetCurrent(104);
 
     messageItemText = getmsg(&preferencesMessageList, &preferencesMessageListItem, 301);
-    strcpy(path, messageItemText);
+    stringCopy(path, messageItemText);
 
     int length = fontGetStringWidth(path);
     fontDrawText(windowBuffer + frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() * 10 + 2 + (frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() - length) / 2,

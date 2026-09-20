@@ -39,6 +39,9 @@ namespace fallout {
 #define AUTOMAP_PIPBOY_VIEW_X (238)
 #define AUTOMAP_PIPBOY_VIEW_Y (105)
 
+#define AUTOMAP_ENTRY_DATA_SIZE (10000)
+#define AUTOMAP_ENTRY_BUFFER_SIZE (11024)
+
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags);
 static int automapSaveEntry(File* stream);
 static int automapLoadEntry(Map map, int elevation);
@@ -642,9 +645,9 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 // 0x41C004 draw_top_down_map_pipboy
 int automapRenderInPipboyWindow(int window, Map map, int elevation)
 {
-    unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
+    Buffer2D windowBuffer = windowGetBuffer2D(window);
 
-    gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
+    gAutomapEntry.data = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
     if (gAutomapEntry.data == nullptr) {
         debugPrint("\nAUTOMAP: Error allocating data buffer!\n");
         return -1;
@@ -659,11 +662,6 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
     unsigned char byte = 0;
     unsigned char* ptr = gAutomapEntry.data;
 
-    // FIXME: This loop is implemented incorrectly. Automap requires 400x400 px,
-    // but it's top offset is 105, which gives max y 505. It only works because
-    // lower portions of automap data contains zeroes. If it doesn't this loop
-    // will try to set pixels outside of window buffer, which usually leads to
-    // crash.
     for (int y = 0; y < HEX_GRID_HEIGHT; y++) {
         for (int x = 0; x < HEX_GRID_WIDTH; x++) {
             bitsRemaining -= 1;
@@ -672,24 +670,32 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
                 byte = *ptr++;
             }
 
-            switch ((byte & 0xC0) >> 6) {
-            case 1:
-                *windowBuffer++ = COLOR_GREEN;
-                *windowBuffer++ = COLOR_GREEN;
-                break;
-            case 2:
-                *windowBuffer++ = COLOR_DARK_GREEN;
-                *windowBuffer++ = COLOR_DARK_GREEN;
-                break;
-            default:
-                windowBuffer += 2;
-                break;
+            int destX = AUTOMAP_PIPBOY_VIEW_X + x * 2;
+            int destY = AUTOMAP_PIPBOY_VIEW_Y + y * 2;
+            if (destX >= 0 && destX + 1 < windowBuffer.width && destY >= 0 && destY < windowBuffer.height) {
+                Color color;
+                bool shouldDraw = true;
+                switch ((byte & 0xC0) >> 6) {
+                case 1:
+                    color = COLOR_GREEN;
+                    break;
+                case 2:
+                    color = COLOR_DARK_GREEN;
+                    break;
+                default:
+                    shouldDraw = false;
+                    break;
+                }
+
+                if (shouldDraw) {
+                    unsigned char* dest = windowBuffer.data + destY * windowBuffer.width + destX;
+                    dest[0] = color;
+                    dest[1] = color;
+                }
             }
 
             byte <<= 2;
         }
-
-        windowBuffer += 640 + 240;
     }
 
     internal_free(gAutomapEntry.data);
@@ -715,9 +721,9 @@ int automapSaveCurrent()
     debugPrint("\nAUTOMAP: Saving AutoMap DB index %d, level %d\n", map, elevation);
 
     bool dataBuffersAllocated = false;
-    gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
+    gAutomapEntry.data = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
     if (gAutomapEntry.data != nullptr) {
-        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(11024);
+        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
         if (gAutomapEntry.compressedData != nullptr) {
             dataBuffersAllocated = true;
         }
@@ -752,9 +758,9 @@ int automapSaveCurrent()
 
     _decode_map_data(elevation);
 
-    int compressedDataSize = graphCompress(gAutomapEntry.data, gAutomapEntry.compressedData, 10000);
+    int compressedDataSize = graphCompress(gAutomapEntry.data, gAutomapEntry.compressedData, AUTOMAP_ENTRY_DATA_SIZE);
     if (compressedDataSize == -1) {
-        gAutomapEntry.dataSize = 10000;
+        gAutomapEntry.dataSize = AUTOMAP_ENTRY_DATA_SIZE;
         gAutomapEntry.isCompressed = 0;
     } else {
         gAutomapEntry.dataSize = compressedDataSize;
@@ -959,6 +965,9 @@ static int automapLoadEntry(Map map, int elevation)
     snprintf(path, sizeof(path), "%s\\%s", "MAPS", AUTOMAP_DB);
 
     bool success = true;
+    int fileSize = -1;
+    long headerEndOffset = -1;
+    long entryDataOffset = -1;
 
     File* stream = fileOpen(path, "r+b");
     if (stream == nullptr) {
@@ -973,7 +982,18 @@ static int automapLoadEntry(Map map, int elevation)
         return -1;
     }
 
+    headerEndOffset = fileTell(stream);
+
     if (gAutomapHeader.offsets[map][elevation] <= 0) {
+        success = false;
+        goto out;
+    }
+
+    fileSize = fileGetSize(stream);
+    if (headerEndOffset < 0
+        || fileSize < 0
+        || gAutomapHeader.offsets[map][elevation] < headerEndOffset
+        || gAutomapHeader.offsets[map][elevation] > fileSize - 5) {
         success = false;
         goto out;
     }
@@ -993,12 +1013,26 @@ static int automapLoadEntry(Map map, int elevation)
         goto out;
     }
 
+    if (gAutomapEntry.isCompressed != 0 && gAutomapEntry.isCompressed != 1) {
+        success = false;
+        goto out;
+    }
+
+    entryDataOffset = fileTell(stream);
+    if (entryDataOffset < 0
+        || gAutomapEntry.dataSize <= 0
+        || gAutomapEntry.dataSize > AUTOMAP_ENTRY_DATA_SIZE
+        || gAutomapEntry.dataSize > fileSize - entryDataOffset) {
+        success = false;
+        goto out;
+    }
+
     if (gAutomapEntry.isCompressed == 1) {
-        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(11024);
+        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(gAutomapEntry.dataSize);
         if (gAutomapEntry.compressedData == nullptr) {
             debugPrint("\nAUTOMAP: Error allocating decompression buffer!\n");
-            fileClose(stream);
-            return -1;
+            success = false;
+            goto out;
         }
 
         if (fileReadUInt8List(stream, gAutomapEntry.compressedData, gAutomapEntry.dataSize) == -1) {
@@ -1006,12 +1040,17 @@ static int automapLoadEntry(Map map, int elevation)
             goto out;
         }
 
-        if (graphDecompress(gAutomapEntry.compressedData, gAutomapEntry.data, 10000) == -1) {
+        if (graphDecompress(gAutomapEntry.compressedData, gAutomapEntry.dataSize, gAutomapEntry.data, AUTOMAP_ENTRY_DATA_SIZE) == -1) {
             debugPrint("\nAUTOMAP: Error decompressing DB entry!\n");
-            fileClose(stream);
-            return -1;
+            success = false;
+            goto out;
         }
     } else {
+        if (gAutomapEntry.dataSize != AUTOMAP_ENTRY_DATA_SIZE) {
+            success = false;
+            goto out;
+        }
+
         if (fileReadUInt8List(stream, gAutomapEntry.data, gAutomapEntry.dataSize) == -1) {
             success = false;
             goto out;
@@ -1022,14 +1061,15 @@ out:
 
     fileClose(stream);
 
+    if (gAutomapEntry.compressedData != nullptr) {
+        internal_free(gAutomapEntry.compressedData);
+        gAutomapEntry.compressedData = nullptr;
+    }
+
     if (!success) {
         debugPrint("\nAUTOMAP: Error reading automap database entry data!\n");
 
         return -1;
-    }
-
-    if (gAutomapEntry.compressedData != nullptr) {
-        internal_free(gAutomapEntry.compressedData);
     }
 
     return 0;
@@ -1093,7 +1133,7 @@ static int automapLoadHeader(File* stream)
 // 0x41CBA4 decode_map_data
 static void _decode_map_data(int elevation)
 {
-    memset(gAutomapEntry.data, 0, SQUARE_GRID_SIZE);
+    memset(gAutomapEntry.data, 0, AUTOMAP_ENTRY_DATA_SIZE);
 
     _obj_process_seen();
 
