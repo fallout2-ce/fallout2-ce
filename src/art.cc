@@ -1412,6 +1412,10 @@ static Art* artLoadLocalized(const char* path)
 // 0x419FC0
 int artRead(const char* path, unsigned char* data, size_t size)
 {
+    if (path == nullptr || data == nullptr || size < sizeof(Art)) {
+        return -1;
+    }
+
     File* stream = fileOpen(path, "rb");
     if (stream == nullptr) {
         return -2;
