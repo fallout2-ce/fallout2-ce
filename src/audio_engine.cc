@@ -388,7 +388,7 @@ bool audioEngineSoundBufferLock(int soundBufferIndex, unsigned int writePos, uns
         return false;
     }
 
-    if (audioBytes1 == nullptr) {
+    if (audioPtr1 == nullptr || audioBytes1 == nullptr || soundBuffer->size == 0) {
         return false;
     }
 
@@ -402,7 +402,11 @@ bool audioEngineSoundBufferLock(int soundBufferIndex, unsigned int writePos, uns
         writeBytes = soundBuffer->size;
     }
 
-    if (writePos + writeBytes <= soundBuffer->size) {
+    if (writePos >= soundBuffer->size || writeBytes > soundBuffer->size) {
+        return false;
+    }
+
+    if (writeBytes <= soundBuffer->size - writePos) {
         *(unsigned char**)audioPtr1 = (unsigned char*)soundBuffer->data + writePos;
         *audioBytes1 = writeBytes;
 

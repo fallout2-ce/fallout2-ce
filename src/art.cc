@@ -402,7 +402,7 @@ int artGetFidgetCount(const HeadFrmId& frmId)
 
     int head = frmId.frameId().id;
 
-    if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
+    if (head >= gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
     }
 
