@@ -1442,11 +1442,11 @@ int artRead(const char* path, unsigned char* data, size_t size)
             if (destOffset > static_cast<size_t>(totalAllocSize)
                 || fileSeek(stream, frameDataOffset + art->dataOffsets[index], SEEK_SET) == -1
                 || artReadFrameData(data + destOffset,
-                    totalAllocSize - destOffset,
-                    stream,
-                    art->frameCount,
-                    nextDataOffset - art->dataOffsets[index],
-                    &previousPadding)
+                       totalAllocSize - destOffset,
+                       stream,
+                       art->frameCount,
+                       nextDataOffset - art->dataOffsets[index],
+                       &previousPadding)
                     != 0) {
                 fileClose(stream);
                 return -5;
