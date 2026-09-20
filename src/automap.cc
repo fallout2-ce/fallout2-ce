@@ -642,7 +642,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 // 0x41C004 draw_top_down_map_pipboy
 int automapRenderInPipboyWindow(int window, Map map, int elevation)
 {
-    unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
+    Buffer2D windowBuffer = windowGetBuffer2D(window);
 
     gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
     if (gAutomapEntry.data == nullptr) {
@@ -659,11 +659,6 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
     unsigned char byte = 0;
     unsigned char* ptr = gAutomapEntry.data;
 
-    // FIXME: This loop is implemented incorrectly. Automap requires 400x400 px,
-    // but it's top offset is 105, which gives max y 505. It only works because
-    // lower portions of automap data contains zeroes. If it doesn't this loop
-    // will try to set pixels outside of window buffer, which usually leads to
-    // crash.
     for (int y = 0; y < HEX_GRID_HEIGHT; y++) {
         for (int x = 0; x < HEX_GRID_WIDTH; x++) {
             bitsRemaining -= 1;
@@ -672,24 +667,32 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
                 byte = *ptr++;
             }
 
-            switch ((byte & 0xC0) >> 6) {
-            case 1:
-                *windowBuffer++ = COLOR_GREEN;
-                *windowBuffer++ = COLOR_GREEN;
-                break;
-            case 2:
-                *windowBuffer++ = COLOR_DARK_GREEN;
-                *windowBuffer++ = COLOR_DARK_GREEN;
-                break;
-            default:
-                windowBuffer += 2;
-                break;
+            int destX = AUTOMAP_PIPBOY_VIEW_X + x * 2;
+            int destY = AUTOMAP_PIPBOY_VIEW_Y + y * 2;
+            if (destX >= 0 && destX + 1 < windowBuffer.width && destY >= 0 && destY < windowBuffer.height) {
+                Color color;
+                bool shouldDraw = true;
+                switch ((byte & 0xC0) >> 6) {
+                case 1:
+                    color = COLOR_GREEN;
+                    break;
+                case 2:
+                    color = COLOR_DARK_GREEN;
+                    break;
+                default:
+                    shouldDraw = false;
+                    break;
+                }
+
+                if (shouldDraw) {
+                    unsigned char* dest = windowBuffer.data + destY * windowBuffer.width + destX;
+                    dest[0] = color;
+                    dest[1] = color;
+                }
             }
 
             byte <<= 2;
         }
-
-        windowBuffer += 640 + 240;
     }
 
     internal_free(gAutomapEntry.data);
