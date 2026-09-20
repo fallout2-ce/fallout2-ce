@@ -1106,7 +1106,7 @@ static int artReadHeader(Art* art, File* stream)
             return -1;
         }
 
-        // The file payload is authoritative. Some compatible FRMs contain all six
+        // The file payload is authoritative. Some  FRMs from Resurrection contain all six
         // rotations but incorrectly report the size of only the first one.
         art->dataSize = payloadSize;
     } else {
