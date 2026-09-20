@@ -501,8 +501,12 @@ static void _DeleteNode(int a1)
 }
 
 // 0x44F92C
-int graphDecompress(unsigned char* src, unsigned char* dest, int length)
+int graphDecompress(const unsigned char* src, int srcSize, unsigned char* dest, int destSize)
 {
+    if (src == nullptr || srcSize <= 0 || dest == nullptr || destSize < 0) {
+        return -1;
+    }
+
     _text_buf = (unsigned char*)internal_malloc(sizeof(*_text_buf) * 4122);
     if (_text_buf == nullptr) {
         debugPrint("\nGRAPHLIB: Error allocating decompression buffer!\n");
@@ -512,18 +516,29 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
     int v8 = 4078;
     memset(_text_buf, ' ', v8);
 
-    int v21 = 0;
-    int index = 0;
-    while (index < length) {
-        v21 >>= 1;
-        if ((v21 & 0x100) == 0) {
-            v21 = *src++;
-            v21 |= 0xFF00;
+    int flags = 0;
+    int srcIndex = 0;
+    int destIndex = 0;
+    while (destIndex < destSize) {
+        flags >>= 1;
+        if ((flags & 0x100) == 0) {
+            if (srcIndex >= srcSize) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            flags = src[srcIndex++];
+            flags |= 0xFF00;
         }
 
-        if ((v21 & 0x01) == 0) {
-            int v10 = *src++;
-            int v11 = *src++;
+        if ((flags & 0x01) == 0) {
+            if (srcSize - srcIndex < 2) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            int v10 = src[srcIndex++];
+            int v11 = src[srcIndex++];
 
             v10 |= (v11 & 0xF0) << 4;
             v11 &= 0x0F;
@@ -534,23 +549,26 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
 
                 unsigned char ch = _text_buf[v17];
                 _text_buf[v8] = ch;
-                *dest++ = ch;
+                dest[destIndex] = ch;
 
                 v8 = (v8 + 1) & 0xFFF;
 
-                index++;
-                if (index >= length) {
+                destIndex++;
+                if (destIndex >= destSize) {
                     break;
                 }
             }
         } else {
-            unsigned char ch = *src++;
+            if (srcIndex >= srcSize) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            unsigned char ch = src[srcIndex++];
             _text_buf[v8] = ch;
-            *dest++ = ch;
+            dest[destIndex++] = ch;
 
             v8 = (v8 + 1) & 0xFFF;
-
-            index++;
         }
     }
 
