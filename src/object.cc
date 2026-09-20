@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "animation.h"
@@ -515,22 +516,34 @@ static int objectLoadAllInternal(File* stream)
         return -1;
     }
 
+    if (objectCount < 0
+        || static_cast<size_t>(objectCount) > std::numeric_limits<size_t>::max() / sizeof(*gObjectFids)) {
+        debugPrint("\nError loading objects: invalid object count %d.\n", objectCount);
+        return -1;
+    }
+
     if (gObjectFids != nullptr) {
         internal_free(gObjectFids);
+        gObjectFids = nullptr;
     }
+    gObjectFidsLength = 0;
 
     if (objectCount != 0) {
         gObjectFids = (int*)internal_malloc(sizeof(*gObjectFids) * objectCount);
-        memset(gObjectFids, 0, sizeof(*gObjectFids) * objectCount);
         if (gObjectFids == nullptr) {
             return -1;
         }
-        gObjectFidsLength = 0;
+        memset(gObjectFids, 0, sizeof(*gObjectFids) * objectCount);
     }
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int objectCountAtElevation;
         if (fileReadInt32(stream, &objectCountAtElevation) == -1) {
+            return -1;
+        }
+
+        if (objectCountAtElevation < 0 || objectCountAtElevation > objectCount - gObjectFidsLength) {
+            debugPrint("\nError loading objects: invalid elevation object count %d.\n", objectCountAtElevation);
             return -1;
         }
 
@@ -617,6 +630,11 @@ static int objectLoadAllInternal(File* stream)
                 inventory->items = nullptr;
             }
         }
+    }
+
+    if (gObjectFidsLength != objectCount) {
+        debugPrint("\nError loading objects: expected %d objects, read %d.\n", objectCount, gObjectFidsLength);
+        return -1;
     }
 
     _obj_rebuild_all_light();
