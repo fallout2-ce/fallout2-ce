@@ -35,6 +35,7 @@
 #include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "tile.h"
 #include "trait.h"
 
@@ -2899,7 +2900,7 @@ static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool i
             // You suffer a fatal heart attack from chem overdose.
             messageListItem.num = 4;
             if (messageListGetItem(&gItemsMessageList, &messageListItem)) {
-                strcpy(msgBuf, messageListItem.text);
+                stringCopy(msgBuf, messageListItem.text);
                 // TODO: Why message is ignored?
             }
         } else {

@@ -36,6 +36,7 @@
 #include "settings.h"
 #include "skill.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -2456,7 +2457,7 @@ static int indicatorBarInit()
         IndicatorDescription* indicator = &(gIndicatorDescriptions[index]);
 
         char text[1024];
-        strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
+        stringCopy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
         Color color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
         indicatorBarRenderBox(indicator->data, text, color);

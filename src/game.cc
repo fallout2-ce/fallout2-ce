@@ -64,6 +64,7 @@
 #include "skill.h"
 #include "skilldex.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -710,7 +711,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 // Pipboy not available in combat!
                 MessageListItem messageListItem;
                 char title[128];
-                strcpy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
+                stringCopy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
                 showDialogBox(title, nullptr, 0, 192, 116, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
             } else {
                 soundPlayFile("ib1p1xx1");
@@ -740,7 +741,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 // Pipboy not available in combat!
                 MessageListItem messageListItem;
                 char title[128];
-                strcpy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
+                stringCopy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
                 showDialogBox(title, nullptr, 0, 192, 116, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
             } else {
                 soundPlayFile("ib1p1xx1");

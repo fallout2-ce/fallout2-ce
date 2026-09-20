@@ -55,6 +55,7 @@
 #include "sfall_global_vars.h"
 #include "skill.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -570,9 +571,9 @@ int lsgSaveGame(int mode)
         soundPlayFile("iisxxxx1");
 
         // Error saving game!
-        strcpy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 132));
+        stringCopy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 132));
         // Unable to save game.
-        strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 133));
+        stringCopy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 133));
 
         const char* body[] = {
             _str1,
@@ -604,14 +605,14 @@ int lsgSaveGame(int mode)
         soundPlayFile("iisxxxx1");
 
         // Error loading save game list!
-        strcpy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 106));
+        stringCopy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 106));
         // Save game directory:
-        strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 107));
+        stringCopy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 107));
 
         snprintf(_str2, sizeof(_str2), "\"%s\\\"", "SAVEGAME");
 
         // TODO: Check.
-        strcpy(_str2, getmsg(&gLoadSaveMessageList, &messageListItem, 108));
+        stringCopy(_str2, getmsg(&gLoadSaveMessageList, &messageListItem, 108));
 
         const char* body[] = {
             _str1,
@@ -961,9 +962,9 @@ int lsgSaveGame(int mode)
                 debugPrint("\nLOADSAVE: ** Error getting save file comment **\n");
 
                 // Error saving game!
-                strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 132));
+                stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 132));
                 // Unable to save game.
-                strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 133));
+                stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 133));
 
                 const char* body[1] = {
                     _str1,
@@ -979,9 +980,9 @@ int lsgSaveGame(int mode)
                     soundPlayFile("iisxxxx1");
 
                     // Error saving game!
-                    strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 132));
+                    stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 132));
                     // Unable to save game.
-                    strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 133));
+                    stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 133));
 
                     rc = -1;
 
@@ -995,15 +996,15 @@ int lsgSaveGame(int mode)
                         soundPlayFile("iisxxxx1");
 
                         // Error loading save agme list!
-                        strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
+                        stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
                         // Save game directory:
-                        strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
+                        stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
 
                         snprintf(_str2, sizeof(_str2), "\"%s\\\"", "SAVEGAME");
 
                         char text[260];
                         // Doesn't exist or is corrupted.
-                        strcpy(text, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
+                        stringCopy(text, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
 
                         const char* body[2] = {
                             _str1,
@@ -1171,8 +1172,8 @@ int lsgLoadGame(int mode)
 
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         soundPlayFile("iisxxxx1");
-        strcpy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 134));
-        strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 135));
+        stringCopy(_str0, getmsg(&gLoadSaveMessageList, &messageListItem, 134));
+        stringCopy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 135));
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
         loadSaveMessageListReset();
@@ -1223,8 +1224,8 @@ int lsgLoadGame(int mode)
             paletteFadeTo(_cmap);
         }
         soundPlayFile("iisxxxx1");
-        strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
-        strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
+        stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
+        stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
         snprintf(_str2, sizeof(_str2), "\"%s\\\"", "SAVEGAME");
         showDialogBox(_str0, body, 2, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
         lsgWindowFree(windowType);
@@ -1575,16 +1576,16 @@ int lsgLoadGame(int mode)
             switch (_LSstatus[_slot_cursor]) {
             case SLOT_STATE_UNSUPPORTED_VERSION:
                 soundPlayFile("iisxxxx1");
-                strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
-                strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
-                strcpy(_str2, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
+                stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
+                stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
+                stringCopy(_str2, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
                 showDialogBox(_str0, body, 2, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
                 rc = -1;
                 break;
             case SLOT_STATE_ERROR:
                 soundPlayFile("iisxxxx1");
-                strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
-                strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
+                stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
+                stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
                 showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
                 rc = -1;
                 break;
@@ -1592,8 +1593,8 @@ int lsgLoadGame(int mode)
                 if (lsgLoadGameInSlot(_slot_cursor) == -1) {
                     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
                     soundPlayFile("iisxxxx1");
-                    strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
-                    strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
+                    stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
+                    stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
                     showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
                     mapNewMap();
                     _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
@@ -2657,7 +2658,7 @@ static int _GetComment(int slot)
     msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 130);
 
     char title[260];
-    strcpy(title, msg);
+    stringCopy(title, msg);
 
     int width = fontGetStringWidth(title);
     fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 7 + (_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() - width) / 2,
