@@ -44,7 +44,7 @@ static int artReadList(const char* path, char** out_arr, int* out_count);
 static int artCacheGetFileSize(const FrmId& frmId, int* out_size);
 static int artCacheReadData(const FrmId& frmId, int* sizePtr, unsigned char* data);
 static void artCacheFreeImpl(void* ptr);
-static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr);
+static int artReadFrameData(unsigned char* data, size_t dataCapacity, File* stream, int count, int sourceSize, int* paddingPtr);
 static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
@@ -1001,13 +1001,13 @@ static int artCacheReadData(const FrmId& frmId, int* sizePtr, unsigned char* dat
         bool loaded = false;
         const char* localizedPath;
         if (artGetLocalizedPath(artFileName, &localizedPath)) {
-            if (artRead(localizedPath, data) == 0) {
+            if (artRead(localizedPath, data, *sizePtr) == 0) {
                 loaded = true;
             }
         }
 
         if (!loaded) {
-            if (artRead(artFileName, data) == 0) {
+            if (artRead(artFileName, data, *sizePtr) == 0) {
                 loaded = true;
             }
         }
@@ -1033,23 +1033,43 @@ static void artCacheFreeImpl(void* ptr)
 }
 
 // 0x419D60
-static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr)
+static int artReadFrameData(unsigned char* data, size_t dataCapacity, File* stream, int count, int sourceSize, int* paddingPtr)
 {
-    unsigned char* ptr = data;
+    size_t dataOffset = 0;
+    int sourceOffset = 0;
     int padding = 0;
     for (int index = 0; index < count; index++) {
-        ArtFrame* frame = (ArtFrame*)ptr;
+        ArtFrame frame;
 
-        if (fileReadInt16(stream, &(frame->width)) == -1) return -1;
-        if (fileReadInt16(stream, &(frame->height)) == -1) return -1;
-        if (fileReadInt32(stream, &(frame->size)) == -1) return -1;
-        if (fileReadInt16(stream, &(frame->x)) == -1) return -1;
-        if (fileReadInt16(stream, &(frame->y)) == -1) return -1;
-        if (fileRead(ptr + sizeof(ArtFrame), frame->size, 1, stream) != 1) return -1;
+        if (sourceSize - sourceOffset < static_cast<int>(sizeof(ArtFrame))) return -1;
+        if (fileReadInt16(stream, &(frame.width)) == -1) return -1;
+        if (fileReadInt16(stream, &(frame.height)) == -1) return -1;
+        if (fileReadInt32(stream, &(frame.size)) == -1) return -1;
+        if (fileReadInt16(stream, &(frame.x)) == -1) return -1;
+        if (fileReadInt16(stream, &(frame.y)) == -1) return -1;
+        sourceOffset += sizeof(ArtFrame);
 
-        ptr += sizeof(ArtFrame) + frame->size;
-        ptr += paddingForSize(frame->size);
-        padding += paddingForSize(frame->size);
+        if (frame.width < 0
+            || frame.height < 0
+            || frame.size < 0
+            || static_cast<size_t>(frame.width) * static_cast<size_t>(frame.height) != static_cast<size_t>(frame.size)
+            || frame.size > sourceSize - sourceOffset) {
+            return -1;
+        }
+
+        int framePadding = paddingForSize(frame.size);
+        size_t frameDataSize = sizeof(ArtFrame) + static_cast<size_t>(frame.size) + framePadding;
+        if (frameDataSize > dataCapacity - dataOffset) {
+            return -1;
+        }
+
+        ArtFrame* destFrame = reinterpret_cast<ArtFrame*>(data + dataOffset);
+        *destFrame = frame;
+        if (frame.size > 0 && fileRead(data + dataOffset + sizeof(ArtFrame), frame.size, 1, stream) != 1) return -1;
+
+        sourceOffset += frame.size;
+        dataOffset += frameDataSize;
+        padding += framePadding;
     }
 
     *paddingPtr = padding;
@@ -1069,24 +1089,28 @@ static int artReadHeader(Art* art, File* stream)
     if (fileReadInt32List(stream, art->dataOffsets, ROTATION_COUNT) == -1) return -1;
     if (fileReadInt32(stream, &(art->dataSize)) == -1) return -1;
 
-    // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
-    if (art->dataSize == 0) {
-        art->dataSize = fileGetSize(stream);
+    long frameDataOffset = fileTell(stream);
+    int fileSize = fileGetSize(stream);
+    if (frameDataOffset < 0 || fileSize < frameDataOffset || art->frameCount < 0) {
+        return -1;
     }
 
-    if (art->frameCount < 0) {
-        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
-    }
-
-    if (art->dataSize < 0) {
-        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    int payloadSize = fileSize - static_cast<int>(frameDataOffset);
+    if (art->dataSize < 0 || art->dataSize > payloadSize) {
+        return -1;
     }
 
     for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
-        if (art->dataOffsets[rotation] < 0) {
-            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        if (art->dataOffsets[rotation] < 0
+            || art->dataOffsets[rotation] > payloadSize
+            || (rotation > 0 && art->dataOffsets[rotation] < art->dataOffsets[rotation - 1])) {
+            return -1;
         }
     }
+
+    // The file payload is authoritative. Some compatible FRMs contain all six
+    // rotations but incorrectly report the size of only the first one.
+    art->dataSize = payloadSize;
 
     return 0;
 }
@@ -1313,12 +1337,17 @@ static Art* artLoadFrm(const char* path)
 
     fileClose(stream);
 
-    unsigned char* data = reinterpret_cast<unsigned char*>(internal_malloc(artGetDataSize(&header)));
+    int dataSize = artGetDataSize(&header);
+    if (dataSize <= 0) {
+        return nullptr;
+    }
+
+    unsigned char* data = reinterpret_cast<unsigned char*>(internal_malloc(dataSize));
     if (data == nullptr) {
         return nullptr;
     }
 
-    if (artRead(path, data) != 0) {
+    if (artRead(path, data, dataSize) != 0) {
         internal_free(data);
         return nullptr;
     }
@@ -1365,7 +1394,7 @@ static Art* artLoadLocalized(const char* path)
 }
 
 // 0x419FC0
-int artRead(const char* path, unsigned char* data)
+int artRead(const char* path, unsigned char* data, size_t size)
 {
     File* stream = fileOpen(path, "rb");
     if (stream == nullptr) {
@@ -1379,8 +1408,14 @@ int artRead(const char* path, unsigned char* data)
     }
 
     int totalAllocSize = artGetDataSize(art);
-    if (totalAllocSize <= 0) {
+    if (totalAllocSize <= 0 || static_cast<size_t>(totalAllocSize) > size) {
         debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
+    }
+
+    long frameDataOffset = fileTell(stream);
+    if (frameDataOffset < 0) {
         fileClose(stream);
         return -5;
     }
@@ -1394,7 +1429,25 @@ int artRead(const char* path, unsigned char* data)
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             art->padding[index] += previousPadding;
             currentPadding += previousPadding;
-            if (artReadFrameData(data + sizeof(Art) + art->dataOffsets[index] + art->padding[index], stream, art->frameCount, &previousPadding) != 0) {
+
+            int nextDataOffset = art->dataSize;
+            for (int nextIndex = index + 1; nextIndex < ROTATION_COUNT; nextIndex++) {
+                if (art->dataOffsets[nextIndex] != art->dataOffsets[index]) {
+                    nextDataOffset = art->dataOffsets[nextIndex];
+                    break;
+                }
+            }
+
+            size_t destOffset = sizeof(Art) + art->dataOffsets[index] + art->padding[index];
+            if (destOffset > static_cast<size_t>(totalAllocSize)
+                || fileSeek(stream, frameDataOffset + art->dataOffsets[index], SEEK_SET) == -1
+                || artReadFrameData(data + destOffset,
+                    totalAllocSize - destOffset,
+                    stream,
+                    art->frameCount,
+                    nextDataOffset - art->dataOffsets[index],
+                    &previousPadding)
+                    != 0) {
                 fileClose(stream);
                 return -5;
             }
@@ -1480,17 +1533,21 @@ int artWrite(const char* path, unsigned char* data)
 
 static int artGetDataSize(const Art* art)
 {
-    int dataSize = sizeof(*art) + art->dataSize;
+    if (art->dataSize < 0 || art->frameCount < 0) {
+        return -1;
+    }
+
+    size_t dataSize = sizeof(*art) + static_cast<size_t>(art->dataSize);
 
     for (int index = 0; index < ROTATION_COUNT; index++) {
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             // Assume worst case - every frame is unaligned and need
             // max padding.
-            dataSize += (sizeof(int) - 1) * art->frameCount;
+            dataSize += static_cast<size_t>(sizeof(int) - 1) * art->frameCount;
         }
     }
 
-    return dataSize;
+    return dataSize <= INT_MAX ? static_cast<int>(dataSize) : -1;
 }
 
 static int paddingForSize(int size)
