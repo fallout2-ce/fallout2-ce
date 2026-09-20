@@ -965,9 +965,13 @@ static int artCacheGetFileSize(const FrmId& frmId, int* sizePtr)
     const char* artFilePath = frmId.filePath();
     if (artFilePath != nullptr) {
         File* stream = nullptr;
+        const char* openedPath = artFilePath;
         const char* localizedPath;
         if (artGetLocalizedPath(artFilePath, &localizedPath)) {
             stream = fileOpen(localizedPath, "rb");
+            if (stream != nullptr) {
+                openedPath = localizedPath;
+            }
         }
         if (stream == nullptr) {
             stream = fileOpen(artFilePath, "rb");
@@ -983,6 +987,8 @@ static int artCacheGetFileSize(const FrmId& frmId, int* sizePtr)
                 } else {
                     result = 0;
                 }
+            } else {
+                debugPrint("ART ERROR: rejected %s: invalid header\n", openedPath);
             }
             fileClose(stream);
         }
@@ -1102,12 +1108,15 @@ static int artReadHeader(Art* art, File* stream)
         }
 
         payloadSize = fileSize - static_cast<int>(frameDataOffset);
-        if (art->dataSize < 0 || art->dataSize > payloadSize) {
+        if (art->dataSize < 0) {
             return -1;
         }
 
-        // The file payload is authoritative. Some  FRMs from Resurrection contain all six
-        // rotations but incorrectly report the size of only the first one.
+        // The file payload is authoritative. Split directional art (.FR0-.FR5)
+        // repeats the aggregate size of all six files in every header, while
+        // some FRMs from Resurrection report the size of only the first
+        // rotation. Frame reads below validate the actual payload in either
+        // case.
         art->dataSize = payloadSize;
     } else {
         // The decompressed size is unavailable for gzip streams. Keep the header
@@ -1347,6 +1356,7 @@ static Art* artLoadFrm(const char* path)
 
     Art header;
     if (artReadHeader(&header, stream) != 0) {
+        debugPrint("ART ERROR: rejected %s: invalid header\n", path);
         fileClose(stream);
         return nullptr;
     }
@@ -1355,6 +1365,7 @@ static Art* artLoadFrm(const char* path)
 
     int dataSize = artGetDataSize(&header);
     if (dataSize <= 0) {
+        debugPrint("ART ERROR: rejected %s: invalid data size %d\n", path, dataSize);
         return nullptr;
     }
 
@@ -1423,6 +1434,7 @@ int artRead(const char* path, unsigned char* data, size_t size)
 
     Art* art = (Art*)data;
     if (artReadHeader(art, stream) != 0) {
+        debugPrint("ART ERROR: rejected %s: invalid header\n", path);
         fileClose(stream);
         return -3;
     }
@@ -1436,6 +1448,7 @@ int artRead(const char* path, unsigned char* data, size_t size)
 
     long frameDataOffset = fileTell(stream);
     if (frameDataOffset < 0) {
+        debugPrint("ART ERROR: rejected %s: invalid frame data offset\n", path);
         fileClose(stream);
         return -5;
     }
@@ -1468,6 +1481,7 @@ int artRead(const char* path, unsigned char* data, size_t size)
                        nextDataOffset - art->dataOffsets[index],
                        &previousPadding)
                     != 0) {
+                debugPrint("ART ERROR: rejected %s: invalid frame data for rotation %d\n", path, index);
                 fileClose(stream);
                 return -5;
             }
