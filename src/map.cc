@@ -1830,9 +1830,9 @@ static void _square_reset()
     constexpr TileFrameId kGridFrameId = TileFrameId::Grid;
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        int* p = _square[elevation]->tileFid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
-                int* p = _square[elevation]->tileFid;
                 int fid = *p;
                 *p = floorTileFidFromCombinedTileFid(fid) | (kGridFrameId | tileFlagsFromTileFid(roofTileFidFromCombinedTileFid(fid)));
 

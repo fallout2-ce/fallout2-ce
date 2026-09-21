@@ -906,7 +906,7 @@ void copyTile()
                 TileFlags rotBits = tileFlagsFromTileFid(floorFid);
                 TileFrameId newFloorFrameId = srcFrmId[i].frameId().tile;
                 if (newFloorFrameId == TileFrameId::Invalid) {
-                    newFloorFrameId == TileFrameId::Last;
+                    newFloorFrameId = TileFrameId::Last;
                 }
                 TileFID newFloorFid = newFloorFrameId | rotBits;
                 *word = newFloorFid | roofFid;

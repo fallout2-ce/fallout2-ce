@@ -5284,7 +5284,7 @@ static int _obj_preload_sort(const void* fid1, const void* fid2)
     const FrmId frmId2 = FrmId(*(int*)fid2);
 
     const ObjectType objType1 = frmId1.objectType();
-    const ObjectType objType2 = frmId1.objectType();
+    const ObjectType objType2 = frmId2.objectType();
 
     if (!frmId1.valid() || !frmId2.valid()) {
         return objType1 - objType2;

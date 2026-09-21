@@ -343,7 +343,7 @@ constexpr inline TileFlags tileFlagsFromTileFid(TileFID fid) {
 
 constexpr inline TileFID operator|(TileFrameId tile, TileFlags flags)
 {
-    return static_cast<TileFID>(((static_cast<int>(tile) | static_cast<int>(flags))) & 0xFFFF);
+    return static_cast<TileFID>(((static_cast<int>(tile) | static_cast<int>(flags) << 12)) & 0xFFFF);
 }
 
 constexpr inline int operator|(TileFID floorFid, TileFID roofFid)
