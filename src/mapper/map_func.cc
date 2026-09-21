@@ -900,16 +900,16 @@ void copyTile()
             int dstSy = iy + srcDy[i] + 12;
             int dstSquare = squareTileFromScreenXY(dstSx, dstSy, gElevation);
             if (dstSquare != -1) {
-                int* word = &_square[gElevation]->tileFid[dstSquare];
-                TileFID floorFid = floorTileFidFromCombinedTileFid(*word);
-                TileFID roofFid = roofTileFidFromCombinedTileFid(*word);
-                TileFlags rotBits = tileFlagsFromTileFid(floorFid);
+                int* tileFid = &_square[gElevation]->tileFid[dstSquare];
+                TileFID floorFid = floorTileFidFromCombinedTileFid(*tileFid);
+                TileFID roofFid = roofTileFidFromCombinedTileFid(*tileFid);
+                TileFlags floorFlags = tileFlagsFromTileFid(floorFid);
                 TileFrameId newFloorFrameId = srcFrmId[i].frameId().tile;
                 if (newFloorFrameId == TileFrameId::Invalid) {
                     newFloorFrameId = TileFrameId::Last;
                 }
-                TileFID newFloorFid = newFloorFrameId | rotBits;
-                *word = newFloorFid | roofFid;
+                TileFID newFloorFid = newFloorFrameId | floorFlags;
+                *tileFid = newFloorFid | roofFid;
             }
         }
     });

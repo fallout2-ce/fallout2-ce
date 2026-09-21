@@ -1556,9 +1556,6 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 int _obj_reset_roof()
 {
     TileFrameId frameId = FrmId(roofTileFidFromCombinedTileFid(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y])).frameId().tile;
-    if (frameId == TileFrameId::Invalid) {
-        frameId = TileFrameId::Last;
-    }
     if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
