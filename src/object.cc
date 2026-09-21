@@ -3231,7 +3231,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
             int tileFids = _square[0]->tileFid[i];
             TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
             TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;
             }
@@ -3251,7 +3251,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
             int tileFids = _square[1]->tileFid[i];
             TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
             TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;
             }
@@ -3271,7 +3271,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
             int tileFids = _square[2]->tileFid[i];
             TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
             TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;
             }

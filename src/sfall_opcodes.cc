@@ -1406,7 +1406,7 @@ static void op_get_tile_fid(Program* program)
     switch (mode) {
     case 1:
         // roof tile frame id
-        programStackPushInteger(program,  static_cast<int>(roofTileFidFromCombinedTileFid(squareData)));
+        programStackPushInteger(program, static_cast<int>(roofTileFidFromCombinedTileFid(squareData)));
         break;
     case 2:
         // floor tile and root tile fid

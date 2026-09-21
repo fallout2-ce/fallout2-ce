@@ -325,7 +325,7 @@ constexpr inline TileFlags operator|(TileFlags lhs, TileFlags rhs)
     return static_cast<TileFlags>((static_cast<int>(lhs) | static_cast<int>(rhs)) & 0xF);
 }
 
-enum class TileFID : int { };
+enum class TileFID : int {};
 
 constexpr inline TileFID floorTileFidFromCombinedTileFid(int fid)
 {
@@ -337,7 +337,8 @@ constexpr inline TileFID roofTileFidFromCombinedTileFid(int fid)
     return static_cast<TileFID>((static_cast<int>(fid) >> 16) & 0xFFFF);
 }
 
-constexpr inline TileFlags tileFlagsFromTileFid(TileFID fid) {
+constexpr inline TileFlags tileFlagsFromTileFid(TileFID fid)
+{
     return static_cast<TileFlags>((static_cast<int>(fid) & 0xF000) >> 12);
 }
 

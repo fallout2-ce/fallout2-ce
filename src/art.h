@@ -289,6 +289,7 @@ public:
     {
         return !(*this == frameId);
     }
+
 protected:
     static constexpr int kFrameIdMask = 0x00000FFF;
     static constexpr int kWeaponAnimationMask = 0x0000F000;
@@ -300,6 +301,7 @@ protected:
     static constexpr int kAnimationTypeMaskPosition = 16;
     static constexpr int kObjectTypeMaskPosition = 24;
     static constexpr int kRotationMaskPosition = 28;
+
 private:
     ObjectType _objectType;
     int _fid;
