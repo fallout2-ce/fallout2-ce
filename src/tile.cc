@@ -1313,9 +1313,9 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
             int squareTile = baseSquareTile + x;
-            int roofTileFid = (gTileSquares[elevation]->floorAndRoofFids[squareTile] >> 16) & 0xFFFF;
+            TileFID roofTileFid = roofTileFidFromCombinedTileFid(gTileSquares[elevation]->tileFid[squareTile]);
 
-            if ((((roofTileFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition) & 0x01) == 0) {
+            if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::First) == TileFlags::None) {
                 TileFrameId frameId = FrmId(roofTileFid).frameId().tile;
                 if (frameId == TileFrameId::Invalid) {
                     frameId = TileFrameId::Last;
@@ -1345,21 +1345,32 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
     tasks_stack.pop();
 
     int squareTileIndex = gSquareGridWidth * y + x;
-    int squareTile = gTileSquares[elevation]->floorAndRoofFids[squareTileIndex];
-    int roofTileFid = (squareTile >> 16) & 0xFFFF;
+    int squareTile = gTileSquares[elevation]->tileFid[squareTileIndex];
+    TileFID floorTileFid = floorTileFidFromCombinedTileFid(squareTile);
+    TileFID roofTileFid = roofTileFidFromCombinedTileFid(squareTile);
+    TileFrameId roofFrameId = FrmId(roofTileFid).frameId().tile;
+    if (roofFrameId == TileFrameId::Invalid) {
+        roofFrameId = TileFrameId::Last;
+    }
 
-    const TileFrmId frmId = FrmId(roofTileFid).frameId().tile;
-    if (frmId != TileFrameId::Grid) {
-        int flag = (roofTileFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
+    if (roofFrameId != TileFrameId::Grid) {
+        TileFlags flag = tileFlagsFromTileFid(roofTileFid);
 
-        if (on ? ((flag & 0x01) != 0) : ((flag & 0x03) == 0)) {
-            if (on) {
-                flag &= ~0x01;
-            } else {
-                flag |= 0x01;
+        bool updateFid = false;
+        if (on) {
+            if ((flag & TileFlags::First) != TileFlags::None) {
+                flag = flag & ~TileFlags::First;
+                updateFid = true;
             }
+        } else {
+            if ((flag & (TileFlags::First | TileFlags::Second)) == TileFlags::None) {
+                flag = flag | TileFlags::First;
+                updateFid = true;
+            }
+        }
 
-            gTileSquares[elevation]->floorAndRoofFids[squareTileIndex] = (squareTile & 0xFFFF) | (((flag << FrmId::kWeaponAnimationMaskPosition) | frmId.frameId().id) << 16);
+        if (updateFid) {
+            gTileSquares[elevation]->tileFid[squareTileIndex] = floorTileFid | (roofFrameId | flag);
 
             roof_fill_push_task_if_in_bounds(tasks_stack, x - 1, y);
             roof_fill_push_task_if_in_bounds(tasks_stack, x + 1, y);
@@ -1528,8 +1539,8 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
             int squareTile = baseSquareTile + x;
-            int floorTileFid = gTileSquares[elevation]->floorAndRoofFids[squareTile] & 0xFFFF;
-            if ((((floorTileFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition) & 0x01) == 0) {
+            TileFID floorTileFid = floorTileFidFromCombinedTileFid(gTileSquares[elevation]->tileFid[squareTile]);
+            if ((tileFlagsFromTileFid(floorTileFid) & TileFlags::First) == TileFlags::None) {
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
@@ -1607,14 +1618,14 @@ bool _square_roof_intersect(int x, int y, int elevation)
 
     TileData* ptr = gTileSquares[elevation];
     int idx = gSquareGridWidth * tileY + tileX;
-    int roofTileFid = (ptr->floorAndRoofFids[gSquareGridWidth * tileY + tileX] >> 16) & 0xFFFF;
+    TileFID roofTileFid = roofTileFidFromCombinedTileFid(ptr->tileFid[gSquareGridWidth * tileY + tileX]);
     TileFrameId frameId = FrmId(roofTileFid).frameId().tile;
     if (frameId == TileFrameId::Invalid) {
         frameId = TileFrameId::Last;
     }
 
     if (frameId != TileFrameId::Grid) {
-        if ((((roofTileFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition) & 1) == 0) {
+        if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::First) == TileFlags::None) {
             CacheEntry* handle;
             Art* art = artLock(frameId, &handle);
             if (art != nullptr) {

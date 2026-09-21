@@ -17,7 +17,7 @@ namespace fallout {
 
 // TODO: Probably not needed -> replace with array?
 struct TileData {
-    int floorAndRoofFids[SQUARE_GRID_SIZE]; // contains two shorten 16bit fids within (12 bit FrameId + 4 bit flags), lower half is floor tile fid and upper half is roof tile fid
+    int tileFid[SQUARE_GRID_SIZE]; // contains two shorten 16bit fids within (12 bit FrameId + 4 bit flags), lower half is floor tile fid and upper half is roof tile fid
 };
 
 typedef struct MapHeader {

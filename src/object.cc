@@ -1494,17 +1494,18 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofX = tile % 200 / 2;
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
-            int currentSquare = _square[elevation]->floorAndRoofFids[roofX + 100 * roofY];
-            int currentSquareRoofFid = (currentSquare >> 16) & 0xFFFF;
+            int currentSquare = _square[elevation]->tileFid[roofX + 100 * roofY];
+            TileFID currentSquareRoofFid = roofTileFidFromCombinedTileFid(currentSquare);
             const TileFrameId currentSquareFrameId = FrmId(currentSquareRoofFid).frameId().tile;
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
-                ? _square[elevation]->floorAndRoofFids[_obj_last_roof_x + 100 * _obj_last_roof_y]
+                ? _square[elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            int previousSquareRoofFid = (previousSquare >> 16) & 0xFFFF;
+            TileFID previousSquareRoofFid = roofTileFidFromCombinedTileFid(previousSquare);
             bool isEmpty = currentSquareFrameId == TileFrameId::Grid;
-
-            if (isEmpty != _obj_last_is_empty || ((currentSquareRoofFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition) != ((previousSquareRoofFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition)) {
+            TileFlags currentSquareFlags = tileFlagsFromTileFid(currentSquareRoofFid);
+            TileFlags previousSquareFlags = tileFlagsFromTileFid(previousSquareRoofFid);
+            if (isEmpty != _obj_last_is_empty || currentSquareFlags != previousSquareFlags) {
                 if (!_obj_last_is_empty) {
                     tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, elevation, true);
                 }
@@ -1554,7 +1555,10 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    const TileFrameId frameId = FrmId((_square[gDude->elevation]->floorAndRoofFids[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16) & 0xFFFF).frameId().tile;
+    TileFrameId frameId = FrmId(roofTileFidFromCombinedTileFid(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y])).frameId().tile;
+    if (frameId == TileFrameId::Invalid) {
+        frameId = TileFrameId::Last;
+    }
     if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -3227,31 +3231,61 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[0]->floorAndRoofFids[i];
-            int floorTileFrameId = tileFids & 0xFFF;
-            int roofTileFrameId = (tileFids >> 16) & 0xFFF;
-            arr[floorTileFrameId] = 1;
-            arr[roofTileFrameId] = 1;
+            int tileFids = _square[0]->tileFid[i];
+            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
+            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
+            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            if (floorTileFrameId == TileFrameId::Invalid) {
+                floorTileFrameId = TileFrameId::Last;
+            }
+
+            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
+            if (roofTileFrameId == TileFrameId::Invalid) {
+                roofTileFrameId = TileFrameId::Last;
+            }
+
+            arr[static_cast<int>(floorTileFrameId)] = 1;
+            arr[static_cast<int>(roofTileFrameId)] = 1;
         }
     }
 
     if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[1]->floorAndRoofFids[i];
-            int floorTileFrameId = tileFids & 0xFFF;
-            int roofTileFrameId = (tileFids >> 16) & 0xFFF;
-            arr[floorTileFrameId] = 1;
-            arr[roofTileFrameId] = 1;
+            int tileFids = _square[1]->tileFid[i];
+            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
+            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
+            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            if (floorTileFrameId == TileFrameId::Invalid) {
+                floorTileFrameId = TileFrameId::Last;
+            }
+
+            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
+            if (roofTileFrameId == TileFrameId::Invalid) {
+                roofTileFrameId = TileFrameId::Last;
+            }
+
+            arr[static_cast<int>(floorTileFrameId)] = 1;
+            arr[static_cast<int>(roofTileFrameId)] = 1;
         }
     }
 
     if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[2]->floorAndRoofFids[i];
-            int floorTileFrameId = tileFids & 0xFFF;
-            int roofTileFrameId = (tileFids >> 16) & 0xFFF;
-            arr[floorTileFrameId] = 1;
-            arr[roofTileFrameId] = 1;
+            int tileFids = _square[2]->tileFid[i];
+            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
+            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
+            TileFrameId floorTileFrameId  = FrmId(floorTileFid).frameId().tile;
+            if (floorTileFrameId == TileFrameId::Invalid) {
+                floorTileFrameId = TileFrameId::Last;
+            }
+
+            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
+            if (roofTileFrameId == TileFrameId::Invalid) {
+                roofTileFrameId = TileFrameId::Last;
+            }
+
+            arr[static_cast<int>(floorTileFrameId)] = 1;
+            arr[static_cast<int>(roofTileFrameId)] = 1;
         }
     }
 

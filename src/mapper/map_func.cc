@@ -458,12 +458,15 @@ void placeTile(int pid, const FrmId& frmId)
         return;
     }
 
-    int newArt = frmId.frameId().id;
-    int* squarePtr = &_square[gElevation]->floorAndRoofFids[squareTile];
+    TileFrameId newFrameId = frmId.frameId().tile;
+    if (newFrameId == TileFrameId::Invalid) {
+        newFrameId = TileFrameId::Last;
+    }
+    int* squarePtr = &_square[gElevation]->tileFid[squareTile];
     int oldValue = *squarePtr;
 
-    int oldFloorFid = oldValue & 0xFFFF;
-    int oldRoofFid = (oldValue >> 16) & 0xFFFF;
+    TileFID oldFloorFid = floorTileFidFromCombinedTileFid(oldValue);
+    TileFID oldRoofFid = roofTileFidFromCombinedTileFid(oldValue);
 
     const TileFrmId oldRoofFrmId = FrmId(oldRoofFid).frameId().tile;
     if (oldRoofFrmId == frmId) {
@@ -473,15 +476,15 @@ void placeTile(int pid, const FrmId& frmId)
     int sx, sy;
 
     if (tileRoofIsVisible()) {
-        int roofRotation = (oldRoofFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
-        int newRoofFid = roofRotation | newArt;
-        *squarePtr = (newRoofFid << 16) | oldFloorFid;
+        TileFlags roofRotation = tileFlagsFromTileFid(oldRoofFid);
+        TileFID newRoofFid = newFrameId | roofRotation;
+        *squarePtr = oldFloorFid | newRoofFid;
 
         squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
     } else {
-        int floorRotation = (oldFloorFid & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
-        int newFloorFid = floorRotation | newArt;
-        *squarePtr = (oldRoofFid << 16) | newFloorFid;
+        TileFlags floorRotation = tileFlagsFromTileFid(oldFloorFid);
+        TileFID newFloorFid = newFrameId | floorRotation;
+        *squarePtr = newFloorFid | oldRoofFid;
         squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
     }
 
@@ -879,7 +882,7 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        TileFrameId floorArt = FrmId(_square[gElevation]->floorAndRoofFids[srcTiles[i]] & 0xFFFF).frameId().tile;
+        TileFrameId floorArt = FrmId(floorTileFidFromCombinedTileFid(_square[gElevation]->tileFid[srcTiles[i]])).frameId().tile;
         srcFrmId[i] = floorArt;
 
         int sx, sy;
@@ -897,10 +900,16 @@ void copyTile()
             int dstSy = iy + srcDy[i] + 12;
             int dstSquare = squareTileFromScreenXY(dstSx, dstSy, gElevation);
             if (dstSquare != -1) {
-                int* word = &_square[gElevation]->floorAndRoofFids[dstSquare];
-                int rotBits = (*word & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
-                int newFloorFid = srcFrmId[i].frameId().id | rotBits;
-                *word = (*word & 0xFFFF0000) | (newFloorFid & 0xFFFF);
+                int* word = &_square[gElevation]->tileFid[dstSquare];
+                TileFID floorFid = floorTileFidFromCombinedTileFid(*word);
+                TileFID roofFid = roofTileFidFromCombinedTileFid(*word);
+                TileFlags rotBits = tileFlagsFromTileFid(floorFid);
+                TileFrameId newFloorFrameId = srcFrmId[i].frameId().tile;
+                if (newFloorFrameId == TileFrameId::Invalid) {
+                    newFloorFrameId == TileFrameId::Last;
+                }
+                TileFID newFloorFid = newFloorFrameId | rotBits;
+                *word = newFloorFid | roofFid;
             }
         }
     });
@@ -1025,7 +1034,7 @@ static void mapper_shift_map_once(int dx, int dy)
         snap.push_back({ obj, obj->tile });
     }
 
-    int* sq = _square[gElevation]->floorAndRoofFids;
+    int* sq = _square[gElevation]->tileFid;
 
     // Apply the per-object shift / drop rule. `keepRow`/`keepCol` decide whether an old tile
     // survives; `newTile` maps a surviving tile to its destination.
@@ -1197,20 +1206,22 @@ void mapper_shift_map_elev()
 
     // Copy the tile (floor + roof) data to the destination elevation, then strip floor + roof
     // tiles in the source elevation back to "blank" art (id=1).
-    memcpy(_square[destElev]->floorAndRoofFids, _square[gElevation]->floorAndRoofFids, 40000);
+    memcpy(_square[destElev]->tileFid, _square[gElevation]->tileFid, 40000);
 
-    constexpr int kBlankFrameId = static_cast<int>(TileFrameId::Grid);
+    constexpr TileFrameId kBlankFrameId = TileFrameId::Grid;
 
     // Match the original mapper's tile word format (preserved here even though the rotation
     // bits end up overlapping the low nibble of the art id — same convention as placeTile).
-    int* src = _square[gElevation]->floorAndRoofFids;
+    int* src = _square[gElevation]->tileFid;
     for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
         int v = src[i];
-        int floorRot = (v & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
-        int roofRot = ((v >> 16) & FrmId::kWeaponAnimationMask) >> FrmId::kWeaponAnimationMaskPosition;
-        int newRoofFid = kBlankFrameId | roofRot;
-        int newFloorFid = kBlankFrameId | floorRot;
-        src[i] = (newRoofFid << 16) | (newFloorFid & 0xFFFF);
+        TileFID floorTileFid = floorTileFidFromCombinedTileFid(v);
+        TileFID roofTileFid = roofTileFidFromCombinedTileFid(v);
+        TileFlags floorRot = tileFlagsFromTileFid(floorTileFid);
+        TileFlags roofRot = tileFlagsFromTileFid(roofTileFid);
+        TileFID newRoofFid = kBlankFrameId | roofRot;
+        TileFID newFloorFid = kBlankFrameId | floorRot;
+        src[i] = newFloorFid | newRoofFid;
     }
 
     // Move all spatial scripts from source elevation to destination, plus any exit-grid objects
@@ -1316,7 +1327,7 @@ void mapper_copy_map_elev()
         obj = objectFindFirstAtElevation(gElevation);
     }
 
-    memcpy(_square[destElev]->floorAndRoofFids, _square[gElevation]->floorAndRoofFids, 40000);
+    memcpy(_square[destElev]->tileFid, _square[gElevation]->tileFid, 40000);
     mapSetElevation(destElev);
     tileWindowRefresh();
 }

@@ -108,17 +108,6 @@ public:
     static constexpr short kMinFrameId = 0;
     static constexpr short kMaxFrameId = 4095;
 
-    static constexpr int kFrameIdMask = 0x00000FFF;
-    static constexpr int kWeaponAnimationMask = 0x0000F000;
-    static constexpr int kAnimationTypeMask = 0x00FF0000;
-    static constexpr int kObjectTypeMask = 0x0F000000;
-    static constexpr int kRotationMask = 0x70000000;
-
-    static constexpr int kWeaponAnimationMaskPosition = 12;
-    static constexpr int kAnimationTypeMaskPosition = 16;
-    static constexpr int kObjectTypeMaskPosition = 24;
-    static constexpr int kRotationMaskPosition = 28;
-
     constexpr FrmId()
         : _objectType(OBJ_TYPE_INVALID)
         , _fid(kEmptyFid)
@@ -137,6 +126,14 @@ public:
         : _objectType(objectTypeFromFid(fid))
         , _fid(fid)
         , _frameId { buildFrameId(fid) }
+        , _path(nullptr)
+    {
+    }
+
+    constexpr explicit FrmId(TileFID fid)
+        : _objectType(OBJ_TYPE_TILE)
+        , _fid(static_cast<int>(fid))
+        , _frameId { buildFrameId(static_cast<int>(fid)) }
         , _path(nullptr)
     {
     }
@@ -292,7 +289,17 @@ public:
     {
         return !(*this == frameId);
     }
+protected:
+    static constexpr int kFrameIdMask = 0x00000FFF;
+    static constexpr int kWeaponAnimationMask = 0x0000F000;
+    static constexpr int kAnimationTypeMask = 0x00FF0000;
+    static constexpr int kObjectTypeMask = 0x0F000000;
+    static constexpr int kRotationMask = 0x70000000;
 
+    static constexpr int kWeaponAnimationMaskPosition = 12;
+    static constexpr int kAnimationTypeMaskPosition = 16;
+    static constexpr int kObjectTypeMaskPosition = 24;
+    static constexpr int kRotationMaskPosition = 28;
 private:
     ObjectType _objectType;
     int _fid;

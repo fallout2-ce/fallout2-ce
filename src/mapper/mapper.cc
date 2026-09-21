@@ -2598,12 +2598,12 @@ static int mapperPickTile(int* outOffset)
         return 0;
     }
 
-    int packedTile = _square[gElevation]->floorAndRoofFids[tileNum];
+    int packedTile = _square[gElevation]->tileFid[tileNum];
     TileFrameId tileFrameId;
     if (tileRoofIsVisible()) {
-        tileFrameId = FrmId((packedTile >> 16) & 0xFFFF).frameId().tile;
+        tileFrameId = FrmId(roofTileFidFromCombinedTileFid(packedTile)).frameId().tile;
     } else {
-        tileFrameId = FrmId(packedTile & 0xFFFF).frameId().tile;
+        tileFrameId = FrmId(floorTileFidFromCombinedTileFid(packedTile)).frameId().tile;
     }
     if (tileFrameId == TileFrameId::Invalid) {
         tileFrameId = TileFrameId::Last;
