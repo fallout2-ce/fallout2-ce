@@ -1868,7 +1868,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
                 roofTileFid = roofTileFidFromCombinedTileFid(arr[tile]);
 
-                roofTileFlags = tileFlagsFromTileFid(roofTileFid) & ~TileFlags::First;
+                roofTileFlags = tileFlagsFromTileFid(roofTileFid) & ~TileFlags::TemporarilyHidden;
 
                 roofTileArtId = FrmId(roofTileFid).frameId().tile;
                 if (roofTileArtId == TileFrameId::Invalid) {

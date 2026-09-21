@@ -1315,7 +1315,7 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             int squareTile = baseSquareTile + x;
             TileFID roofTileFid = roofTileFidFromCombinedTileFid(gTileSquares[elevation]->tileFid[squareTile]);
 
-            if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::First) == TileFlags::None) {
+            if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::TemporarilyHidden) == TileFlags::None) {
                 TileFrameId frameId = FrmId(roofTileFid).frameId().tile;
                 if (frameId == TileFrameId::Invalid) {
                     frameId = TileFrameId::Last;
@@ -1358,13 +1358,13 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
 
         bool updateFid = false;
         if (on) {
-            if ((flag & TileFlags::First) != TileFlags::None) {
-                flag = flag & ~TileFlags::First;
+            if ((flag & TileFlags::TemporarilyHidden) != TileFlags::None) {
+                flag = flag & ~TileFlags::TemporarilyHidden;
                 updateFid = true;
             }
         } else {
-            if ((flag & (TileFlags::First | TileFlags::Second)) == TileFlags::None) {
-                flag = flag | TileFlags::First;
+            if ((flag & (TileFlags::TemporarilyHidden | TileFlags::AlwaysHidden)) == TileFlags::None) {
+                flag = flag | TileFlags::TemporarilyHidden;
                 updateFid = true;
             }
         }
@@ -1540,7 +1540,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
         for (int x = minX; x <= maxX; x++) {
             int squareTile = baseSquareTile + x;
             TileFID floorTileFid = floorTileFidFromCombinedTileFid(gTileSquares[elevation]->tileFid[squareTile]);
-            if ((tileFlagsFromTileFid(floorTileFid) & TileFlags::First) == TileFlags::None) {
+            if ((tileFlagsFromTileFid(floorTileFid) & TileFlags::TemporarilyHidden) == TileFlags::None) {
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
@@ -1625,7 +1625,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
     }
 
     if (frameId != TileFrameId::Grid) {
-        if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::First) == TileFlags::None) {
+        if ((tileFlagsFromTileFid(roofTileFid) & TileFlags::TemporarilyHidden) == TileFlags::None) {
             CacheEntry* handle;
             Art* art = artLock(frameId, &handle);
             if (art != nullptr) {
