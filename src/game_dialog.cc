@@ -829,13 +829,10 @@ bool _gdialogActive()
     return _dialog_state_fix != 0;
 }
 
-// CE FIX: _gdialogActive() (_dialog_state_fix) is true for the whole
-// duration of talk_p_proc, even for scripts that never open a real dialogue
-// window (e.g. a flavor NPC whose talk_p_proc is just a float_msg() and a
-// return). _gdialog_state tracks whether a window with a head to lip-sync
-// against is actually open, which is what callers like
-// _scr_get_msg_str_speech() need to decide between lip-synced and plain
-// speech playback.
+// _gdialogActive() stays true for the whole talk_p_proc call, even if the
+// script never opens a window (e.g. a flavor NPC that just floats a line
+// and returns). This checks the actual window state instead, so callers can
+// tell whether there's a head on screen to lip-sync against.
 bool gameDialogWindowActive()
 {
     return _gdialog_state == GAME_DIALOG_ACTIVE;

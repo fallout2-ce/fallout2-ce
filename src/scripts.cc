@@ -3228,12 +3228,10 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
         return nullptr;
     }
 
-    // CE FIX: !gGameDialogHeadFrmId.valid() used to force shouldStartSpeech to
-    // 0, silently dropping audio for any call made outside an active gdialog
-    // session (float_msg, combat, timed_event_p_proc, etc), since
-    // gGameDialogHeadFrmId only matters for lip-sync, not for whether the
-    // caller wants audio. That's now handled via gameDialogWindowActive()
-    // below instead.
+    // This used to silence any speech call made outside dialogue (float_msg,
+    // combat, timed events...) just because there was no head fid set. But a
+    // head fid only matters for lip-sync, not for whether we should play
+    // audio at all. gameDialogWindowActive() below now handles that.
 
     MessageListItem messageListItem;
     messageListItem.num = messageId;
@@ -3253,8 +3251,8 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
             } else if (gameDialogWindowActive()) {
                 gameDialogStartLips(messageListItem.audio);
             } else {
-                // CE FIX: play non-dialog speech (voiced floats, combat
-                // lines, etc) with no lip-sync instead of dropping it.
+                // No dialogue window open, so just play the line without
+                // lip-sync instead of dropping it.
                 speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
             }
         } else {
