@@ -921,7 +921,17 @@ static void mainMenuRemoveOverlayDim()
         return;
     }
 
+    bool cursorWasHidden = cursorIsHidden();
+    if (cursorWasHidden) {
+        mouseShowCursor();
+    }
+
     mainMenuAnimateOverlayDim(MAIN_MENU_OVERLAY_DIM_TARGET_INTENSITY, MAIN_MENU_OVERLAY_DIM_CLEAR_INTENSITY);
+
+    if (cursorWasHidden) {
+        mouseHideCursor();
+    }
+
     memcpy(gMainMenuWindowBuffer, mainMenuOverlayDimmedBackup.data(), size);
     mainMenuOverlayDimmedBackup.clear();
     windowRefresh(gMainMenuWindow);
