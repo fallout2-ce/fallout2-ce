@@ -396,7 +396,7 @@ void artToggleObjectTypeHidden(ObjectType objectType)
 // 0x418F7C
 int artGetFidgetCount(const HeadFrmId& frmId)
 {
-    if (!frmId.valid()) {
+    if (!frmId.valid() || !frmId.hasFid()) {
         return -1;
     }
 
