@@ -963,7 +963,7 @@ static int endgameEndingInit()
     File* stream;
     char str[256];
     char *ch, *tok;
-    const char* delim = " \t,";
+    const char* delim = " \t,\r\n";
     EndgameEnding entry;
     EndgameEnding* entries;
     size_t narratorFileNameLength;
@@ -1013,6 +1013,10 @@ static int endgameEndingInit()
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {
+            continue;
+        }
+
+        if (strlen(tok) >= sizeof(entry.voiceOverBaseName)) {
             continue;
         }
 
@@ -1072,7 +1076,7 @@ int endgameDeathEndingInit()
     File* stream;
     char str[256];
     char* ch;
-    const char* delim = " \t,";
+    const char* delim = " \t,\r\n";
     char* tok;
     EndgameDeathEnding entry;
     EndgameDeathEnding* entries;
@@ -1144,7 +1148,11 @@ int endgameDeathEndingInit()
 
         // this code is slightly different from the original, but does the same thing
         narratorFileNameLength = strlen(tok);
+        if (narratorFileNameLength >= sizeof(entry.voiceOverBaseName)) {
+            continue;
+        }
         strncpy(entry.voiceOverBaseName, tok, narratorFileNameLength);
+        entry.voiceOverBaseName[narratorFileNameLength] = '\0';
 
         entry.enabled = false;
 

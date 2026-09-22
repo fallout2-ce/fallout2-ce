@@ -1083,7 +1083,7 @@ size_t soundDecoderDecode(SoundDecoder* soundDecoder, void* buffer, size_t size)
     samp_cnt = soundDecoder->samp_cnt;
 
     size_t bytesRead;
-    for (bytesRead = 0; bytesRead < size; bytesRead += 2) {
+    for (bytesRead = 0; size - bytesRead >= 2; bytesRead += 2) {
         if (samp_cnt == 0) {
             if (soundDecoder->file_cnt == 0) {
                 break;

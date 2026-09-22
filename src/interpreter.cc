@@ -3149,7 +3149,7 @@ static void interpreterPrintStats()
 
 void programStackPushValue(Program* program, const ProgramValue& programValue)
 {
-    if (program->stackValues->size() > 0x1000) {
+    if (program->stackValues->size() >= 0x1000) {
         programFatalError("programStackPushValue: Stack overflow.");
     }
 
@@ -3246,7 +3246,7 @@ void* programStackPopPointer(Program* program)
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue)
 {
-    if (program->returnStackValues->size() > 0x1000) {
+    if (program->returnStackValues->size() >= 0x1000) {
         programFatalError("programReturnStackPushValue: Stack overflow.");
     }
 

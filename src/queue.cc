@@ -127,6 +127,12 @@ int queueLoad(File* stream)
             break;
         }
 
+        if (queueListNode->type < EVENT_TYPE_FIRST || queueListNode->type >= EVENT_TYPE_COUNT) {
+            internal_free(queueListNode);
+            rc = -1;
+            break;
+        }
+
         int objectId;
         if (fileReadInt32(stream, &objectId) == -1) {
             internal_free(queueListNode);

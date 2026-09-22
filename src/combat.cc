@@ -2104,21 +2104,35 @@ int _find_cid(int a1, int cid, Object** critterList, int critterListLength)
     return index;
 }
 
+static void combatClearWhoHitMeOutsideCombatList(Object** combatList, int combatListLength)
+{
+    for (Object* obj = objectFindFirst(); obj != nullptr; obj = objectFindNext()) {
+        if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+            continue;
+        }
+
+        int index;
+        for (index = 0; index < combatListLength; index++) {
+            if (combatList[index] == obj) {
+                break;
+            }
+        }
+
+        if (index == combatListLength) {
+            obj->data.critter.combat.whoHitMe = nullptr;
+        }
+    }
+}
+
 // 0x420E4C
 int combatLoad(File* stream)
 {
     if (fileReadUInt32(stream, reinterpret_cast<unsigned int*>(&gCombatState)) == -1) return -1;
 
     if (!isInCombat()) {
-        Object* obj = objectFindFirst();
-        while (obj != nullptr) {
-            if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
-                if (obj->data.critter.combat.whoHitMeCid == -1) {
-                    obj->data.critter.combat.whoHitMe = nullptr;
-                }
-            }
-            obj = objectFindNext();
-        }
+        // Saved whoHitMe values are CIDs, not pointers. Without an active
+        // combat list there is nothing to resolve them against.
+        combatClearWhoHitMeOutsideCombatList(nullptr, 0);
         return 0;
     }
 
@@ -2149,6 +2163,11 @@ int combatLoad(File* stream)
             }
         }
     }
+
+    // objectListCreate excludes hidden critters and critters on other
+    // elevations. Their saved CIDs must not remain in the pointer member of
+    // the whoHitMe union.
+    combatClearWhoHitMeOutsideCombatList(_combat_list, _list_total);
 
     for (int index = 0; index < _list_total; index++) {
         int cid;
