@@ -454,7 +454,7 @@ void placeTile(int pid, const FrmId& frmId)
     int x, y;
     mouseGetPosition(&x, &y);
     int squareTile = squareTileFromScreenXY(x, y, gElevation);
-    if (!tileIsValid(squareTile)) {
+    if (squareTile == -1) {
         return;
     }
 
@@ -462,29 +462,36 @@ void placeTile(int pid, const FrmId& frmId)
     if (newFrameId == TileFrameId::Invalid) {
         newFrameId = TileFrameId::Last;
     }
+
     int* squarePtr = &_square[gElevation]->tileFid[squareTile];
     int oldValue = *squarePtr;
 
     TileFID oldFloorFid = floorTileFidFromCombinedTileFid(oldValue);
     TileFID oldRoofFid = roofTileFidFromCombinedTileFid(oldValue);
 
-    const TileFrmId oldRoofFrmId = FrmId(oldRoofFid).frameId().tile;
-    if (oldRoofFrmId == frmId) {
-        return;
-    }
-
     int sx, sy;
 
     if (tileRoofIsVisible()) {
-        TileFlags roofRotation = tileFlagsFromTileFid(oldRoofFid);
-        TileFID newRoofFid = newFrameId | roofRotation;
+        const TileFrmId oldRoofFrmId = FrmId(oldRoofFid).frameId().tile;
+        if (oldRoofFrmId == frmId) {
+            return;
+        }
+
+        TileFlags roofFlags = tileFlagsFromTileFid(oldRoofFid);
+        TileFID newRoofFid = newFrameId | roofFlags;
         *squarePtr = oldFloorFid | newRoofFid;
 
         squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
     } else {
-        TileFlags floorRotation = tileFlagsFromTileFid(oldFloorFid);
-        TileFID newFloorFid = newFrameId | floorRotation;
+        const TileFrmId oldFloorFrmId = FrmId(oldFloorFid).frameId().tile;
+        if (oldFloorFrmId == frmId) {
+            return;
+        }
+
+        TileFlags floorFlags = tileFlagsFromTileFid(oldFloorFid);
+        TileFID newFloorFid = newFrameId | floorFlags;
         *squarePtr = newFloorFid | oldRoofFid;
+
         squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
     }
 

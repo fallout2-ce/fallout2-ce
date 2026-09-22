@@ -306,7 +306,7 @@ enum class TileFrameId : int {
 
 enum class TileFlags : int {
     None = 0,
-    TemporarilyHidden = 1, // toogled by proximity flood-fill, cleared on map load
+    TemporarilyHidden = 1, // toggled by proximity flood-fill, cleared on map load
     AlwaysHidden = 2, // stored in map data, keeps the tile hidden regardless of flood-fill state
 };
 
