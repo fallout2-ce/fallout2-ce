@@ -3232,8 +3232,8 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     // 0, silently dropping audio for any call made outside an active gdialog
     // session (float_msg, combat, timed_event_p_proc, etc), since
     // gGameDialogHeadFrmId only matters for lip-sync, not for whether the
-    // caller wants audio. That's now handled via _gdialogActive() below
-    // instead.
+    // caller wants audio. That's now handled via gameDialogWindowActive()
+    // below instead.
 
     MessageListItem messageListItem;
     messageListItem.num = messageId;
@@ -3245,12 +3245,12 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     if (shouldStartSpeech) {
         if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
             if (messageListItem.flags & 0x01) {
-                if (_gdialogActive()) {
+                if (gameDialogWindowActive()) {
                     gameDialogStartLips(nullptr);
                 } else {
                     soundPlayFile("censor");
                 }
-            } else if (_gdialogActive()) {
+            } else if (gameDialogWindowActive()) {
                 gameDialogStartLips(messageListItem.audio);
             } else {
                 // CE FIX: play non-dialog speech (voiced floats, combat
