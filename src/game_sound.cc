@@ -1819,10 +1819,32 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
     // "AHS-7" has lines like "ahs71.acm" in an "ahs7\" folder, so trimming
     // trailing digits would cut off part of the name). Just search one
     // folder level down for a match instead of guessing.
+    //
+    // Loose folders on disk have to be listed first and checked one by one,
+    // because the OS file search does not expand a wildcard in the middle of
+    // a path.
     char pattern[COMPAT_MAX_PATH];
-    snprintf(pattern, sizeof(pattern), "%s*\\%s%s", _sound_speech_path, src, ".ACM");
+    snprintf(pattern, sizeof(pattern), "%s*", _sound_speech_path);
 
     XList xlist = {};
+    if (xlistInitDirectories(pattern, &xlist)) {
+        for (int index = 0; index < xlist.fileNamesLength; index++) {
+            snprintf(path, sizeof(path), "%s\\%s%s", xlist.fileNames[index], src, ".ACM");
+            if (dbGetFileSize(path, &fileSize) == 0) {
+                strncpy(dest, path, COMPAT_MAX_PATH);
+                dest[COMPAT_MAX_PATH] = '\0';
+                xlistFree(&xlist);
+                return 0;
+            }
+        }
+        xlistFree(&xlist);
+    }
+
+    // .dat files store full paths, so a wildcard in the middle of the path
+    // matches there directly.
+    snprintf(pattern, sizeof(pattern), "%s*\\%s%s", _sound_speech_path, src, ".ACM");
+
+    xlist = {};
     if (xlistInit(pattern, &xlist)) {
         if (xlist.fileNamesLength > 0) {
             strncpy(dest, xlist.fileNames[0], COMPAT_MAX_PATH);
