@@ -1406,7 +1406,7 @@ static void op_get_tile_fid(Program* program)
     switch (mode) {
     case 1:
         // roof tile frame id
-        programStackPushInteger(program, TileFrmId(roofTileFidFromCombinedTileFid(squareData)).frameId().id);
+        programStackPushInteger(program, TileFrmId(squareData, TileFrmId::Mode::Roof).frameId().id);
         break;
     case 2:
         // floor tile and roof tile fid
@@ -1414,7 +1414,7 @@ static void op_get_tile_fid(Program* program)
         break;
     default:
         // floor tile frame id
-        programStackPushInteger(program, TileFrmId(floorTileFidFromCombinedTileFid(squareData)).frameId().id);
+        programStackPushInteger(program, TileFrmId(squareData, TileFrmId::Mode::Floor).frameId().id);
         break;
     }
 }

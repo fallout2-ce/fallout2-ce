@@ -3393,7 +3393,7 @@ static int _check_gravity(int tile, int elevation)
         tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
-        const TileFrameId frameId = TileFrmId(floorTileFidFromCombinedTileFid(_square[elevation]->tileFid[squareTile])).frameId().tile;
+        const TileFrameId frameId = TileFrmId(_square[elevation]->tileFid[squareTile], TileFrmId::Mode::Floor).frameId().tile;
         if (frameId != TileFrameId::Grid) {
             break;
         }

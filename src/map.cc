@@ -1481,12 +1481,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrameId frameId;
 
-            frameId = TileFrmId(floorTileFidFromCombinedTileFid(_square[elevation]->tileFid[tile])).frameId().tile;
+            frameId = TileFrmId(_square[elevation]->tileFid[tile], TileFrmId::Mode::Floor).frameId().tile;
             if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frameId = TileFrmId(roofTileFidFromCombinedTileFid(_square[elevation]->tileFid[tile])).frameId().tile;
+            frameId = TileFrmId(_square[elevation]->tileFid[tile], TileFrmId::Mode::Roof).frameId().tile;
             if (frameId != TileFrameId::Grid) {
                 break;
             }
@@ -1827,20 +1827,22 @@ static void square_init()
 // 0x484210
 static void _square_reset()
 {
-    constexpr TileFrameId kGridFrameId = TileFrameId::Grid;
-
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int* p = _square[elevation]->tileFid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
                 int fid = *p;
-                *p = floorTileFidFromCombinedTileFid(fid) | (kGridFrameId | tileFlagsFromTileFid(roofTileFidFromCombinedTileFid(fid)));
+                const TileFrmId originalFloorTileFrmId = TileFrmId(fid, TileFrmId::Mode::Floor);
+                const TileFrmId originalRoofTileFrmId = TileFrmId(fid, TileFrmId::Mode::Roof);
+                const TileFrmId updatedTileFrmId = TileFrmId(
+                    TileFrmId(
+                        TileFrameId::Grid, 
+                        originalFloorTileFrmId.flags()), 
+                    TileFrmId(
+                        TileFrameId::Grid, 
+                        originalRoofTileFrmId.flags()));
 
-                fid = *p;
-                TileFlags tileFlags = tileFlagsFromTileFid(floorTileFidFromCombinedTileFid(fid));
-                TileFID updatedLowerTile = kGridFrameId | tileFlags;
-
-                *p = updatedLowerTile | roofTileFidFromCombinedTileFid(fid);
+                *p = updatedTileFrmId.fid();
 
                 p++;
             }
@@ -1851,31 +1853,28 @@ static void _square_reset()
 // 0x48431C
 static int _square_load(File* stream, MapHeaderFlags flags)
 {
-    TileFID roofTileFid;
-    TileFlags roofTileFlags;
-    TileFrameId roofTileArtId;
-    TileFID floorTileFid;
-
     _square_reset();
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            int* arr = _square[elevation]->tileFid;
-            if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
+            int* tileFids = _square[elevation]->tileFid;
+            if (_db_freadIntCount(stream, tileFids, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                roofTileFid = roofTileFidFromCombinedTileFid(arr[tile]);
+                const TileFrmId roofTileFrmId = TileFrmId(tileFids[tile], TileFrmId::Mode::Roof);
 
-                roofTileFlags = tileFlagsFromTileFid(roofTileFid) & ~TileFlags::TemporarilyHidden;
+                TileFlags roofTileFlags = roofTileFrmId.flags() & ~TileFlags::TemporarilyHidden;
 
-                roofTileArtId = TileFrmId(roofTileFid).frameId().tile;
+                TileFrameId roofTileArtId = roofTileFrmId.frameId().tile;
                 if (roofTileArtId == TileFrameId::Invalid) {
                     roofTileArtId = TileFrameId::Last;
                 }
-                floorTileFid = floorTileFidFromCombinedTileFid(arr[tile]);
-                arr[tile] = floorTileFid | (roofTileArtId | roofTileFlags);
+
+                const TileFrmId floorTileFrmId = TileFrmId(tileFids[tile], TileFrmId::Mode::Floor);
+                const TileFrmId updatedTileFrmId = TileFrmId(floorTileFrmId, TileFrmId(roofTileArtId, roofTileFlags));
+                tileFids[tile] = updatedTileFrmId.fid();
             }
         }
     }

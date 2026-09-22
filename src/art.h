@@ -364,32 +364,43 @@ class TileFrmId : public FrmId {
 public:
     enum class Mode : char {
         Floor = 0,
-        Roof = 1
+        Roof = 1,
+        Both = 2,
+        Unknown = 3,
     };
 
     constexpr TileFrmId()
         : FrmId() { }
 
-    constexpr explicit TileFrmId(TileFID fid)
+    constexpr explicit TileFrmId(int fid)
         : FrmId(
             OBJ_TYPE_TILE,
-            static_cast<int>(fid),
-            static_cast<int>(fid),
-            nullptr) { }
+            fid,
+            fid,
+            nullptr) 
+    { 
+        _mode = Mode::Both;
+    }
 
     constexpr explicit TileFrmId(int fid, Mode mode)
         : FrmId(
             OBJ_TYPE_TILE,
             mode == Mode::Floor ? floorFid(fid) : roofFid(fid),
             mode == Mode::Floor ? floorFid(fid) : roofFid(fid),
-            nullptr) { }
+            nullptr) 
+    { 
+        _mode = mode;
+    }
 
     constexpr explicit TileFrmId(const TileFrmId& floorFid, const TileFrmId& roofFid)
         : FrmId(
             OBJ_TYPE_TILE,
             ((floorFid.fid() & 0xFFFF) | ((roofFid.fid() & 0xFFFF) << 16)) & 0xFFFFFFFF,
             floorFid.frameId().id,
-            nullptr) { }
+            nullptr) 
+    { 
+        _mode = Mode::Both;
+    }
 
     constexpr explicit TileFrmId(TileFrameId tile, TileFlags flags)
         : FrmId(
@@ -410,13 +421,17 @@ public:
             return TileFlags::None;
         }
 
-        int flags = (fid() & kWeaponAnimationMask >> kWeaponAnimationMaskPosition);
+        int flags = (fid() & kWeaponAnimationMask) >> kWeaponAnimationMaskPosition;
         return static_cast<TileFlags>(flags);
     }
+
+    constexpr Mode mode() const { return _mode; }
 
     using FrmId::operator==;
     using FrmId::operator!=;
 private:
+    Mode _mode = Mode::Unknown;
+
     constexpr inline int floorFid(int fid) { return fid & 0xFFFF; }
     constexpr inline int roofFid(int fid) { return (fid >> 16) & 0xFFFF; }
 };
