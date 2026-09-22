@@ -352,8 +352,6 @@ inline bool mapIsValid(int map)
 }
 
 bool cityIsValid(int city);
-int wmMaxMapIndex();
-int wmMaxAreaIndex();
 int wmParseMapsConfig(Config* cfg, int startMapIdx);
 int wmParseAreasConfig(Config* cfg, int startAreaIdx);
 int wmMapIdxToName(Map mapIdx, char* dest, size_t size);
