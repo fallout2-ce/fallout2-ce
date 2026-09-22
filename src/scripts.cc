@@ -26,6 +26,7 @@
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "game_movie.h"
+#include "game_sound.h"
 #include "input.h"
 #include "map_defs.h"
 #include "memory.h"
@@ -3227,9 +3228,12 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
         return nullptr;
     }
 
-    if (!gGameDialogHeadFrmId.valid()) {
-        shouldStartSpeech = 0;
-    }
+    // CE FIX: !gGameDialogHeadFrmId.valid() used to force shouldStartSpeech to
+    // 0, silently dropping audio for any call made outside an active gdialog
+    // session (float_msg, combat, timed_event_p_proc, etc), since
+    // gGameDialogHeadFrmId only matters for lip-sync, not for whether the
+    // caller wants audio. That's now handled via _gdialogActive() below
+    // instead.
 
     MessageListItem messageListItem;
     messageListItem.num = messageId;
@@ -3239,16 +3243,22 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     }
 
     if (shouldStartSpeech) {
-        if (_gdialogActive()) {
-            if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
-                if (messageListItem.flags & 0x01) {
+        if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
+            if (messageListItem.flags & 0x01) {
+                if (_gdialogActive()) {
                     gameDialogStartLips(nullptr);
                 } else {
-                    gameDialogStartLips(messageListItem.audio);
+                    soundPlayFile("censor");
                 }
+            } else if (_gdialogActive()) {
+                gameDialogStartLips(messageListItem.audio);
             } else {
-                debugPrint("Missing speech name: %d\n", messageListItem.num);
+                // CE FIX: play non-dialog speech (voiced floats, combat
+                // lines, etc) with no lip-sync instead of dropping it.
+                speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
             }
+        } else {
+            debugPrint("Missing speech name: %d\n", messageListItem.num);
         }
     }
 
