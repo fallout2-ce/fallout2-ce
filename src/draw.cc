@@ -472,7 +472,9 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, Color c
 
         for (int x = 0; x < width; x++) {
             if (*ptr != 0 && cycle) {
-                *(ptr - 1) = color;
+                if (x != 0) {
+                    *(ptr - 1) = color;
+                }
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
                 *ptr = color;
@@ -491,8 +493,9 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, Color c
 
         for (int y = 0; y < height; y++) {
             if (*ptr != 0 && cycle) {
-                // TODO: Check in debugger, might be a bug.
-                *(ptr - pitch) = color;
+                if (y != 0) {
+                    *(ptr - pitch) = color;
+                }
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
                 *ptr = color;

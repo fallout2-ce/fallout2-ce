@@ -265,7 +265,7 @@ int fontManagerAdd(FontManager* fontManager)
 // 0x4D58AC GNW_text_font
 static void textFontSetCurrentImpl(int font)
 {
-    if (font >= TEXT_FONT_MAX) {
+    if (font < 0 || font >= TEXT_FONT_MAX) {
         return;
     }
 

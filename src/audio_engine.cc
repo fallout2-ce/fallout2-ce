@@ -153,7 +153,21 @@ int audioEngineCreateSoundBuffer(unsigned int size, int bitsPerSample, int chann
         std::lock_guard<std::recursive_mutex> lock(soundBuffer->mutex);
 
         if (!soundBuffer->active) {
-            soundBuffer->active = true;
+            if (size == 0) {
+                return -1;
+            }
+
+            void* data = malloc(size);
+            if (data == nullptr) {
+                return -1;
+            }
+
+            SDL_AudioStream* stream = SDL_NewAudioStream(bitsPerSample == 16 ? AUDIO_S16 : AUDIO_S8, channels, rate, gAudioEngineSpec.format, gAudioEngineSpec.channels, gAudioEngineSpec.freq);
+            if (stream == nullptr) {
+                free(data);
+                return -1;
+            }
+
             soundBuffer->size = size;
             soundBuffer->bitsPerSample = bitsPerSample;
             soundBuffer->channels = channels;
@@ -162,8 +176,9 @@ int audioEngineCreateSoundBuffer(unsigned int size, int bitsPerSample, int chann
             soundBuffer->playing = false;
             soundBuffer->looping = false;
             soundBuffer->pos = 0;
-            soundBuffer->data = malloc(size);
-            soundBuffer->stream = SDL_NewAudioStream(bitsPerSample == 16 ? AUDIO_S16 : AUDIO_S8, channels, rate, gAudioEngineSpec.format, gAudioEngineSpec.channels, gAudioEngineSpec.freq);
+            soundBuffer->data = data;
+            soundBuffer->stream = stream;
+            soundBuffer->active = true;
             return index;
         }
     }
@@ -388,7 +403,7 @@ bool audioEngineSoundBufferLock(int soundBufferIndex, unsigned int writePos, uns
         return false;
     }
 
-    if (audioBytes1 == nullptr) {
+    if (audioPtr1 == nullptr || audioBytes1 == nullptr || soundBuffer->data == nullptr || soundBuffer->size == 0) {
         return false;
     }
 
@@ -402,7 +417,11 @@ bool audioEngineSoundBufferLock(int soundBufferIndex, unsigned int writePos, uns
         writeBytes = soundBuffer->size;
     }
 
-    if (writePos + writeBytes <= soundBuffer->size) {
+    if (writePos >= soundBuffer->size || writeBytes > soundBuffer->size) {
+        return false;
+    }
+
+    if (writeBytes <= soundBuffer->size - writePos) {
         *(unsigned char**)audioPtr1 = (unsigned char*)soundBuffer->data + writePos;
         *audioBytes1 = writeBytes;
 
