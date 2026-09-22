@@ -472,7 +472,7 @@ void placeTile(int pid, const FrmId& frmId)
     int sx, sy;
 
     if (tileRoofIsVisible()) {
-        const TileFrmId oldRoofFrmId = FrmId(oldRoofFid).frameId().tile;
+        const TileFrmId oldRoofFrmId = TileFrmId(oldRoofFid).frameId().tile;
         if (oldRoofFrmId == frmId) {
             return;
         }
@@ -483,7 +483,7 @@ void placeTile(int pid, const FrmId& frmId)
 
         squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
     } else {
-        const TileFrmId oldFloorFrmId = FrmId(oldFloorFid).frameId().tile;
+        const TileFrmId oldFloorFrmId = TileFrmId(oldFloorFid).frameId().tile;
         if (oldFloorFrmId == frmId) {
             return;
         }
@@ -889,7 +889,7 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        TileFrameId floorArt = FrmId(floorTileFidFromCombinedTileFid(_square[gElevation]->tileFid[srcTiles[i]])).frameId().tile;
+        TileFrameId floorArt = TileFrmId(floorTileFidFromCombinedTileFid(_square[gElevation]->tileFid[srcTiles[i]])).frameId().tile;
         srcFrmId[i] = floorArt;
 
         int sx, sy;
