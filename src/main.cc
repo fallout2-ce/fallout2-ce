@@ -109,7 +109,9 @@ int falloutMain(int argc, char** argv)
         bool done = false;
         while (!done) {
             keyboardReset();
-            _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
+            if (!backgoundSoundIsPlaying()) {
+                _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
+            }
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
@@ -182,8 +184,10 @@ int falloutMain(int argc, char** argv)
                     mainMenuWindowInit();
                 } else {
                     main_unload_new();
-                    main_reset_system();
                     mainMenuCancelSubscreen();
+                    if (loadGameRc < 0) {
+                        main_reset_system();
+                    }
                 }
                 break;
             }
