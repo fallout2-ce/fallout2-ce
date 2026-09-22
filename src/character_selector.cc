@@ -263,9 +263,9 @@ int characterSelectorOpen()
     }
 
     if (rc == 2) {
-        mainMenuFadeOutAfterSubscreen(true);
+        mainMenuFadeOutForGameStart(true);
     } else {
-        mainMenuRestoreAfterSubscreen(true);
+        mainMenuFadeOutForMenuReturn(true);
     }
     characterSelectorWindowFree();
 

@@ -1220,8 +1220,7 @@ int lsgLoadGame(int mode)
         windowRefresh(gLoadSaveWindow);
         renderPresent();
         if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
-            colorPaletteLoad("color.pal");
-            paletteFadeTo(_cmap);
+            mainMenuShowSubscreen(true);
         }
         soundPlayFile("iisxxxx1");
         strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
@@ -1609,7 +1608,7 @@ int lsgLoadGame(int mode)
     }
 
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
-        mainMenuRestoreAfterSubscreen(true);
+        mainMenuFadeOutForMenuReturn(true);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU
