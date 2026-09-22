@@ -3226,49 +3226,19 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
     unsigned char arr[FrmId::kMaxFrameId + 1];
     memset(arr, 0, sizeof(arr));
 
-    if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[0]->tileFid[i];
-            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
-            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
-            if (floorTileFrameId == TileFrameId::Invalid) {
-                floorTileFrameId = TileFrameId::Last;
-            }
+    constexpr MapHeaderFlags kElevationFlags[ELEVATION_COUNT] = {
+        MAP_HEADER_ELEVATION_0,
+        MAP_HEADER_ELEVATION_1,
+        MAP_HEADER_ELEVATION_2,
+    };
 
-            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
-            if (roofTileFrameId == TileFrameId::Invalid) {
-                roofTileFrameId = TileFrameId::Last;
-            }
-
-            arr[static_cast<int>(floorTileFrameId)] = 1;
-            arr[static_cast<int>(roofTileFrameId)] = 1;
+    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        if ((flags & kElevationFlags[elevation]) != MAP_HEADER_NONE) {
+            continue;
         }
-    }
 
-    if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[1]->tileFid[i];
-            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
-            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
-            if (floorTileFrameId == TileFrameId::Invalid) {
-                floorTileFrameId = TileFrameId::Last;
-            }
-
-            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
-            if (roofTileFrameId == TileFrameId::Invalid) {
-                roofTileFrameId = TileFrameId::Last;
-            }
-
-            arr[static_cast<int>(floorTileFrameId)] = 1;
-            arr[static_cast<int>(roofTileFrameId)] = 1;
-        }
-    }
-
-    if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int tileFids = _square[2]->tileFid[i];
+        for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
+            int tileFids = _square[elevation]->tileFid[tile];
             TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
             TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
             TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
