@@ -109,12 +109,11 @@ public:
     static constexpr short kMaxFrameId = 4095;
 
     constexpr FrmId()
-        : _objectType(OBJ_TYPE_INVALID)
-        , _fid(kEmptyFid)
-        , _frameId { kInvalidFrameId }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_INVALID,
+            kEmptyFid,
+            kInvalidFrameId,
+            nullptr) { }
 
     static const FrmId& Empty()
     {
@@ -123,86 +122,73 @@ public:
     }
 
     constexpr explicit FrmId(int fid)
-        : _objectType(objectTypeFromFid(fid))
-        , _fid(fid)
-        , _frameId { buildFrameId(fid) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            objectTypeFromFid(fid),
+            fid,
+            fid,
+            nullptr) { }
 
     constexpr explicit FrmId(TileFID fid)
-        : _objectType(OBJ_TYPE_TILE)
-        , _fid(static_cast<int>(fid))
-        , _frameId { buildFrameId(static_cast<int>(fid)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_TILE,
+            static_cast<int>(fid),
+            static_cast<int>(fid),
+            nullptr) { }
 
     constexpr FrmId(Proto* proto)
-        : FrmId(proto == nullptr ? kEmptyFid : proto->fid)
-    {
-    }
+        : FrmId(proto == nullptr ? kEmptyFid : proto->fid) { }
 
     constexpr FrmId(Object* object)
-        : FrmId(object == nullptr ? kEmptyFid : object->fid)
-    {
-    }
+        : FrmId(object == nullptr ? kEmptyFid : object->fid) { }
 
     constexpr FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
-        : _objectType(OBJ_TYPE_MISC)
-        , _fid(buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType))
-        , _frameId { buildFrameId(static_cast<int>(misc)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_MISC,
+            buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType),
+            static_cast<int>(misc),
+            nullptr) { }
 
     constexpr FrmId(SceneryFrameId scenery)
-        : _objectType(OBJ_TYPE_SCENERY)
-        , _fid(buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)))
-        , _frameId { buildFrameId(static_cast<int>(scenery)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_SCENERY,
+            buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)),
+            static_cast<int>(scenery),
+            nullptr) { }
 
     constexpr FrmId(WallFrameId wall)
-        : _objectType(OBJ_TYPE_WALL)
-        , _fid(buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)))
-        , _frameId { buildFrameId(static_cast<int>(wall)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_WALL,
+            buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)),
+            static_cast<int>(wall),
+            nullptr) { }
 
     constexpr FrmId(ItemFrameId item)
-        : _objectType(OBJ_TYPE_ITEM)
-        , _fid(buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)))
-        , _frameId { buildFrameId(static_cast<int>(item)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_ITEM,
+            buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)),
+            static_cast<int>(item),
+            nullptr) { }
 
     constexpr FrmId(TileFrameId tile)
-        : _objectType(OBJ_TYPE_TILE)
-        , _fid(buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)))
-        , _frameId { buildFrameId(static_cast<int>(tile)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_TILE,
+            buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)),
+            static_cast<int>(tile),
+            nullptr) { }
 
     constexpr FrmId(SkillDexFrameId skilldex)
-        : _objectType(OBJ_TYPE_SKILLDEX)
-        , _fid(buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)))
-        , _frameId { buildFrameId(static_cast<int>(skilldex)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_SKILLDEX,
+            buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)),
+            static_cast<int>(skilldex),
+            nullptr) { }
 
     constexpr FrmId(InterfaceFrameId interface)
-        : _objectType(OBJ_TYPE_INTERFACE)
-        , _fid(buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)))
-        , _frameId { buildFrameId(static_cast<int>(interface)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_INTERFACE, 
+            buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)),
+            static_cast<int>(interface),
+            nullptr) { }
 
     // cannot be made constexpr as internally calls FrmId::exist and that checks file system
     FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
@@ -215,30 +201,25 @@ public:
     explicit FrmId(Object* object, AnimationType animType);
 
     constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
-        : _objectType(OBJ_TYPE_HEAD)
-        , _fid(buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget))
-        , _frameId { buildFrameId(static_cast<int>(head)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_HEAD,
+            buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget),
+            static_cast<int>(head),
+            nullptr) { }
 
     constexpr FrmId(BackgroundFrameId background)
-        : _objectType(OBJ_TYPE_BACKGROUND)
-        , _fid(buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)))
-        , _frameId { buildFrameId(static_cast<int>(background)) }
-        , _path(nullptr)
-    {
-    }
+        : FrmId(
+            OBJ_TYPE_BACKGROUND,
+            buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)),
+            static_cast<int>(background),
+            nullptr) { }
 
     constexpr FrmId(ObjectType objType, const char* path)
-        : _objectType(objType)
-        , _fid(kEmptyFid)
-        , _frameId { kInvalidFrameId }
-        , _path(path)
-
-    {
-        assert(objectTypeIsValid(objType));
-    }
+        : FrmId(
+            objType,
+            kEmptyFid,
+            kInvalidFrameId,
+            path) { assert(objectTypeIsValid(objType)); }
 
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
@@ -302,6 +283,14 @@ protected:
     static constexpr int kObjectTypeMaskPosition = 24;
     static constexpr int kRotationMaskPosition = 28;
 
+    constexpr FrmId(ObjectType objectType, int fid, int frameId, const char* path)
+        : _objectType(objectType)
+        , _fid(fid)
+        , _frameId { frameId < kMinFrameId ? kInvalidFrameId : frameIdFromFid(frameId) }
+        , _path(path)
+    {
+    }
+
 private:
     ObjectType _objectType;
     int _fid;
@@ -319,8 +308,6 @@ private:
     static constexpr ObjectType objectTypeFromFid(int fid) { return static_cast<ObjectType>((fid & kObjectTypeMask) >> kObjectTypeMaskPosition); }
     static constexpr Rotation rotationFromFid(int fid) { return static_cast<Rotation>((fid & kRotationMask) >> kRotationMaskPosition); }
 
-    static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
-
     /* FID Structure:
         3 bits for rotation
         4 bits for object type
@@ -329,7 +316,7 @@ private:
         12 bits for frame ID
 
         animType doesn't have to be of AnimationType enum only but also HeadAnimation
-        weaponAnimation doesn't have to be WeaponAnimation enum only but also Fidget or flags
+        weaponAnimation doesn't have to be WeaponAnimation enum only but also Fidget or TileFlags
     */
     static constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
