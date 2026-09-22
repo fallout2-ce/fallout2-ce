@@ -116,6 +116,7 @@ static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 static bool gMainMenuWindowHidden;
 static int gMainMenuOverlayCount = 0;
 static bool gMainMenuOverlayBackgroundEnabled = false;
+static int mainMenuSubscreenBackdrop = -1;
 
 static FrmImage mainMenuBackgroundFrmImage;
 static FrmImage mainMenuButtonPanelFrmImage;
@@ -576,6 +577,11 @@ int mainMenuWindowInit()
 // 0x481968 main_menu_destroy
 void mainMenuWindowFree()
 {
+    if (mainMenuSubscreenBackdrop != -1) {
+        windowDestroy(mainMenuSubscreenBackdrop);
+        mainMenuSubscreenBackdrop = -1;
+    }
+
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         if (gMainMenuButtons[index] != -1) {
             buttonDestroy(gMainMenuButtons[index]);
@@ -711,12 +717,21 @@ void mainMenuBeginSubscreen()
     }
 
     mainMenuWindowHide(true);
+    if (mainMenuSubscreenBackdrop == -1) {
+        // Palette index 0 in the root window is grey, so cover it around 640x480 dialogs.
+        mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, 0);
+    }
 }
 
 void mainMenuCancelSubscreen()
 {
     if (mainMenuWindowIsOverlayActive()) {
         mainMenuWindowLeaveOverlay();
+    }
+
+    if (mainMenuSubscreenBackdrop != -1) {
+        windowDestroy(mainMenuSubscreenBackdrop);
+        mainMenuSubscreenBackdrop = -1;
     }
 }
 
