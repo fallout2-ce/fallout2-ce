@@ -1109,7 +1109,7 @@ static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set)
 }
 
 // CE: Extracted from wmMapInit to support modular config loading.
-int wmParseMapsConfig(Config* cfg)
+int wmParseMapsConfig(Config* cfg, bool reindex)
 {
     if (cfg == nullptr) return -1;
 
@@ -1118,7 +1118,7 @@ int wmParseMapsConfig(Config* cfg)
     MapInfo* maps;
     MapInfo* map;
 
-    Map mapIdx = static_cast<Map>(wmMaxMapNum);
+    Map mapIdx = static_cast<Map>(reindex ? MAP_FIRST : wmMaxMapNum);
     int loop_safety_counter = 0;
 
     while (loop_safety_counter < 5000) {
@@ -1232,7 +1232,7 @@ int wmParseMapsConfig(Config* cfg)
                 return -1;
             }
 
-            automapSetDisplayMap(mapIdx, num);
+            if (!reindex) automapSetDisplayMap(mapIdx, num);
         }
 
         if (configGetString(cfg, section, "random_start_point_0", &str)) {
@@ -1271,7 +1271,7 @@ int wmParseMapsConfig(Config* cfg)
 }
 
 // CE: Extracted from wmAreaInit to support modular config loading.
-int wmParseAreasConfig(Config* cfg)
+int wmParseAreasConfig(Config* cfg, bool reindex)
 {
     if (cfg == nullptr) return -1;
 
@@ -1282,7 +1282,7 @@ int wmParseAreasConfig(Config* cfg)
     CityInfo* city;
     EntranceInfo* entrance;
 
-    City area_idx = static_cast<City>(wmMaxAreaNum);
+    City area_idx = static_cast<City>(reindex ? CITY_FIRST : wmMaxAreaNum);
     InterfaceFrameId frameId;
 
     int loop_safety_counter = 0;
@@ -1307,7 +1307,7 @@ int wmParseAreasConfig(Config* cfg)
         // NOTE: Uninline.
         wmAreaSlotInit(city);
 
-        city->areaId = City(area_idx);
+        city->areaId = City(wmMaxAreaNum - 1);
 
         InterfaceFrmId frmId = InterfaceFrameId::Invalid;
         if (frameId != InterfaceFrameId::Invalid) {
