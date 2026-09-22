@@ -29,6 +29,7 @@
 #include "svga.h"
 #include "window_manager.h"
 #include "worldmap.h"
+#include "xfile.h"
 
 namespace fallout {
 
@@ -1806,18 +1807,41 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
 
     // Check for existence by getting file size.
     int fileSize;
-    if (dbGetFileSize(path, &fileSize) != 0) {
-        if (gGameSoundDebugEnabled) {
-            debugPrint("-- find failed ");
-        }
-
-        return -1;
+    if (dbGetFileSize(path, &fileSize) == 0) {
+        strncpy(dest, path, COMPAT_MAX_PATH);
+        dest[COMPAT_MAX_PATH] = '\0';
+        return 0;
     }
 
-    strncpy(dest, path, COMPAT_MAX_PATH);
-    dest[COMPAT_MAX_PATH] = '\0';
+    // CE FIX: mod-provided speech (e.g. voiced floats) is commonly packaged
+    // one subfolder per NPC, same as the base game's own dialogue speech
+    // (see _lips_make_speech()), but with no dialogue head fid available to
+    // name that subfolder from (these lines can play with no dialogue
+    // window open at all), and no fixed naming relation between the
+    // subfolder and the filename (e.g. "AHS-7"'s lines are "ahs7<N>.acm"
+    // inside an "ahs7\" folder -- stripping trailing digits from the
+    // filename would eat the "7" that's actually part of the NPC's name).
+    // Search one subfolder level under sound\speech\ for the file instead
+    // of guessing its name.
+    char pattern[COMPAT_MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s*\\%s%s", _sound_speech_path, src, ".ACM");
 
-    return 0;
+    XList xlist = {};
+    if (xlistInit(pattern, &xlist)) {
+        if (xlist.fileNamesLength > 0) {
+            strncpy(dest, xlist.fileNames[0], COMPAT_MAX_PATH);
+            dest[COMPAT_MAX_PATH] = '\0';
+            xlistFree(&xlist);
+            return 0;
+        }
+        xlistFree(&xlist);
+    }
+
+    if (gGameSoundDebugEnabled) {
+        debugPrint("-- find failed ");
+    }
+
+    return -1;
 }
 
 // 0x4520EC
