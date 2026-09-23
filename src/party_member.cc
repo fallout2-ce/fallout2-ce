@@ -227,7 +227,7 @@ int partyMemberParseConfig(Config* config, bool reindex)
         gPartyMemberDescriptions.push_back(desc);
 
         // Adjust vectors
-        PartyMemberLevelUpInfo levelUpInfo{};
+        PartyMemberLevelUpInfo levelUpInfo {};
         _partyMemberLevelUpInfoList.push_back(levelUpInfo);
 
         searchIdx++;
@@ -240,7 +240,8 @@ int partyMemberParseConfig(Config* config, bool reindex)
     return 0;
 }
 
-static int _parserTestData() {
+static int _parserTestData()
+{
     // =========================================================================
     // Test data
     // =========================================================================
