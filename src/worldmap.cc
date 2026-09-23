@@ -1232,6 +1232,8 @@ int wmParseMapsConfig(Config* cfg, bool reindex)
                 return -1;
             }
 
+            // automap has a fixed capacity of 160
+            // TODO: exapand capacity, introduce external sources support to automap
             if (!reindex) automapSetDisplayMap(mapIdx, num);
         }
 
