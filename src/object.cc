@@ -1495,13 +1495,13 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->tileFid[roofX + 100 * roofY];
-            const TileFrmId currentSquareRoofFrmId = TileFrmId(currentSquare, TileFrmId::Mode::Roof);
+            const RoofTileFrmId currentSquareRoofFrmId = RoofTileFrmId(currentSquare);
             const TileFrameId currentSquareRoofFrameId = currentSquareRoofFrmId.frameId().tile;
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            const TileFrmId previousSquareRoofFrmId = TileFrmId(previousSquare, TileFrmId::Mode::Roof);
+            const RoofTileFrmId previousSquareRoofFrmId = RoofTileFrmId(previousSquare);
             bool isEmpty = currentSquareRoofFrameId == TileFrameId::Grid;
             if (isEmpty != _obj_last_is_empty || currentSquareRoofFrmId.flags() != previousSquareRoofFrmId.flags()) {
                 if (!_obj_last_is_empty) {
@@ -1553,7 +1553,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    TileFrameId frameId = TileFrmId(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y], TileFrmId::Mode::Roof).frameId().tile;
+    TileFrameId frameId = RoofTileFrmId(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]).frameId().tile;
     if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -3237,8 +3237,8 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
         for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int tileFids = _square[elevation]->tileFid[tile];
-            const TileFrmId floorTileFrmId = TileFrmId(tileFids, TileFrmId::Mode::Floor);
-            const TileFrmId roofTileFrmId = TileFrmId(tileFids, TileFrmId::Mode::Roof);
+            const FloorTileFrmId floorTileFrmId = FloorTileFrmId(tileFids);
+            const RoofTileFrmId roofTileFrmId = RoofTileFrmId(tileFids);
             TileFrameId floorTileFrameId = floorTileFrmId.frameId().tile;
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;

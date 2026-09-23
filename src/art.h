@@ -360,42 +360,73 @@ using SkillDexFrmId = TypedFrmId<OBJ_TYPE_SKILLDEX, SkillDexFrameId>;
 using InterfaceFrmId = TypedFrmId<OBJ_TYPE_INTERFACE, InterfaceFrameId>;
 using BackgroundFrmId = TypedFrmId<OBJ_TYPE_BACKGROUND, BackgroundFrameId>;
 
-class TileFrmId : public FrmId {
-public:
-    enum class Mode : char {
-        Floor = 0,
-        Roof = 1,
-        Both = 2
-    };
+constexpr int kFloorTileFidShift = 0;
+constexpr int kRoofTileFidShift = 16;
 
-    constexpr TileFrmId()
+template <int FidShift>
+class HalfTileFrmId : public FrmId {
+public:
+    static_assert(
+        FidShift == kFloorTileFidShift || FidShift == kRoofTileFidShift,
+        "Only 0 and 16 bit shifts are supported");
+    
+    constexpr HalfTileFrmId()
         : FrmId() { }
 
-    constexpr explicit TileFrmId(int fid, Mode mode = Mode::Both)
+    constexpr explicit HalfTileFrmId(int fid)
         : FrmId(
             OBJ_TYPE_TILE,
-            fidFromFidByMode(fid, mode),
-            fidFromFidByMode(fid, mode),
-            nullptr) 
-    { 
-        _mode = mode;
-    }
+            (fid >> FidShift) & kHalfFidMask,
+            (fid >> FidShift) & kHalfFidMask,
+            nullptr) { }
 
-    constexpr explicit TileFrmId(const TileFrmId& floorFid, const TileFrmId& roofFid)
-        : FrmId(
-            OBJ_TYPE_TILE,
-            buildFid(floorFid, roofFid),
-            floorFid.frameId().id,
-            nullptr) 
-    { 
-        _mode = Mode::Both;
-    }
-
-    constexpr explicit TileFrmId(TileFrameId tile, TileFlags flags)
+    constexpr explicit HalfTileFrmId(TileFrameId tile, TileFlags flags)
         : FrmId(
             OBJ_TYPE_TILE,
             buildHalfFid(tile, flags),
             static_cast<int>(tile),
+            nullptr) { }
+
+    constexpr TileFlags flags() const
+    {
+        if (!hasFid()) {
+            return TileFlags::None;
+        }
+
+        int flags = (fid() & kFlagsMask) >> kFlagsPosition;
+        return static_cast<TileFlags>(flags);
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+private:
+    static constexpr int kHalfFidMask = 0xFFFF;
+    static constexpr int kFlagsMask = 0xF000;
+    static constexpr int kFlagsPosition = 12;
+
+    /* Tile Half FID Structure:
+        12 bits for floor tile frame id
+         4 bits for floor tile flags
+    */
+    static constexpr int buildHalfFid(TileFrameId frameId, TileFlags flags)
+    {
+        return ((static_cast<int>(frameId) & kFrameIdMask) | ((static_cast<int>(flags) & 0xF) << kFlagsPosition)) & kHalfFidMask;
+    }
+};
+
+using FloorTileFrmId = HalfTileFrmId<kFloorTileFidShift>;
+using RoofTileFrmId = HalfTileFrmId<kRoofTileFidShift>;
+
+class TileFrmId : public FrmId {
+public:
+    constexpr TileFrmId()
+        : FrmId() { }
+
+    constexpr explicit TileFrmId(const FloorTileFrmId& floorFid, const RoofTileFrmId& roofFid)
+        : FrmId(
+            OBJ_TYPE_TILE,
+            buildFid(floorFid, roofFid),
+            floorFid.frameId().id,
             nullptr) { }
 
     constexpr TileFrmId(TileFrameId tile)
@@ -404,55 +435,18 @@ public:
     constexpr TileFrmId(const char* path)
         : FrmId(OBJ_TYPE_TILE, path) { }
 
-    constexpr TileFlags flags() const
-    {
-        if (!hasFid()) {
-            return TileFlags::None;
-        }
-
-        int flags = (fid() & kTileFlagsMask) >> kFloorFlagsPosition;
-        return static_cast<TileFlags>(flags);
-    }
-
-    constexpr Mode mode() const { return _mode; }
-
     using FrmId::operator==;
     using FrmId::operator!=;
 private:
-    Mode _mode = Mode::Floor;
-
-    static constexpr int kHalfFidMask = 0xFFFF;
-    static constexpr int kTileFlagsMask = 0xF000;
-    static constexpr int kFloorFlagsPosition = 12;
-    static constexpr int kRoofMaskPosition = 16;
-
-    static constexpr int buildHalfFid(TileFrameId frameId, TileFlags flags)
-    {
-        return ((static_cast<int>(frameId) & kFrameIdMask) | ((static_cast<int>(flags) & 0xF) << kFloorFlagsPosition)) & kHalfFidMask;
-    }
-
     /* Tile FID Structure:
         12 bits for floor tile frame id
          4 bits for floor tile flags
         12 bits for roof tile frame id
          4 bits for roof tile flags
     */
-    static constexpr int buildFid(const TileFrmId& floorFrmId, const TileFrmId& roofFrmId)
+    static constexpr int buildFid(const FloorTileFrmId& floorFrmId, const RoofTileFrmId& roofFrmId)
     {
-        assert(floorFrmId.mode() == Mode::Floor && roofFrmId.mode() == Mode::Roof && "Floor and Roof TileFrmId mismatch!");
-        return ((floorFrmId.fid() & kHalfFidMask) | ((roofFrmId.fid()) << kRoofMaskPosition));
-    }
-
-    static constexpr int fidFromFidByMode(int fid, Mode mode)
-    {
-        switch(mode){
-            case Mode::Roof:
-                return (fid >> kRoofMaskPosition) & kHalfFidMask;
-            case Mode::Floor:
-                return fid & kHalfFidMask;
-            default:
-                return fid;
-        }
+        return (floorFrmId.fid() | ((roofFrmId.fid()) << kRoofTileFidShift));
     }
 };
 

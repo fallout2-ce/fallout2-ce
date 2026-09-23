@@ -1481,12 +1481,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrameId frameId;
 
-            frameId = TileFrmId(_square[elevation]->tileFid[tile], TileFrmId::Mode::Floor).frameId().tile;
+            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
             if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frameId = TileFrmId(_square[elevation]->tileFid[tile], TileFrmId::Mode::Roof).frameId().tile;
+            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
             if (frameId != TileFrameId::Grid) {
                 break;
             }
@@ -1832,13 +1832,13 @@ static void _square_reset()
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
                 int fid = *p;
-                const TileFrmId originalFloorTileFrmId = TileFrmId(fid, TileFrmId::Mode::Floor);
-                const TileFrmId originalRoofTileFrmId = TileFrmId(fid, TileFrmId::Mode::Roof);
+                const FloorTileFrmId originalFloorTileFrmId = FloorTileFrmId(fid);
+                const RoofTileFrmId originalRoofTileFrmId = RoofTileFrmId(fid);
                 const TileFrmId updatedTileFrmId = TileFrmId(
-                    TileFrmId(
+                    FloorTileFrmId(
                         TileFrameId::Grid, 
                         originalFloorTileFrmId.flags()), 
-                    TileFrmId(
+                    RoofTileFrmId(
                         TileFrameId::Grid, 
                         originalRoofTileFrmId.flags()));
 
@@ -1863,7 +1863,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                const TileFrmId roofTileFrmId = TileFrmId(tileFids[tile], TileFrmId::Mode::Roof);
+                const RoofTileFrmId roofTileFrmId = RoofTileFrmId(tileFids[tile]);
 
                 TileFlags roofTileFlags = roofTileFrmId.flags() & ~TileFlags::TemporarilyHidden;
 
@@ -1872,8 +1872,8 @@ static int _square_load(File* stream, MapHeaderFlags flags)
                     roofTileArtId = TileFrameId::Last;
                 }
 
-                const TileFrmId floorTileFrmId = TileFrmId(tileFids[tile], TileFrmId::Mode::Floor);
-                const TileFrmId updatedTileFrmId = TileFrmId(floorTileFrmId, TileFrmId(roofTileArtId, roofTileFlags));
+                const FloorTileFrmId floorTileFrmId = FloorTileFrmId(tileFids[tile]);
+                const TileFrmId updatedTileFrmId = TileFrmId(floorTileFrmId, RoofTileFrmId(roofTileArtId, roofTileFlags));
                 tileFids[tile] = updatedTileFrmId.fid();
             }
         }

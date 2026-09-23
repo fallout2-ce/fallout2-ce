@@ -466,8 +466,8 @@ void placeTile(int pid, const FrmId& frmId)
     int* squarePtr = &_square[gElevation]->tileFid[squareTile];
     int oldValue = *squarePtr;
 
-    const TileFrmId oldFloorFrmId = TileFrmId(oldValue, TileFrmId::Mode::Floor);
-    const TileFrmId oldRoofFrmId = TileFrmId(oldValue, TileFrmId::Mode::Roof);
+    const FloorTileFrmId oldFloorFrmId = FloorTileFrmId(oldValue);
+    const RoofTileFrmId oldRoofFrmId = RoofTileFrmId(oldValue);
 
     int sx, sy;
 
@@ -476,7 +476,7 @@ void placeTile(int pid, const FrmId& frmId)
             return;
         }
 
-        const TileFrmId newRoofFrmId = TileFrmId(newFrameId, oldRoofFrmId.flags());
+        const RoofTileFrmId newRoofFrmId = RoofTileFrmId(newFrameId, oldRoofFrmId.flags());
         *squarePtr = TileFrmId(oldFloorFrmId, newRoofFrmId).fid();
 
         squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
@@ -485,7 +485,7 @@ void placeTile(int pid, const FrmId& frmId)
             return;
         }
 
-        const TileFrmId newFloorFid = TileFrmId(newFrameId, oldFloorFrmId.flags());
+        const FloorTileFrmId newFloorFid = FloorTileFrmId(newFrameId, oldFloorFrmId.flags());
         *squarePtr = TileFrmId(newFloorFid, oldRoofFrmId).fid();
 
         squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
@@ -885,7 +885,7 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        TileFrameId floorArt = TileFrmId(_square[gElevation]->tileFid[srcTiles[i]], TileFrmId::Mode::Floor).frameId().tile;
+        TileFrameId floorArt = FloorTileFrmId(_square[gElevation]->tileFid[srcTiles[i]]).frameId().tile;
         srcFrmId[i] = floorArt;
 
         int sx, sy;
@@ -904,13 +904,13 @@ void copyTile()
             int dstSquare = squareTileFromScreenXY(dstSx, dstSy, gElevation);
             if (dstSquare != -1) {
                 int* tileFid = &_square[gElevation]->tileFid[dstSquare];
-                const TileFrmId floorFrmId = TileFrmId(*tileFid, TileFrmId::Mode::Floor);
-                const TileFrmId roofFrmId = TileFrmId(*tileFid, TileFrmId::Mode::Roof);
+                const FloorTileFrmId floorFrmId = FloorTileFrmId(*tileFid);
+                const RoofTileFrmId roofFrmId = RoofTileFrmId(*tileFid);
                 TileFrameId newFloorFrameId = srcFrmId[i].frameId().tile;
                 if (newFloorFrameId == TileFrameId::Invalid) {
                     newFloorFrameId = TileFrameId::Last;
                 }
-                const TileFrmId newFloorFrmId = TileFrmId(newFloorFrameId, floorFrmId.flags());
+                const FloorTileFrmId newFloorFrmId = FloorTileFrmId(newFloorFrameId, floorFrmId.flags());
                 *tileFid = TileFrmId(newFloorFrmId, roofFrmId).fid();
             }
         }
@@ -1217,10 +1217,10 @@ void mapper_shift_map_elev()
     int* src = _square[gElevation]->tileFid;
     for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
         int v = src[i];
-        const TileFrmId floorTileFrmId = TileFrmId(v, TileFrmId::Mode::Floor);
-        const TileFrmId roofTileFrmId = TileFrmId(v, TileFrmId::Mode::Roof);
-        const TileFrmId newRoofFrmId = TileFrmId(kBlankFrameId, roofTileFrmId.flags());
-        const TileFrmId newFloorFrmId = TileFrmId(kBlankFrameId, floorTileFrmId.flags());
+        const FloorTileFrmId floorTileFrmId = FloorTileFrmId(v);
+        const RoofTileFrmId roofTileFrmId = RoofTileFrmId(v);
+        const RoofTileFrmId newRoofFrmId = RoofTileFrmId(kBlankFrameId, roofTileFrmId.flags());
+        const FloorTileFrmId newFloorFrmId = FloorTileFrmId(kBlankFrameId, floorTileFrmId.flags());
         src[i] = TileFrmId(newFloorFrmId, newRoofFrmId).fid();
     }
 
