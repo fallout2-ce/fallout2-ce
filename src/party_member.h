@@ -12,8 +12,8 @@
 namespace fallout {
 
 extern int gPartyMemberDescriptionsLength;
-extern int* gPartyMemberPids;
-// extern std::vector<int> gPartyMemberPids;
+// extern int* gPartyMemberPids;
+extern std::vector<int> gPartyMemberPids;
 
 int partyMemberParseConfig(Config* config, bool reindex = false);
 int partyMembersInit();

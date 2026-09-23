@@ -83,16 +83,17 @@ static int _partyMemberCopyLevelInfo(Object* object, int a2);
 int gPartyMemberDescriptionsLength = 0;
 
 // 0x519DA0 partyMemberPidList
-int* gPartyMemberPids = nullptr;
-// std::vector<int> gPartyMemberPids;
+// ~int* gPartyMemberPids = nullptr;
+std::vector<int> gPartyMemberPids;
 
-//
+// ~PartyMemberListItem* gPartyMembers = nullptr;
+std::vector<PartyMemberListItem> gPartyMembers;
+
 static PartyMemberListItem* _itemSaveListHead = nullptr;
 
 // List of party members, it's length is [gPartyMemberDescriptionsLength] + 20.
 //
 // 0x519DA8 partyMemberList
-PartyMemberListItem* gPartyMembers = nullptr;
 // std::vector<PartyMemberListItem> gPartyMembers;
 
 // Number of critters added to party.
@@ -107,34 +108,33 @@ static int _partyMemberItemCount = 20000;
 static int _partyStatePrepped = 0;
 
 // 0x519DB8 partyMemberAIOptions
-static PartyMemberDescription* gPartyMemberDescriptions = nullptr;
+// ~static PartyMemberDescription* gPartyMemberDescriptions = nullptr;
+static std::vector<PartyMemberDescription> gPartyMemberDescriptions;
 
 // 0x519DBC partyMemberLevelUpInfoList
-static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
+// ~static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
+static std::vector<PartyMemberLevelUpInfo> _partyMemberLevelUpInfoList;
 
 // 0x519DC0 curID
 static int _curID = 20000;
 
 static bool npcEngineLevelUp = true;
 
-// CE: parser vectors
-static std::vector<int> vPartyMemberPids;
-static std::vector<PartyMemberListItem> vPartyMembers;
-static std::vector<PartyMemberDescription> vPartyMemberDescriptions;
-static std::vector<PartyMemberLevelUpInfo> vPartyMemberLevelUpInfoList;
-
 // CE: extracted from partyMembersInit()
+
 int partyMemberParseConfig(Config* config, bool reindex)
 {
     if (config == nullptr) return -1;
 
     char section[50];
-
     int loopSafetyCounter = 0;
-    int fileIdx = 0;
 
     while (loopSafetyCounter++ < 1000) {
-        int searchIdx = reindex ? fileIdx : static_cast<int>(vPartyMemberDescriptions.size());
+        // In case reindex = true search file sections starting from 0
+        // (writing gPartyMemberDescriptionsLength + 1)
+        // Otherwise use gPartyMemberDescriptionsLength
+        // (for first/subsequent indexed config file reads)
+        int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
 
         snprintf(section, sizeof(section), "Party Member %d", searchIdx);
 
@@ -143,18 +143,12 @@ int partyMemberParseConfig(Config* config, bool reindex)
             break;
         }
 
-        vPartyMemberPids.push_back(partyMemberPid);
-
-        PartyMemberListItem listItem {};
-        vPartyMembers.push_back(listItem);
+        gPartyMemberPids.push_back(partyMemberPid);
 
         PartyMemberDescription desc;
         partyMemberDescriptionInit(&desc);
 
-        PartyMemberLevelUpInfo levelUpInfo {};
-        vPartyMemberLevelUpInfoList.push_back(levelUpInfo);
-
-        // Parse config strings into temp desc struct
+        // Parse config strings to desc
         char* string;
 
         if (configGetString(config, section, "area_attack_mode", &string)) {
@@ -239,42 +233,17 @@ int partyMemberParseConfig(Config* config, bool reindex)
             }
         }
 
-        vPartyMemberDescriptions.push_back(desc);
+        gPartyMemberDescriptions.push_back(desc);
 
-        fileIdx++;
-        loopSafetyCounter++;
+        // Adjust vectors
+        PartyMemberLevelUpInfo levelUpInfo{};
+        _partyMemberLevelUpInfoList.push_back(levelUpInfo);
+
+        searchIdx++;
     }
 
-    // sync vectors to pointers
-    gPartyMemberDescriptionsLength = static_cast<int>(vPartyMemberDescriptions.size());
-
-    // free previous mem
-    internal_free(gPartyMemberPids);
-    gPartyMemberPids = (int*)internal_malloc(sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
-    if (gPartyMemberPids != nullptr) {
-        memcpy(gPartyMemberPids, vPartyMemberPids.data(), sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
-    }
-
-    internal_free(gPartyMembers);
-    // keep +20 offset
-    size_t partyMembersAllocSize = sizeof(*gPartyMembers) * (gPartyMemberDescriptionsLength + 20);
-    gPartyMembers = (PartyMemberListItem*)internal_malloc(partyMembersAllocSize);
-    if (gPartyMembers != nullptr) {
-        memset(gPartyMembers, 0, partyMembersAllocSize);
-        memcpy(gPartyMembers, vPartyMembers.data(), sizeof(*gPartyMembers) * vPartyMembers.size());
-    }
-
-    internal_free(gPartyMemberDescriptions);
-    gPartyMemberDescriptions = (PartyMemberDescription*)internal_malloc(sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
-    if (gPartyMemberDescriptions != nullptr) {
-        memcpy(gPartyMemberDescriptions, vPartyMemberDescriptions.data(), sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
-    }
-
-    internal_free(_partyMemberLevelUpInfoList);
-    _partyMemberLevelUpInfoList = (PartyMemberLevelUpInfo*)internal_malloc(sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
-    if (_partyMemberLevelUpInfoList != nullptr) {
-        memcpy(_partyMemberLevelUpInfoList, vPartyMemberLevelUpInfoList.data(), sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
-    }
+    gPartyMembers.resize(gPartyMemberDescriptions.size() + 20);
+    gPartyMemberDescriptionsLength = static_cast<int>(gPartyMemberDescriptions.size());
 
     return 0;
 }
@@ -320,25 +289,32 @@ void partyMembersExit()
 
     gPartyMemberDescriptionsLength = 0;
 
-    if (gPartyMemberPids != nullptr) {
-        internal_free(gPartyMemberPids);
-        gPartyMemberPids = nullptr;
-    }
+    gPartyMemberPids.clear();
+    gPartyMembers.clear();
+    gPartyMemberDescriptions.clear();
+    _partyMemberLevelUpInfoList.clear();
 
-    if (gPartyMembers != nullptr) {
-        internal_free(gPartyMembers);
-        gPartyMembers = nullptr;
-    }
+    // gPartyMemberPids.clear();
+    // if (gPartyMemberPids != nullptr) {
+    //     internal_free(gPartyMemberPids);
+    //     gPartyMemberPids = nullptr;
+    // }
 
-    if (gPartyMemberDescriptions != nullptr) {
-        internal_free(gPartyMemberDescriptions);
-        gPartyMemberDescriptions = nullptr;
-    }
+    // gPartyMembers.clear();
+    // if (gPartyMembers != nullptr) {
+    //     internal_free(gPartyMembers);
+    //     gPartyMembers = nullptr;
+    // }
 
-    if (_partyMemberLevelUpInfoList != nullptr) {
-        internal_free(_partyMemberLevelUpInfoList);
-        _partyMemberLevelUpInfoList = nullptr;
-    }
+    // if (gPartyMemberDescriptions != nullptr) {
+    //     internal_free(gPartyMemberDescriptions);
+    //     gPartyMemberDescriptions = nullptr;
+    // }
+    //
+    // if (_partyMemberLevelUpInfoList != nullptr) {
+    //     internal_free(_partyMemberLevelUpInfoList);
+    //     _partyMemberLevelUpInfoList = nullptr;
+    // }
 }
 
 // 0x4941F0 partyMemberGetAIOptions
@@ -753,7 +729,7 @@ int partyMembersLoad(File* stream)
     if (fileReadInt32(stream, &gPartyMembersLength) == -1) goto cleanup;
     if (fileReadInt32(stream, &_partyMemberItemCount) == -1) goto cleanup;
 
-    gPartyMembers->object = gDude;
+    gPartyMembers.front().object = gDude;
 
     if (gPartyMembersLength != 0) {
         for (int index = 1; index < gPartyMembersLength; index++) {
