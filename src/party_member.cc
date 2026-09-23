@@ -86,13 +86,11 @@ int gPartyMemberDescriptionsLength = 0;
 std::vector<int> gPartyMemberPids;
 
 std::vector<PartyMemberListItem> gPartyMembers;
-
 static PartyMemberListItem* _itemSaveListHead = nullptr;
 
 // List of party members, it's length is [gPartyMemberDescriptionsLength] + 20.
 //
 // 0x519DA8 partyMemberList
-// std::vector<PartyMemberListItem> gPartyMembers;
 
 // Number of critters added to party.
 //
@@ -117,7 +115,6 @@ static int _curID = 20000;
 static bool npcEngineLevelUp = true;
 
 // CE: extracted from partyMembersInit()
-
 int partyMemberParseConfig(Config* config, bool reindex)
 {
     if (config == nullptr) return -1;
@@ -255,7 +252,7 @@ int partyMembersInit()
         return -1;
     }
 
-    if (partyMemberParseConfig(config.get(), static_cast<int>(MAP_FIRST)) == -1) {
+    if (partyMemberParseConfig(config.get(), false) == -1) {
         return -1;
     }
 
@@ -687,21 +684,18 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 // 0x494BBC partyMemberLoad
 int partyMembersLoad(File* stream)
 {
-    int result = -1;
+    std::vector<int> partyMemberObjectIds(gPartyMemberDescriptionsLength + 20, 0);
 
-    int* partyMemberObjectIds = (int*)internal_malloc(sizeof(*partyMemberObjectIds) * (gPartyMemberDescriptionsLength + 20));
-    if (partyMemberObjectIds == nullptr) {
-        return -1;
-    }
-
-    if (fileReadInt32(stream, &gPartyMembersLength) == -1) goto cleanup;
-    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) goto cleanup;
+    if (fileReadInt32(stream, &gPartyMembersLength) == -1) return -1;
+    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) return -1;
 
     gPartyMembers.front().object = gDude;
 
     if (gPartyMembersLength != 0) {
         for (int index = 1; index < gPartyMembersLength; index++) {
-            if (fileReadInt32(stream, &(partyMemberObjectIds[index])) == -1) goto cleanup;
+            if (fileReadInt32(stream, &partyMemberObjectIds[index]) == -1) {
+                return -1;
+            }
         }
 
         for (int index = 1; index < gPartyMembersLength; index++) {
@@ -719,11 +713,11 @@ int partyMembersLoad(File* stream)
                 gPartyMembers[index].object = object;
             } else {
                 debugPrint("Couldn't find party member on map...trying to load anyway.\n");
-                if (index + 1 >= gPartyMembersLength) {
-                    partyMemberObjectIds[index] = 0;
-                } else {
-                    memcpy(&(partyMemberObjectIds[index]), &(partyMemberObjectIds[index + 1]), sizeof(*partyMemberObjectIds) * (gPartyMembersLength - (index + 1)));
-                }
+
+                partyMemberObjectIds.erase(partyMemberObjectIds.begin() + index);
+                // Amend original alloc size just in case
+                // (safety push for _partyMemberLevelUpInfoList/gPartyMemberDescriptionsLength loop below)
+                partyMemberObjectIds.push_back(0);
 
                 index--;
                 gPartyMembersLength--;
@@ -731,7 +725,7 @@ int partyMembersLoad(File* stream)
         }
 
         if (_partyMemberUnPrepSave() == -1) {
-            goto cleanup;
+            return -1;
         }
     }
 
@@ -740,16 +734,12 @@ int partyMembersLoad(File* stream)
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
         PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[index]);
 
-        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) goto cleanup;
-        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) goto cleanup;
-        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) goto cleanup;
+        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) return -1;
+        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) return -1;
+        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) return -1;
     }
 
-    result = 0;
-
-cleanup:
-    internal_free(partyMemberObjectIds);
-    return result;
+    return 0;
 }
 
 // 0x494D7C partyMemberClear
