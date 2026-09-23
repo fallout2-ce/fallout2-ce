@@ -1,8 +1,8 @@
-# FOR:CE Community Engine
+# Fallout 2: Community Engine
 
-FOR:CE is a fully working re-implementation of the classic Fallout engine, optimized for a hassle-free experience on multiple platforms, including Windows, Mac, iOS, Android, and Linux.  It provides high resolution support, quality-of-life improvements, and dozens upon dozens of bug fixes.
+Fallout 2:CE is a fully working re-implementation of the classic Fallout engine, optimized for a hassle-free experience on multiple platforms, including Windows, Mac, iOS, Android, and Linux.  It provides high resolution support, quality-of-life improvements, and dozens upon dozens of bug fixes.
 
-This is a fork of the original Fallout2: CE project, which is no longer getting regular updates.
+This is a fork of the original Fallout 2:CE project, which is no longer getting regular updates.
 
 Popular total conversion mods are partially supported. Nevada and Sonora work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project) is supported. [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
 
