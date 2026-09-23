@@ -123,9 +123,7 @@ int partyMemberParseConfig(Config* config, bool reindex)
     int loopSafetyCounter = 0;
 
     // If reindex = true search file sections starting from 0
-    // (writing gPartyMemberDescriptionsLength + 1)
     // Otherwise use gPartyMemberDescriptionsLength
-    // (for first/subsequent indexed config file reads)
     int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
 
     while (loopSafetyCounter < 1000) {
