@@ -1108,20 +1108,8 @@ static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set)
     }
 }
 
-int wmMaxMapIndex()
-{
-    return wmMaxMapNum - 1;
-}
-
-int wmMaxAreaIndex()
-{
-    return wmMaxAreaNum - 1;
-}
-
 // CE: Extracted from wmMapInit to support modular config loading.
-// Arg `startMapIdx` is temporary and only serves illustration purposes
-// likely to be removed when API is finalized
-int wmParseMapsConfig(Config* cfg, int startMapIdx)
+int wmParseMapsConfig(Config* cfg, bool reindex)
 {
     if (cfg == nullptr) return -1;
 
@@ -1130,12 +1118,7 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
     MapInfo* maps;
     MapInfo* map;
 
-    if (startMapIdx < static_cast<int>(MAP_FIRST) || startMapIdx != wmMaxMapNum) {
-        debugPrint("wmParseMapsConfig: startMapIdx %d does not match next map slot %d", startMapIdx, wmMaxMapNum);
-        return -1;
-    }
-
-    Map mapIdx = static_cast<Map>(startMapIdx);
+    Map mapIdx = static_cast<Map>(reindex ? MAP_FIRST : wmMaxMapNum);
     int loop_safety_counter = 0;
 
     while (loop_safety_counter < 5000) {
@@ -1165,12 +1148,9 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
             exit(1);
         }
 
-        char mapFileName[40];
-        strncpy(mapFileName, str, sizeof(mapFileName) - 1);
-        mapFileName[sizeof(mapFileName) - 1] = '\0';
-        compat_strlwr(mapFileName);
-        strncpy(map->mapFileName, mapFileName, sizeof(map->mapFileName));
+        strncpy(map->mapFileName, str, sizeof(map->mapFileName) - 1);
         map->mapFileName[sizeof(map->mapFileName) - 1] = '\0';
+        compat_strlwr(map->mapFileName);
 
         if (configGetString(cfg, section, "music", &str)) {
             strncpy(map->music, str, 40);
@@ -1252,7 +1232,9 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
                 return -1;
             }
 
-            automapSetDisplayMap(mapIdx, num);
+            // automap has a fixed capacity of 160
+            // TODO: exapand capacity, introduce external sources support to automap
+            if (!reindex) automapSetDisplayMap(mapIdx, num);
         }
 
         if (configGetString(cfg, section, "random_start_point_0", &str)) {
@@ -1291,9 +1273,7 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
 }
 
 // CE: Extracted from wmAreaInit to support modular config loading.
-// Arg `startAreaIdx` is temporary and only serves illustration purposes
-// likely to be removed when API is finalized
-int wmParseAreasConfig(Config* cfg, int startAreaIdx)
+int wmParseAreasConfig(Config* cfg, bool reindex)
 {
     if (cfg == nullptr) return -1;
 
@@ -1304,12 +1284,7 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
     CityInfo* city;
     EntranceInfo* entrance;
 
-    if (startAreaIdx < static_cast<int>(CITY_FIRST) || startAreaIdx != wmMaxAreaNum) {
-        debugPrint("wmParseAreasConfig: startAreaIdx %d does not match next area slot %d", startAreaIdx, wmMaxAreaNum);
-        return -1;
-    }
-
-    City area_idx = static_cast<City>(startAreaIdx);
+    City area_idx = static_cast<City>(reindex ? CITY_FIRST : wmMaxAreaNum);
     InterfaceFrameId frameId;
 
     int loop_safety_counter = 0;
@@ -1334,7 +1309,7 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
         // NOTE: Uninline.
         wmAreaSlotInit(city);
 
-        city->areaId = City(area_idx);
+        city->areaId = City(wmMaxAreaNum - 1);
 
         InterfaceFrmId frmId = InterfaceFrameId::Invalid;
         if (frameId != InterfaceFrameId::Invalid) {
@@ -3123,7 +3098,7 @@ static int wmAreaInit()
     }
 
     if (configRead(cfg.get(), "data\\city.txt", true)) {
-        if (wmParseAreasConfig(cfg.get(), static_cast<int>(CITY_FIRST)) == -1) {
+        if (wmParseAreasConfig(cfg.get()) == -1) {
             return -1;
         }
     }
@@ -3188,7 +3163,7 @@ static int wmMapInit()
     }
 
     if (configRead(config.get(), "data\\maps.txt", true)) {
-        if (wmParseMapsConfig(config.get(), static_cast<int>(MAP_FIRST)) == -1) {
+        if (wmParseMapsConfig(config.get()) == -1) {
             return -1;
         }
     }
