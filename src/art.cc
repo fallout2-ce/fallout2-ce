@@ -1661,53 +1661,67 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 
 FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : FrmId(
-        OBJ_TYPE_CRITTER,
-        buildObjectFid(OBJ_TYPE_CRITTER, static_cast<int>(critter), animType, weaponAnimation, rotation),
-        static_cast<int>(critter),
-        nullptr) { }
+          OBJ_TYPE_CRITTER,
+          buildObjectFid(OBJ_TYPE_CRITTER, static_cast<int>(critter), animType, weaponAnimation, rotation),
+          static_cast<int>(critter),
+          nullptr)
+{
+}
 
 FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : FrmId(
-        objectType,
-        buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation),
-        frmId,
-        nullptr) { assert(objectTypeIsValid(objectType)); }
+          objectType,
+          buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation),
+          frmId,
+          nullptr)
+{
+    assert(objectTypeIsValid(objectType));
+}
 
 FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : FrmId(
-        object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
-        object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation),
-        object == nullptr ? kInvalidFrameId : object->fid,
-        nullptr) { }
+          object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
+          object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation),
+          object == nullptr ? kInvalidFrameId : object->fid,
+          nullptr)
+{
+}
 
 FrmId::FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation)
     : FrmId(
-        object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
-        object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animationTypeFromFid(object->fid), weaponAnimation, rotation),
-        object == nullptr ? kInvalidFrameId : object->fid,
-        nullptr) { }
+          object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
+          object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animationTypeFromFid(object->fid), weaponAnimation, rotation),
+          object == nullptr ? kInvalidFrameId : object->fid,
+          nullptr)
+{
+}
 
 FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation)
     : FrmId(
-        object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
-        object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotationFromFid(object->fid)),
-        object == nullptr ? kInvalidFrameId : object->fid,
-        nullptr
-    ) { }
+          object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
+          object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotationFromFid(object->fid)),
+          object == nullptr ? kInvalidFrameId : object->fid,
+          nullptr)
+{
+}
 
 FrmId::FrmId(Object* object, AnimationType animType, Rotation rotation)
     : FrmId(
-        object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
-        object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotation),
-        object == nullptr ? kInvalidFrameId : object->fid,
-        nullptr) { }
+          object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
+          object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotation),
+          object == nullptr ? kInvalidFrameId : object->fid,
+          nullptr)
+{
+}
 
 FrmId::FrmId(Object* object, AnimationType animType)
     : FrmId(
-        object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
-        object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotationFromFid(object->fid)),
-        object == nullptr ? kInvalidFrameId : object->fid,
-        nullptr) { }
+          object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid),
+          object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimationFromFid(object->fid), rotationFromFid(object->fid)),
+          object == nullptr ? kInvalidFrameId : object->fid,
+          nullptr)
+{
+}
 
 // 0x419C88
 // animType doesn't have to be of AnimationType enum only but also HeadAnimation

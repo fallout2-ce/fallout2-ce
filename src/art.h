@@ -110,10 +110,12 @@ public:
 
     constexpr FrmId()
         : FrmId(
-            OBJ_TYPE_INVALID,
-            kEmptyFid,
-            kInvalidFrameId,
-            nullptr) { }
+              OBJ_TYPE_INVALID,
+              kEmptyFid,
+              kInvalidFrameId,
+              nullptr)
+    {
+    }
 
     static const FrmId& Empty()
     {
@@ -123,65 +125,85 @@ public:
 
     constexpr explicit FrmId(int fid)
         : FrmId(
-            objectTypeFromFid(fid),
-            fid,
-            fid,
-            nullptr) { }
+              objectTypeFromFid(fid),
+              fid,
+              fid,
+              nullptr)
+    {
+    }
 
     constexpr FrmId(Proto* proto)
-        : FrmId(proto == nullptr ? kEmptyFid : proto->fid) { }
+        : FrmId(proto == nullptr ? kEmptyFid : proto->fid)
+    {
+    }
 
     constexpr FrmId(Object* object)
-        : FrmId(object == nullptr ? kEmptyFid : object->fid) { }
+        : FrmId(object == nullptr ? kEmptyFid : object->fid)
+    {
+    }
 
     constexpr FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : FrmId(
-            OBJ_TYPE_MISC,
-            buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType),
-            static_cast<int>(misc),
-            nullptr) { }
+              OBJ_TYPE_MISC,
+              buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType),
+              static_cast<int>(misc),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(SceneryFrameId scenery)
         : FrmId(
-            OBJ_TYPE_SCENERY,
-            buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)),
-            static_cast<int>(scenery),
-            nullptr) { }
+              OBJ_TYPE_SCENERY,
+              buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)),
+              static_cast<int>(scenery),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(WallFrameId wall)
         : FrmId(
-            OBJ_TYPE_WALL,
-            buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)),
-            static_cast<int>(wall),
-            nullptr) { }
+              OBJ_TYPE_WALL,
+              buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)),
+              static_cast<int>(wall),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(ItemFrameId item)
         : FrmId(
-            OBJ_TYPE_ITEM,
-            buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)),
-            static_cast<int>(item),
-            nullptr) { }
+              OBJ_TYPE_ITEM,
+              buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)),
+              static_cast<int>(item),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(TileFrameId tile)
         : FrmId(
-            OBJ_TYPE_TILE,
-            buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)),
-            static_cast<int>(tile),
-            nullptr) { }
+              OBJ_TYPE_TILE,
+              buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)),
+              static_cast<int>(tile),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(SkillDexFrameId skilldex)
         : FrmId(
-            OBJ_TYPE_SKILLDEX,
-            buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)),
-            static_cast<int>(skilldex),
-            nullptr) { }
+              OBJ_TYPE_SKILLDEX,
+              buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)),
+              static_cast<int>(skilldex),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(InterfaceFrameId interface)
         : FrmId(
-            OBJ_TYPE_INTERFACE, 
-            buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)),
-            static_cast<int>(interface),
-            nullptr) { }
+              OBJ_TYPE_INTERFACE,
+              buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)),
+              static_cast<int>(interface),
+              nullptr)
+    {
+    }
 
     // cannot be made constexpr as internally calls FrmId::exist and that checks file system
     FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
@@ -195,24 +217,31 @@ public:
 
     constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : FrmId(
-            OBJ_TYPE_HEAD,
-            buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget),
-            static_cast<int>(head),
-            nullptr) { }
+              OBJ_TYPE_HEAD,
+              buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget),
+              static_cast<int>(head),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(BackgroundFrameId background)
         : FrmId(
-            OBJ_TYPE_BACKGROUND,
-            buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)),
-            static_cast<int>(background),
-            nullptr) { }
+              OBJ_TYPE_BACKGROUND,
+              buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)),
+              static_cast<int>(background),
+              nullptr)
+    {
+    }
 
     constexpr FrmId(ObjectType objType, const char* path)
         : FrmId(
-            objType,
-            kEmptyFid,
-            kInvalidFrameId,
-            path) { assert(objectTypeIsValid(objType)); }
+              objType,
+              kEmptyFid,
+              kInvalidFrameId,
+              path)
+    {
+        assert(objectTypeIsValid(objType));
+    }
 
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
@@ -341,13 +370,19 @@ public:
         "TypedFrmId can only be instantiated with a supported frame id type");
 
     constexpr TypedFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     constexpr TypedFrmId(TFrameId frameId)
-        : FrmId(frameId) { }
+        : FrmId(frameId)
+    {
+    }
 
     constexpr TypedFrmId(const char* path)
-        : FrmId(ObjType, path) { }
+        : FrmId(ObjType, path)
+    {
+    }
 
     using FrmId::operator==;
     using FrmId::operator!=;
@@ -369,23 +404,29 @@ public:
     static_assert(
         FidShift == kFloorTileFidShift || FidShift == kRoofTileFidShift,
         "Only 0 and 16 bit shifts are supported");
-    
+
     constexpr HalfTileFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     constexpr explicit HalfTileFrmId(int fid)
         : FrmId(
-            OBJ_TYPE_TILE,
-            (fid >> FidShift) & kHalfFidMask,
-            (fid >> FidShift) & kHalfFidMask,
-            nullptr) { }
+              OBJ_TYPE_TILE,
+              (fid >> FidShift) & kHalfFidMask,
+              (fid >> FidShift) & kHalfFidMask,
+              nullptr)
+    {
+    }
 
     constexpr explicit HalfTileFrmId(TileFrameId tile, TileFlags flags)
         : FrmId(
-            OBJ_TYPE_TILE,
-            buildHalfFid(tile, flags),
-            static_cast<int>(tile),
-            nullptr) { }
+              OBJ_TYPE_TILE,
+              buildHalfFid(tile, flags),
+              static_cast<int>(tile),
+              nullptr)
+    {
+    }
 
     constexpr TileFlags flags() const
     {
@@ -399,6 +440,7 @@ public:
 
     using FrmId::operator==;
     using FrmId::operator!=;
+
 private:
     static constexpr int kHalfFidMask = 0xFFFF;
     static constexpr int kFlagsMask = 0xF000;
@@ -420,23 +462,32 @@ using RoofTileFrmId = HalfTileFrmId<kRoofTileFidShift>;
 class TileFrmId : public FrmId {
 public:
     constexpr TileFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     constexpr explicit TileFrmId(const FloorTileFrmId& floorFid, const RoofTileFrmId& roofFid)
         : FrmId(
-            OBJ_TYPE_TILE,
-            buildFid(floorFid, roofFid),
-            floorFid.frameId().id,
-            nullptr) { }
+              OBJ_TYPE_TILE,
+              buildFid(floorFid, roofFid),
+              floorFid.frameId().id,
+              nullptr)
+    {
+    }
 
     constexpr TileFrmId(TileFrameId tile)
-        : FrmId(tile) { }
+        : FrmId(tile)
+    {
+    }
 
     constexpr TileFrmId(const char* path)
-        : FrmId(OBJ_TYPE_TILE, path) { }
+        : FrmId(OBJ_TYPE_TILE, path)
+    {
+    }
 
     using FrmId::operator==;
     using FrmId::operator!=;
+
 private:
     /* Tile FID Structure:
         12 bits for floor tile frame id
@@ -453,14 +504,20 @@ private:
 class CritterFrmId : public FrmId {
 public:
     constexpr CritterFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     // cannot be made constexpr as internally calls artExists which cannot be constexpr
     CritterFrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE)
-        : FrmId(critter, animType, weaponAnimation, rotation) { }
+        : FrmId(critter, animType, weaponAnimation, rotation)
+    {
+    }
 
     constexpr CritterFrmId(const char* path)
-        : FrmId(OBJ_TYPE_CRITTER, path) { }
+        : FrmId(OBJ_TYPE_CRITTER, path)
+    {
+    }
 
     using FrmId::operator==;
     using FrmId::operator!=;
@@ -469,13 +526,19 @@ public:
 class HeadFrmId : public FrmId {
 public:
     constexpr HeadFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
-        : FrmId(head, headAnimation, fidget) { }
+        : FrmId(head, headAnimation, fidget)
+    {
+    }
 
     constexpr HeadFrmId(const char* path)
-        : FrmId(OBJ_TYPE_HEAD, path) { }
+        : FrmId(OBJ_TYPE_HEAD, path)
+    {
+    }
 
     constexpr HeadFidget fidget() const
     {
@@ -493,13 +556,19 @@ public:
 class MiscFrmId : public FrmId {
 public:
     constexpr MiscFrmId()
-        : FrmId() { }
+        : FrmId()
+    {
+    }
 
     constexpr MiscFrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
-        : FrmId(misc, animType) { }
+        : FrmId(misc, animType)
+    {
+    }
 
     constexpr MiscFrmId(const char* path)
-        : FrmId(OBJ_TYPE_MISC, path) { }
+        : FrmId(OBJ_TYPE_MISC, path)
+    {
+    }
 
     using FrmId::operator==;
     using FrmId::operator!=;

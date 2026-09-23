@@ -1836,10 +1836,10 @@ static void _square_reset()
                 const RoofTileFrmId originalRoofTileFrmId = RoofTileFrmId(fid);
                 const TileFrmId updatedTileFrmId = TileFrmId(
                     FloorTileFrmId(
-                        TileFrameId::Grid, 
-                        originalFloorTileFrmId.flags()), 
+                        TileFrameId::Grid,
+                        originalFloorTileFrmId.flags()),
                     RoofTileFrmId(
-                        TileFrameId::Grid, 
+                        TileFrameId::Grid,
                         originalRoofTileFrmId.flags()));
 
                 *p = updatedTileFrmId.fid();
