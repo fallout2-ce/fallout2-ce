@@ -365,28 +365,17 @@ public:
     enum class Mode : char {
         Floor = 0,
         Roof = 1,
-        Both = 2,
-        Unknown = 3,
+        Both = 2
     };
 
     constexpr TileFrmId()
         : FrmId() { }
 
-    constexpr explicit TileFrmId(int fid)
+    constexpr explicit TileFrmId(int fid, Mode mode = Mode::Both)
         : FrmId(
             OBJ_TYPE_TILE,
-            fid,
-            fid,
-            nullptr) 
-    { 
-        _mode = Mode::Both;
-    }
-
-    constexpr explicit TileFrmId(int fid, Mode mode)
-        : FrmId(
-            OBJ_TYPE_TILE,
-            mode == Mode::Floor ? floorFid(fid) : roofFid(fid),
-            mode == Mode::Floor ? floorFid(fid) : roofFid(fid),
+            fidFromFidByMode(fid, mode),
+            fidFromFidByMode(fid, mode),
             nullptr) 
     { 
         _mode = mode;
@@ -395,7 +384,7 @@ public:
     constexpr explicit TileFrmId(const TileFrmId& floorFid, const TileFrmId& roofFid)
         : FrmId(
             OBJ_TYPE_TILE,
-            ((floorFid.fid() & 0xFFFF) | ((roofFid.fid() & 0xFFFF) << 16)) & 0xFFFFFFFF,
+            buildFid(floorFid, roofFid),
             floorFid.frameId().id,
             nullptr) 
     { 
@@ -405,7 +394,7 @@ public:
     constexpr explicit TileFrmId(TileFrameId tile, TileFlags flags)
         : FrmId(
             OBJ_TYPE_TILE,
-            ((static_cast<int>(tile) & kFrameIdMask) | ((static_cast<int>(flags) & 0xF) << kWeaponAnimationMaskPosition)) & 0xFFFF,
+            buildHalfFid(tile, flags),
             static_cast<int>(tile),
             nullptr) { }
 
@@ -421,7 +410,7 @@ public:
             return TileFlags::None;
         }
 
-        int flags = (fid() & kWeaponAnimationMask) >> kWeaponAnimationMaskPosition;
+        int flags = (fid() & kTileFlagsMask) >> kFloorFlagsPosition;
         return static_cast<TileFlags>(flags);
     }
 
@@ -430,10 +419,41 @@ public:
     using FrmId::operator==;
     using FrmId::operator!=;
 private:
-    Mode _mode = Mode::Unknown;
+    Mode _mode = Mode::Floor;
 
-    constexpr inline int floorFid(int fid) { return fid & 0xFFFF; }
-    constexpr inline int roofFid(int fid) { return (fid >> 16) & 0xFFFF; }
+    static constexpr int kHalfFidMask = 0xFFFF;
+    static constexpr int kTileFlagsMask = 0xF000;
+    static constexpr int kFloorFlagsPosition = 12;
+    static constexpr int kRoofMaskPosition = 16;
+
+    static constexpr int buildHalfFid(TileFrameId frameId, TileFlags flags)
+    {
+        return ((static_cast<int>(frameId) & kFrameIdMask) | ((static_cast<int>(flags) & 0xF) << kFloorFlagsPosition)) & kHalfFidMask;
+    }
+
+    /* Tile FID Structure:
+        12 bits for floor tile frame id
+         4 bits for floor tile flags
+        12 bits for roof tile frame id
+         4 bits for roof tile flags
+    */
+    static constexpr int buildFid(const TileFrmId& floorFrmId, const TileFrmId& roofFrmId)
+    {
+        assert(floorFrmId.mode() == Mode::Floor && roofFrmId.mode() == Mode::Roof && "Floor and Roof TileFrmId mismatch!");
+        return ((floorFrmId.fid() & kHalfFidMask) | ((roofFrmId.fid()) << kRoofMaskPosition));
+    }
+
+    static constexpr int fidFromFidByMode(int fid, Mode mode)
+    {
+        switch(mode){
+            case Mode::Roof:
+                return (fid >> kRoofMaskPosition) & kHalfFidMask;
+            case Mode::Floor:
+                return fid & kHalfFidMask;
+            default:
+                return fid;
+        }
+    }
 };
 
 class CritterFrmId : public FrmId {
