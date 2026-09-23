@@ -3,11 +3,6 @@
 
 namespace fallout {
 
-constexpr inline int frameIdFromFid(int fid)
-{
-    return fid & 0xFFF;
-}
-
 constexpr inline int frameIdFromPid(int pid)
 {
     return pid & 0xFFFFFF;
@@ -306,7 +301,56 @@ enum class TileFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm
     Grid = 1, // grid000.frm
+    Last = 4095 // last possible frame id in tile.lst
 };
+
+enum class TileFlags : int {
+    None = 0,
+    TemporarilyHidden = 1, // toggled by proximity flood-fill, cleared on map load
+    AlwaysHidden = 2, // stored in map data, keeps the tile hidden regardless of flood-fill state
+};
+
+constexpr inline TileFlags operator~(TileFlags rhs)
+{
+    return static_cast<TileFlags>(~static_cast<int>(rhs));
+}
+
+constexpr inline TileFlags operator&(TileFlags lhs, TileFlags rhs)
+{
+    return static_cast<TileFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline TileFlags operator|(TileFlags lhs, TileFlags rhs)
+{
+    return static_cast<TileFlags>((static_cast<int>(lhs) | static_cast<int>(rhs)) & 0xF);
+}
+
+enum class TileFID : int {};
+
+constexpr inline TileFID floorTileFidFromCombinedTileFid(int fid)
+{
+    return static_cast<TileFID>(static_cast<int>(fid) & 0xFFFF);
+}
+
+constexpr inline TileFID roofTileFidFromCombinedTileFid(int fid)
+{
+    return static_cast<TileFID>((static_cast<int>(fid) >> 16) & 0xFFFF);
+}
+
+constexpr inline TileFlags tileFlagsFromTileFid(TileFID fid)
+{
+    return static_cast<TileFlags>((static_cast<int>(fid) & 0xF000) >> 12);
+}
+
+constexpr inline TileFID operator|(TileFrameId tile, TileFlags flags)
+{
+    return static_cast<TileFID>(((static_cast<int>(tile) | static_cast<int>(flags) << 12)) & 0xFFFF);
+}
+
+constexpr inline int operator|(TileFID floorFid, TileFID roofFid)
+{
+    return (static_cast<int>(floorFid) | (static_cast<int>(roofFid) << 16)) & 0xFFFFFFFF;
+}
 
 enum class MiscFrameId : int {
     Invalid = -1, // invalid frame id

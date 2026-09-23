@@ -1479,15 +1479,15 @@ static int _map_save_file(File* stream)
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            TileFrmId frmId;
+            TileFrameId frameId;
 
-            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile]));
-            if (frmId != TileFrameId::Grid) {
+            frameId = FrmId(floorTileFidFromCombinedTileFid(_square[elevation]->tileFid[tile])).frameId().tile;
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (frmId != TileFrameId::Grid) {
+            frameId = FrmId(roofTileFidFromCombinedTileFid(_square[elevation]->tileFid[tile])).frameId().tile;
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
         }
@@ -1529,7 +1529,7 @@ static int _map_save_file(File* stream)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            _db_fwriteLongCount(stream, _square[elevation]->fid, SQUARE_GRID_SIZE);
+            _db_fwriteLongCount(stream, _square[elevation]->tileFid, SQUARE_GRID_SIZE);
         }
     }
 
@@ -1827,25 +1827,20 @@ static void square_init()
 // 0x484210
 static void _square_reset()
 {
-    constexpr int kGridFrameId = static_cast<int>(TileFrameId::Grid);
+    constexpr TileFrameId kGridFrameId = TileFrameId::Grid;
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        int* p = _square[elevation]->fid;
+        int* p = _square[elevation]->tileFid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
-                // TODO: Strange math, initially right, but need to figure it out and
-                // check subsequent calls.
                 int fid = *p;
-                fid &= ~0xFFFF;
-                *p = ((kGridFrameId | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = floorTileFidFromCombinedTileFid(fid) | (kGridFrameId | tileFlagsFromTileFid(roofTileFidFromCombinedTileFid(fid)));
 
                 fid = *p;
-                int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = kGridFrameId | tileFlags;
+                TileFlags tileFlags = tileFlagsFromTileFid(floorTileFidFromCombinedTileFid(fid));
+                TileFID updatedLowerTile = kGridFrameId | tileFlags;
 
-                fid &= ~0xFFFF;
-
-                *p = updatedLowerTile | ((fid >> 16) << 16);
+                *p = updatedLowerTile | roofTileFidFromCombinedTileFid(fid);
 
                 p++;
             }
@@ -1856,31 +1851,31 @@ static void _square_reset()
 // 0x48431C
 static int _square_load(File* stream, MapHeaderFlags flags)
 {
-    int upperTileWord;
-    int upperTileFlags;
-    int upperTileArtId;
-    int lowerTileWord;
+    TileFID roofTileFid;
+    TileFlags roofTileFlags;
+    TileFrameId roofTileArtId;
+    TileFID floorTileFid;
 
     _square_reset();
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            int* arr = _square[elevation]->fid;
+            int* arr = _square[elevation]->tileFid;
             if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                upperTileWord = arr[tile];
-                upperTileWord &= ~(0xFFFF);
-                upperTileWord >>= 16;
+                roofTileFid = roofTileFidFromCombinedTileFid(arr[tile]);
 
-                upperTileFlags = (upperTileWord & 0xF000) >> 12;
-                upperTileFlags &= ~(0x01);
+                roofTileFlags = tileFlagsFromTileFid(roofTileFid) & ~TileFlags::TemporarilyHidden;
 
-                upperTileArtId = frameIdFromFid(upperTileWord);
-                lowerTileWord = arr[tile] & 0xFFFF;
-                arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
+                roofTileArtId = FrmId(roofTileFid).frameId().tile;
+                if (roofTileArtId == TileFrameId::Invalid) {
+                    roofTileArtId = TileFrameId::Last;
+                }
+                floorTileFid = floorTileFidFromCombinedTileFid(arr[tile]);
+                arr[tile] = floorTileFid | (roofTileArtId | roofTileFlags);
             }
         }
     }

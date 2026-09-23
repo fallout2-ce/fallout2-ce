@@ -16,9 +16,9 @@ namespace fallout {
 #define ORIGINAL_ISO_WINDOW_HEIGHT 380
 
 // TODO: Probably not needed -> replace with array?
-typedef struct TileData {
-    int fid[SQUARE_GRID_SIZE];
-} TileData;
+struct TileData {
+    int tileFid[SQUARE_GRID_SIZE]; // contains two shortened 16 bit fids within (12 bit FrameId + 4 bit flags), lower half is floor tile fid and upper half is roof tile fid
+};
 
 typedef struct MapHeader {
     // map_ver

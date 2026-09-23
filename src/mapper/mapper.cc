@@ -2598,14 +2598,17 @@ static int mapperPickTile(int* outOffset)
         return 0;
     }
 
-    int packedTile = _square[gElevation]->fid[tileNum];
-    TileFrameId tileFrmId;
+    int packedTile = _square[gElevation]->tileFid[tileNum];
+    TileFrameId tileFrameId;
     if (tileRoofIsVisible()) {
-        tileFrmId = static_cast<TileFrameId>(frameIdFromFid(packedTile >> 16));
+        tileFrameId = FrmId(roofTileFidFromCombinedTileFid(packedTile)).frameId().tile;
     } else {
-        tileFrmId = static_cast<TileFrameId>(frameIdFromFid(packedTile));
+        tileFrameId = FrmId(floorTileFidFromCombinedTileFid(packedTile)).frameId().tile;
     }
-    const TileFrmId artFrmId = tileFrmId;
+    if (tileFrameId == TileFrameId::Invalid) {
+        tileFrameId = TileFrameId::Last;
+    }
+    const TileFrmId tileFrmId = tileFrameId;
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2613,7 +2616,7 @@ static int mapperPickTile(int* outOffset)
         if (protoGetProto(pid, &proto) == -1) {
             return -1;
         }
-        if (proto->fid == artFrmId.fid()) {
+        if (proto->fid == tileFrmId.fid()) {
             *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
