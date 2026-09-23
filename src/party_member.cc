@@ -122,13 +122,13 @@ int partyMemberParseConfig(Config* config, bool reindex)
     char section[50];
     int loopSafetyCounter = 0;
 
-    while (loopSafetyCounter++ < 1000) {
-        // In case reindex = true search file sections starting from 0
-        // (writing gPartyMemberDescriptionsLength + 1)
-        // Otherwise use gPartyMemberDescriptionsLength
-        // (for first/subsequent indexed config file reads)
-        int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
+    // If reindex = true search file sections starting from 0
+    // (writing gPartyMemberDescriptionsLength + 1)
+    // Otherwise use gPartyMemberDescriptionsLength
+    // (for first/subsequent indexed config file reads)
+    int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
 
+    while (loopSafetyCounter < 1000) {
         snprintf(section, sizeof(section), "Party Member %d", searchIdx);
 
         int partyMemberPid;
@@ -233,11 +233,47 @@ int partyMemberParseConfig(Config* config, bool reindex)
         _partyMemberLevelUpInfoList.push_back(levelUpInfo);
 
         searchIdx++;
+        loopSafetyCounter++;
     }
 
     gPartyMembers.resize(gPartyMemberDescriptions.size() + 20);
     gPartyMemberDescriptionsLength = static_cast<int>(gPartyMemberDescriptions.size());
 
+    return 0;
+}
+
+static int _parserTestData() {
+    // =========================================================================
+    // Test data
+    // =========================================================================
+    debugPrint("party.txt loaded, entries length: %d\n", gPartyMemberDescriptionsLength);
+
+    Config dummy_config;
+    if (!configInit(&dummy_config)) return false;
+
+    char section[50];
+
+    snprintf(section, sizeof(section), "Party Member %d", 26);
+
+    configSetInt(&dummy_config, section, "party_member_pid", 16777500);
+    configSetString(&dummy_config, section, "area_attack_mode", "always, be_careful");
+    configSetString(&dummy_config, section, "attack_who", "closest, strongest");
+    configSetString(&dummy_config, section, "best_weapon", "ranged");
+    configSetString(&dummy_config, section, "chem_use", "clean");
+    configSetString(&dummy_config, section, "distance", "stay_close");
+    configSetString(&dummy_config, section, "run_away_mode", "never");
+    configSetString(&dummy_config, section, "disposition", "aggressive");
+
+    configSetInt(&dummy_config, section, "level_minimum", 5);
+    configSetInt(&dummy_config, section, "level_up_every", 3);
+    configSetString(&dummy_config, section, "level_pids", "16777501, 16777502");
+
+    if (partyMemberParseConfig(&dummy_config, false) == -1) {
+        debugPrint("Couldn't parse dummy_config\n");
+        return -1;
+    }
+
+    debugPrint("dummy_config parsed, entries length: %d\n", gPartyMemberDescriptionsLength);
     return 0;
 }
 
@@ -255,6 +291,8 @@ int partyMembersInit()
     if (partyMemberParseConfig(config.get(), false) == -1) {
         return -1;
     }
+
+    _parserTestData();
 
     return 0;
 }
