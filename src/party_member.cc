@@ -83,10 +83,8 @@ static int _partyMemberCopyLevelInfo(Object* object, int a2);
 int gPartyMemberDescriptionsLength = 0;
 
 // 0x519DA0 partyMemberPidList
-// ~int* gPartyMemberPids = nullptr;
 std::vector<int> gPartyMemberPids;
 
-// ~PartyMemberListItem* gPartyMembers = nullptr;
 std::vector<PartyMemberListItem> gPartyMembers;
 
 static PartyMemberListItem* _itemSaveListHead = nullptr;
@@ -108,11 +106,9 @@ static int _partyMemberItemCount = 20000;
 static int _partyStatePrepped = 0;
 
 // 0x519DB8 partyMemberAIOptions
-// ~static PartyMemberDescription* gPartyMemberDescriptions = nullptr;
 static std::vector<PartyMemberDescription> gPartyMemberDescriptions;
 
 // 0x519DBC partyMemberLevelUpInfoList
-// ~static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
 static std::vector<PartyMemberLevelUpInfo> _partyMemberLevelUpInfoList;
 
 // 0x519DC0 curID
@@ -281,40 +277,12 @@ void partyMembersReset()
 // 0x494134 partyMember_exit
 void partyMembersExit()
 {
-    for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        _partyMemberLevelUpInfoList[index].level = 0;
-        _partyMemberLevelUpInfoList[index].numLevelUps = 0;
-        _partyMemberLevelUpInfoList[index].isEarly = 0;
-    }
-
     gPartyMemberDescriptionsLength = 0;
 
     gPartyMemberPids.clear();
     gPartyMembers.clear();
     gPartyMemberDescriptions.clear();
     _partyMemberLevelUpInfoList.clear();
-
-    // gPartyMemberPids.clear();
-    // if (gPartyMemberPids != nullptr) {
-    //     internal_free(gPartyMemberPids);
-    //     gPartyMemberPids = nullptr;
-    // }
-
-    // gPartyMembers.clear();
-    // if (gPartyMembers != nullptr) {
-    //     internal_free(gPartyMembers);
-    //     gPartyMembers = nullptr;
-    // }
-
-    // if (gPartyMemberDescriptions != nullptr) {
-    //     internal_free(gPartyMemberDescriptions);
-    //     gPartyMemberDescriptions = nullptr;
-    // }
-    //
-    // if (_partyMemberLevelUpInfoList != nullptr) {
-    //     internal_free(_partyMemberLevelUpInfoList);
-    //     _partyMemberLevelUpInfoList = nullptr;
-    // }
 }
 
 // 0x4941F0 partyMemberGetAIOptions
