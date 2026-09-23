@@ -165,10 +165,19 @@ struct SoundSettings {
     int music_volume = 22281;
     int sndfx_volume = 22281;
     int speech_volume = 22281;
+    int float_volume = 22281;
     int cache_size = 448;
     std::string music_path1 = "sound\\music\\";
     std::string music_path2 = "sound\\music\\";
     int gapless_music = 1;
+    // Audio channel pools, see audio_channels.h for limits.
+    int music_channels = 1;
+    int speech_channels = 1;
+    int sfx_channels = 4;
+    int movie_channels = 1;
+    int script_channels = 1;
+    int float_channels = 2;
+    int pipboy_channels = 1;
 };
 
 struct DebugSettings {

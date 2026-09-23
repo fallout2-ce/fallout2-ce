@@ -3,10 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <vector>
+
 #include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
 #include "audio.h"
+#include "audio_channels.h"
 #include "combat.h"
 #include "content_config.h"
 #include "debug.h"
@@ -67,7 +70,7 @@ static bool gSpeechEnabled = false;
 // 0x518E48 gsound_sfx_enabled
 static bool gSoundEffectsEnabled = false;
 
-// number of active effects (max 4)
+// number of active effects (max is the SFX channel count)
 static int _gsound_active_effect_counter;
 
 // 0x518E50
@@ -131,6 +134,25 @@ static int gSpeechVolume = VOLUME_MAX;
 // 0x518E90 sndfx_volume
 static int gSoundEffectsVolume = VOLUME_MAX;
 
+static int gFloatVolume = VOLUME_MAX;
+
+// One channel of a [GameSoundChannelPool]. [serial] orders sounds by start
+// time, so the oldest one can be evicted when the pool is full.
+struct GameSoundChannelSlot {
+    Sound* sound = nullptr;
+    unsigned int serial = 0;
+};
+
+// Fixed-size pool of channels for one [AudioChannelType]. Slots are sized
+// once in [gameSoundInit] so their addresses stay valid as callback data.
+struct GameSoundChannelPool {
+    std::vector<GameSoundChannelSlot> slots;
+    unsigned int nextSerial = 0;
+};
+
+static GameSoundChannelPool gFloatChannelPool;
+static GameSoundChannelPool gPipboyChannelPool;
+
 // 0x518E94 detectDevices
 static int _detectDevices = -1;
 
@@ -178,6 +200,11 @@ static int speechPlay();
 static int _gsound_get_music_path(char** out_value, const char* key);
 static Sound* _gsound_get_sound_ready_for_effect();
 static int _gsound_setup_paths();
+static void gameSoundChannelPoolInit(GameSoundChannelPool* pool, AudioChannelType type);
+static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool);
+static void gameSoundChannelPoolSetVolume(GameSoundChannelPool* pool, int volume);
+static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume);
+static void gameSoundChannelSlotCallback(void* userData, int event);
 
 // Generic decoded backend: supports arbitrary script/speech paths via audio decoders.
 const SoundFileIO gGameSoundAudioIO = {
@@ -234,7 +261,7 @@ int gameSoundInit()
     soundSetMemoryProcs(internal_malloc, internal_realloc, internal_free);
 
     // initialize direct sound
-    if (soundInit(_detectDevices, 24, 0x8000, 0x8000, 22050) != 0) {
+    if (soundInit(_detectDevices, 24, 0x8000, 0x8000, 22050, audioChannelsGetTotal()) != 0) {
         if (gGameSoundDebugEnabled) {
             debugPrint("failed!\n");
         }
@@ -245,6 +272,9 @@ int gameSoundInit()
     if (gGameSoundDebugEnabled) {
         debugPrint("success.\n");
     }
+
+    gameSoundChannelPoolInit(&gFloatChannelPool, AUDIO_CHANNEL_FLOAT);
+    gameSoundChannelPoolInit(&gPipboyChannelPool, AUDIO_CHANNEL_PIPBOY);
 
     audioInit(gameSoundIsCompressed);
 
@@ -338,6 +368,9 @@ int gameSoundInit()
     gSpeechVolume = settings.sound.speech_volume;
     speechSetVolume(gSpeechVolume);
 
+    gFloatVolume = settings.sound.float_volume;
+    floatSoundSetVolume(gFloatVolume);
+
     _gsound_background_fade = 0;
     gBackgroundSoundFileName[0] = '\0';
 
@@ -357,6 +390,9 @@ void gameSoundReset()
 
     // NOTE: Uninline.
     speechDelete();
+
+    floatSoundStopAll();
+    pipboySoundStop();
 
     if (_gsound_background_df_vol) {
         // NOTE: Uninline.
@@ -393,6 +429,9 @@ int gameSoundExit()
 
     // NOTE: Uninline.
     speechDelete();
+
+    floatSoundStopAll();
+    pipboySoundStop();
 
     backgroundSoundDelete();
     soundExit();
@@ -1063,6 +1102,77 @@ void speechResume()
     }
 }
 
+int floatSoundPlay(const char* fileName)
+{
+    if (!gGameSoundInitialized || !gSpeechEnabled) {
+        return -1;
+    }
+
+    if (fileName == nullptr || fileName[0] == '\0' || gFloatVolume == 0) {
+        return -1;
+    }
+
+    if (gGameSoundDebugEnabled) {
+        debugPrint("Loading float sound file %s%s...", fileName, ".ACM");
+    }
+
+    char path[COMPAT_MAX_PATH + 1];
+    if (gameSoundFindSpeechSoundPath(path, fileName) != 0) {
+        if (gGameSoundDebugEnabled) {
+            debugPrint("failed because the file could not be found.\n");
+        }
+        return -1;
+    }
+
+    // Same scaling as speech, so equal volume settings sound equally loud.
+    return gameSoundChannelPoolPlay(&gFloatChannelPool, path, (int)(gFloatVolume * 0.69));
+}
+
+void floatSoundStopAll()
+{
+    gameSoundChannelPoolStopAll(&gFloatChannelPool);
+}
+
+void floatSoundSetVolume(int volume)
+{
+    if (!gGameSoundInitialized) {
+        return;
+    }
+
+    if (volume < VOLUME_MIN || volume > VOLUME_MAX) {
+        if (gGameSoundDebugEnabled) {
+            debugPrint("Requested float volume out of range.\n");
+        }
+        return;
+    }
+
+    gFloatVolume = volume;
+    gameSoundChannelPoolSetVolume(&gFloatChannelPool, (int)(volume * 0.69));
+}
+
+int floatSoundGetVolume()
+{
+    return gFloatVolume;
+}
+
+int pipboySoundPlay(const char* path)
+{
+    if (!gGameSoundInitialized || !gSpeechEnabled) {
+        return -1;
+    }
+
+    if (path == nullptr || path[0] == '\0') {
+        return -1;
+    }
+
+    return gameSoundChannelPoolPlay(&gPipboyChannelPool, path, (int)(gSpeechVolume * 0.69));
+}
+
+void pipboySoundStop()
+{
+    gameSoundChannelPoolStopAll(&gPipboyChannelPool);
+}
+
 // 0x45108C
 int _gsound_play_sfx_file_volume(const char* a1, int a2)
 {
@@ -1101,7 +1211,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
         debugPrint("Loading sound file %s%s...", name, ".ACM");
     }
 
-    if (_gsound_active_effect_counter >= SOUND_EFFECTS_MAX_COUNT) {
+    if (_gsound_active_effect_counter >= audioChannelsGetCount(AUDIO_CHANNEL_SFX)) {
         if (gGameSoundDebugEnabled) {
             debugPrint("failed because there are already %d active effects.\n", _gsound_active_effect_counter);
         }
@@ -1983,6 +2093,96 @@ Sound* _gsound_get_sound_ready_for_effect()
     soundSetVolume(sound, gSoundEffectsVolume);
 
     return sound;
+}
+
+static void gameSoundChannelPoolInit(GameSoundChannelPool* pool, AudioChannelType type)
+{
+    pool->slots.assign(audioChannelsGetCount(type), GameSoundChannelSlot());
+    pool->nextSerial = 0;
+}
+
+static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool)
+{
+    for (GameSoundChannelSlot& slot : pool->slots) {
+        if (slot.sound != nullptr) {
+            Sound* sound = slot.sound;
+            slot.sound = nullptr;
+            soundDelete(sound);
+        }
+    }
+}
+
+static void gameSoundChannelPoolSetVolume(GameSoundChannelPool* pool, int volume)
+{
+    for (GameSoundChannelSlot& slot : pool->slots) {
+        if (slot.sound != nullptr) {
+            soundSetVolume(slot.sound, volume);
+        }
+    }
+}
+
+// Plays [path] on a free channel of [pool]. If every channel is busy, the
+// oldest sound is stopped to make room, since the newest line is usually the
+// one that matters.
+static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume)
+{
+    GameSoundChannelSlot* target = nullptr;
+    for (GameSoundChannelSlot& slot : pool->slots) {
+        if (slot.sound == nullptr) {
+            target = &slot;
+            break;
+        }
+
+        if (target == nullptr || slot.serial < target->serial) {
+            target = &slot;
+        }
+    }
+
+    if (target == nullptr) {
+        return -1;
+    }
+
+    if (target->sound != nullptr) {
+        Sound* evicted = target->sound;
+        target->sound = nullptr;
+        soundDelete(evicted);
+    }
+
+    GameSoundLoadOptions loadOptions = {
+        GSOUND_LIMIT_AFTER,
+        GSOUND_STREAM,
+        GSOUND_NO_LOOP,
+        0,
+        gameSoundChannelSlotCallback,
+        target,
+    };
+
+    Sound* sound = nullptr;
+    if (gameSoundLoadSound(&sound, path, &gGameSoundAudioIO, &loadOptions) != 0) {
+        return -1;
+    }
+
+    soundSetVolume(sound, volume);
+
+    if (soundPlay(sound) != 0) {
+        if (gGameSoundDebugEnabled) {
+            debugPrint("Unable to play pooled sound %s.\n", path);
+        }
+        soundDelete(sound);
+        return -1;
+    }
+
+    target->sound = sound;
+    target->serial = pool->nextSerial++;
+
+    return 0;
+}
+
+static void gameSoundChannelSlotCallback(void* userData, int event)
+{
+    if (event == SOUND_CALLBACK_EVENT_DONE) {
+        static_cast<GameSoundChannelSlot*>(userData)->sound = nullptr;
+    }
 }
 
 // gsound_setup_paths

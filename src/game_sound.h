@@ -87,6 +87,18 @@ int speechGetDuration();
 int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 int _gsound_speech_play_preloaded();
 void speechDelete();
+
+// Plays a voiced float line (speech file name without extension) on the float
+// channel pool. Evicts the oldest float when every channel is busy.
+int floatSoundPlay(const char* fileName);
+void floatSoundStopAll();
+void floatSoundSetVolume(int volume);
+int floatSoundGetVolume();
+
+// Plays a sound (full path) on the dedicated Pip-Boy channel pool.
+int pipboySoundPlay(const char* path);
+void pipboySoundStop();
+
 int _gsound_play_sfx_file_volume(const char* name, int volume);
 Sound* soundEffectLoad(const char* name, Object* object);
 Sound* soundEffectLoadWithVolume(const char* name, Object* object, int volume);
