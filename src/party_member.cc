@@ -122,8 +122,6 @@ int partyMembersParseConfig(Config* config, bool reindex)
     char section[50];
     int loopSafetyCounter = 0;
 
-    // If reindex = true search file sections starting from 0
-    // Otherwise use gPartyMemberDescriptionsLength
     int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
 
     while (loopSafetyCounter < 1000) {
@@ -139,7 +137,6 @@ int partyMembersParseConfig(Config* config, bool reindex)
         PartyMemberDescription desc;
         partyMemberDescriptionInit(&desc);
 
-        // Parse config strings to desc
         char* string;
 
         if (configGetString(config, section, "area_attack_mode", &string)) {
@@ -226,7 +223,6 @@ int partyMembersParseConfig(Config* config, bool reindex)
 
         gPartyMemberDescriptions.push_back(desc);
 
-        // Adjust vectors
         PartyMemberLevelUpInfo levelUpInfo {};
         _partyMemberLevelUpInfoList.push_back(levelUpInfo);
 
