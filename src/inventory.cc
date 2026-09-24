@@ -3927,22 +3927,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
             if (equippedItem->pid == PROTO_ID_LIT_FLARE) {
-                int lightIntensity;
-                int lightDistance;
-                if (critter == gDude) {
-                    lightIntensity = LIGHT_INTENSITY_MAX;
-                    lightDistance = 4;
-                } else {
-                    Proto* proto;
-                    if (protoGetProto(critter->pid, &proto) == -1) {
-                        return -1;
-                    }
-
-                    lightDistance = proto->lightDistance;
-                    lightIntensity = proto->lightIntensity;
-                }
-
-                objectSetLight(critter, lightDistance, lightIntensity, &rect);
+                critterRestoreLightWithoutFlare(critter);
             }
         }
 
@@ -4008,6 +3993,49 @@ int inventoryUnequip(Object* critter_obj, Hand hand)
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
+// CE: Put a critter's own light back after a lit flare leaves their hand.
+//
+// A lit flare raises the light of whoever holds it, and objectSetLight() writes that onto the
+// critter, not onto the flare. `inven_wield` undoes it for a flare it replaces; nothing undid it
+// for a flare that burned out, was thrown, or was unwielded, and the raised value is serialised
+// with the object, so the critter stayed a walking lamp across saves.
+//
+// Does nothing while the other hand still holds one.
+void critterRestoreLightWithoutFlare(Object* critter)
+{
+    Object* leftHandItem = critterGetItem1(critter);
+    if (leftHandItem != nullptr && leftHandItem->pid == PROTO_ID_LIT_FLARE) {
+        return;
+    }
+
+    Object* rightHandItem = critterGetItem2(critter);
+    if (rightHandItem != nullptr && rightHandItem->pid == PROTO_ID_LIT_FLARE) {
+        return;
+    }
+
+    int lightDistance;
+    int lightIntensity;
+    if (critter == gDude) {
+        // The dude carries a light of their own that the prototype does not describe, which is the
+        // figure inven_wield and the inventory screen both put back.
+        lightDistance = 4;
+        lightIntensity = LIGHT_INTENSITY_MAX;
+    } else {
+        Proto* proto;
+        if (protoGetProto(critter->pid, &proto) == -1) {
+            return;
+        }
+
+        lightDistance = proto->lightDistance;
+        lightIntensity = proto->lightIntensity;
+    }
+
+    Rect rect;
+    if (objectSetLight(critter, lightDistance, lightIntensity, &rect) == 0) {
+        tileWindowRefreshRect(&rect, critter->elevation);
+    }
+}
+
 // 0x472A64
 int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 {
@@ -4036,6 +4064,11 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
     if (item) {
         item->flags &= ~OBJECT_IN_ANY_HAND;
+
+        // CE: Fix the light staying up when a lit flare is unwielded.
+        if (item->pid == PROTO_ID_LIT_FLARE) {
+            critterRestoreLightWithoutFlare(critter);
+        }
     }
 
     if (activeHand == hand && (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
@@ -6691,6 +6724,14 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
             if (itemAdd(critter, item, 1) != 0) {
                 // item will be in an invalid state, but this can only happen on malloc failure
                 return -1;
+            }
+
+            // CE: This branch re-adds the item itself rather than going through
+            // inventoryUnequipFunc(), so it has to put the light back on its own. Reached from
+            // the unwield_slot metarule while the inventory window is open; dragging a flare out
+            // of a hand goes through _inven_pickup(), which already calls _inven_update_lighting().
+            if (item->pid == PROTO_ID_LIT_FLARE) {
+                critterRestoreLightWithoutFlare(critter);
             }
 
             update = true;
