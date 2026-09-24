@@ -85,12 +85,12 @@ int gPartyMemberDescriptionsLength = 0;
 // 0x519DA0 partyMemberPidList
 std::vector<int> gPartyMemberPids;
 
-std::vector<PartyMemberListItem> gPartyMembers;
 static PartyMemberListItem* _itemSaveListHead = nullptr;
 
 // List of party members, it's length is [gPartyMemberDescriptionsLength] + 20.
 //
 // 0x519DA8 partyMemberList
+std::vector<PartyMemberListItem> gPartyMembers;
 
 // Number of critters added to party.
 //
@@ -115,7 +115,7 @@ static int _curID = 20000;
 static bool npcEngineLevelUp = true;
 
 // CE: extracted from partyMembersInit()
-int partyMemberParseConfig(Config* config, bool reindex)
+int partyMembersParseConfig(Config* config, bool reindex)
 {
     if (config == nullptr) return -1;
 
@@ -240,42 +240,6 @@ int partyMemberParseConfig(Config* config, bool reindex)
     return 0;
 }
 
-static int _parserTestData()
-{
-    // =========================================================================
-    // Test data
-    // =========================================================================
-    debugPrint("party.txt loaded, entries length: %d\n", gPartyMemberDescriptionsLength);
-
-    Config dummy_config;
-    if (!configInit(&dummy_config)) return false;
-
-    char section[50];
-
-    snprintf(section, sizeof(section), "Party Member %d", 26);
-
-    configSetInt(&dummy_config, section, "party_member_pid", 16777500);
-    configSetString(&dummy_config, section, "area_attack_mode", "always, be_careful");
-    configSetString(&dummy_config, section, "attack_who", "closest, strongest");
-    configSetString(&dummy_config, section, "best_weapon", "ranged");
-    configSetString(&dummy_config, section, "chem_use", "clean");
-    configSetString(&dummy_config, section, "distance", "stay_close");
-    configSetString(&dummy_config, section, "run_away_mode", "never");
-    configSetString(&dummy_config, section, "disposition", "aggressive");
-
-    configSetInt(&dummy_config, section, "level_minimum", 5);
-    configSetInt(&dummy_config, section, "level_up_every", 3);
-    configSetString(&dummy_config, section, "level_pids", "16777501, 16777502");
-
-    if (partyMemberParseConfig(&dummy_config, false) == -1) {
-        debugPrint("Couldn't parse dummy_config\n");
-        return -1;
-    }
-
-    debugPrint("dummy_config parsed, entries length: %d\n", gPartyMemberDescriptionsLength);
-    return 0;
-}
-
 // partyMember_init
 // 0x493BC0 partyMember_init
 int partyMembersInit()
@@ -287,11 +251,9 @@ int partyMembersInit()
         return -1;
     }
 
-    if (partyMemberParseConfig(config.get(), false) == -1) {
+    if (partyMembersParseConfig(config.get(), false) == -1) {
         return -1;
     }
-
-    _parserTestData();
 
     return 0;
 }

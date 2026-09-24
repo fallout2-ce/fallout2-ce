@@ -7,12 +7,12 @@
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
+#include "config.h"
 #include "skill_defs.h"
 
 namespace fallout {
 
 extern int gPartyMemberDescriptionsLength;
-// extern int* gPartyMemberPids;
 extern std::vector<int> gPartyMemberPids;
 
 int partyMemberParseConfig(Config* config, bool reindex = false);
