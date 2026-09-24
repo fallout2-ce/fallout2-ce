@@ -38,6 +38,7 @@ void movieSetVolume(int volume);
 void _movieUpdate();
 int _moviePlaying();
 void movieHandleRendererReset();
+void movieHandleFocusGained();
 void movieRenderDirectOverlay();
 
 } // namespace fallout

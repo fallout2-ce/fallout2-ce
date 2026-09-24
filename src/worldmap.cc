@@ -625,9 +625,6 @@ static void wmRefreshInterfaceDial(bool shouldRefreshWindow);
 static void wmInterfaceDialSyncTime(bool shouldRefreshWindow);
 static int wmAreaFindFirstValidMap(Map* mapIdxPtr, int* elevationPtr, int* tilePtr, Rotation* rotationPtr);
 static void wmRunLocalMapEnterHook(Map* mapIdxPtr);
-static void wmFadeOut();
-static void wmFadeIn();
-static void wmFadeReset();
 static void wmBlinkRndEncounterIcon(bool special);
 
 // 0x4BC860 can_rest_here
@@ -1029,7 +1026,6 @@ static bool townMapHotkeysFix;
 static double gameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
-static bool wmFaded = false;
 static Map wmForceEncounterMapId = MAP_INVALID;
 static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
@@ -3749,11 +3745,9 @@ static int wmWorldMapFunc(int a1)
     }
 
     if (wmInterfaceExit() == -1) {
-        wmFadeReset();
+        paletteSetEntries(_cmap);
         return -1;
     }
-
-    wmFadeIn();
 
     return rc;
 }
@@ -3850,7 +3844,9 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
 
         // For unknown reason fadeout and blinking icon are mutually exclusive.
         if ((wmForceEncounterFlags & ENCOUNTER_FLAG_FADEOUT) != ENCOUNTER_FLAG_NONE) {
-            wmFadeOut();
+            // Match sfall: leave the encounter screen black on worldmap exit.
+            // Its script is responsible for the next fade in.
+            paletteFadeTo(gPaletteBlack);
         } else if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_ICON) == ENCOUNTER_FLAG_NONE) {
             bool special = (wmForceEncounterFlags & ENCOUNTER_FLAG_ICON_SP) != ENCOUNTER_FLAG_NONE;
             wmBlinkRndEncounterIcon(special);
@@ -7525,28 +7521,6 @@ int wmTeleportToArea(City areaIdx)
     }
 
     return 0;
-}
-
-void wmFadeOut()
-{
-    if (!wmFaded) {
-        paletteFadeTo(gPaletteBlack);
-        wmFaded = true;
-    }
-}
-
-void wmFadeIn()
-{
-    if (wmFaded) {
-        paletteFadeTo(_cmap);
-        wmFaded = false;
-    }
-}
-
-void wmFadeReset()
-{
-    wmFaded = false;
-    paletteSetEntries(_cmap);
 }
 
 void wmBlinkRndEncounterIcon(bool special)
