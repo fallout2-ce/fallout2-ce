@@ -497,7 +497,7 @@ private:
     */
     static constexpr int buildFid(const FloorTileFrmId& floorFrmId, const RoofTileFrmId& roofFrmId)
     {
-        return (floorFrmId.fid() | ((roofFrmId.fid()) << kRoofTileFidShift));
+        return static_cast<int>(static_cast<unsigned int>(floorFrmId.fid()) | (static_cast<unsigned int>(roofFrmId.fid()) << kRoofTileFidShift));
     }
 };
 
