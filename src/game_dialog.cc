@@ -2676,7 +2676,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         gameDialogFidgetFrmId = HeadFrameId::Invalid;
         gameDialogFidgetFrm = nullptr;
         gameDialogFidgetFrmHandle = INVALID_CACHE_ENTRY;
-        gameDialogFidgetReaction = FIDGET_INVALID;
+        gameDialogFidgetReaction = HeadFidget::Invalid;
         gameDialogFidgetUpdateDelay = 0;
         gameDialogFidgetLastUpdateTimestamp = 0;
         gameDialogRenderTalkingHead(nullptr, 0);
@@ -2688,10 +2688,10 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
 
     HeadAnimation anim;
     switch (reaction) {
-    case FIDGET_GOOD:
+    case HeadFidget::Good:
         anim = HeadAnimation::GoodPhonemes;
         break;
-    case FIDGET_BAD:
+    case HeadFidget::Bad:
         anim = HeadAnimation::BadPhonemes;
         break;
     default:
@@ -2735,26 +2735,26 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
 
     int chance = randomBetween(1, 100) + _dialogue_seconds_since_last_input / 2;
 
-    int fidget = fidgetCount;
+    HeadFidgetAnimation fidget = static_cast<HeadFidgetAnimation>(fidgetCount);
     switch (fidgetCount) {
     case 1:
-        fidget = 1;
+        fidget = HeadFidgetAnimation::First;
         break;
     case 2:
         if (chance < 68) {
-            fidget = 1;
+            fidget = HeadFidgetAnimation::First;
         } else {
-            fidget = 2;
+            fidget = HeadFidgetAnimation::Second;
         }
         break;
     case 3:
         _dialogue_seconds_since_last_input = 0;
         if (chance < 52) {
-            fidget = 1;
+            fidget = HeadFidgetAnimation::First;
         } else if (chance < 77) {
-            fidget = 2;
+            fidget = HeadFidgetAnimation::Second;
         } else {
-            fidget = 3;
+            fidget = HeadFidgetAnimation::Third;
         }
         break;
     }
@@ -3209,17 +3209,17 @@ void _talk_to_critter_reacts(int reaction)
     switch (reactionCode) {
     case GAME_DIALOG_REACTION_GOOD:
         switch (gameDialogFidgetReaction) {
-        case FIDGET_GOOD:
+        case HeadFidget::Good:
             _gdPlayTransition(HeadAnimation::VeryGoodReaction);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_GOOD);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Good);
             break;
-        case FIDGET_NEUTRAL:
+        case HeadFidget::Neutral:
             _gdPlayTransition(HeadAnimation::NeutralToGood);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_GOOD);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Good);
             break;
-        case FIDGET_BAD:
+        case HeadFidget::Bad:
             _gdPlayTransition(HeadAnimation::BadToNeutral);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_NEUTRAL);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Neutral);
             break;
         default:
             break;
@@ -3229,17 +3229,17 @@ void _talk_to_critter_reacts(int reaction)
         break;
     case GAME_DIALOG_REACTION_BAD:
         switch (gameDialogFidgetReaction) {
-        case FIDGET_GOOD:
+        case HeadFidget::Good:
             _gdPlayTransition(HeadAnimation::GoodToNeutral);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_NEUTRAL);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Neutral);
             break;
-        case FIDGET_NEUTRAL:
+        case HeadFidget::Neutral:
             _gdPlayTransition(HeadAnimation::NeutralToBad);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_BAD);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Bad);
             break;
-        case FIDGET_BAD:
+        case HeadFidget::Bad:
             _gdPlayTransition(HeadAnimation::VeryBadReaction);
-            _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_BAD);
+            _gdSetupFidget(gGameDialogHeadFrmId, HeadFidget::Bad);
             break;
         default:
             break;

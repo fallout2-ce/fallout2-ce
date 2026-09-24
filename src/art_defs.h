@@ -28,16 +28,23 @@ enum class HeadAnimation : unsigned char {
     BadPhonemes = 11,
 };
 
-enum HeadFidget : int {
-    FIDGET_INVALID = -1,
-    FIDGET_GOOD = 1,
-    FIDGET_NEUTRAL = 4,
-    FIDGET_BAD = 7,
+enum class HeadFidget : char {
+    Invalid = -1,
+    Good = 1,
+    Neutral = 4,
+    Bad = 7,
+};
+
+enum class HeadFidgetAnimation : unsigned char {
+    None = 0,
+    First = 1,
+    Second = 2,
+    Third = 3
 };
 
 inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
 {
-    return fidget != FIDGET_INVALID ? static_cast<HeadAnimation>(fidget) : HeadAnimation::VeryGoodReaction;
+    return fidget != HeadFidget::Invalid ? static_cast<HeadAnimation>(fidget) : HeadAnimation::VeryGoodReaction;
 }
 
 enum class BackgroundFrameId : int {
