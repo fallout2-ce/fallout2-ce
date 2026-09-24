@@ -492,7 +492,7 @@ static int _head_phoneme_lookup[PHONEME_COUNT] = {
 };
 
 // 0x518900 phone_anim
-static HeadAnimation _phone_anim = HEAD_ANIMATION_VERY_GOOD_REACTION;
+static HeadAnimation _phone_anim = HeadAnimation::VeryGoodReaction;
 
 // 0x518904 loop_cnt
 static int _loop_cnt = -1;
@@ -2689,13 +2689,13 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
     HeadAnimation anim;
     switch (reaction) {
     case FIDGET_GOOD:
-        anim = HEAD_ANIMATION_GOOD_PHONEMES;
+        anim = HeadAnimation::GoodPhonemes;
         break;
     case FIDGET_BAD:
-        anim = HEAD_ANIMATION_BAD_PHONEMES;
+        anim = HeadAnimation::BadPhonemes;
         break;
     default:
-        anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
+        anim = HeadAnimation::NeutralPhonemes;
         break;
     }
 
@@ -3210,15 +3210,15 @@ void _talk_to_critter_reacts(int reaction)
     case GAME_DIALOG_REACTION_GOOD:
         switch (gameDialogFidgetReaction) {
         case FIDGET_GOOD:
-            _gdPlayTransition(HEAD_ANIMATION_VERY_GOOD_REACTION);
+            _gdPlayTransition(HeadAnimation::VeryGoodReaction);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_GOOD);
             break;
         case FIDGET_NEUTRAL:
-            _gdPlayTransition(HEAD_ANIMATION_NEUTRAL_TO_GOOD);
+            _gdPlayTransition(HeadAnimation::NeutralToGood);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_GOOD);
             break;
         case FIDGET_BAD:
-            _gdPlayTransition(HEAD_ANIMATION_BAD_TO_NEUTRAL);
+            _gdPlayTransition(HeadAnimation::BadToNeutral);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_NEUTRAL);
             break;
         default:
@@ -3230,15 +3230,15 @@ void _talk_to_critter_reacts(int reaction)
     case GAME_DIALOG_REACTION_BAD:
         switch (gameDialogFidgetReaction) {
         case FIDGET_GOOD:
-            _gdPlayTransition(HEAD_ANIMATION_GOOD_TO_NEUTRAL);
+            _gdPlayTransition(HeadAnimation::GoodToNeutral);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_NEUTRAL);
             break;
         case FIDGET_NEUTRAL:
-            _gdPlayTransition(HEAD_ANIMATION_NEUTRAL_TO_BAD);
+            _gdPlayTransition(HeadAnimation::NeutralToBad);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_BAD);
             break;
         case FIDGET_BAD:
-            _gdPlayTransition(HEAD_ANIMATION_VERY_BAD_REACTION);
+            _gdPlayTransition(HeadAnimation::VeryBadReaction);
             _gdSetupFidget(gGameDialogHeadFrmId, FIDGET_BAD);
             break;
         default:

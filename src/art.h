@@ -215,10 +215,10 @@ public:
     explicit FrmId(Object* object, AnimationType animType, Rotation rotation);
     explicit FrmId(Object* object, AnimationType animType);
 
-    constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+    constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HeadAnimation::VeryGoodReaction, int fidget = 0)
         : FrmId(
               OBJ_TYPE_HEAD,
-              buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget),
+              buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), static_cast<unsigned char>(headAnimation), fidget),
               static_cast<int>(head),
               nullptr)
     {
@@ -530,7 +530,7 @@ public:
     {
     }
 
-    constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+    constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HeadAnimation::VeryGoodReaction, int fidget = 0)
         : FrmId(head, headAnimation, fidget)
     {
     }
