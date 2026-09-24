@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "combat_ai_defs.h"
+#include "config.h"
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
-#include "config.h"
 #include "skill_defs.h"
 
 namespace fallout {
