@@ -1,6 +1,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include "critter.h"
 #include "db.h"
 #include "obj_types.h"
 #include "perk_defs.h"
@@ -52,7 +53,7 @@ typedef struct ScriptEvent {
 } ScriptEvent;
 
 typedef struct RadiationEvent {
-    int radiationLevel;
+    RadiationLevel radiationLevel;
     int isHealing;
 } RadiationEvent;
 

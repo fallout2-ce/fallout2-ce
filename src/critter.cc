@@ -49,32 +49,6 @@ namespace fallout {
 // in [gRadiationEffectPenalties] for every [RadiationLevel].
 #define RADIATION_EFFECT_COUNT 8
 
-// Radiation levels.
-//
-// The names of levels are taken from Fallout 3, comments from Fallout 2.
-typedef enum RadiationLevel {
-    // Very nauseous.
-    RADIATION_LEVEL_NONE,
-
-    // Slightly fatigued.
-    RADIATION_LEVEL_MINOR,
-
-    // Vomiting does not stop.
-    RADIATION_LEVEL_ADVANCED,
-
-    // Hair is falling out.
-    RADIATION_LEVEL_CRITICAL,
-
-    // Skin is falling off.
-    RADIATION_LEVEL_DEADLY,
-
-    // Intense agony.
-    RADIATION_LEVEL_FATAL,
-
-    // The number of radiation levels.
-    RADIATION_LEVEL_COUNT,
-} RadiationLevel;
-
 static int _get_rad_damage_level(Object* obj, void* data);
 static int critter_kill_count_clear();
 static int _critterClearObjDrugs(Object* obj, void* data);
@@ -160,7 +134,7 @@ static int gKillsByType[KILL_TYPE_DEFAULT_COUNT];
 // Something with radiation.
 //
 // 0x56D7CC old_rad_level
-static int oldRadLevel;
+static RadiationLevel oldRadLevel;
 
 // scrname_init
 // 0x42CF50 critter_init
@@ -511,14 +485,14 @@ int critterCheckRadiationEvent(Object* obj)
         return 0;
     }
 
-    oldRadLevel = 0;
+    oldRadLevel = RADIATION_LEVEL_NONE;
 
     queueClearByEventType(EVENT_TYPE_RADIATION, _get_rad_damage_level);
 
     // NOTE: Uninline
     int radiation = critterGetRadiation(obj);
 
-    int radiationLevel;
+    RadiationLevel radiationLevel;
     if (radiation > 999)
         radiationLevel = RADIATION_LEVEL_FATAL;
     else if (radiation > 599)
@@ -578,7 +552,7 @@ int radiationClearDamage(Object* obj, void* data)
 // Applies radiation.
 //
 // 0x42D63C process_rads
-void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
+void radiationProcess(Object* obj, RadiationLevel radiationLevel, bool isHealing)
 {
     MessageListItem messageListItem;
 
@@ -666,7 +640,7 @@ int radiationEventRead(File* stream, void** dataPtr)
         return -1;
     }
 
-    if (fileReadInt32(stream, &(radiationEvent->radiationLevel)) == -1) goto err;
+    if (fileReadInt32Enum<RadiationLevel>(stream, &(radiationEvent->radiationLevel)) == -1) goto err;
     if (fileReadInt32(stream, &(radiationEvent->isHealing)) == -1) goto err;
 
     *dataPtr = radiationEvent;
@@ -683,7 +657,7 @@ int radiationEventWrite(File* stream, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
 
-    if (fileWriteInt32(stream, radiationEvent->radiationLevel) == -1) return -1;
+    if (fileWriteInt32Enum<RadiationLevel>(stream, radiationEvent->radiationLevel) == -1) return -1;
     if (fileWriteInt32(stream, radiationEvent->isHealing) == -1) return -1;
 
     return 0;
