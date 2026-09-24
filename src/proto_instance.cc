@@ -875,9 +875,14 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
         // the rest burning for good. itemRemove() is the engine's own way to take one off a
         // stack — _obj_copy() leaves the remainder behind and hands this pointer back as a single
         // item — and is what the inventory screen does before it reaches here.
-        bool takenOffAStack = critter != nullptr
-            && itemGetQuantity(critter, flare) > 1
-            && itemRemove(critter, flare, 1) == 0;
+        // Whose inventory it is, not who is using it. They are the same for every path the game
+        // takes today — the backpack window lists the player's own items — but the flare's own
+        // owner is the thing that has to give it up, it costs nothing to ask, and it puts the lit
+        // flare back where it came from when that is a container rather than a pocket.
+        Object* holder = flare->owner != nullptr ? flare->owner : critter;
+        bool takenOffAStack = holder != nullptr
+            && itemGetQuantity(holder, flare) > 1
+            && itemRemove(holder, flare, 1) == 0;
 
         if (critter == gDude) {
             // You light the flare.
@@ -892,10 +897,11 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
         objectSetLight(flare, 8, 0x10000, nullptr);
         queueAddEvent(72000, flare, nullptr, EVENT_TYPE_FLARE);
 
-        if (takenOffAStack && itemAdd(critter, flare, 1) != 0) {
+        if (takenOffAStack && itemAdd(holder, flare, 1) != 0) {
             // Nothing sensible is left to do with it, and dropping it at their feet beats
             // leaking it: it is lit, so it lights the ground the way a thrown one would.
-            _obj_connect(flare, critter->tile, critter->elevation, nullptr);
+            Object* ground = critter != nullptr ? critter : holder;
+            _obj_connect(flare, ground->tile, ground->elevation, nullptr);
         }
     }
 
