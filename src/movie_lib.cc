@@ -837,6 +837,15 @@ static void syncReset(int quanta)
     sync_time = -1000 * compat_timeGetTime() + quanta;
 }
 
+void MVE_rmResetSync()
+{
+    if (rm_active && sync_active) {
+        // The event loop stops stepping movies while focus is lost, but the
+        // wall clock used by syncWait keeps advancing.
+        syncReset(sync_wait_quanta);
+    }
+}
+
 // 0x4F5570 MVE_sndConfigure
 static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
 {
