@@ -720,6 +720,9 @@ void mainMenuBeginSubscreen()
     if (mainMenuSubscreenBackdrop == -1) {
         // Palette index 0 in the root window is grey, so cover it around 640x480 dialogs.
         mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, 0);
+        if (mainMenuSubscreenBackdrop != -1) {
+            windowRefresh(mainMenuSubscreenBackdrop);
+        }
     }
 }
 
