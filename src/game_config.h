@@ -49,11 +49,11 @@ enum GameDifficulty : int {
     GAME_DIFFICULTY_HARD,
 };
 
-typedef enum CombatDifficulty {
+enum CombatDifficulty : int {
     COMBAT_DIFFICULTY_EASY,
     COMBAT_DIFFICULTY_NORMAL,
     COMBAT_DIFFICULTY_HARD,
-} CombatDifficulty;
+};
 
 typedef enum ViolenceLevel {
     VIOLENCE_LEVEL_NONE,

@@ -135,7 +135,7 @@ struct GameplaySettings {
 
 struct PreferencesSettings {
     GameDifficulty game_difficulty = GAME_DIFFICULTY_NORMAL;
-    int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
+    CombatDifficulty combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
     int violence_level = VIOLENCE_LEVEL_MAXIMUM_BLOOD;
     int target_highlight = TARGET_HIGHLIGHT_TARGETING_ONLY;
     bool item_highlight = true;

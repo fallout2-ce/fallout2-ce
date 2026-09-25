@@ -792,7 +792,7 @@ static void _UpdateThing(int index)
 int _SavePrefs(bool save)
 {
     settings.preferences.game_difficulty = static_cast<GameDifficulty>(gPreferencesGameDifficulty1);
-    settings.preferences.combat_difficulty = gPreferencesCombatDifficulty1;
+    settings.preferences.combat_difficulty = static_cast<CombatDifficulty>(gPreferencesCombatDifficulty1);
     settings.preferences.violence_level = gPreferencesViolenceLevel1;
     settings.preferences.target_highlight = gPreferencesTargetHighlight1;
     settings.preferences.combat_messages = gPreferencesCombatMessages1;
