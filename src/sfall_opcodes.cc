@@ -1,6 +1,7 @@
 #include "sfall_opcodes.h"
 
 #include <algorithm>
+#include <cstring>
 #include <math.h>
 #include <string.h>
 
@@ -669,11 +670,19 @@ static void op_set_sfall_global(Program* program)
     ProgramValue value = programStackPopValue(program);
     ProgramValue variable = programStackPopValue(program);
 
+    int rawValue;
+    if (value.isFloat()) {
+        static_assert(sizeof(rawValue) == sizeof(value.floatValue));
+        std::memcpy(&rawValue, &value.floatValue, sizeof(rawValue));
+    } else {
+        rawValue = value.integerValue;
+    }
+
     if ((variable.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_STRING) {
         const char* key = programGetString(program, variable.opcode, variable.integerValue);
-        sfall_gl_vars_store(key, value.integerValue);
+        sfall_gl_vars_store(key, rawValue);
     } else if (variable.opcode == VALUE_TYPE_INT) {
-        sfall_gl_vars_store(variable.integerValue, value.integerValue);
+        sfall_gl_vars_store(variable.integerValue, rawValue);
     }
 }
 
@@ -691,6 +700,25 @@ static void op_get_sfall_global_int(Program* program)
     }
 
     programStackPushInteger(program, value);
+}
+
+// get_sfall_global_float
+static void op_get_sfall_global_float(Program* program)
+{
+    ProgramValue variable = programStackPopValue(program);
+
+    int rawValue = 0;
+    if ((variable.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_STRING) {
+        const char* key = programGetString(program, variable.opcode, variable.integerValue);
+        sfall_gl_vars_fetch(key, rawValue);
+    } else if (variable.opcode == VALUE_TYPE_INT) {
+        sfall_gl_vars_fetch(variable.integerValue, rawValue);
+    }
+
+    float value;
+    static_assert(sizeof(value) == sizeof(rawValue));
+    std::memcpy(&value, &rawValue, sizeof(value));
+    programStackPushFloat(program, value);
 }
 
 // get_game_mode
@@ -2437,6 +2465,7 @@ void sfallOpcodesInit()
     // 0x819e - int   get_sfall_global_int(string/int varname)
     interpreterRegisterOpcode(0x819E, op_get_sfall_global_int);
     // 0x819f - float get_sfall_global_float(string/int varname)
+    interpreterRegisterOpcode(0x819F, op_get_sfall_global_float);
     // 0x822d - int   create_array(int element_count, int flags)
     interpreterRegisterOpcode(0x822D, op_create_array);
     // 0x822e - void  set_array(int array, any element, any value)
