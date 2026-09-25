@@ -55,12 +55,13 @@ enum CombatDifficulty : int {
     COMBAT_DIFFICULTY_HARD,
 };
 
-typedef enum ViolenceLevel {
+enum ViolenceLevel : int {
+    VIOLENCE_LEVEL_INVALID = -1,
     VIOLENCE_LEVEL_NONE,
     VIOLENCE_LEVEL_MINIMAL,
     VIOLENCE_LEVEL_NORMAL,
     VIOLENCE_LEVEL_MAXIMUM_BLOOD,
-} ViolenceLevel;
+};
 
 typedef enum TargetHighlight {
     TARGET_HIGHLIGHT_OFF,
