@@ -109,12 +109,30 @@ struct PreferenceDescription {
         ViolenceLevel* violenceLevelPtr;
         TargetHighlight* targetHighlightPtr;
 
-        constexpr PreferenceDescriptionValue(std::nullptr_t) : intPtr(nullptr) {}
-        constexpr PreferenceDescriptionValue(int* ptr) : intPtr(ptr) {}
-        constexpr PreferenceDescriptionValue(GameDifficulty* ptr) : gameDifficultyPtr(ptr) {}
-        constexpr PreferenceDescriptionValue(CombatDifficulty* ptr) : combatDifficultyPtr(ptr) {}
-        constexpr PreferenceDescriptionValue(ViolenceLevel* ptr) : violenceLevelPtr(ptr) {}
-        constexpr PreferenceDescriptionValue(TargetHighlight* ptr) : targetHighlightPtr(ptr) {}
+        constexpr PreferenceDescriptionValue(std::nullptr_t)
+            : intPtr(nullptr)
+        {
+        }
+        constexpr PreferenceDescriptionValue(int* ptr)
+            : intPtr(ptr)
+        {
+        }
+        constexpr PreferenceDescriptionValue(GameDifficulty* ptr)
+            : gameDifficultyPtr(ptr)
+        {
+        }
+        constexpr PreferenceDescriptionValue(CombatDifficulty* ptr)
+            : combatDifficultyPtr(ptr)
+        {
+        }
+        constexpr PreferenceDescriptionValue(ViolenceLevel* ptr)
+            : violenceLevelPtr(ptr)
+        {
+        }
+        constexpr PreferenceDescriptionValue(TargetHighlight* ptr)
+            : targetHighlightPtr(ptr)
+        {
+        }
     } value;
 };
 
