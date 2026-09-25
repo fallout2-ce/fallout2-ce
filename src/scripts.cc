@@ -3231,7 +3231,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     // This used to silence any speech call made outside dialogue (float_msg,
     // combat, timed events...) just because there was no head fid set. But a
     // head fid only matters for lip-sync, not for whether we should play
-    // audio at all. gameDialogWindowActive() below now handles that.
+    // audio at all, so below it only picks lip-sync vs. plain playback.
 
     MessageListItem messageListItem;
     messageListItem.num = messageId;
@@ -3243,20 +3243,14 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     if (shouldStartSpeech) {
         if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
             if (messageListItem.flags & 0x01) {
-                if (gameDialogWindowActive()) {
-                    gameDialogStartLips(nullptr);
-                } else {
-                    soundPlayFile("censor");
-                }
-            } else if (gameDialogWindowActive()) {
+                soundPlayFile("censor");
+            } else if (gameDialogWindowActive() && gGameDialogHeadFrmId.valid()) {
                 gameDialogStartLips(messageListItem.audio);
             } else {
-                // No dialogue window open, so just play the line without
+                // No talking head on screen, so just play the line without
                 // lip-sync instead of dropping it.
                 speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
             }
-        } else {
-            debugPrint("Missing speech name: %d\n", messageListItem.num);
         }
     }
 
