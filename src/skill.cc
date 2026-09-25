@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "display_monitor.h"
 #include "game.h"
+#include "game_config.h"
 #include "interface.h"
 #include "item.h"
 #include "message.h"
@@ -1441,7 +1442,7 @@ int skillGetGameDifficultyModifier(Skill skill)
     case SKILL_BARTER:
     case SKILL_GAMBLING:
     case SKILL_OUTDOORSMAN: {
-        int gameDifficulty = settings.preferences.game_difficulty;
+        GameDifficulty gameDifficulty = settings.preferences.game_difficulty;
 
         if (gameDifficulty == GAME_DIFFICULTY_HARD) {
             return -10;

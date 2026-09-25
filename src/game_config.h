@@ -43,11 +43,11 @@ namespace fallout {
 #define ITALIAN "italian"
 #define SPANISH "spanish"
 
-typedef enum GameDifficulty {
+enum GameDifficulty : int {
     GAME_DIFFICULTY_EASY,
     GAME_DIFFICULTY_NORMAL,
     GAME_DIFFICULTY_HARD,
-} GameDifficulty;
+};
 
 typedef enum CombatDifficulty {
     COMBAT_DIFFICULTY_EASY,

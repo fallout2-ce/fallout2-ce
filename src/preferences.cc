@@ -10,6 +10,7 @@
 #include "delay.h"
 #include "draw.h"
 #include "game.h"
+#include "game_config.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "graph_lib.h"
@@ -790,7 +791,7 @@ static void _UpdateThing(int index)
 // 0x492CB0 SavePrefs
 int _SavePrefs(bool save)
 {
-    settings.preferences.game_difficulty = gPreferencesGameDifficulty1;
+    settings.preferences.game_difficulty = static_cast<GameDifficulty>(gPreferencesGameDifficulty1);
     settings.preferences.combat_difficulty = gPreferencesCombatDifficulty1;
     settings.preferences.violence_level = gPreferencesViolenceLevel1;
     settings.preferences.target_highlight = gPreferencesTargetHighlight1;
