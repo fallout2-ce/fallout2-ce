@@ -7220,7 +7220,7 @@ static void characterEditorFolderViewScroll(int direction)
     if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
         blitBufferToBuffer(
             _editorBackgroundFrmImage.getData() + 640 * 267 + 345,
-            277,
+            295,
             170,
             640,
             gCharacterEditorWindowBuffer + 640 * 267 + 345,
