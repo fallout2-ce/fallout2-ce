@@ -84,7 +84,7 @@ typedef enum PreferencesWindowFrm {
     PREFERENCES_WINDOW_FRM_COUNT,
 } PreferencesWindowFrm;
 
-typedef struct PreferenceDescription {
+struct PreferenceDescription {
     // The number of options.
     short valuesCount;
 
@@ -102,8 +102,21 @@ typedef struct PreferenceDescription {
     int btn;
     double minValue;
     double maxValue;
-    int* valuePtr;
-} PreferenceDescription;
+    union PreferenceDescriptionValue {
+        int* intPtr;
+        GameDifficulty* gameDifficultyPtr;
+        CombatDifficulty* combatDifficultyPtr;
+        ViolenceLevel* violenceLevelPtr;
+        TargetHighlight* targetHighlightPtr;
+
+        constexpr PreferenceDescriptionValue(std::nullptr_t) : intPtr(nullptr) {}
+        constexpr PreferenceDescriptionValue(int* ptr) : intPtr(ptr) {}
+        constexpr PreferenceDescriptionValue(GameDifficulty* ptr) : gameDifficultyPtr(ptr) {}
+        constexpr PreferenceDescriptionValue(CombatDifficulty* ptr) : combatDifficultyPtr(ptr) {}
+        constexpr PreferenceDescriptionValue(ViolenceLevel* ptr) : violenceLevelPtr(ptr) {}
+        constexpr PreferenceDescriptionValue(TargetHighlight* ptr) : targetHighlightPtr(ptr) {}
+    } value;
+};
 
 static void _SetSystemPrefs();
 static void _SaveSettings();
@@ -265,16 +278,16 @@ static unsigned char* gPreferencesWindowBuffer;
 static int gPreferencesWindow = -1;
 
 // 0x663924 settings_backup
-static int gPreferencesGameDifficulty2;
+static GameDifficulty gPreferencesGameDifficulty2;
 
 // 0x663928
-static int gPreferencesCombatDifficulty2;
+static CombatDifficulty gPreferencesCombatDifficulty2;
 
 // 0x66392C
-static int gPreferencesViolenceLevel2;
+static ViolenceLevel gPreferencesViolenceLevel2;
 
 // 0x663930
-static int gPreferencesTargetHighlight2;
+static TargetHighlight gPreferencesTargetHighlight2;
 
 // 0x663934
 static int gPreferencesCombatLooks2;
@@ -364,16 +377,16 @@ static void preferencesRefreshBrightnessSlider()
 static int gPreferencesCombatMessages1;
 
 // 0x6639B0 target_highlight
-static int gPreferencesTargetHighlight1;
+static TargetHighlight gPreferencesTargetHighlight1;
 
 // 0x6639B4 combat_difficulty
-static int gPreferencesCombatDifficulty1;
+static CombatDifficulty gPreferencesCombatDifficulty1;
 
 // 0x6639B8 violence_level
-static int gPreferencesViolenceLevel1;
+static ViolenceLevel gPreferencesViolenceLevel1;
 
 // 0x6639BC game_difficulty
-static int gPreferencesGameDifficulty1;
+static GameDifficulty gPreferencesGameDifficulty1;
 
 // 0x6639C0 combatLookValue
 static int gPreferencesCombatLooks1;
@@ -513,7 +526,7 @@ static void preferencesSetDefaults(bool updateUi)
     gPreferencesTextBaseDelay1 = 3.5;
     gPreferencesBrightness1 = 1.0;
     gPreferencesMouseSensitivity1 = 1.0;
-    gPreferencesGameDifficulty1 = 1;
+    gPreferencesGameDifficulty1 = GAME_DIFFICULTY_NORMAL;
     gPreferencesLanguageFilter1 = 0;
     gPreferencesMasterVolume1 = 22281;
     gPreferencesMusicVolume1 = 22281;
@@ -533,10 +546,10 @@ static void preferencesSetDefaults(bool updateUi)
 // 0x4931F8
 static void _JustUpdate_()
 {
-    gPreferencesGameDifficulty1 = std::clamp(gPreferencesGameDifficulty1, 0, 2);
-    gPreferencesCombatDifficulty1 = std::clamp(gPreferencesCombatDifficulty1, 0, 2);
-    gPreferencesViolenceLevel1 = std::clamp(gPreferencesViolenceLevel1, 0, 3);
-    gPreferencesTargetHighlight1 = std::clamp(gPreferencesTargetHighlight1, 0, 2);
+    gPreferencesGameDifficulty1 = std::clamp(gPreferencesGameDifficulty1, GAME_DIFFICULTY_MIN, GAME_DIFFICULTY_MAX);
+    gPreferencesCombatDifficulty1 = std::clamp(gPreferencesCombatDifficulty1, COMBAT_DIFFICULTY_MIN, COMBAT_DIFFICULTY_MAX);
+    gPreferencesViolenceLevel1 = std::clamp(gPreferencesViolenceLevel1, VIOLENCE_LEVEL_MIN, VIOLENCE_LEVEL_MAX);
+    gPreferencesTargetHighlight1 = std::clamp(gPreferencesTargetHighlight1, TARGET_HIGHLIGHT_MIN, TARGET_HIGHLIGHT_MAX);
     gPreferencesCombatMessages1 = std::clamp(gPreferencesCombatMessages1, 0, 1);
     gPreferencesCombatLooks1 = std::clamp(gPreferencesCombatLooks1, 0, 1);
     gPreferencesCombatTaunts1 = std::clamp(gPreferencesCombatTaunts1, 0, 1);
@@ -668,7 +681,7 @@ static void _UpdateThing(int index)
             fontDrawText(gPreferencesWindowBuffer + 640 * y + x, s, 640, 640, COLOR_DARK_YELLOW);
         }
 
-        int value = *(meta->valuePtr);
+        int value = *(meta->value.intPtr);
         blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_PRIMARY_SWITCH].getData() + (46 * 47) * value, 46, 47, 46, gPreferencesWindowBuffer + 640 * meta->knobY + meta->knobX, 640);
     } else if (index >= FIRST_SECONDARY_PREF && index <= LAST_SECONDARY_PREF) {
         int secondaryOptionIndex = index - FIRST_SECONDARY_PREF;
@@ -693,7 +706,7 @@ static void _UpdateThing(int index)
             fontDrawText(gPreferencesWindowBuffer + 640 * (meta->knobY - 5) + x, text, 640, 640, COLOR_DARK_YELLOW);
         }
 
-        int value = *(meta->valuePtr);
+        int value = *(meta->value.intPtr);
         if (index == PREF_COMBAT_MESSAGES) {
             value ^= 1;
         }
@@ -703,7 +716,7 @@ static void _UpdateThing(int index)
         switch (index) {
         case PREF_COMBAT_SPEED:
             if (1) {
-                double value = *meta->valuePtr;
+                double value = *meta->value.intPtr;
                 value = std::clamp(value, 0.0, 50.0);
 
                 int x = (int)((value - meta->minValue) * 219.0 / (meta->maxValue - meta->minValue) + 384.0);
@@ -729,7 +742,7 @@ static void _UpdateThing(int index)
         case PREF_SFX_VOLUME:
         case PREF_SPEECH_VOLUME:
             if (1) {
-                double value = *meta->valuePtr;
+                double value = *meta->value.intPtr;
                 value = std::clamp(value, meta->minValue, meta->maxValue);
 
                 int x = (int)((value - meta->minValue) * 219.0 / (meta->maxValue - meta->minValue) + 384.0);
@@ -791,10 +804,10 @@ static void _UpdateThing(int index)
 // 0x492CB0 SavePrefs
 int _SavePrefs(bool save)
 {
-    settings.preferences.game_difficulty = static_cast<GameDifficulty>(gPreferencesGameDifficulty1);
-    settings.preferences.combat_difficulty = static_cast<CombatDifficulty>(gPreferencesCombatDifficulty1);
-    settings.preferences.violence_level = static_cast<ViolenceLevel>(gPreferencesViolenceLevel1);
-    settings.preferences.target_highlight = static_cast<TargetHighlight>(gPreferencesTargetHighlight1);
+    settings.preferences.game_difficulty = gPreferencesGameDifficulty1;
+    settings.preferences.combat_difficulty = gPreferencesCombatDifficulty1;
+    settings.preferences.violence_level = gPreferencesViolenceLevel1;
+    settings.preferences.target_highlight = gPreferencesTargetHighlight1;
     settings.preferences.combat_messages = gPreferencesCombatMessages1;
     settings.preferences.combat_looks = gPreferencesCombatLooks1;
     settings.preferences.combat_taunts = gPreferencesCombatTaunts1;
@@ -839,10 +852,10 @@ int preferencesSave(File* stream)
     float brightness = (float)gPreferencesBrightness1;
     float mouseSensitivity = (float)gPreferencesMouseSensitivity1;
 
-    if (fileWriteInt32(stream, gPreferencesGameDifficulty1) == -1) goto err;
-    if (fileWriteInt32(stream, gPreferencesCombatDifficulty1) == -1) goto err;
-    if (fileWriteInt32(stream, gPreferencesViolenceLevel1) == -1) goto err;
-    if (fileWriteInt32(stream, gPreferencesTargetHighlight1) == -1) goto err;
+    if (fileWriteInt32Enum<GameDifficulty>(stream, gPreferencesGameDifficulty1) == -1) goto err;
+    if (fileWriteInt32Enum<CombatDifficulty>(stream, gPreferencesCombatDifficulty1) == -1) goto err;
+    if (fileWriteInt32Enum<ViolenceLevel>(stream, gPreferencesViolenceLevel1) == -1) goto err;
+    if (fileWriteInt32Enum<TargetHighlight>(stream, gPreferencesTargetHighlight1) == -1) goto err;
     if (fileWriteInt32(stream, gPreferencesCombatLooks1) == -1) goto err;
     if (fileWriteInt32(stream, gPreferencesCombatMessages1) == -1) goto err;
     if (fileWriteInt32(stream, gPreferencesCombatTaunts1) == -1) goto err;
@@ -878,10 +891,10 @@ int preferencesLoad(File* stream)
 
     preferencesSetDefaults(false);
 
-    if (fileReadInt32(stream, &gPreferencesGameDifficulty1) == -1) goto err;
-    if (fileReadInt32(stream, &gPreferencesCombatDifficulty1) == -1) goto err;
-    if (fileReadInt32(stream, &gPreferencesViolenceLevel1) == -1) goto err;
-    if (fileReadInt32(stream, &gPreferencesTargetHighlight1) == -1) goto err;
+    if (fileReadInt32Enum<GameDifficulty>(stream, &gPreferencesGameDifficulty1) == -1) goto err;
+    if (fileReadInt32Enum<CombatDifficulty>(stream, &gPreferencesCombatDifficulty1) == -1) goto err;
+    if (fileReadInt32Enum<ViolenceLevel>(stream, &gPreferencesViolenceLevel1) == -1) goto err;
+    if (fileReadInt32Enum<TargetHighlight>(stream, &gPreferencesTargetHighlight1) == -1) goto err;
     if (fileReadInt32(stream, &gPreferencesCombatLooks1) == -1) goto err;
     if (fileReadInt32(stream, &gPreferencesCombatMessages1) == -1) goto err;
     if (fileReadInt32(stream, &gPreferencesCombatTaunts1) == -1) goto err;
@@ -1323,7 +1336,7 @@ static void _DoThing(int eventCode)
 
     if (preferenceIndex >= FIRST_PRIMARY_PREF && preferenceIndex <= LAST_PRIMARY_PREF) {
         PreferenceDescription* meta = &(gPreferenceDescriptions[preferenceIndex]);
-        int* valuePtr = meta->valuePtr;
+        int* valuePtr = meta->value.intPtr;
         int value = *valuePtr;
         bool valueChanged = false;
 
@@ -1397,7 +1410,7 @@ static void _DoThing(int eventCode)
         }
     } else if (preferenceIndex >= FIRST_SECONDARY_PREF && preferenceIndex <= LAST_SECONDARY_PREF) {
         PreferenceDescription* meta = &(gPreferenceDescriptions[preferenceIndex]);
-        int* valuePtr = meta->valuePtr;
+        int* valuePtr = meta->value.intPtr;
         bool valueChanged = false;
 
         int knobCenterX = meta->knobX + 11;
@@ -1430,7 +1443,7 @@ static void _DoThing(int eventCode)
         }
     } else if (preferenceIndex >= FIRST_RANGE_PREF && preferenceIndex <= LAST_RANGE_PREF) {
         PreferenceDescription* meta = &(gPreferenceDescriptions[preferenceIndex]);
-        int* valuePtr = meta->valuePtr;
+        int* valuePtr = meta->value.intPtr;
 
         soundPlayFile("ib1p1xx1");
 
@@ -1496,23 +1509,23 @@ static void _DoThing(int eventCode)
 
             switch (preferenceIndex) {
             case PREF_COMBAT_SPEED:
-                *meta->valuePtr = (int)newValue;
+                *meta->value.intPtr = (int)newValue;
                 break;
             case PREF_TEXT_BASE_DELAY:
                 gPreferencesTextBaseDelay1 = 6.0 - newValue + 1.0;
                 break;
             case PREF_MASTER_VOLUME:
-                *meta->valuePtr = (int)newValue;
+                *meta->value.intPtr = (int)newValue;
                 gameSoundSetMasterVolume(gPreferencesMasterVolume1);
                 redrawLabels = true;
                 break;
             case PREF_MUSIC_VOLUME:
-                *meta->valuePtr = (int)newValue;
+                *meta->value.intPtr = (int)newValue;
                 backgroundSoundSetVolume(gPreferencesMusicVolume1);
                 redrawLabels = true;
                 break;
             case PREF_SFX_VOLUME:
-                *meta->valuePtr = (int)newValue;
+                *meta->value.intPtr = (int)newValue;
                 soundEffectsSetVolume(gPreferencesSoundEffectsVolume1);
                 redrawLabels = true;
                 if (sfxVolumeExample == 0) {
@@ -1523,7 +1536,7 @@ static void _DoThing(int eventCode)
                 }
                 break;
             case PREF_SPEECH_VOLUME:
-                *meta->valuePtr = (int)newValue;
+                *meta->value.intPtr = (int)newValue;
                 speechSetVolume(gPreferencesSpeechVolume1);
                 redrawLabels = true;
                 if (speechVolumeExample == 0) {
