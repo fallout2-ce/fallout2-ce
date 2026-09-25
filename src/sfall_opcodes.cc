@@ -299,6 +299,11 @@ static void op_game_loaded(Program* program)
     programStackPushInteger(program, loaded ? 1 : 0);
 }
 
+static void op_sneak_success(Program* program)
+{
+    programStackPushInteger(program, dudeIsSneaking() ? 1 : 0);
+}
+
 // set_global_script_repeat
 static void op_set_global_script_repeat(Program* program)
 {
@@ -2752,6 +2757,7 @@ void sfallOpcodesInit()
     // 0x826b - string message_str_game(int fileId, int messageId)
     interpreterRegisterOpcode(0x826B, op_get_message);
     // 0x826c - int sneak_success()
+    interpreterRegisterOpcode(0x826C, op_sneak_success);
     // 0x826d - int tile_light(int elevation, int tileNum)
     interpreterRegisterOpcode(0x826D, op_tile_light);
     // 0x826e - object obj_blocking_line(object objFrom, int tileTo, int blockingType)
