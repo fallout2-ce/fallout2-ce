@@ -235,11 +235,14 @@ void initSettingsRegistry(bool isMapper)
     SETTING(sounds);
     SETTING(music);
     SETTING(speech);
+    SETTING(float_speech);
+    SETTING(pipboy_speech);
     SETTING(master_volume);
     SETTING(music_volume);
     SETTING(sndfx_volume);
     SETTING(speech_volume);
-    SETTING_P(float_volume, clamp(VOLUME_MIN, VOLUME_MAX));
+    // SETTING_P(float_volume, clamp(VOLUME_MIN, VOLUME_MAX));
+    // SETTING_P(pipboy_volume, clamp(VOLUME_MIN, VOLUME_MAX));
     SETTING(cache_size);
     SETTING_P(music_path1, normalizePath);
     SETTING_P(music_path2, normalizePath);

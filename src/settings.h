@@ -161,11 +161,17 @@ struct SoundSettings {
     bool sounds = true;
     bool music = true;
     bool speech = true;
+    // Voiced floats and Pip-Boy lines, only when [speech] is on too.
+    bool float_speech = true;
+    bool pipboy_speech = true;
     int master_volume = 22281;
     int music_volume = 22281;
     int sndfx_volume = 22281;
     int speech_volume = 22281;
-    int float_volume = 22281;
+    // TODO: Separate volumes for voiced floats and Pip-Boy lines, once they
+    // have a place in the preferences screen. Both use speech_volume for now.
+    // int float_volume = 22281;
+    // int pipboy_volume = 22281;
     int cache_size = 448;
     std::string music_path1 = "sound\\music\\";
     std::string music_path2 = "sound\\music\\";
@@ -175,8 +181,8 @@ struct SoundSettings {
     int speech_channels = 1;
     int sfx_channels = 4;
     int movie_channels = 1;
-    int script_channels = 1;
-    int float_channels = 2;
+    int script_channels = 4;
+    int float_channels = 4;
     int pipboy_channels = 1;
 };
 

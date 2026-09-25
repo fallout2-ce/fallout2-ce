@@ -34,7 +34,7 @@ constexpr AudioChannelLimits kAudioChannelLimits[AUDIO_CHANNEL_TYPE_COUNT] = {
     /* AUDIO_CHANNEL_SPEECH */ { 1, 1 },
     /* AUDIO_CHANNEL_SFX    */ { 4, 16 },
     /* AUDIO_CHANNEL_MOVIE  */ { 1, 1 },
-    /* AUDIO_CHANNEL_SCRIPT */ { 1, 1 },
+    /* AUDIO_CHANNEL_SCRIPT */ { 1, 16 },
     /* AUDIO_CHANNEL_FLOAT  */ { 1, 8 },
     /* AUDIO_CHANNEL_PIPBOY */ { 1, 1 },
 };

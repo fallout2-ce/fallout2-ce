@@ -231,6 +231,7 @@ static void pipboyWindowHandleStatus(int userInput);
 static void pipboyWindowRenderQuestLocationList(int a1);
 static void pipboyWindowQuestList(int a1);
 static void pipboyRenderHolodiskText();
+static void pipboyPlayHolodiskAudio();
 static int pipboyWindowRenderHolodiskList(int a1);
 static int _qscmp(const void* a1, const void* a2);
 static void pipboyWindowHandleAutomaps(int a1);
@@ -843,6 +844,8 @@ static int pipboyWindowInit(int intent)
 // 0x497828
 static void pipboyWindowFree()
 {
+    pipboySoundStop();
+
     if (settings.debug.show_script_messages) {
         debugPrint("\nScript <Map Update>");
     }
@@ -1168,6 +1171,7 @@ static void pipboyWindowHandleStatus(int userInput)
                 inputPauseForTocks(200);
                 pipboyWindowDestroyButtons();
                 pipboyRenderHolodiskText();
+                pipboyPlayHolodiskAudio();
                 _holo_flag = 1;
             }
         }
@@ -1566,6 +1570,24 @@ static void pipboyRenderHolodiskText()
     renderNavigationButtons(_view_page, gPipboyHolodiskLastPage + 1, true);
 
     windowRefresh(gPipboyWindow);
+}
+
+// Plays the voiced narration attached to the holodisk's title entry in
+// pipboy.msg, if it has one. Turning pages keeps it playing, opening another
+// holodisk or closing the Pip-Boy stops it.
+static void pipboyPlayHolodiskAudio()
+{
+    pipboySoundStop();
+
+    MessageListItem messageListItem;
+    messageListItem.num = gHolodiskDescriptions[_holodisk].name;
+    if (!messageListGetItem(&gPipboyMessageList, &messageListItem)) {
+        return;
+    }
+
+    if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
+        pipboySoundPlay(messageListItem.audio);
+    }
 }
 
 // 0x498C40

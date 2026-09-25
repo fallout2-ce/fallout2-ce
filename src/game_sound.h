@@ -89,14 +89,15 @@ int _gsound_speech_play_preloaded();
 void speechDelete();
 
 // Plays a voiced float line (speech file name without extension) on the float
-// channel pool. Evicts the oldest float when every channel is busy.
+// channel pool at speech volume. Evicts the oldest float when every channel is
+// busy. Falls back to sound\sfx\ when the file is not in the speech folders,
+// like sfall.
 int floatSoundPlay(const char* fileName);
 void floatSoundStopAll();
-void floatSoundSetVolume(int volume);
-int floatSoundGetVolume();
 
-// Plays a sound (full path) on the dedicated Pip-Boy channel pool.
-int pipboySoundPlay(const char* path);
+// Plays a voiced Pip-Boy line (file name in sound\pipboy\ without extension,
+// e.g. a holodisk narration) on the Pip-Boy channel pool at speech volume.
+int pipboySoundPlay(const char* fileName);
 void pipboySoundStop();
 
 int _gsound_play_sfx_file_volume(const char* name, int volume);

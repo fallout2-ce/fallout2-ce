@@ -44,6 +44,10 @@ typedef enum SoundEffectActionType {
 // 0x5035BC aSoundSfx
 static char _aSoundSfx[] = "sound\\sfx\\";
 
+// Voiced Pip-Boy lines (holodisk narration) live in their own folder, apart
+// from NPC speech.
+static const char* _sound_pipboy_path = "sound\\pipboy\\";
+
 // 0x5035C8 aSoundMusic_0
 static char _aSoundMusic_0[] = "sound\\music\\";
 
@@ -135,8 +139,6 @@ static int gSpeechVolume = VOLUME_MAX;
 // 0x518E90 sndfx_volume
 static int gSoundEffectsVolume = VOLUME_MAX;
 
-static int gFloatVolume = VOLUME_MAX;
-
 // One channel of a [GameSoundChannelPool]. [serial] orders sounds by start
 // time, so the oldest one can be evicted when the pool is full.
 struct GameSoundChannelSlot {
@@ -196,6 +198,7 @@ static void soundEffectCallback(void* userData, int event);
 static int _gsound_background_allocate(Sound** outSound, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 static int gameSoundFindBackgroundSoundPath(char* dest, const char* src);
 static int gameSoundFindSpeechSoundPath(char* dest, const char* src);
+static int gameSoundFindAcmFile(char* dest, const char* directory, const char* name);
 static int backgroundSoundPlay();
 static int speechPlay();
 static int _gsound_get_music_path(char** out_value, const char* key);
@@ -276,6 +279,7 @@ int gameSoundInit()
 
     gameSoundChannelPoolInit(&gFloatChannelPool, AUDIO_CHANNEL_FLOAT);
     gameSoundChannelPoolInit(&gPipboyChannelPool, AUDIO_CHANNEL_PIPBOY);
+    scriptSoundInit();
 
     audioInit(gameSoundIsCompressed);
 
@@ -368,9 +372,6 @@ int gameSoundInit()
 
     gSpeechVolume = settings.sound.speech_volume;
     speechSetVolume(gSpeechVolume);
-
-    gFloatVolume = settings.sound.float_volume;
-    floatSoundSetVolume(gFloatVolume);
 
     _gsound_background_fade = 0;
     gBackgroundSoundFileName[0] = '\0';
@@ -950,6 +951,11 @@ void speechSetVolume(int volume)
             soundSetVolume(gSpeechSound, (int)(volume * 0.69));
         }
     }
+
+    // Voiced floats and Pip-Boy lines follow the speech slider until they
+    // get sliders of their own.
+    gameSoundChannelPoolSetVolume(&gFloatChannelPool, (int)(volume * 0.69));
+    gameSoundChannelPoolSetVolume(&gPipboyChannelPool, (int)(volume * 0.69));
 }
 
 // 0x450C5C
@@ -1105,11 +1111,11 @@ void speechResume()
 
 int floatSoundPlay(const char* fileName)
 {
-    if (!gGameSoundInitialized || !gSpeechEnabled) {
+    if (!gGameSoundInitialized || !gSpeechEnabled || !settings.sound.float_speech) {
         return -1;
     }
 
-    if (fileName == nullptr || fileName[0] == '\0' || gFloatVolume == 0) {
+    if (fileName == nullptr || fileName[0] == '\0' || gSpeechVolume == 0) {
         return -1;
     }
 
@@ -1119,14 +1125,18 @@ int floatSoundPlay(const char* fileName)
 
     char path[COMPAT_MAX_PATH + 1];
     if (gameSoundFindSpeechSoundPath(path, fileName) != 0) {
-        if (gGameSoundDebugEnabled) {
-            debugPrint("failed because the file could not be found.\n");
+        // sfall plays voiced combat taunts from sound\sfx\, so look there
+        // too for mods made for it.
+        if (gameSoundFindAcmFile(path, _sound_sfx_path, fileName) != 0) {
+            if (gGameSoundDebugEnabled) {
+                debugPrint("failed because the file could not be found.\n");
+            }
+            return -1;
         }
-        return -1;
     }
 
-    // Same scaling as speech, so equal volume settings sound equally loud.
-    return gameSoundChannelPoolPlay(&gFloatChannelPool, path, (int)(gFloatVolume * 0.69));
+    // Same scaling as speech, so they sound equally loud.
+    return gameSoundChannelPoolPlay(&gFloatChannelPool, path, (int)(gSpeechVolume * 0.69));
 }
 
 void floatSoundStopAll()
@@ -1134,35 +1144,25 @@ void floatSoundStopAll()
     gameSoundChannelPoolStopAll(&gFloatChannelPool);
 }
 
-void floatSoundSetVolume(int volume)
+int pipboySoundPlay(const char* fileName)
 {
-    if (!gGameSoundInitialized) {
-        return;
-    }
-
-    if (volume < VOLUME_MIN || volume > VOLUME_MAX) {
-        if (gGameSoundDebugEnabled) {
-            debugPrint("Requested float volume out of range.\n");
-        }
-        return;
-    }
-
-    gFloatVolume = volume;
-    gameSoundChannelPoolSetVolume(&gFloatChannelPool, (int)(volume * 0.69));
-}
-
-int floatSoundGetVolume()
-{
-    return gFloatVolume;
-}
-
-int pipboySoundPlay(const char* path)
-{
-    if (!gGameSoundInitialized || !gSpeechEnabled) {
+    if (!gGameSoundInitialized || !gSpeechEnabled || !settings.sound.pipboy_speech) {
         return -1;
     }
 
-    if (path == nullptr || path[0] == '\0') {
+    if (fileName == nullptr || fileName[0] == '\0' || gSpeechVolume == 0) {
+        return -1;
+    }
+
+    if (gGameSoundDebugEnabled) {
+        debugPrint("Loading Pip-Boy sound file %s%s...", fileName, ".ACM");
+    }
+
+    char path[COMPAT_MAX_PATH + 1];
+    if (gameSoundFindAcmFile(path, _sound_pipboy_path, fileName) != 0) {
+        if (gGameSoundDebugEnabled) {
+            debugPrint("failed because the file could not be found.\n");
+        }
         return -1;
     }
 
@@ -1970,6 +1970,23 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
     }
 
     return -1;
+}
+
+// Looks for [name].ACM in [directory] (ending with a backslash) and copies
+// the path into [dest], which must hold COMPAT_MAX_PATH + 1 chars.
+static int gameSoundFindAcmFile(char* dest, const char* directory, const char* name)
+{
+    char path[COMPAT_MAX_PATH];
+    snprintf(path, sizeof(path), "%s%s%s", directory, name, ".ACM");
+
+    int fileSize;
+    if (dbGetFileSize(path, &fileSize) != 0) {
+        return -1;
+    }
+
+    strncpy(dest, path, COMPAT_MAX_PATH);
+    dest[COMPAT_MAX_PATH] = '\0';
+    return 0;
 }
 
 // 0x4520EC
