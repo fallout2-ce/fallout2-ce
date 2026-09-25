@@ -63,11 +63,11 @@ enum ViolenceLevel : int {
     VIOLENCE_LEVEL_MAXIMUM_BLOOD,
 };
 
-typedef enum TargetHighlight {
+enum TargetHighlight : int {
     TARGET_HIGHLIGHT_OFF,
     TARGET_HIGHLIGHT_ON,
     TARGET_HIGHLIGHT_TARGETING_ONLY,
-} TargetHighlight;
+};
 
 extern bool gGameConfigInitialized;
 extern Config gGameConfig;
