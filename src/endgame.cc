@@ -289,7 +289,10 @@ static void endgamePlayConfiguredMovie()
     }
 
     if (movie >= 0 && movie < GAME_MOVIE_MAX_COUNT) {
-        gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_PAUSE_MUSIC);
+        // Match sfall's Fallout 1 endgame hook: let the endgame track play
+        // through the movie and do not add another movie fade.
+        inputPauseForTocks(1500);
+        gameMoviePlay(movie, 0);
     }
 }
 

@@ -825,4 +825,11 @@ int _moviePlaying()
     return _running;
 }
 
+void movieHandleFocusGained()
+{
+    if (_running) {
+        MVE_rmResetSync();
+    }
+}
+
 } // namespace fallout

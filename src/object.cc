@@ -62,7 +62,7 @@ static int _obj_connect_to_tile(ObjectListNode* node, int tile_index, int elev, 
 static int _obj_adjust_light(Object* obj, int a2, Rect* rect);
 static void objectDrawOutline(Object* object, Rect* rect);
 static void _obj_render_object(Object* object, Rect* rect, int light);
-static int _obj_preload_sort(const void* a1, const void* a2);
+static int _obj_preload_sort(const void* fid1, const void* fid2);
 static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData);
 
 // 0x5195F8 objInitialized
@@ -1494,15 +1494,18 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofX = tile % 200 / 2;
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
-            int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
-            const TileFrmId currentSquareFrmId = static_cast<TileFrameId>(frameIdFromFid(currentSquare >> 16));
+            int currentSquare = _square[elevation]->tileFid[roofX + 100 * roofY];
+            TileFID currentSquareRoofFid = roofTileFidFromCombinedTileFid(currentSquare);
+            const TileFrameId currentSquareFrameId = FrmId(currentSquareRoofFid).frameId().tile;
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
-                ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
+                ? _square[elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = currentSquareFrmId == TileFrameId::Grid;
-
-            if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
+            TileFID previousSquareRoofFid = roofTileFidFromCombinedTileFid(previousSquare);
+            bool isEmpty = currentSquareFrameId == TileFrameId::Grid;
+            TileFlags currentSquareFlags = tileFlagsFromTileFid(currentSquareRoofFid);
+            TileFlags previousSquareFlags = tileFlagsFromTileFid(previousSquareRoofFid);
+            if (isEmpty != _obj_last_is_empty || currentSquareFlags != previousSquareFlags) {
                 if (!_obj_last_is_empty) {
                     tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, elevation, true);
                 }
@@ -1552,8 +1555,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
-    if (frmId != TileFrameId::Grid) {
+    TileFrameId frameId = FrmId(roofTileFidFromCombinedTileFid(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y])).frameId().tile;
+    if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3223,27 +3226,33 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
     unsigned char arr[FrmId::kMaxFrameId + 1];
     memset(arr, 0, sizeof(arr));
 
-    if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[0]->fid[i];
-            arr[v3 & 0xFFF] = 1;
-            arr[(v3 >> 16) & 0xFFF] = 1;
-        }
-    }
+    constexpr MapHeaderFlags kElevationFlags[ELEVATION_COUNT] = {
+        MAP_HEADER_ELEVATION_0,
+        MAP_HEADER_ELEVATION_1,
+        MAP_HEADER_ELEVATION_2,
+    };
 
-    if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[1]->fid[i];
-            arr[v3 & 0xFFF] = 1;
-            arr[(v3 >> 16) & 0xFFF] = 1;
+    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        if ((flags & kElevationFlags[elevation]) != MAP_HEADER_NONE) {
+            continue;
         }
-    }
 
-    if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
-        for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[2]->fid[i];
-            arr[v3 & 0xFFF] = 1;
-            arr[(v3 >> 16) & 0xFFF] = 1;
+        for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
+            int tileFids = _square[elevation]->tileFid[tile];
+            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
+            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
+            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
+            if (floorTileFrameId == TileFrameId::Invalid) {
+                floorTileFrameId = TileFrameId::Last;
+            }
+
+            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
+            if (roofTileFrameId == TileFrameId::Invalid) {
+                roofTileFrameId = TileFrameId::Last;
+            }
+
+            arr[static_cast<int>(floorTileFrameId)] = 1;
+            arr[static_cast<int>(roofTileFrameId)] = 1;
         }
     }
 
@@ -5236,30 +5245,45 @@ void _obj_fix_violence_settings(int* fid)
 }
 
 // 0x48FB08 obj_preload_sort
-static int _obj_preload_sort(const void* a1, const void* a2)
+static int _obj_preload_sort(const void* fid1, const void* fid2)
 {
-    int v1 = *(int*)a1;
-    int v2 = *(int*)a2;
+    const FrmId frmId1 = FrmId(*(int*)fid1);
+    const FrmId frmId2 = FrmId(*(int*)fid2);
 
-    int v3 = _cd_order[FrmId(v1).objectType()];
-    int v4 = _cd_order[FrmId(v2).objectType()];
+    const ObjectType objType1 = frmId1.objectType();
+    const ObjectType objType2 = frmId2.objectType();
 
-    int cmp = v3 - v4;
+    if (!frmId1.valid() || !frmId2.valid()) {
+        return objType1 - objType2;
+    }
+
+    constexpr size_t kCdOrderSize = (sizeof(_cd_order) / sizeof(_cd_order[0]));
+    assert(objType1 < kCdOrderSize && objType2 < kCdOrderSize && "_obj_preload_sort(const void* fid1, const void* fid2) called object type higher than _cd_order size!");
+
+    int cmp;
+    if (objType1 < kCdOrderSize && objType2 < kCdOrderSize) {
+        cmp = _cd_order[objType1] - _cd_order[objType2];
+        if (cmp != 0) {
+            return cmp;
+        }
+    } else {
+        cmp = objType1 - objType2;
+        if (cmp != 0) {
+            return cmp;
+        }
+    }
+
+    cmp = frmId1.frameId().id - frmId2.frameId().id;
     if (cmp != 0) {
         return cmp;
     }
 
-    cmp = frameIdFromFid(v1) - frameIdFromFid(v2);
+    cmp = frmId1.weaponAnimation() - frmId2.weaponAnimation();
     if (cmp != 0) {
         return cmp;
     }
 
-    cmp = ((v1 & 0xF000) >> 12) - (((v2 & 0xF000) >> 12));
-    if (cmp != 0) {
-        return cmp;
-    }
-
-    cmp = ((v1 & 0xFF0000) >> 16) - (((v2 & 0xFF0000) >> 16));
+    cmp = frmId1.animationType() - frmId2.animationType();
     return cmp;
 }
 

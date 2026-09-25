@@ -13,6 +13,7 @@
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
+#include "movie.h"
 #include "sfall_kb_helpers.h"
 #include "sfall_script_hooks.h"
 #include "svga.h"
@@ -1046,6 +1047,7 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
+                movieHandleFocusGained();
                 if (!mouseDeviceInitMode()) {
                     debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());
                 }

@@ -829,6 +829,15 @@ bool _gdialogActive()
     return _dialog_state_fix != 0;
 }
 
+// _gdialogActive() stays true for the whole talk_p_proc call, even if the
+// script never opens a window (e.g. a flavor NPC that just floats a line
+// and returns). This checks the actual window state instead, so callers can
+// tell whether there's a head on screen to lip-sync against.
+bool gameDialogWindowActive()
+{
+    return _gdialog_state == GAME_DIALOG_ACTIVE;
+}
+
 // gdialogEnter
 // 0x444D3C
 void gameDialogEnter(Object* speaker, int mode)

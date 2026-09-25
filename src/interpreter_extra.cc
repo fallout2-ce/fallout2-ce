@@ -2059,7 +2059,7 @@ static void opMetarule3(Program* program)
 
             int frameId = param2.integerValue;
             if (frameId > FrmId::kMaxFrameId) {
-                frameId = frameIdFromFid(frameId);
+                frameId = FrmId(frameId).frameId().id;
             }
 
             const FrmId frmId = FrmId(obj);
