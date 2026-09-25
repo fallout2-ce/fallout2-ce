@@ -550,7 +550,7 @@ public:
         if (!hasFid()) {
             return HeadFidget::Invalid;
         }
-        char fidget = (fid() & kAnimationTypeMask) >> kAnimationTypeMaskPosition;
+        int fidget = (fid() & kAnimationTypeMask) >> kAnimationTypeMaskPosition;
         return static_cast<HeadFidget>(fidget);
     }
 

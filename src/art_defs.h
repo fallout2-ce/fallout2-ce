@@ -28,7 +28,7 @@ enum class HeadAnimation : unsigned char {
     BadPhonemes = 11,
 };
 
-enum class HeadFidget : char {
+enum class HeadFidget : int {
     Invalid = -1,
     Good = 1,
     Neutral = 4,
