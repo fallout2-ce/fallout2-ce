@@ -824,6 +824,7 @@ static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx);
 static void mf_set_rest_mode(OpcodeContext& ctx);
+static void mf_set_rest_heal_time(OpcodeContext& ctx);
 static void mf_set_rest_option(OpcodeContext& ctx);
 static void mf_set_scr_name(OpcodeContext& ctx);
 static void mf_set_terrain_name(OpcodeContext& ctx);
@@ -933,7 +934,7 @@ const MetaruleInfo kMetarules[] = {
     { "set_outline", mf_set_outline, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     { "set_party_member_cc_msg_ids", mf_set_party_member_cc_msg_ids, 3, 3, -1, { ARG_INT, ARG_INT, ARG_INT } },
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
-    // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
+    { "set_rest_heal_time", mf_set_rest_heal_time, 1, 1, -1, { ARG_INT } },
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
     { "set_rest_mode", mf_set_rest_mode, 1, 1, -1, { ARG_INT } },
     { "set_rest_option", mf_set_rest_option, 2, 2, -1, { ARG_INT, ARG_INT } },
@@ -2148,6 +2149,11 @@ static void mf_encounter_detection(OpcodeContext& ctx)
 static void mf_set_rest_mode(OpcodeContext& ctx)
 {
     wmSetRestMode(static_cast<RestModeFlag>(ctx.arg(0).asInt()));
+}
+
+static void mf_set_rest_heal_time(OpcodeContext& ctx)
+{
+    pipboySetRestHealTime(ctx.arg(0).asInt());
 }
 
 static void mf_set_rest_option(OpcodeContext& ctx)
