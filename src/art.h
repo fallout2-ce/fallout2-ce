@@ -530,6 +530,11 @@ public:
     {
     }
 
+    constexpr HeadFrmId(HeadFrameId head, HeadFidget headFidget, HeadFidgetAnimation fidgetAnimation = HeadFidgetAnimation::None)
+        : HeadFrmId(head, headAnimationFromHeadFidget(headFidget), fidgetAnimation)
+    {
+    }
+
     constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HeadAnimation::VeryGoodReaction, HeadFidgetAnimation fidgetAnimation = HeadFidgetAnimation::None)
         : FrmId(head, headAnimation, fidgetAnimation)
     {
@@ -551,6 +556,12 @@ public:
 
     using FrmId::operator==;
     using FrmId::operator!=;
+
+private:
+    static constexpr HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
+    {
+        return fidget != HeadFidget::Invalid ? static_cast<HeadAnimation>(fidget) : HeadAnimation::VeryGoodReaction;
+    }
 };
 
 class MiscFrmId : public FrmId {

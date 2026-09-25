@@ -2727,7 +2727,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId().head, headAnimationFromHeadFidget(reaction)));
+    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId().head, reaction));
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
         return;
@@ -2767,7 +2767,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId().head, headAnimationFromHeadFidget(reaction), fidget);
+    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId().head, reaction, fidget);
     gameDialogFidgetFrmCurrentFrame = 0;
     gameDialogFidgetFrm = artLock(gameDialogFidgetFrmId, &gameDialogFidgetFrmHandle);
     if (gameDialogFidgetFrm == nullptr) {

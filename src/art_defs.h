@@ -42,11 +42,6 @@ enum class HeadFidgetAnimation : unsigned char {
     Third = 3
 };
 
-inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
-{
-    return fidget != HeadFidget::Invalid ? static_cast<HeadAnimation>(fidget) : HeadAnimation::VeryGoodReaction;
-}
-
 enum class BackgroundFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm - not working in game
