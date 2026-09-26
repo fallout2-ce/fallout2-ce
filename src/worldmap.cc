@@ -7500,31 +7500,15 @@ int wmTeleportToArea(City areaIdx)
         return -1;
     }
 
+    if (wmGenData.currentAreaId != areaIdx) {
+        CityInfo* city = &(wmAreaInfoList[areaIdx]);
+        wmAreaGetMarkWorldPos(city, &wmGenData.worldPosX, &wmGenData.worldPosY);
+    }
+
     wmGenData.currentAreaId = areaIdx;
     wmGenData.walkDestinationX = 0;
     wmGenData.walkDestinationY = 0;
     wmGenData.isWalking = false;
-
-    CityInfo* city = &(wmAreaInfoList[areaIdx]);
-
-    // SFALL: Fix for incorrect positioning after exiting small/medium
-    // locations.
-    // CE: See `wmWorldMapFunc` for explanation.
-    CitySizeDescription* citySizeDescription = &(wmSphereData[city->size]);
-
-    // CE: This function might be called outside |wmWorldmapFunc|, so it's
-    // image might not be locked.
-    bool wasLocked = citySizeDescription->frmImage.isLocked();
-    if (!wasLocked) {
-        citySizeDescription->frmImage.lock(FrmId(citySizeDescription->fid));
-    }
-
-    wmGenData.worldPosX = city->x + citySizeDescription->frmImage.getWidth() / 2 - WM_VIEW_X;
-    wmGenData.worldPosY = city->y + citySizeDescription->frmImage.getHeight() / 2 - WM_VIEW_Y;
-
-    if (!wasLocked) {
-        citySizeDescription->frmImage.unlock();
-    }
 
     return 0;
 }
