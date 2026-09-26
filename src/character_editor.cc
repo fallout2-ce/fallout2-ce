@@ -264,7 +264,6 @@ typedef struct KillInfo {
 
 static int characterEditorWindowInit();
 static void characterEditorWindowFree();
-static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static void characterEditorDrawFolders();
 static void characterEditorDrawPerksFolder();
 static int characterEditorKillsCompare(const void* a1, const void* a2);
@@ -1989,106 +1988,6 @@ void characterEditorInit()
     gCharacterEditorLastLevel = 1;
 }
 
-// handle name input
-static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
-{
-    int cursorWidth = fontGetStringWidth("_") - 4;
-    int windowWidth = windowGetWidth(win);
-    int v60 = fontGetLineHeight();
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    if (maxLength > 255) {
-        maxLength = 255;
-    }
-
-    char copy[257];
-    strcpy(copy, text);
-
-    size_t nameLength = strlen(text);
-    copy[nameLength] = ' ';
-    copy[nameLength + 1] = '\0';
-
-    int nameWidth = fontGetStringWidth(copy);
-
-    bufferFill(windowBuffer + windowWidth * y + x, nameWidth, fontGetLineHeight(), windowWidth, backgroundColor);
-    fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-
-    windowRefresh(win);
-
-    beginTextInput();
-
-    int blinkingCounter = 3;
-    bool blink = false;
-
-    int rc = 1;
-    while (rc == 1) {
-        sharedFpsLimiter.mark();
-
-        _frame_time = getTicks();
-
-        int keyCode = inputGetInput();
-        if (keyCode == cancelKeyCode) {
-            rc = 0;
-        } else if (keyCode == KEY_RETURN) {
-            soundPlayFile("ib1p1xx1");
-            rc = 0;
-        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-            rc = -1;
-        } else {
-            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy), v60, windowWidth, backgroundColor);
-                copy[nameLength - 1] = ' ';
-                copy[nameLength] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength--;
-
-                windowRefresh(win);
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && nameLength < maxLength) {
-                if ((flags & 0x01) != 0) {
-                    if (!_isdoschar(keyCode)) {
-                        break;
-                    }
-                }
-
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy), v60, windowWidth, backgroundColor);
-
-                copy[nameLength] = keyCode & 0xFF;
-                copy[nameLength + 1] = ' ';
-                copy[nameLength + 2] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength++;
-
-                windowRefresh(win);
-            }
-        }
-
-        blinkingCounter -= 1;
-        if (blinkingCounter == 0) {
-            blinkingCounter = 3;
-
-            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
-            blink = !blink;
-
-            bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(copy) - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
-        }
-
-        windowRefresh(win);
-
-        delay_ms(1000 / 24 - (getTicks() - _frame_time));
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    }
-
-    endTextInput();
-
-    if (rc == 0 || nameLength > 0) {
-        copy[nameLength] = '\0';
-        strcpy(text, copy);
-    }
-
-    return rc;
-}
-
 // 0x434060 isdoschar
 bool _isdoschar(int ch)
 {
@@ -3275,99 +3174,19 @@ static void characterEditorDrawCard()
 // 0x436C4C NameWindow
 static int characterEditorEditName()
 {
-    char* text;
-
-    int windowWidth = _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth();
-    int windowHeight = _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getHeight();
-
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
     int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(nameWindowX, nameWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
-    if (win == -1) {
-        return -1;
+    const char* doneBtnText = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
+
+    auto newName = showInputDialog(critterGetName(gDude), nameWindowX, nameWindowY, doneBtnText);
+
+    if (newName.has_value()) {
+        dudeSetName(newName->c_str());
+        characterEditorDrawName();
+    } else {
+        unsigned char* windowBuf = windowGetBuffer(gCharacterEditorWindow);
+        _PrintName(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
     }
-
-    unsigned char* windowBuf = windowGetBuffer(win);
-
-    // Copy background
-    memcpy(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getData(), static_cast<size_t>(windowWidth) * windowHeight);
-
-    blitBufferToBufferTrans(
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        windowBuf + static_cast<size_t>(windowWidth) * 13 + 13,
-        windowWidth);
-    blitBufferToBufferTrans(_editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
-        windowBuf + windowWidth * 40 + 13,
-        windowWidth);
-
-    fontSetCurrent(103);
-
-    text = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
-    fontDrawText(windowBuf + windowWidth * 44 + 50, text, windowWidth, windowWidth, COLOR_DARK_YELLOW);
-
-    int doneBtn = buttonCreate(win,
-        26,
-        44,
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_LILTTLE_RED_BUTTON_DOWN].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    windowRefresh(win);
-
-    fontSetCurrent(101);
-
-    char name[64];
-    strcpy(name, critterGetName(gDude));
-
-    if (strcmp(name, "None") == 0) {
-        name[0] = '\0';
-    }
-
-    // NOTE: I don't understand the nameCopy, not sure what it is used for. It's
-    // definitely there, but I just don' get it.
-    char nameCopy[64];
-    strcpy(nameCopy, name);
-
-    if (_get_input_str(win, 500, nameCopy, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0) != -1) {
-        if (nameCopy[0] != '\0') {
-            dudeSetName(nameCopy);
-            characterEditorDrawName();
-            windowDestroy(win);
-            return 0;
-        }
-    }
-
-    // NOTE: original code is a bit different, the following chunk of code written two times.
-
-    fontSetCurrent(101);
-    blitBufferToBuffer(_editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        windowBuf + _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth() * 13 + 13,
-        _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
-
-    _PrintName(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
-
-    strcpy(nameCopy, name);
-
-    windowDestroy(win);
 
     return 0;
 }

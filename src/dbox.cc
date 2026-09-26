@@ -1,7 +1,6 @@
 #include "dbox.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include <algorithm>
 
@@ -81,6 +80,15 @@ typedef enum FileDialogFrm {
     FILE_DIALOG_FRM_COUNT,
 } FileDialogFrm;
 
+typedef enum InputDialogFrm {
+    INPUT_DIALOG_FRM_BACKGROUND,
+    INPUT_DIALOG_FRM_NAME_BOX,
+    INPUT_DIALOG_FRM_DONE_BOX,
+    INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
+    INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
+    INPUT_DIALOG_FRM_COUNT
+} InputDialogFrm;
+
 typedef enum FileDialogScrollDirection {
     FILE_DIALOG_SCROLL_DIRECTION_NONE,
     FILE_DIALOG_SCROLL_DIRECTION_UP,
@@ -146,6 +154,156 @@ static constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     InterfaceFrameId::CharacterEditorUpArrowOff,
     InterfaceFrameId::CharacterEditorUpArrowOn,
 };
+
+static constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
+    InterfaceFrameId::CharacterWindow,
+    InterfaceFrameId::CharacterEditorNameBox,
+    InterfaceFrameId::DoneBox,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown
+};
+
+static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
+{
+    int cursorWidth = fontGetStringWidth("_") - 4;
+    int windowWidth = windowGetWidth(win);
+    int lineHeight = fontGetLineHeight();
+    unsigned char* windowBuffer = windowGetBuffer(win);
+
+    if (maxLength > 255) {
+        maxLength = 255;
+    }
+
+    std::string copy = text + " ";
+
+    auto redrawText = [&]() {
+        bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy.c_str()), lineHeight, windowWidth, backgroundColor);
+        fontDrawText(windowBuffer + windowWidth * y + x, copy.c_str(), windowWidth, windowWidth, textColor);
+        windowRefresh(win);
+    };
+
+    redrawText();
+
+    beginTextInput();
+
+    int blinkingCounter = 3;
+    bool blink = false;
+    int rc = 1;
+
+    while (rc == 1) {
+        sharedFpsLimiter.mark();
+        unsigned int frameTime = getTicks();
+
+        int keyCode = inputGetInput();
+        if (keyCode == cancelKeyCode) {
+            rc = 0;
+        } else if (keyCode == KEY_RETURN) {
+            soundPlayFile("ib1p1xx1");
+            rc = 0;
+        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+            rc = -1;
+        } else {
+            // BACKSPACE / DELETE
+            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && !text.empty()) {
+                text.pop_back();
+                copy = text + " ";
+                redrawText();
+            }
+            // Input
+            else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
+                if ((flags & 0x01) != 0) {
+                    if (!_isdoschar(keyCode)) {
+                        break;
+                    }
+                }
+
+                text.push_back(static_cast<char>(keyCode & 0xFF));
+                copy = text + " ";
+                redrawText();
+            }
+        }
+
+        blinkingCounter -= 1;
+        if (blinkingCounter == 0) {
+            blinkingCounter = 3;
+
+            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
+            blink = !blink;
+
+            int currentTextWidth = fontGetStringWidth(copy.c_str());
+            bufferFill(windowBuffer + windowWidth * y + x + currentTextWidth - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
+        }
+
+        windowRefresh(win);
+
+        int elapsed = getTicks() - frameTime;
+        if (elapsed < (1000 / 24)) {
+            delay_ms((1000 / 24) - elapsed);
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+
+    endTextInput();
+
+    return rc;
+}
+
+std::optional<std::string> showInputDialog(std::string_view currentInput, int windowX, int windowY, const char* doneText)
+{
+    FrmImage frms[INPUT_DIALOG_FRM_COUNT];
+
+    for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
+        if (!frms[i].lock(kInputDialogFrmIds[i])) {
+            return std::nullopt;
+        }
+    }
+
+    const auto& bgFrm = frms[INPUT_DIALOG_FRM_BACKGROUND];
+    const auto& nameBoxFrm = frms[INPUT_DIALOG_FRM_NAME_BOX];
+    const auto& doneBoxFrm = frms[INPUT_DIALOG_FRM_DONE_BOX];
+    const auto& btnUpFrm = frms[INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP];
+    const auto& btnDownFrm = frms[INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN];
+
+    int windowWidth = bgFrm.getWidth();
+    int windowHeight = bgFrm.getHeight();
+
+    int win = windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    if (win == -1) {
+        return std::nullopt;
+    }
+
+    unsigned char* windowBuf = windowGetBuffer(win);
+
+    memcpy(windowBuf, bgFrm.getData(), static_cast<size_t>(windowWidth) * windowHeight);
+
+    blitBufferToBufferTrans(nameBoxFrm.getData(), nameBoxFrm.getWidth(), nameBoxFrm.getHeight(), nameBoxFrm.getWidth(), windowBuf + static_cast<size_t>(windowWidth) * 13 + 13, windowWidth);
+    blitBufferToBufferTrans(doneBoxFrm.getData(), doneBoxFrm.getWidth(), doneBoxFrm.getHeight(), doneBoxFrm.getWidth(), windowBuf + windowWidth * 40 + 13, windowWidth);
+
+    fontSetCurrent(103);
+    fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+
+    int doneBtn = buttonCreate(win, 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+    if (doneBtn != -1) {
+        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+    }
+
+    windowRefresh(win);
+    fontSetCurrent(101);
+
+    std::string editableText = (currentInput == "None") ? "" : std::string(currentInput);
+
+    int status = _get_input_str(win, 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
+
+    windowDestroy(win);
+
+    if (status != -1 && !editableText.empty()) {
+        return editableText;
+    }
+
+    return std::nullopt;
+}
 
 // 0x41CF20 dialog_out
 int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, ColorWithFlags titleColor, const char* secondaryButtonText, ColorWithFlags bodyColor, int flags)
