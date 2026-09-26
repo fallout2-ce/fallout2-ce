@@ -57,6 +57,7 @@ struct roof_fill_task {
 };
 
 static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, int hexGridHeight);
+static int tileClampToLegacyBorder(int tile);
 static void tileRefreshMapper(Rect* rect, int elevation);
 static void tileRefreshGame(Rect* rect, int elevation);
 static void roof_fill_push_task_if_in_bounds(std::stack<roof_fill_task>& tasks_stack, int x, int y);
@@ -502,6 +503,21 @@ static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, i
     gTileBorderInitialized = true;
 }
 
+static int tileClampToLegacyBorder(int tile)
+{
+    if (!gTileBorderInitialized) {
+        return tile;
+    }
+
+    int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
+    int tile_y = tile / gHexGridWidth;
+
+    tile_x = std::clamp(tile_x, gTileBorderMinX + 1, gTileBorderMaxX - 1);
+    tile_y = std::clamp(tile_y, gTileBorderMinY + 1, gTileBorderMaxY - 1);
+
+    return tile_y * gHexGridWidth + (gHexGridWidth - 1 - tile_x);
+}
+
 // NOTE: Collapsed.
 //
 // 0x4B129C
@@ -610,12 +626,20 @@ int tileSetCenter(int tile, int flags)
         }
     }
 
+    const bool edgeZoneSelected = mapEdgeZoneIsSelected();
+    if (!edgeActive && !mapEdgeIsMapperMode() && !isScroll && gTileBorderInitialized && !settings.ui.ignore_map_edges) {
+        // Forced centers can target a tile outside the legacy scroll border, for
+        // example scripted player moves near map edges. Keep the camera within
+        // the valid legacy center range without changing the object's tile.
+        tile = tileClampToLegacyBorder(tile);
+    }
+
     int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
     int tile_y = tile / gHexGridWidth;
 
     // Legacy global borders are for maps without EDG data. EDG maps use their
     // own boundary/clamp logic above, which can validly land on this border.
-    if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileBorderInitialized && gTileScrollBlockingEnabled) {
+    if ((!edgeActive || !edgeZoneSelected) && gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
