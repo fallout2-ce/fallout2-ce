@@ -62,7 +62,8 @@ inline bool globalVariableIsValid(int var)
 
 class GameMode {
 public:
-    enum Flags {
+    enum Flags : unsigned int {
+        kNone = 0x0,
         kWorldmap = 0x1,
         kDialog = 0x4,
         kOptions = 0x8,
@@ -86,23 +87,38 @@ public:
         kSpecial = 0x80000000,
     };
 
-    static void enterGameMode(int gameMode);
-    static void exitGameMode(int gameMode);
-    static void exitGameModeQuietly(int gameMode);
-    static bool isInGameMode(int gameMode);
-    static int getCurrentGameMode() { return currentGameMode; }
+    static void enterGameMode(Flags gameMode);
+    static void exitGameMode(Flags gameMode);
+    static void exitGameModeQuietly(Flags gameMode);
+    static bool isInGameMode(Flags gameMode);
+    static Flags getCurrentGameMode() { return currentGameMode; }
 
 private:
-    static int currentGameMode;
+    static Flags currentGameMode;
 };
+
+constexpr inline GameMode::Flags operator~(GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(~static_cast<unsigned int>(rhs));
+}
+
+constexpr inline GameMode::Flags operator&(GameMode::Flags lhs, GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline GameMode::Flags operator|(GameMode::Flags lhs, GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 class ScopedGameMode {
 public:
-    ScopedGameMode(int gameMode);
+    ScopedGameMode(GameMode::Flags gameMode);
     ~ScopedGameMode();
 
 private:
-    int gameMode;
+    GameMode::Flags gameMode;
 };
 
 } // namespace fallout

@@ -274,7 +274,7 @@ Runs once every time when the game mode was changed, like opening/closing the in
 int arg0 - event type: 1 - when the player exits the game, 0 - otherwise
 int arg1 - the previous game mode
 */
-void scriptHooks_GameModeChange(int exit, int previousGameMode)
+void scriptHooks_GameModeChange(int exit, GameMode::Flags previousGameMode)
 {
     ScriptHookCall(HOOK_GAMEMODECHANGE, 0, { exit, previousGameMode }).call();
 }

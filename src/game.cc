@@ -1676,38 +1676,38 @@ int gameSetGlobalPointer(GameGlobalVar var, void* value)
     return 0;
 }
 
-int GameMode::currentGameMode = 0;
+GameMode::Flags GameMode::currentGameMode = kNone;
 
-void GameMode::enterGameMode(int gameMode)
+void GameMode::enterGameMode(GameMode::Flags gameMode)
 {
-    int previousGameMode = currentGameMode;
-    currentGameMode |= gameMode;
+    GameMode::Flags previousGameMode = currentGameMode;
+    currentGameMode = currentGameMode | gameMode;
     if (currentGameMode != previousGameMode) {
         sfallOnGameModeChange(0, previousGameMode);
     }
 }
 
-void GameMode::exitGameMode(int gameMode)
+void GameMode::exitGameMode(GameMode::Flags gameMode)
 {
-    int previousGameMode = currentGameMode;
-    currentGameMode &= ~gameMode;
+    GameMode::Flags previousGameMode = currentGameMode;
+    currentGameMode = currentGameMode & ~gameMode;
     if (currentGameMode != previousGameMode) {
         sfallOnGameModeChange(0, previousGameMode);
     }
 }
 
 // remove game mode without triggering hooks
-void GameMode::exitGameModeQuietly(int gameMode)
+void GameMode::exitGameModeQuietly(GameMode::Flags gameMode)
 {
-    currentGameMode &= ~gameMode;
+    currentGameMode = currentGameMode & ~gameMode;
 }
 
-bool GameMode::isInGameMode(int gameMode)
+bool GameMode::isInGameMode(GameMode::Flags gameMode)
 {
-    return (currentGameMode & gameMode) != 0;
+    return (currentGameMode & gameMode) != kNone;
 }
 
-ScopedGameMode::ScopedGameMode(int gameMode)
+ScopedGameMode::ScopedGameMode(GameMode::Flags gameMode)
 {
     this->gameMode = gameMode;
     GameMode::enterGameMode(gameMode);
