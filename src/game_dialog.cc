@@ -2759,7 +2759,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         break;
     }
 
-    debugPrint("Choosing fidget %d out of %d\n", fidget, fidgetCount);
+    debugPrint("Choosing fidget %d out of %d\n", static_cast<int>(fidget), fidgetCount);
 
     if (gameDialogFidgetFrm != nullptr) {
         if (artUnlock(gameDialogFidgetFrmHandle) == -1) {

@@ -146,6 +146,8 @@ static void preferencesRefreshBrightnessSlider();
 int _SavePrefs(bool save);
 static int preferencesWindowInit();
 static int preferencesWindowFree();
+static int _GetPrefrencesValue(int preference, const PreferenceDescription& description);
+static void _SetPrefrencesValue(int preference, const PreferenceDescription& description, int value);
 static void _DoThing(int eventCode);
 static int preferencesGetRangeOptionLabelX(int optionIndex, int valuesCount, const char* text);
 static void preferencesMessageListReset();
@@ -699,7 +701,7 @@ static void _UpdateThing(int index)
             fontDrawText(gPreferencesWindowBuffer + 640 * y + x, s, 640, 640, COLOR_DARK_YELLOW);
         }
 
-        int value = *(meta->value.intPtr);
+        int value = _GetPrefrencesValue(index, *meta);
         blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_PRIMARY_SWITCH].getData() + (46 * 47) * value, 46, 47, 46, gPreferencesWindowBuffer + 640 * meta->knobY + meta->knobX, 640);
     } else if (index >= FIRST_SECONDARY_PREF && index <= LAST_SECONDARY_PREF) {
         int secondaryOptionIndex = index - FIRST_SECONDARY_PREF;
@@ -1341,6 +1343,43 @@ int doPreferences(bool animated)
     return rc;
 }
 
+static void _SetPrefrencesValue(int preference, const PreferenceDescription& description, int value)
+{
+    switch(preference) {
+        case PREF_GAME_DIFFICULTY:
+            *(description.value.gameDifficultyPtr) = static_cast<GameDifficulty>(value);
+            return;
+        case PREF_COMBAT_DIFFICULTY:
+            *(description.value.combatDifficultyPtr) = static_cast<CombatDifficulty>(value);
+            return;
+        case PREF_VIOLENCE_LEVEL:
+            *(description.value.violenceLevelPtr) = static_cast<ViolenceLevel>(value);
+            return;
+        case PREF_TARGET_HIGHLIGHT:
+            *(description.value.targetHighlightPtr) = static_cast<TargetHighlight>(value);
+            return;
+        default:
+            *(description.value.intPtr) = value;
+            return;
+    }
+}
+
+static int _GetPrefrencesValue(int preference, const PreferenceDescription& description)
+{
+    switch(preference) {
+        case PREF_GAME_DIFFICULTY:
+            return static_cast<int>(*(description.value.gameDifficultyPtr));
+        case PREF_COMBAT_DIFFICULTY:
+            return static_cast<int>(*(description.value.combatDifficultyPtr));
+        case PREF_VIOLENCE_LEVEL:
+            return static_cast<int>(*(description.value.violenceLevelPtr));
+        case PREF_TARGET_HIGHLIGHT:
+            return static_cast<int>(*(description.value.targetHighlightPtr));
+        default:
+            return *(description.value.intPtr);
+    }
+}
+
 // 0x490E8C DoThing
 static void _DoThing(int eventCode)
 {
@@ -1354,8 +1393,7 @@ static void _DoThing(int eventCode)
 
     if (preferenceIndex >= FIRST_PRIMARY_PREF && preferenceIndex <= LAST_PRIMARY_PREF) {
         PreferenceDescription* meta = &(gPreferenceDescriptions[preferenceIndex]);
-        int* valuePtr = meta->value.intPtr;
-        int value = *valuePtr;
+        int value = _GetPrefrencesValue(preferenceIndex, *meta);
         bool valueChanged = false;
 
         int knobCenterX = meta->knobX + 23;
@@ -1366,12 +1404,12 @@ static void _DoThing(int eventCode)
                 int topOptionY = meta->knobY + kPrimaryOptionLabelYOffsetByValue[0];
                 if (y >= topOptionY && y <= topOptionY + fontGetLineHeight()) {
                     if (x >= meta->minX && x <= meta->knobX) {
-                        *valuePtr = 0;
+                        _SetPrefrencesValue(preferenceIndex, *meta, 0);
                         meta->direction = 0;
                         valueChanged = true;
                     } else {
                         if (meta->valuesCount >= 3 && x >= meta->knobX + kPrimaryOptionLabelXOffsetByValue[2] && x <= meta->maxX) {
-                            *valuePtr = 2;
+                            _SetPrefrencesValue(preferenceIndex, *meta, 2);
                             meta->direction = 0;
                             valueChanged = true;
                         }
@@ -1379,7 +1417,7 @@ static void _DoThing(int eventCode)
                 }
             } else {
                 if (x >= meta->knobX + 9 && x <= meta->knobX + 37) {
-                    *valuePtr = 1;
+                    _SetPrefrencesValue(preferenceIndex, *meta, 1);
                     if (value != 0) {
                         meta->direction = 1;
                     } else {
@@ -1392,7 +1430,7 @@ static void _DoThing(int eventCode)
             if (meta->valuesCount == 4) {
                 int bottomOptionY = meta->knobY + kPrimaryOptionLabelYOffsetByValue[3];
                 if (y >= bottomOptionY && y <= bottomOptionY + 2 * fontGetLineHeight() && x >= meta->knobX + kPrimaryOptionLabelXOffsetByValue[3] && x <= meta->maxX) {
-                    *valuePtr = 3;
+                    _SetPrefrencesValue(preferenceIndex, *meta, 3);
                     meta->direction = 1;
                     valueChanged = true;
                 }
@@ -1409,9 +1447,9 @@ static void _DoThing(int eventCode)
             }
 
             if (meta->direction != 0) {
-                *valuePtr = value - 1;
+                _SetPrefrencesValue(preferenceIndex, *meta, value - 1);
             } else {
-                *valuePtr = value + 1;
+                _SetPrefrencesValue(preferenceIndex, *meta, value + 1);
             }
 
             valueChanged = true;
