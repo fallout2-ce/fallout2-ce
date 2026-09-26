@@ -3161,7 +3161,7 @@ static void characterEditorDrawCard()
         return;
     }
 
-    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 277, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
+    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 295, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
 
     if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
         Stat characterEditorSelectedItemStat = static_cast<Stat>(characterEditorSelectedItem);
@@ -7227,7 +7227,7 @@ static void characterEditorFolderViewScroll(int direction)
     if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
         blitBufferToBuffer(
             _editorBackgroundFrmImage.getData() + 640 * 267 + 345,
-            277,
+            295,
             170,
             640,
             gCharacterEditorWindowBuffer + 640 * 267 + 345,
