@@ -1275,7 +1275,7 @@ void edit_mapper()
         // (F8, Escape, mouse clicks, keyboard, everything).
         // ----------------------------------------------------------------
 
-        if (gameGetState() == GAME_STATE_5) {
+        if (gameGetState() == GameState::DialogRequested) {
             _gdialogSystemEnter();
         }
 

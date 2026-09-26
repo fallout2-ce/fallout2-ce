@@ -1134,6 +1134,8 @@ int gameRequestState(GameState newGameState)
     case GameState::DialogActive:
         newGameState = GameState::DialogRequested;
         break;
+    default:
+        break;
     }
 
     if (gGameState == GameState::DialogActive && newGameState == GameState::DialogRequested) {
@@ -1156,6 +1158,8 @@ void gameUpdateState()
         break;
     case GameState::DialogRequested:
         gGameState = GameState::DialogActive;
+        break;
+    default:
         break;
     }
 }
