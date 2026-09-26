@@ -2737,7 +2737,7 @@ static void opGameDialogSystemEnter(Program* program)
         return;
     }
 
-    if (gameRequestState(GAME_STATE_4) == -1) {
+    if (gameRequestState(GameState::DialogActive) == -1) {
         return;
     }
 

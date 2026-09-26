@@ -8,14 +8,14 @@
 
 namespace fallout {
 
-typedef enum GameState {
-    GAME_STATE_0,
-    GAME_STATE_1,
-    GAME_STATE_2,
-    GAME_STATE_3,
-    GAME_STATE_4,
-    GAME_STATE_5,
-} GameState;
+enum class GameState : int {
+    Normal,
+    NormalPending,
+    DialogFinished,
+    DialogFinishedPending,
+    DialogActive,
+    DialogRequested,
+};
 
 typedef enum GameQuitRequest {
     GAME_QUIT_REQUEST_NONE = 0,
@@ -43,8 +43,8 @@ bool gameUiIsDisabled();
 int gameGetGlobalVar(GameGlobalVar var);
 int gameSetGlobalVar(GameGlobalVar var, int value);
 int globalVarsRead(const char* path, const char* section, int* variablesListLengthPtr, int** variablesListPtr);
-int gameGetState();
-int gameRequestState(int newGameState);
+GameState gameGetState();
+int gameRequestState(GameState newGameState);
 void gameUpdateState();
 int showQuitConfirmationDialog();
 

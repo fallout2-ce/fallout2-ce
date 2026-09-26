@@ -23,6 +23,7 @@
 #include "draw.h"
 #include "endgame.h"
 #include "font_manager.h"
+#include "game.h"
 #include "game_dialog.h"
 #include "game_memory.h"
 #include "game_mouse.h"
@@ -106,7 +107,7 @@ static char _aBuildHash[] = _BUILD_HASH;
 static bool gGameUiDisabled = false;
 
 // 0x5186B8 game_state_cur
-static int gGameState = GAME_STATE_0;
+static GameState gGameState = GameState::Normal;
 
 // 0x5186BC game_in_mapper
 static bool gIsMapper = false;
@@ -539,7 +540,7 @@ void gameExit()
 int gameHandleKey(int eventCode, bool isInCombatMode)
 {
     // NOTE: Uninline.
-    if (gameGetState() == GAME_STATE_5) {
+    if (gameGetState() == GameState::DialogRequested) {
         _gdialogSystemEnter();
     }
 
@@ -1115,27 +1116,27 @@ int globalVarsRead(const char* path, const char* section, int* variablesListLeng
 }
 
 // 0x443E2C
-int gameGetState()
+GameState gameGetState()
 {
     return gGameState;
 }
 
 // 0x443E34
-int gameRequestState(int newGameState)
+int gameRequestState(GameState newGameState)
 {
     switch (newGameState) {
-    case GAME_STATE_0:
-        newGameState = GAME_STATE_1;
+    case GameState::Normal:
+        newGameState = GameState::NormalPending;
         break;
-    case GAME_STATE_2:
-        newGameState = GAME_STATE_3;
+    case GameState::DialogFinished:
+        newGameState = GameState::DialogFinishedPending;
         break;
-    case GAME_STATE_4:
-        newGameState = GAME_STATE_5;
+    case GameState::DialogActive:
+        newGameState = GameState::DialogRequested;
         break;
     }
 
-    if (gGameState == GAME_STATE_4 && newGameState == GAME_STATE_5) {
+    if (gGameState == GameState::DialogActive && newGameState == GameState::DialogRequested) {
         return -1;
     }
 
@@ -1147,14 +1148,14 @@ int gameRequestState(int newGameState)
 void gameUpdateState()
 {
     switch (gGameState) {
-    case GAME_STATE_1:
-        gGameState = GAME_STATE_0;
+    case GameState::NormalPending:
+        gGameState = GameState::Normal;
         break;
-    case GAME_STATE_3:
-        gGameState = GAME_STATE_2;
+    case GameState::DialogFinishedPending:
+        gGameState = GameState::DialogFinished;
         break;
-    case GAME_STATE_5:
-        gGameState = GAME_STATE_4;
+    case GameState::DialogRequested:
+        gGameState = GameState::DialogActive;
         break;
     }
 }
