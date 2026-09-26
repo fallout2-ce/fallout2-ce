@@ -29,6 +29,7 @@
 #include "svga.h"
 #include "window_manager.h"
 #include "worldmap.h"
+#include "xfile.h"
 
 namespace fallout {
 
@@ -1806,18 +1807,59 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
 
     // Check for existence by getting file size.
     int fileSize;
-    if (dbGetFileSize(path, &fileSize) != 0) {
-        if (gGameSoundDebugEnabled) {
-            debugPrint("-- find failed ");
-        }
-
-        return -1;
+    if (dbGetFileSize(path, &fileSize) == 0) {
+        strncpy(dest, path, COMPAT_MAX_PATH);
+        dest[COMPAT_MAX_PATH] = '\0';
+        return 0;
     }
 
-    strncpy(dest, path, COMPAT_MAX_PATH);
-    dest[COMPAT_MAX_PATH] = '\0';
+    // Mods often put each NPC's speech in its own subfolder, like the base
+    // game does for dialogue heads. We have no head to name that folder
+    // after here, and can't guess it from the filename either (an NPC named
+    // "AHS-7" has lines like "ahs71.acm" in an "ahs7\" folder, so trimming
+    // trailing digits would cut off part of the name). Just search one
+    // folder level down for a match instead of guessing.
+    //
+    // Loose folders on disk have to be listed first and checked one by one,
+    // because the OS file search does not expand a wildcard in the middle of
+    // a path.
+    char pattern[COMPAT_MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s*", _sound_speech_path);
 
-    return 0;
+    XList xlist = {};
+    if (xlistInitDirectories(pattern, &xlist)) {
+        for (int index = 0; index < xlist.fileNamesLength; index++) {
+            snprintf(path, sizeof(path), "%s\\%s%s", xlist.fileNames[index], src, ".ACM");
+            if (dbGetFileSize(path, &fileSize) == 0) {
+                strncpy(dest, path, COMPAT_MAX_PATH);
+                dest[COMPAT_MAX_PATH] = '\0';
+                xlistFree(&xlist);
+                return 0;
+            }
+        }
+        xlistFree(&xlist);
+    }
+
+    // .dat files store full paths, so a wildcard in the middle of the path
+    // matches there directly.
+    snprintf(pattern, sizeof(pattern), "%s*\\%s%s", _sound_speech_path, src, ".ACM");
+
+    xlist = {};
+    if (xlistInit(pattern, &xlist)) {
+        if (xlist.fileNamesLength > 0) {
+            strncpy(dest, xlist.fileNames[0], COMPAT_MAX_PATH);
+            dest[COMPAT_MAX_PATH] = '\0';
+            xlistFree(&xlist);
+            return 0;
+        }
+        xlistFree(&xlist);
+    }
+
+    if (gGameSoundDebugEnabled) {
+        debugPrint("-- find failed ");
+    }
+
+    return -1;
 }
 
 // 0x4520EC

@@ -16,6 +16,7 @@ int gameDialogInit();
 int gameDialogReset();
 int gameDialogExit();
 bool _gdialogActive();
+bool gameDialogWindowActive();
 void gameDialogEnter(Object* speaker, int mode);
 void _gdialogSystemEnter();
 void gameDialogStartLips(const char* audioFileName);

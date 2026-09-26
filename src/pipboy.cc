@@ -413,6 +413,8 @@ int gPipboyCurrentLine;
 // 0x664518 rest_time
 int _rest_time;
 
+static int restHealTime = 180;
+
 // 0x66451C amcty_indx
 Map _amcty_indx;
 
@@ -901,6 +903,7 @@ static void _pip_init_()
 // pip_init
 void pipboyInit()
 {
+    restHealTime = 180;
     pipboyRestOptionsReset();
     _pip_init_();
 }
@@ -908,8 +911,16 @@ void pipboyInit()
 // NOTE: Uncollapsed 0x497918.
 void pipboyReset()
 {
+    restHealTime = 180;
     pipboyRestOptionsReset();
     _pip_init_();
+}
+
+void pipboySetRestHealTime(int minutes)
+{
+    if (minutes > 0) {
+        restHealTime = minutes;
+    }
 }
 
 // 0x49791C
@@ -2486,7 +2497,7 @@ static bool _Check4Health(int minutes)
 {
     _rest_time += minutes;
 
-    if (_rest_time < 180) {
+    if (_rest_time < restHealTime) {
         return false;
     }
 

@@ -11,6 +11,39 @@
 
 namespace fallout {
 
+// Radiation levels.
+//
+// The names of levels are taken from Fallout 3, comments from Fallout 2.
+enum RadiationLevel : int {
+    // Very nauseous.
+    RADIATION_LEVEL_NONE,
+
+    // Slightly fatigued.
+    RADIATION_LEVEL_MINOR,
+
+    // Vomiting does not stop.
+    RADIATION_LEVEL_ADVANCED,
+
+    // Hair is falling out.
+    RADIATION_LEVEL_CRITICAL,
+
+    // Skin is falling off.
+    RADIATION_LEVEL_DEADLY,
+
+    // Intense agony.
+    RADIATION_LEVEL_FATAL,
+
+    // The number of radiation levels.
+    RADIATION_LEVEL_COUNT,
+};
+
+inline RadiationLevel operator++(RadiationLevel& e, int)
+{
+    RadiationLevel result = e;
+    e = static_cast<RadiationLevel>(static_cast<int>(e) + 1);
+    return result;
+}
+
 const CritterFrameId kGorisCombatBaseFrameId = CritterFrameId(100);
 const CritterFrameId kGorisRobeBaseFrameId = CritterFrameId(99);
 
@@ -32,7 +65,7 @@ int critterGetRadiation(Object* critter);
 int critterAdjustRadiation(Object* obj, int amount);
 int critterCheckRadiationEvent(Object* critter);
 int radiationClearDamage(Object* obj, void* data);
-void radiationProcess(Object* obj, int radiationLevel, bool direction);
+void radiationProcess(Object* obj, RadiationLevel radiationLevel, bool direction);
 int radiationEventProcess(Object* obj, void* data);
 int radiationEventRead(File* stream, void** dataPtr);
 int radiationEventWrite(File* stream, void* data);

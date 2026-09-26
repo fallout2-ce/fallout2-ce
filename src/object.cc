@@ -175,7 +175,7 @@ static int _light_distance[36] = {
 };
 
 // 0x51976C fix_violence_level
-static int gViolenceLevel = -1;
+static ViolenceLevel gViolenceLevel = VIOLENCE_LEVEL_INVALID;
 
 // 0x519770 obj_last_roof_x
 static int _obj_last_roof_x = -1;
@@ -495,7 +495,7 @@ int objectLoadAll(File* stream)
 {
     int rc = objectLoadAllInternal(stream);
 
-    gViolenceLevel = -1;
+    gViolenceLevel = VIOLENCE_LEVEL_INVALID;
 
     return rc;
 }
@@ -1495,17 +1495,15 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->tileFid[roofX + 100 * roofY];
-            TileFID currentSquareRoofFid = roofTileFidFromCombinedTileFid(currentSquare);
-            const TileFrameId currentSquareFrameId = FrmId(currentSquareRoofFid).frameId().tile;
+            const RoofTileFrmId currentSquareRoofFrmId = RoofTileFrmId(currentSquare);
+            const TileFrameId currentSquareRoofFrameId = currentSquareRoofFrmId.frameId().tile;
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            TileFID previousSquareRoofFid = roofTileFidFromCombinedTileFid(previousSquare);
-            bool isEmpty = currentSquareFrameId == TileFrameId::Grid;
-            TileFlags currentSquareFlags = tileFlagsFromTileFid(currentSquareRoofFid);
-            TileFlags previousSquareFlags = tileFlagsFromTileFid(previousSquareRoofFid);
-            if (isEmpty != _obj_last_is_empty || currentSquareFlags != previousSquareFlags) {
+            const RoofTileFrmId previousSquareRoofFrmId = RoofTileFrmId(previousSquare);
+            bool isEmpty = currentSquareRoofFrameId == TileFrameId::Grid;
+            if (isEmpty != _obj_last_is_empty || currentSquareRoofFrmId.flags() != previousSquareRoofFrmId.flags()) {
                 if (!_obj_last_is_empty) {
                     tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, elevation, true);
                 }
@@ -1555,7 +1553,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    TileFrameId frameId = FrmId(roofTileFidFromCombinedTileFid(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y])).frameId().tile;
+    TileFrameId frameId = RoofTileFrmId(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]).frameId().tile;
     if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -3239,14 +3237,14 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
         for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int tileFids = _square[elevation]->tileFid[tile];
-            TileFID floorTileFid = floorTileFidFromCombinedTileFid(tileFids);
-            TileFID roofTileFid = roofTileFidFromCombinedTileFid(tileFids);
-            TileFrameId floorTileFrameId = FrmId(floorTileFid).frameId().tile;
+            const FloorTileFrmId floorTileFrmId = FloorTileFrmId(tileFids);
+            const RoofTileFrmId roofTileFrmId = RoofTileFrmId(tileFids);
+            TileFrameId floorTileFrameId = floorTileFrmId.frameId().tile;
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;
             }
 
-            TileFrameId roofTileFrameId = FrmId(roofTileFid).frameId().tile;
+            TileFrameId roofTileFrameId = roofTileFrmId.frameId().tile;
             if (roofTileFrameId == TileFrameId::Invalid) {
                 roofTileFrameId = TileFrameId::Last;
             }
@@ -5203,7 +5201,7 @@ void _obj_fix_violence_settings(int* fid)
     }
 
     bool shouldResetViolenceLevel = false;
-    if (gViolenceLevel == -1) {
+    if (gViolenceLevel == VIOLENCE_LEVEL_INVALID) {
         gViolenceLevel = settings.preferences.violence_level;
         shouldResetViolenceLevel = true;
     }
@@ -5240,7 +5238,7 @@ void _obj_fix_violence_settings(int* fid)
     }
 
     if (shouldResetViolenceLevel) {
-        gViolenceLevel = -1;
+        gViolenceLevel = VIOLENCE_LEVEL_INVALID;
     }
 }
 
