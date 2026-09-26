@@ -872,7 +872,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
         // CE: Light one flare rather than the whole stack, which is what the singular message
         // below has always said. A stack is a single object, so lighting it in place turned every
         // flare in it into a lit flare sharing one timer; when that fired it spent one and left
-        // the rest burning for good. itemRemove() is the engine's own way to take one off a
+        // the rest burning for good. itemRemoveWithReason() takes one off a
         // stack — _obj_copy() leaves the remainder behind and hands this pointer back as a single
         // item — and is what the inventory screen does before it reaches here.
         // Whose inventory it is, not who is using it. They are the same for every path the game
@@ -882,7 +882,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
         Object* holder = flare->owner != nullptr ? flare->owner : critter;
         bool takenOffAStack = holder != nullptr
             && itemGetQuantity(holder, flare) > 1
-            && itemRemove(holder, flare, 1) == 0;
+            && itemRemoveWithReason(holder, flare, 1, RemoveInventoryObjectHookReason::UseObj) == 0;
 
         if (critter == gDude) {
             // You light the flare.
