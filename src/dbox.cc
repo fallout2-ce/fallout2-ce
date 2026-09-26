@@ -164,6 +164,8 @@ static constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
     InterfaceFrameId::LittleRedButtonDown
 };
 
+// CE: extracted from character_editor.cc
+// TODO: see if it could be used for `showSaveFileDialog`
 static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
 {
     int cursorWidth = fontGetStringWidth("_") - 4;
@@ -246,7 +248,6 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     }
 
     endTextInput();
-
     return rc;
 }
 
