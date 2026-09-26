@@ -1060,7 +1060,7 @@ static void _script_chk_timed_events()
         shouldProcessQueue = true;
     }
 
-    if (gameGetState() != GAME_STATE_4) {
+    if (gameGetState() != GameState::DialogActive) {
         if (getTicksBetween(currentTime, gLastMapUpdateTime) >= 30000) {
             gLastMapUpdateTime = currentTime;
             scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);

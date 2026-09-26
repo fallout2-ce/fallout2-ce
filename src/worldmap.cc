@@ -3885,6 +3885,8 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
         case GAME_DIFFICULTY_HARD:
             frequency += modifier;
             break;
+        case GAME_DIFFICULTY_NORMAL:
+            break;
         }
     }
 
@@ -4130,6 +4132,8 @@ static int wmRndEncounterPick()
         if (chance < 0) {
             chance = 0;
         }
+        break;
+    case GAME_DIFFICULTY_NORMAL:
         break;
     }
 

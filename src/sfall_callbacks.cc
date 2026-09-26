@@ -3,6 +3,7 @@
 #include "combat.h"
 #include "content_config.h"
 #include "display_monitor.h"
+#include "game.h"
 #include "game_dialog.h"
 #include "interface.h"
 #include "inventory.h"
@@ -81,7 +82,7 @@ void sfallOnAfterNewGame()
     return;
 }
 
-void sfallOnGameModeChange(int exit, int previousGameMode)
+void sfallOnGameModeChange(int exit, GameMode::Flags previousGameMode)
 {
     scriptHooks_GameModeChange(exit, previousGameMode);
 }
