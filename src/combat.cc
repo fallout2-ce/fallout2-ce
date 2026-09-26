@@ -4645,11 +4645,13 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
 
     if (attacker->data.critter.combat.team != gDude->data.critter.combat.team) {
         switch (settings.preferences.combat_difficulty) {
-        case 0:
+        case COMBAT_DIFFICULTY_EASY:
             toHit -= 20;
             break;
-        case 2:
+        case COMBAT_DIFFICULTY_HARD:
             toHit += 20;
+            break;
+        case COMBAT_DIFFICULTY_NORMAL:
             break;
         }
     }
@@ -4729,6 +4731,8 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
             break;
         case COMBAT_DIFFICULTY_HARD:
             difficultyDamagePercent = 125;
+            break;
+        case COMBAT_DIFFICULTY_NORMAL:
             break;
         }
     }
