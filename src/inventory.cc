@@ -1276,7 +1276,7 @@ static void createPartySlotButtons()
 
 static FrmId buildPartyDisplayFrmId()
 {
-    WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation weaponAnimationCode = WeaponAnimation::None;
     Object* rightHandItem = partyTargetEquipped->rightHand;
     if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
@@ -1573,7 +1573,7 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
         }
     }
 
-    WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation animationCode = WeaponAnimation::None;
     Object* itemInHand = activeHand == HAND_RIGHT ? rightHandItem : leftHandItem;
     if (itemInHand != nullptr) {
         if (protoGetProto(itemInHand->pid, &proto) != -1
@@ -3400,7 +3400,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
     _stack[0] = critter;
     _stack_offset[0] = 0;
 
-    WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation animationCode = WeaponAnimation::None;
     Object* itemInHand = interfaceGetCurrentHand() == HAND_RIGHT ? gInventoryRightHandItem : gInventoryLeftHandItem;
     if (itemInHand != nullptr) {
         Proto* proto = nullptr;
@@ -3964,14 +3964,14 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (itemGetType(item) == ITEM_TYPE_WEAPON) {
             weaponAnimationCode = weaponGetAnimationCode(item);
         } else {
-            weaponAnimationCode = WEAPON_ANIMATION_NONE;
+            weaponAnimationCode = WeaponAnimation::None;
         }
 
         if (hand == handIndex) {
-            if (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE) {
+            if (FrmId(critter).weaponAnimation() != WeaponAnimation::None) {
                 if (animate) {
                     if (!isoIsDisabled()) {
-                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
                         animationRegisterPlaySoundEffect(critter, soundEffectName, 0);
                         animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
                     }
@@ -3979,10 +3979,10 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             }
 
             if (animate && !isoIsDisabled()) {
-                if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
+                if (weaponAnimationCode != WeaponAnimation::None) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
                     animationRegisterSetFrmId(critter, frmId, -1);
                 }
             } else {
@@ -4038,22 +4038,22 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
         item->flags &= ~OBJECT_IN_ANY_HAND;
     }
 
-    if (activeHand == hand && (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
+    if (activeHand == hand && (FrmId(critter).weaponAnimation() != WeaponAnimation::None)) {
         if (animate && !isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
-            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
             animationRegisterPlaySoundEffect(critter, sfx, 0);
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
             animationRegisterSetFrmId(critter, frmId, -1);
 
             return reg_anim_end();
         }
 
-        const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, frmId);
     }
 
@@ -5266,7 +5266,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = FrmId(targetObj, WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
+                            targetObj->fid = FrmId(targetObj, WeaponAnimation::None, targetObj->rotation + 1).fid();
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;

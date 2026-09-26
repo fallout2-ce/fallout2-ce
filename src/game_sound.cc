@@ -1333,7 +1333,7 @@ int _gsound_compute_relative_volume(Object* obj)
 
 // sfx_build_char_name
 // 0x451604
-char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponType)
+char* sfxBuildCharName(Object* a1, AnimationType anim, CharacterSoundEffect soundEffect)
 {
     char artName[ART_NAME_SIZE];
     char weaponCode;
@@ -1344,8 +1344,22 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
         return nullptr;
     }
 
+    WeaponAnimation weaponAnimation;
+    switch (soundEffect) {
+    case CharacterSoundEffect::KnockDown:
+        weaponAnimation = WeaponAnimation::Knife;
+    case CharacterSoundEffect::PassOut:
+        weaponAnimation = WeaponAnimation::Club;
+    case CharacterSoundEffect::Die:
+        weaponAnimation = WeaponAnimation::Hammer;
+    case CharacterSoundEffect::Contact:
+        weaponAnimation = WeaponAnimation::Spear;
+    default:
+        weaponAnimation = WeaponAnimation::None;
+    }
+
     if (anim == ANIM_TAKE_OUT) {
-        if (_art_get_code(anim, weaponType, &weaponCode, &animationCode) == -1) {
+        if (_art_get_code(anim, weaponAnimation, &weaponCode, &animationCode) == -1) {
             return nullptr;
         }
     } else {
@@ -1356,12 +1370,12 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
 
     // TODO: Check.
     if (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK) {
-        if (weaponType == CHARACTER_SOUND_EFFECT_PASS_OUT) {
+        if (soundEffect == CharacterSoundEffect::PassOut) {
             weaponCode = 'Y';
-        } else if (weaponType == CHARACTER_SOUND_EFFECT_DIE) {
+        } else if (soundEffect == CharacterSoundEffect::Die) {
             weaponCode = 'Z';
         }
-    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && weaponType == CHARACTER_SOUND_EFFECT_CONTACT) {
+    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && soundEffect == CharacterSoundEffect::Contact) {
         weaponCode = 'Z';
     }
 

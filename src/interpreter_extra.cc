@@ -430,21 +430,21 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         if (critter == gDude) {
             if (interfaceGetCurrentHand() == HAND_RIGHT) {
                 if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                    weaponCode = WEAPON_ANIMATION_NONE;
+                    weaponCode = WeaponAnimation::None;
                 }
             } else {
                 if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
-                    weaponCode = WEAPON_ANIMATION_NONE;
+                    weaponCode = WeaponAnimation::None;
                 }
             }
         } else {
             if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                weaponCode = WEAPON_ANIMATION_NONE;
+                weaponCode = WeaponAnimation::None;
             }
         }
 
-        if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFrmId = FrmId(critter, WEAPON_ANIMATION_NONE, frmId.rotation());
+        if (weaponCode == WeaponAnimation::None) {
+            newFrmId = FrmId(critter, WeaponAnimation::None, frmId.rotation());
         }
     } else {
         if (critter == gDude) {
@@ -4292,7 +4292,7 @@ static void _op_anim_action_frame(Program* program)
     int actionFrame = 0;
 
     if (object != nullptr) {
-        FrmId fid = FrmId(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
+        FrmId fid = FrmId(object, anim, WeaponAnimation::None, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {
@@ -4380,13 +4380,13 @@ static void opCritterModifySkill(Program* program)
 // 0x45B9C4 op_sfx_build_char_name
 static void opSfxBuildCharName(Program* program)
 {
-    WeaponAnimation weaponType = programStackPopEnum<WeaponAnimation>(program);
+    CharacterSoundEffect soundEffect = programStackPopEnum<CharacterSoundEffect>(program);
     AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
         char soundEffectName[16];
-        strcpy(soundEffectName, sfxBuildCharName(obj, anim, weaponType));
+        strcpy(soundEffectName, sfxBuildCharName(obj, anim, soundEffect));
         programStackPushString(program, soundEffectName);
     } else {
         scriptPredefinedError(program, "sfx_build_char_name", SCRIPT_ERROR_OBJECT_IS_NULL);

@@ -357,7 +357,7 @@ int critterGetStat(Object* critter, Stat stat)
                             Object* item2 = critterGetItem2(gDude);
                             if (item2 != nullptr) {
                                 if (itemGetType(item2) == ITEM_TYPE_WEAPON) {
-                                    if (weaponGetAnimationCode(item2) != WEAPON_ANIMATION_NONE) {
+                                    if (weaponGetAnimationCode(item2) != WeaponAnimation::None) {
                                         hasWeapon = true;
                                     }
                                 }
@@ -367,7 +367,7 @@ int critterGetStat(Object* critter, Stat stat)
                                 Object* item1 = critterGetItem1(gDude);
                                 if (item1 != nullptr) {
                                     if (itemGetType(item1) == ITEM_TYPE_WEAPON) {
-                                        if (weaponGetAnimationCode(item1) != WEAPON_ANIMATION_NONE) {
+                                        if (weaponGetAnimationCode(item1) != WeaponAnimation::None) {
                                             hasWeapon = true;
                                         }
                                     }
