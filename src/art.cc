@@ -586,7 +586,7 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
 
     if (animation >= ANIM_TAKE_OUT && animation <= ANIM_FIRE_CONTINUOUS) {
         *animationCodePtr = 'c' + (animation - ANIM_TAKE_OUT);
-        if (weaponType == WEAPON_ANIMATION_NONE) {
+        if (weaponType == WeaponAnimation::None) {
             return -1;
         }
 
@@ -613,11 +613,11 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
         *weaponCodePtr = 'b';
         return 0;
     } else if (animation == ANIM_THROW_ANIM) {
-        if (weaponType == WEAPON_ANIMATION_KNIFE) {
+        if (weaponType == WeaponAnimation::Knife) {
             // knife
             *weaponCodePtr = 'd';
             *animationCodePtr = 'm';
-        } else if (weaponType == WEAPON_ANIMATION_SPEAR) {
+        } else if (weaponType == WeaponAnimation::Spear) {
             // spear
             *weaponCodePtr = 'g';
             *animationCodePtr = 'm';
@@ -628,7 +628,7 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
         }
         return 0;
     } else if (animation == ANIM_DODGE_ANIM) {
-        if (weaponType <= 0) {
+        if (weaponType <= WeaponAnimation::None) {
             *weaponCodePtr = 'a';
             *animationCodePtr = 'n';
         } else {
@@ -639,7 +639,7 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
     }
 
     *animationCodePtr = 'a' + animation;
-    if (animation <= ANIM_WALK && weaponType > 0) {
+    if (animation <= ANIM_WALK && weaponType > WeaponAnimation::None) {
         *weaponCodePtr = artGetCritterWeaponCode(weaponType);
         return 0;
     }
@@ -651,18 +651,18 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
 static char artGetCritterWeaponCode(WeaponAnimation weaponType)
 {
     switch (weaponType) {
-    case WEAPON_ANIMATION_SFALL_S:
+    case WeaponAnimation::SfallS:
         return 's';
-    case WEAPON_ANIMATION_SFALL_O:
+    case WeaponAnimation::SfallO:
         return 'o';
-    case WEAPON_ANIMATION_SFALL_P:
+    case WeaponAnimation::SfallP:
         return 'p';
-    case WEAPON_ANIMATION_SFALL_Q:
+    case WeaponAnimation::SfallQ:
         return 'q';
-    case WEAPON_ANIMATION_SFALL_T:
+    case WeaponAnimation::SfallT:
         return 't';
     default:
-        return 'd' + (weaponType - 1);
+        return 'd' + (static_cast<int>(weaponType) - 1);
     }
 }
 
@@ -1735,14 +1735,14 @@ int FrmId::buildObjectFid(ObjectType objectType, int frmId, AnimationType animTy
         || animType < ANIM_FALL_BACK
         || animType > ANIM_FALL_FRONT_BLOOD) {
         rotation = ROTATION_NE;
-    } else if (!exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, rotation))) {
+    } else if (!exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, static_cast<unsigned char>(weaponAnimation), rotation))) {
         rotation = rotation != ROTATION_E
-                && exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, ROTATION_E))
+                && exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, static_cast<unsigned char>(weaponAnimation), ROTATION_E))
             ? ROTATION_E
             : ROTATION_NE;
     }
 
-    return buildFid(objectType, frmId, animType, weaponAnimation, rotation);
+    return buildFid(objectType, frmId, animType, static_cast<unsigned char>(weaponAnimation), rotation);
 }
 
 // 0x4198C8
@@ -1791,7 +1791,7 @@ int FrmId::buildAliasFid(int fid)
             OBJ_TYPE_CRITTER,
             static_cast<int>(aliasedFrameId),
             anim,
-            weaponAnimationFromFid(fid),
+            static_cast<unsigned char>(weaponAnimationFromFid(fid)),
             rotationFromFid(fid));
     }
 

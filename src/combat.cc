@@ -5695,7 +5695,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         CALLED_SHOT_WINDOW_WIDTH);
 
     FrmImage critterFrm;
-    const FrmId critterFrmId = FrmId(critter, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    const FrmId critterFrmId = FrmId(critter, ANIM_CALLED_SHOT_PIC, WeaponAnimation::None, ROTATION_NE);
     if (critterFrm.lock(critterFrmId)) {
         blitBufferToBuffer(critterFrm.getData(),
             170,

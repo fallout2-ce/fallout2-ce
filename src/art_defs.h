@@ -76,38 +76,31 @@ enum DudeNativeLook : int {
     DUDE_NATIVE_LOOK_COUNT,
 };
 
-enum WeaponAnimation : int {
-    WEAPON_ANIMATION_INVALID = -1,
-    WEAPON_ANIMATION_NONE,
-    WEAPON_ANIMATION_KNIFE, // d
-    WEAPON_ANIMATION_CLUB, // e
-    WEAPON_ANIMATION_HAMMER, // f
-    WEAPON_ANIMATION_SPEAR, // g
-    WEAPON_ANIMATION_PISTOL, // h
-    WEAPON_ANIMATION_SMG, // i
-    WEAPON_ANIMATION_SHOTGUN, // j
-    WEAPON_ANIMATION_LASER_RIFLE, // k
-    WEAPON_ANIMATION_MINIGUN, // l
-    WEAPON_ANIMATION_LAUNCHER, // m
-    WEAPON_ANIMATION_SFALL_S, // s
-    WEAPON_ANIMATION_SFALL_O, // o
-    WEAPON_ANIMATION_SFALL_P, // p
-    WEAPON_ANIMATION_SFALL_Q, // q
-    WEAPON_ANIMATION_SFALL_T, // t
-    WEAPON_ANIMATION_COUNT,
-
-    // There's mixed usage of WeaponAnimation and CharacterSoundEffect in the code, lets merge those as we any cannot distinguish between them.
-    CHARACTER_SOUND_EFFECT_UNUSED = WEAPON_ANIMATION_NONE,
-    CHARACTER_SOUND_EFFECT_KNOCKDOWN = WEAPON_ANIMATION_KNIFE,
-    CHARACTER_SOUND_EFFECT_PASS_OUT = WEAPON_ANIMATION_CLUB,
-    CHARACTER_SOUND_EFFECT_DIE = WEAPON_ANIMATION_HAMMER,
-    CHARACTER_SOUND_EFFECT_CONTACT = WEAPON_ANIMATION_SPEAR,
+enum class WeaponAnimation : int {
+    None,
+    Knife, // d
+    Club, // e
+    Hammer, // f
+    Spear, // g
+    Pistol, // h
+    Smg, // i
+    Shotgun, // j
+    LaserRifle, // k
+    Minigun, // l
+    Launcher, // m
+    SfallS, // s
+    SfallO, // o
+    SfallP, // p
+    SfallQ, // q
+    SfallT, // t
 };
 
 constexpr inline bool weaponAnimationIsValid(int weaponAnimation)
 {
-    return weaponAnimation >= WEAPON_ANIMATION_NONE && weaponAnimation < WEAPON_ANIMATION_COUNT;
+    return weaponAnimation >= static_cast<int>(WeaponAnimation::None) && weaponAnimation <= static_cast<int>(WeaponAnimation::SfallT);
 }
+
+constexpr inline bool weaponAnimationIsValid(WeaponAnimation weaponAnimation) { return weaponAnimationIsValid(static_cast<int>(weaponAnimation)); }
 
 enum class SkillDexFrameId : int {
     Invalid = -1, // invalid frame id

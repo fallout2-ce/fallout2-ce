@@ -679,7 +679,7 @@ int itemDropAll(Object* critter, int tile)
     if (hasEquippedItems) {
         Rect updatedRect;
         const FrmId frmId = FrmId(critter);
-        const CritterFrmId critterFrmId = CritterFrmId(frameId, frmId.animationType(), WEAPON_ANIMATION_NONE, frmId.rotation());
+        const CritterFrmId critterFrmId = CritterFrmId(frameId, frmId.animationType(), WeaponAnimation::None, frmId.rotation());
         objectSetFrmId(critter, critterFrmId, &updatedRect);
         if (FrmId(critter).animationType() == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
@@ -1867,7 +1867,7 @@ int weaponGetBurstRounds(Object* weapon)
 WeaponAnimation weaponGetAnimationCode(Object* weapon)
 {
     if (weapon == nullptr) {
-        return WEAPON_ANIMATION_INVALID;
+        return WeaponAnimation::None;
     }
 
     Proto* proto;

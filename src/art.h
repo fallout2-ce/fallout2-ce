@@ -206,8 +206,8 @@ public:
     }
 
     // cannot be made constexpr as internally calls FrmId::exist and that checks file system
-    FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
-    explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
+    FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE);
+    explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE);
 
     explicit FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation);
     explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
@@ -257,7 +257,7 @@ public:
     const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
     constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
     constexpr const FrameId& frameId() const { return _frameId; }
-    constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WEAPON_ANIMATION_INVALID; }
+    constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WeaponAnimation::None; }
     constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
     constexpr AnimationType animationType() const { return hasAnimationType() ? animationTypeFromFid(_fid) : ANIM_INVALID; }
 
@@ -509,7 +509,7 @@ public:
     }
 
     // cannot be made constexpr as internally calls artExists which cannot be constexpr
-    CritterFrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE)
+    CritterFrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE)
         : FrmId(critter, animType, weaponAnimation, rotation)
     {
     }
