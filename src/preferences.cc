@@ -1345,38 +1345,38 @@ int doPreferences(bool animated)
 
 static void _SetPrefrencesValue(int preference, const PreferenceDescription& description, int value)
 {
-    switch(preference) {
-        case PREF_GAME_DIFFICULTY:
-            *(description.value.gameDifficultyPtr) = static_cast<GameDifficulty>(value);
-            return;
-        case PREF_COMBAT_DIFFICULTY:
-            *(description.value.combatDifficultyPtr) = static_cast<CombatDifficulty>(value);
-            return;
-        case PREF_VIOLENCE_LEVEL:
-            *(description.value.violenceLevelPtr) = static_cast<ViolenceLevel>(value);
-            return;
-        case PREF_TARGET_HIGHLIGHT:
-            *(description.value.targetHighlightPtr) = static_cast<TargetHighlight>(value);
-            return;
-        default:
-            *(description.value.intPtr) = value;
-            return;
+    switch (preference) {
+    case PREF_GAME_DIFFICULTY:
+        *(description.value.gameDifficultyPtr) = static_cast<GameDifficulty>(value);
+        return;
+    case PREF_COMBAT_DIFFICULTY:
+        *(description.value.combatDifficultyPtr) = static_cast<CombatDifficulty>(value);
+        return;
+    case PREF_VIOLENCE_LEVEL:
+        *(description.value.violenceLevelPtr) = static_cast<ViolenceLevel>(value);
+        return;
+    case PREF_TARGET_HIGHLIGHT:
+        *(description.value.targetHighlightPtr) = static_cast<TargetHighlight>(value);
+        return;
+    default:
+        *(description.value.intPtr) = value;
+        return;
     }
 }
 
 static int _GetPrefrencesValue(int preference, const PreferenceDescription& description)
 {
-    switch(preference) {
-        case PREF_GAME_DIFFICULTY:
-            return static_cast<int>(*(description.value.gameDifficultyPtr));
-        case PREF_COMBAT_DIFFICULTY:
-            return static_cast<int>(*(description.value.combatDifficultyPtr));
-        case PREF_VIOLENCE_LEVEL:
-            return static_cast<int>(*(description.value.violenceLevelPtr));
-        case PREF_TARGET_HIGHLIGHT:
-            return static_cast<int>(*(description.value.targetHighlightPtr));
-        default:
-            return *(description.value.intPtr);
+    switch (preference) {
+    case PREF_GAME_DIFFICULTY:
+        return static_cast<int>(*(description.value.gameDifficultyPtr));
+    case PREF_COMBAT_DIFFICULTY:
+        return static_cast<int>(*(description.value.combatDifficultyPtr));
+    case PREF_VIOLENCE_LEVEL:
+        return static_cast<int>(*(description.value.violenceLevelPtr));
+    case PREF_TARGET_HIGHLIGHT:
+        return static_cast<int>(*(description.value.targetHighlightPtr));
+    default:
+        return *(description.value.intPtr);
     }
 }
 
