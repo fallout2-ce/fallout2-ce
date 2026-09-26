@@ -13,32 +13,34 @@ enum class HeadFrameId : int {
     None = 0, // reser.frm
 };
 
-enum HeadAnimation : int {
-    HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
-    HEAD_ANIMATION_GOOD = 1,
-    HEAD_ANIMATION_GOOD_TO_NEUTRAL = 2,
-    HEAD_ANIMATION_NEUTRAL_TO_GOOD = 3,
-    HEAD_ANIMATION_NEUTRAL = 4,
-    HEAD_ANIMATION_NEUTRAL_TO_BAD = 5,
-    HEAD_ANIMATION_BAD_TO_NEUTRAL = 6,
-    HEAD_ANIMATION_BAD = 7,
-    HEAD_ANIMATION_VERY_BAD_REACTION = 8,
-    HEAD_ANIMATION_GOOD_PHONEMES = 9,
-    HEAD_ANIMATION_NEUTRAL_PHONEMES = 10,
-    HEAD_ANIMATION_BAD_PHONEMES = 11,
+enum class HeadAnimation : unsigned char {
+    VeryGoodReaction = 0,
+    Good = 1,
+    GoodToNeutral = 2,
+    NeutralToGood = 3,
+    Neutral = 4,
+    NeutralToBad = 5,
+    BadToNeutral = 6,
+    Bad = 7,
+    VeryBadReaction = 8,
+    GoodPhonemes = 9,
+    NeutralPhonemes = 10,
+    BadPhonemes = 11,
 };
 
-enum HeadFidget : int {
-    FIDGET_INVALID = -1,
-    FIDGET_GOOD = 1,
-    FIDGET_NEUTRAL = 4,
-    FIDGET_BAD = 7,
+enum class HeadFidget : int {
+    Invalid = -1,
+    Good = 1,
+    Neutral = 4,
+    Bad = 7,
 };
 
-inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
-{
-    return fidget != FIDGET_INVALID ? static_cast<HeadAnimation>(fidget) : HEAD_ANIMATION_VERY_GOOD_REACTION;
-}
+enum class HeadFidgetAnimation : unsigned char {
+    None = 0,
+    First = 1,
+    Second = 2,
+    Third = 3
+};
 
 enum class BackgroundFrameId : int {
     Invalid = -1, // invalid frame id

@@ -43,30 +43,39 @@ namespace fallout {
 #define ITALIAN "italian"
 #define SPANISH "spanish"
 
-typedef enum GameDifficulty {
+enum GameDifficulty : int {
     GAME_DIFFICULTY_EASY,
     GAME_DIFFICULTY_NORMAL,
     GAME_DIFFICULTY_HARD,
-} GameDifficulty;
+    GAME_DIFFICULTY_MIN = GAME_DIFFICULTY_EASY,
+    GAME_DIFFICULTY_MAX = GAME_DIFFICULTY_HARD
+};
 
-typedef enum CombatDifficulty {
+enum CombatDifficulty : int {
     COMBAT_DIFFICULTY_EASY,
     COMBAT_DIFFICULTY_NORMAL,
     COMBAT_DIFFICULTY_HARD,
-} CombatDifficulty;
+    COMBAT_DIFFICULTY_MIN = COMBAT_DIFFICULTY_EASY,
+    COMBAT_DIFFICULTY_MAX = COMBAT_DIFFICULTY_HARD
+};
 
-typedef enum ViolenceLevel {
+enum ViolenceLevel : int {
+    VIOLENCE_LEVEL_INVALID = -1,
     VIOLENCE_LEVEL_NONE,
     VIOLENCE_LEVEL_MINIMAL,
     VIOLENCE_LEVEL_NORMAL,
     VIOLENCE_LEVEL_MAXIMUM_BLOOD,
-} ViolenceLevel;
+    VIOLENCE_LEVEL_MIN = VIOLENCE_LEVEL_NONE,
+    VIOLENCE_LEVEL_MAX = VIOLENCE_LEVEL_MAXIMUM_BLOOD
+};
 
-typedef enum TargetHighlight {
+enum TargetHighlight : int {
     TARGET_HIGHLIGHT_OFF,
     TARGET_HIGHLIGHT_ON,
     TARGET_HIGHLIGHT_TARGETING_ONLY,
-} TargetHighlight;
+    TARGET_HIGHLIGHT_MIN = TARGET_HIGHLIGHT_OFF,
+    TARGET_HIGHLIGHT_MAX = TARGET_HIGHLIGHT_TARGETING_ONLY
+};
 
 extern bool gGameConfigInitialized;
 extern Config gGameConfig;

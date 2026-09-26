@@ -175,7 +175,7 @@ static int _light_distance[36] = {
 };
 
 // 0x51976C fix_violence_level
-static int gViolenceLevel = -1;
+static ViolenceLevel gViolenceLevel = VIOLENCE_LEVEL_INVALID;
 
 // 0x519770 obj_last_roof_x
 static int _obj_last_roof_x = -1;
@@ -495,7 +495,7 @@ int objectLoadAll(File* stream)
 {
     int rc = objectLoadAllInternal(stream);
 
-    gViolenceLevel = -1;
+    gViolenceLevel = VIOLENCE_LEVEL_INVALID;
 
     return rc;
 }
@@ -5201,7 +5201,7 @@ void _obj_fix_violence_settings(int* fid)
     }
 
     bool shouldResetViolenceLevel = false;
-    if (gViolenceLevel == -1) {
+    if (gViolenceLevel == VIOLENCE_LEVEL_INVALID) {
         gViolenceLevel = settings.preferences.violence_level;
         shouldResetViolenceLevel = true;
     }
@@ -5238,7 +5238,7 @@ void _obj_fix_violence_settings(int* fid)
     }
 
     if (shouldResetViolenceLevel) {
-        gViolenceLevel = -1;
+        gViolenceLevel = VIOLENCE_LEVEL_INVALID;
     }
 }
 

@@ -410,13 +410,13 @@ int artGetFidgetCount(const HeadFrmId& frmId)
 
     HeadFidget fidget = frmId.fidget();
     switch (fidget) {
-    case FIDGET_INVALID:
+    case HeadFidget::Invalid:
         return -1;
-    case FIDGET_GOOD:
+    case HeadFidget::Good:
         return headDescription->goodFidgetCount;
-    case FIDGET_NEUTRAL:
+    case HeadFidget::Neutral:
         return headDescription->neutralFidgetCount;
-    case FIDGET_BAD:
+    case HeadFidget::Bad:
         return headDescription->badFidgetCount;
     default:
         return 0;
