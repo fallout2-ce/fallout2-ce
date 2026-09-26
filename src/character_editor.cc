@@ -3146,154 +3146,129 @@ static void characterEditorDrawSkills(int a1)
 // 0x4365AC DrawInfoWin
 static void characterEditorDrawCard()
 {
-    SkillDexFrmId graphicId;
-    char* title;
-    char* description;
+    const auto item = characterEditorSelectedItem;
 
-    if (characterEditorSelectedItem < EDITOR_FIRST_PRIMARY_STAT || characterEditorSelectedItem > EDITOR_LAST_TRAIT) {
+    if (item < EDITOR_FIRST_PRIMARY_STAT || item > EDITOR_LAST_TRAIT) {
         return;
     }
 
-    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 277, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
+    constexpr int STRIDE = 640;
+    constexpr int CARD_X = 345;
+    constexpr int CARD_Y = 267;
 
-    if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
-        Stat characterEditorSelectedItemStat = static_cast<Stat>(characterEditorSelectedItem);
-        description = statGetDescription(characterEditorSelectedItemStat);
-        title = statGetName(characterEditorSelectedItemStat);
-        graphicId = statGetFrmId(characterEditorSelectedItemStat);
-        characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem <= EDITOR_NEXT_LEVEL) {
+    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (STRIDE * CARD_Y) + CARD_X, 277, 170, STRIDE, gCharacterEditorWindowBuffer + (CARD_Y * STRIDE) + CARD_X, STRIDE);
+
+    auto drawCard = [](SkillDexFrmId fid, const char* t, const char* sub, char* d) {
+        characterEditorDrawCardWithOptions(fid, t, sub, d);
+    };
+
+    auto drawMsgCard = [&](SkillDexFrmId fid, int titleId, int descId) {
+        const char* title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, titleId);
+        char* desc = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, descId);
+        drawCard(fid, title, nullptr, desc);
+    };
+
+    // PRIMARY STATS
+    if (item >= EDITOR_FIRST_PRIMARY_STAT && item <= EDITOR_LAST_PRIMARY_STAT) {
+        auto stat = static_cast<Stat>(item);
+        drawCard(statGetFrmId(stat), statGetName(stat), nullptr, statGetDescription(stat));
+    }
+    // LEVEL / EXPERIENCE
+    else if (item >= EDITOR_LEVEL && item <= EDITOR_NEXT_LEVEL) {
         if (gCharacterEditorIsCreationMode) {
-            switch (characterEditorSelectedItem) {
-            case EDITOR_LEVEL:
-                // Character Points
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 121);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 120);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Level, title, nullptr, description);
-                break;
-            default:
-                break;
+            if (item == EDITOR_LEVEL) {
+                drawMsgCard(SkillDexFrameId::Level, 120, 121);
             }
         } else {
-            switch (characterEditorSelectedItem) {
+            switch (item) {
             case EDITOR_LEVEL:
-                description = pcStatGetDescription(PC_STAT_LEVEL);
-                title = pcStatGetName(PC_STAT_LEVEL);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Level, title, nullptr, description);
+                drawCard(SkillDexFrameId::Level, pcStatGetName(PC_STAT_LEVEL), nullptr, pcStatGetDescription(PC_STAT_LEVEL));
                 break;
             case EDITOR_EXPERIENCE:
-                description = pcStatGetDescription(PC_STAT_EXPERIENCE);
-                title = pcStatGetName(PC_STAT_EXPERIENCE);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Experience, title, nullptr, description);
+                drawCard(SkillDexFrameId::Experience, pcStatGetName(PC_STAT_EXPERIENCE), nullptr, pcStatGetDescription(PC_STAT_EXPERIENCE));
                 break;
             case EDITOR_NEXT_LEVEL:
-                // Next Level
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 123);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 122);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::NextLevel, title, nullptr, description);
+                drawMsgCard(SkillDexFrameId::NextLevel, 122, 123);
                 break;
             default:
                 break;
             }
         }
-    } else if ((characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) || (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT)) {
-        characterEditorDrawCardWithOptions(gCharacterEditorFolderCardFrmId, gCharacterEditorFolderCardTitle, gCharacterEditorFolderCardSubtitle, gCharacterEditorFolderCardDescription);
-    } else if (characterEditorSelectedItem >= EDITOR_HIT_POINTS && characterEditorSelectedItem <= EDITOR_CRIPPLED_LEFT_LEG) {
-        switch (characterEditorSelectedItem) {
-        case EDITOR_HIT_POINTS:
-            description = statGetDescription(STAT_MAXIMUM_HIT_POINTS);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 300);
-            graphicId = statGetFrmId(STAT_MAXIMUM_HIT_POINTS);
-            characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-            break;
-        case EDITOR_POISONED:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 400);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 312);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Poisoned, title, nullptr, description);
-            break;
-        case EDITOR_RADIATED:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 401);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 313);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Radiated, title, nullptr, description);
-            break;
-        case EDITOR_EYE_DAMAGE:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 402);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 314);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::EyeDamage, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_RIGHT_ARM:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 403);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 315);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledRightArm, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_LEFT_ARM:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 404);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 316);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledLeftArm, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_RIGHT_LEG:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 405);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 317);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledRightLeg, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_LEFT_LEG:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 406);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 318);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledLeftLeg, title, nullptr, description);
-            break;
-        default:
-            break;
+    }
+    // FOLDER CARD
+    else if ((item >= EDITOR_PERK_KARMA_KILLS && item < EDITOR_HIT_POINTS) || (item >= EDITOR_FIRST_TRAIT && item <= EDITOR_LAST_TRAIT)) {
+        drawCard(gCharacterEditorFolderCardFrmId, gCharacterEditorFolderCardTitle, gCharacterEditorFolderCardSubtitle, gCharacterEditorFolderCardDescription);
+    }
+    // HIT POINTS, INJURIES
+    else if (item >= EDITOR_HIT_POINTS && item <= EDITOR_CRIPPLED_LEFT_LEG) {
+        if (item == EDITOR_HIT_POINTS) {
+            drawCard(
+                statGetFrmId(STAT_MAXIMUM_HIT_POINTS),
+                getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 300),
+                nullptr,
+                statGetDescription(STAT_MAXIMUM_HIT_POINTS));
+            return;
         }
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
-        int derivedStatIndex = characterEditorSelectedItem - EDITOR_FIRST_DERIVED_STAT;
-        Stat stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
-        description = statGetDescription(stat);
-        title = statGetName(stat);
-        graphicId = gCharacterEditorDerivedStatFrmIds[derivedStatIndex];
-        characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
-        Skill skill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
-        const char* attributesDescription = skillGetAttributes(skill);
 
-        char formatted[150]; // TODO: Size is probably wrong.
-        const char* base = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 137);
-        int defaultValue = skillGetDefaultValue(skill);
-        snprintf(formatted, sizeof(formatted), "%s %d%% %s", base, defaultValue, attributesDescription);
+        struct EditorCardMapping {
+            int editorItemId;
+            SkillDexFrameId graphicId;
+            int titleMsgId;
+            int descMsgId;
+        };
 
-        graphicId = skillGetFrmId(skill);
-        title = skillGetName(skill);
-        description = skillGetDescription(skill);
-        characterEditorDrawCardWithOptions(graphicId, title, formatted, description);
-    } else if (characterEditorSelectedItem >= EDITOR_TAG_SKILL && characterEditorSelectedItem < EDITOR_FIRST_TRAIT) {
-        switch (characterEditorSelectedItem) {
-        case EDITOR_TAG_SKILL:
-            if (gCharacterEditorIsCreationMode) {
-                // Tag Skill
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 145);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 144);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
-            } else {
-                // Skill Points
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 131);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 130);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
+        static const EditorCardMapping injuryCardMappings[] = {
+            { EDITOR_POISONED, SkillDexFrameId::Poisoned, 312, 400 },
+            { EDITOR_RADIATED, SkillDexFrameId::Radiated, 313, 401 },
+            { EDITOR_EYE_DAMAGE, SkillDexFrameId::EyeDamage, 314, 402 },
+            { EDITOR_CRIPPLED_RIGHT_ARM, SkillDexFrameId::CrippledRightArm, 315, 403 },
+            { EDITOR_CRIPPLED_LEFT_ARM, SkillDexFrameId::CrippledLeftArm, 316, 404 },
+            { EDITOR_CRIPPLED_RIGHT_LEG, SkillDexFrameId::CrippledRightLeg, 317, 405 },
+            { EDITOR_CRIPPLED_LEFT_LEG, SkillDexFrameId::CrippledLeftLeg, 318, 406 }
+        };
+
+        for (const auto& mapping : injuryCardMappings) {
+            if (mapping.editorItemId == item) {
+                drawMsgCard(mapping.graphicId, mapping.titleMsgId, mapping.descMsgId);
+                return;
             }
-            break;
-        case EDITOR_SKILLS:
-            // Skills
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 151);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 150);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
-            break;
-        case EDITOR_OPTIONAL_TRAITS:
-            // Optional Traits
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 147);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 146);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
-            break;
-        default:
-            break;
         }
+    }
+    // DERIVED STATS
+    else if (item >= EDITOR_FIRST_DERIVED_STAT && item <= EDITOR_LAST_DERIVED_STAT) {
+        int derivedStatIndex = item - EDITOR_FIRST_DERIVED_STAT;
+        Stat stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
+        drawCard(gCharacterEditorDerivedStatFrmIds[derivedStatIndex], statGetName(stat), nullptr, statGetDescription(stat));
+    }
+    // SKILLS
+    else if (item >= EDITOR_FIRST_SKILL && item <= EDITOR_LAST_SKILL) {
+        Skill skill = static_cast<Skill>(item - EDITOR_FIRST_SKILL);
+
+        const char* base = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 137);
+        std::string formatted = std::string(base) + " " + std::to_string(skillGetDefaultValue(skill)) + "% " + skillGetAttributes(skill);
+
+        drawCard(skillGetFrmId(skill), skillGetName(skill), formatted.c_str(), skillGetDescription(skill));
+    }
+    // TAG SKILLS
+    else if (item >= EDITOR_TAG_SKILL && item < EDITOR_FIRST_TRAIT) {
+        int titleId = 0;
+        int descId = 0;
+
+        switch (item) {
+            case EDITOR_TAG_SKILL:
+                titleId = gCharacterEditorIsCreationMode ? 144 : 130;
+                descId  = gCharacterEditorIsCreationMode ? 145 : 131;
+                break;
+            case EDITOR_SKILLS:
+                titleId = 150; descId = 151;
+                break;
+            case EDITOR_OPTIONAL_TRAITS:
+                titleId = 146; descId = 147;
+                break;
+            default: return;
+        }
+
+        drawMsgCard(SkillDexFrameId::Skills, titleId, descId);
     }
 }
 
