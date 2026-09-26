@@ -1,6 +1,7 @@
 #include "dbox.h"
 
 #include <stdio.h>
+#include <string>
 
 #include <algorithm>
 
@@ -249,13 +250,14 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return rc;
 }
 
-std::optional<std::string> showInputDialog(std::string_view currentInput, int windowX, int windowY, const char* doneText)
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText)
 {
     FrmImage frms[INPUT_DIALOG_FRM_COUNT];
+    static std::string result;
 
     for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
         if (!frms[i].lock(kInputDialogFrmIds[i])) {
-            return std::nullopt;
+            return nullptr;
         }
     }
 
@@ -269,9 +271,7 @@ std::optional<std::string> showInputDialog(std::string_view currentInput, int wi
     int windowHeight = bgFrm.getHeight();
 
     int win = windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
-    if (win == -1) {
-        return std::nullopt;
-    }
+    if (win == -1) return nullptr;
 
     unsigned char* windowBuf = windowGetBuffer(win);
 
@@ -291,17 +291,17 @@ std::optional<std::string> showInputDialog(std::string_view currentInput, int wi
     windowRefresh(win);
     fontSetCurrent(101);
 
-    std::string editableText = (currentInput == "None") ? "" : std::string(currentInput);
-
+    std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
     int status = _get_input_str(win, 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     windowDestroy(win);
 
-    if (status != -1 && !editableText.empty()) {
-        return editableText;
+    if (status == 0 && !editableText.empty()) {
+        result = std::move(editableText);
+        return result.c_str();
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 // 0x41CF20 dialog_out

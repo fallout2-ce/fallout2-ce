@@ -1,9 +1,6 @@
 #ifndef DBOX_H
 #define DBOX_H
 
-#include <string>
-#include <optional>
-
 #include "color.h"
 
 namespace fallout {
@@ -24,7 +21,7 @@ inline int showDialogBox(const char* title, const char** body, int bodyLength, i
     return showDialogBox(title, body, bodyLength, x, y, titleColor | DRAW_TEXT_FLAG_NONE, secondaryButtonText, bodyColor | DRAW_TEXT_FLAG_NONE, flags);
 }
 
-std::optional<std::string> showInputDialog(std::string_view currentInput, int windowX, int windowY, const char* doneText);
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText);
 
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
