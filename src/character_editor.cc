@@ -266,7 +266,6 @@ typedef struct KillInfo {
 static int characterEditorWindowInit();
 static void characterEditorWindowFree();
 static int characterEditorGetModalWindowFlags();
-static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static void characterEditorDrawFolders();
 static void characterEditorDrawPerksFolder();
 static int characterEditorKillsCompare(const void* a1, const void* a2);
@@ -1996,106 +1995,6 @@ void characterEditorInit()
     gCharacterEditorLastLevel = 1;
 }
 
-// handle name input
-static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
-{
-    int cursorWidth = fontGetStringWidth("_") - 4;
-    int windowWidth = windowGetWidth(win);
-    int v60 = fontGetLineHeight();
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    if (maxLength > 255) {
-        maxLength = 255;
-    }
-
-    char copy[257];
-    strcpy(copy, text);
-
-    size_t nameLength = strlen(text);
-    copy[nameLength] = ' ';
-    copy[nameLength + 1] = '\0';
-
-    int nameWidth = fontGetStringWidth(copy);
-
-    bufferFill(windowBuffer + windowWidth * y + x, nameWidth, fontGetLineHeight(), windowWidth, backgroundColor);
-    fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-
-    windowRefresh(win);
-
-    beginTextInput();
-
-    int blinkingCounter = 3;
-    bool blink = false;
-
-    int rc = 1;
-    while (rc == 1) {
-        sharedFpsLimiter.mark();
-
-        _frame_time = getTicks();
-
-        int keyCode = inputGetInput();
-        if (keyCode == cancelKeyCode) {
-            rc = 0;
-        } else if (keyCode == KEY_RETURN) {
-            soundPlayFile("ib1p1xx1");
-            rc = 0;
-        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-            rc = -1;
-        } else {
-            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy), v60, windowWidth, backgroundColor);
-                copy[nameLength - 1] = ' ';
-                copy[nameLength] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength--;
-
-                windowRefresh(win);
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && nameLength < maxLength) {
-                if ((flags & 0x01) != 0) {
-                    if (!_isdoschar(keyCode)) {
-                        break;
-                    }
-                }
-
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy), v60, windowWidth, backgroundColor);
-
-                copy[nameLength] = keyCode & 0xFF;
-                copy[nameLength + 1] = ' ';
-                copy[nameLength + 2] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
-                nameLength++;
-
-                windowRefresh(win);
-            }
-        }
-
-        blinkingCounter -= 1;
-        if (blinkingCounter == 0) {
-            blinkingCounter = 3;
-
-            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
-            blink = !blink;
-
-            bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(copy) - cursorWidth, cursorWidth, v60 - 2, windowWidth, color);
-        }
-
-        windowRefresh(win);
-
-        delay_ms(1000 / 24 - (getTicks() - _frame_time));
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    }
-
-    endTextInput();
-
-    if (rc == 0 || nameLength > 0) {
-        copy[nameLength] = '\0';
-        strcpy(text, copy);
-    }
-
-    return rc;
-}
-
 // 0x434060 isdoschar
 bool _isdoschar(int ch)
 {
@@ -3153,273 +3052,147 @@ static void characterEditorDrawSkills(int a1)
 // 0x4365AC DrawInfoWin
 static void characterEditorDrawCard()
 {
-    SkillDexFrmId graphicId;
-    char* title;
-    char* description;
+    const auto item = characterEditorSelectedItem;
 
-    if (characterEditorSelectedItem < EDITOR_FIRST_PRIMARY_STAT || characterEditorSelectedItem > EDITOR_LAST_TRAIT) {
+    if (item < EDITOR_FIRST_PRIMARY_STAT || item > EDITOR_LAST_TRAIT) {
         return;
     }
 
-    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 295, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
+    constexpr int STRIDE = 640;
+    constexpr int CARD_X = 345;
+    constexpr int CARD_Y = 267;
 
-    if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
-        Stat characterEditorSelectedItemStat = static_cast<Stat>(characterEditorSelectedItem);
-        description = statGetDescription(characterEditorSelectedItemStat);
-        title = statGetName(characterEditorSelectedItemStat);
-        graphicId = statGetFrmId(characterEditorSelectedItemStat);
-        characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem <= EDITOR_NEXT_LEVEL) {
+    blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (STRIDE * CARD_Y) + CARD_X, 295, 170, STRIDE, gCharacterEditorWindowBuffer + (CARD_Y * STRIDE) + CARD_X, STRIDE);
+
+    auto drawMsgCard = [&](SkillDexFrmId fid, int titleId, int descId) {
+        const char* title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, titleId);
+        char* desc = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, descId);
+        characterEditorDrawCardWithOptions(fid, title, nullptr, desc);
+    };
+
+    // PRIMARY STATS
+    if (item >= EDITOR_FIRST_PRIMARY_STAT && item <= EDITOR_LAST_PRIMARY_STAT) {
+        auto stat = static_cast<Stat>(item);
+        characterEditorDrawCardWithOptions(statGetFrmId(stat), statGetName(stat), nullptr, statGetDescription(stat));
+    }
+    // LEVEL / EXPERIENCE
+    else if (item >= EDITOR_LEVEL && item <= EDITOR_NEXT_LEVEL) {
         if (gCharacterEditorIsCreationMode) {
-            switch (characterEditorSelectedItem) {
-            case EDITOR_LEVEL:
-                // Character Points
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 121);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 120);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Level, title, nullptr, description);
-                break;
-            default:
-                break;
+            if (item == EDITOR_LEVEL) {
+                drawMsgCard(SkillDexFrameId::Level, 120, 121);
             }
         } else {
-            switch (characterEditorSelectedItem) {
+            switch (item) {
             case EDITOR_LEVEL:
-                description = pcStatGetDescription(PC_STAT_LEVEL);
-                title = pcStatGetName(PC_STAT_LEVEL);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Level, title, nullptr, description);
+                characterEditorDrawCardWithOptions(SkillDexFrameId::Level, pcStatGetName(PC_STAT_LEVEL), nullptr, pcStatGetDescription(PC_STAT_LEVEL));
                 break;
             case EDITOR_EXPERIENCE:
-                description = pcStatGetDescription(PC_STAT_EXPERIENCE);
-                title = pcStatGetName(PC_STAT_EXPERIENCE);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Experience, title, nullptr, description);
+                characterEditorDrawCardWithOptions(SkillDexFrameId::Experience, pcStatGetName(PC_STAT_EXPERIENCE), nullptr, pcStatGetDescription(PC_STAT_EXPERIENCE));
                 break;
             case EDITOR_NEXT_LEVEL:
-                // Next Level
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 123);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 122);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::NextLevel, title, nullptr, description);
+                drawMsgCard(SkillDexFrameId::NextLevel, 122, 123);
                 break;
             default:
                 break;
             }
         }
-    } else if ((characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) || (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT)) {
+    }
+    // FOLDER CARD
+    else if ((item >= EDITOR_PERK_KARMA_KILLS && item < EDITOR_HIT_POINTS) || (item >= EDITOR_FIRST_TRAIT && item <= EDITOR_LAST_TRAIT)) {
         characterEditorDrawCardWithOptions(gCharacterEditorFolderCardFrmId, gCharacterEditorFolderCardTitle, gCharacterEditorFolderCardSubtitle, gCharacterEditorFolderCardDescription);
-    } else if (characterEditorSelectedItem >= EDITOR_HIT_POINTS && characterEditorSelectedItem <= EDITOR_CRIPPLED_LEFT_LEG) {
-        switch (characterEditorSelectedItem) {
-        case EDITOR_HIT_POINTS:
-            description = statGetDescription(STAT_MAXIMUM_HIT_POINTS);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 300);
-            graphicId = statGetFrmId(STAT_MAXIMUM_HIT_POINTS);
-            characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-            break;
-        case EDITOR_POISONED:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 400);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 312);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Poisoned, title, nullptr, description);
-            break;
-        case EDITOR_RADIATED:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 401);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 313);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Radiated, title, nullptr, description);
-            break;
-        case EDITOR_EYE_DAMAGE:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 402);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 314);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::EyeDamage, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_RIGHT_ARM:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 403);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 315);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledRightArm, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_LEFT_ARM:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 404);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 316);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledLeftArm, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_RIGHT_LEG:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 405);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 317);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledRightLeg, title, nullptr, description);
-            break;
-        case EDITOR_CRIPPLED_LEFT_LEG:
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 406);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 318);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::CrippledLeftLeg, title, nullptr, description);
-            break;
-        default:
-            break;
+    }
+    // HIT POINTS, INJURIES
+    else if (item >= EDITOR_HIT_POINTS && item <= EDITOR_CRIPPLED_LEFT_LEG) {
+        if (item == EDITOR_HIT_POINTS) {
+            characterEditorDrawCardWithOptions(
+                statGetFrmId(STAT_MAXIMUM_HIT_POINTS),
+                getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 300),
+                nullptr,
+                statGetDescription(STAT_MAXIMUM_HIT_POINTS));
+            return;
         }
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
-        int derivedStatIndex = characterEditorSelectedItem - EDITOR_FIRST_DERIVED_STAT;
-        Stat stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
-        description = statGetDescription(stat);
-        title = statGetName(stat);
-        graphicId = gCharacterEditorDerivedStatFrmIds[derivedStatIndex];
-        characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
-        Skill skill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
-        const char* attributesDescription = skillGetAttributes(skill);
 
-        char formatted[150]; // TODO: Size is probably wrong.
-        const char* base = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 137);
-        int defaultValue = skillGetDefaultValue(skill);
-        snprintf(formatted, sizeof(formatted), "%s %d%% %s", base, defaultValue, attributesDescription);
+        struct EditorCardMapping {
+            int editorItemId;
+            SkillDexFrameId graphicId;
+            int titleMsgId;
+            int descMsgId;
+        };
 
-        graphicId = skillGetFrmId(skill);
-        title = skillGetName(skill);
-        description = skillGetDescription(skill);
-        characterEditorDrawCardWithOptions(graphicId, title, formatted, description);
-    } else if (characterEditorSelectedItem >= EDITOR_TAG_SKILL && characterEditorSelectedItem < EDITOR_FIRST_TRAIT) {
-        switch (characterEditorSelectedItem) {
-        case EDITOR_TAG_SKILL:
-            if (gCharacterEditorIsCreationMode) {
-                // Tag Skill
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 145);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 144);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
-            } else {
-                // Skill Points
-                description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 131);
-                title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 130);
-                characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
+        static const EditorCardMapping injuryCardMappings[] = {
+            { EDITOR_POISONED, SkillDexFrameId::Poisoned, 312, 400 },
+            { EDITOR_RADIATED, SkillDexFrameId::Radiated, 313, 401 },
+            { EDITOR_EYE_DAMAGE, SkillDexFrameId::EyeDamage, 314, 402 },
+            { EDITOR_CRIPPLED_RIGHT_ARM, SkillDexFrameId::CrippledRightArm, 315, 403 },
+            { EDITOR_CRIPPLED_LEFT_ARM, SkillDexFrameId::CrippledLeftArm, 316, 404 },
+            { EDITOR_CRIPPLED_RIGHT_LEG, SkillDexFrameId::CrippledRightLeg, 317, 405 },
+            { EDITOR_CRIPPLED_LEFT_LEG, SkillDexFrameId::CrippledLeftLeg, 318, 406 }
+        };
+
+        for (const auto& mapping : injuryCardMappings) {
+            if (mapping.editorItemId == item) {
+                drawMsgCard(mapping.graphicId, mapping.titleMsgId, mapping.descMsgId);
+                return;
             }
+        }
+    }
+    // DERIVED STATS
+    else if (item >= EDITOR_FIRST_DERIVED_STAT && item <= EDITOR_LAST_DERIVED_STAT) {
+        int derivedStatIndex = item - EDITOR_FIRST_DERIVED_STAT;
+        Stat stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
+        characterEditorDrawCardWithOptions(gCharacterEditorDerivedStatFrmIds[derivedStatIndex], statGetName(stat), nullptr, statGetDescription(stat));
+    }
+    // SKILLS
+    else if (item >= EDITOR_FIRST_SKILL && item <= EDITOR_LAST_SKILL) {
+        Skill skill = static_cast<Skill>(item - EDITOR_FIRST_SKILL);
+
+        const char* base = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 137);
+        std::string formatted = std::string(base) + " " + std::to_string(skillGetDefaultValue(skill)) + "% " + skillGetAttributes(skill);
+
+        characterEditorDrawCardWithOptions(skillGetFrmId(skill), skillGetName(skill), formatted.c_str(), skillGetDescription(skill));
+    }
+    // TAG SKILLS
+    else if (item >= EDITOR_TAG_SKILL && item < EDITOR_FIRST_TRAIT) {
+        int titleId = 0;
+        int descId = 0;
+
+        switch (item) {
+        case EDITOR_TAG_SKILL:
+            titleId = gCharacterEditorIsCreationMode ? 144 : 130;
+            descId = gCharacterEditorIsCreationMode ? 145 : 131;
             break;
         case EDITOR_SKILLS:
-            // Skills
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 151);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 150);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
+            titleId = 150;
+            descId = 151;
             break;
         case EDITOR_OPTIONAL_TRAITS:
-            // Optional Traits
-            description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 147);
-            title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 146);
-            characterEditorDrawCardWithOptions(SkillDexFrameId::Skills, title, nullptr, description);
+            titleId = 146;
+            descId = 147;
             break;
         default:
-            break;
+            return;
         }
+
+        drawMsgCard(SkillDexFrameId::Skills, titleId, descId);
     }
 }
 
 // 0x436C4C NameWindow
 static int characterEditorEditName()
 {
-    char* text;
-
-    int windowWidth = _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth();
-    int windowHeight = _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getHeight();
-
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
     int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(nameWindowX, nameWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
-    if (win == -1) {
-        return -1;
+    const char* doneBtnText = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
+
+    auto newName = showInputDialog(critterGetName(gDude), nameWindowX, nameWindowY, doneBtnText);
+
+    if (newName != nullptr) {
+        dudeSetName(newName);
+        characterEditorDrawName();
+        windowRefresh(gCharacterEditorWindow);
     }
-
-    unsigned char* windowBuf = windowGetBuffer(win);
-
-    // Copy background
-    memcpy(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getData(), static_cast<size_t>(windowWidth) * windowHeight);
-
-    blitBufferToBufferTrans(
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        windowBuf + static_cast<size_t>(windowWidth) * 13 + 13,
-        windowWidth);
-    blitBufferToBufferTrans(_editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
-        windowBuf + windowWidth * 40 + 13,
-        windowWidth);
-
-    fontSetCurrent(103);
-
-    text = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
-    fontDrawText(windowBuf + windowWidth * 44 + 50, text, windowWidth, windowWidth, COLOR_DARK_YELLOW);
-
-    int doneBtn = buttonCreate(win,
-        26,
-        44,
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
-        _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_LILTTLE_RED_BUTTON_DOWN].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    windowRefresh(win);
-
-    fontSetCurrent(101);
-
-    char name[64];
-    strcpy(name, critterGetName(gDude));
-
-    if (strcmp(name, "None") == 0) {
-        name[0] = '\0';
-    }
-
-    // NOTE: I don't understand the nameCopy, not sure what it is used for. It's
-    // definitely there, but I just don' get it.
-    char nameCopy[64];
-    strcpy(nameCopy, name);
-
-    if (_get_input_str(win, 500, nameCopy, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0) != -1) {
-        if (nameCopy[0] != '\0') {
-            dudeSetName(nameCopy);
-            characterEditorDrawName();
-            windowDestroy(win);
-            return 0;
-        }
-    }
-
-    // NOTE: original code is a bit different, the following chunk of code written two times.
-
-    fontSetCurrent(101);
-    blitBufferToBuffer(_editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getData(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getHeight(),
-        _editorFrmImages[EDITOR_GRAPHIC_NAME_BOX].getWidth(),
-        windowBuf + _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth() * 13 + 13,
-        _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
-
-    _PrintName(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
-
-    strcpy(nameCopy, name);
-
-    windowDestroy(win);
 
     return 0;
-}
-
-// 0x436F70 PrintName
-static void _PrintName(unsigned char* buf, int pitch)
-{
-    char str[64];
-    char* v4;
-
-    memcpy(str, byte_431D93, 64);
-
-    fontSetCurrent(101);
-
-    v4 = critterGetName(gDude);
-
-    // TODO: Check.
-    strcpy(str, v4);
-
-    fontDrawText(buf + 19 * pitch + 21, str, pitch, pitch, COLOR_GREEN);
 }
 
 // 0x436FEC AgeWindow
