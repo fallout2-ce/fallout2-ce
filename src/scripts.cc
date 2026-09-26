@@ -33,6 +33,7 @@
 #include "message.h"
 #include "object.h"
 #include "party_member.h"
+#include "pipboy.h"
 #include "platform_compat.h"
 #include "proto.h"
 #include "proto_instance.h"
@@ -3240,7 +3241,9 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
         return gErrorString;
     }
 
-    if (shouldStartSpeech) {
+    // Resting runs queued script events while time passes, so NPCs fire
+    // floats back to back. Show the text, but don't voice or bleep them.
+    if (shouldStartSpeech && !pipboyIsResting()) {
         if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
             if (messageListItem.flags & 0x01) {
                 soundPlayFile("censor");

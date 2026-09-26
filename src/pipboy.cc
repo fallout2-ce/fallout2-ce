@@ -457,6 +457,9 @@ void handlePipboyPageNavigation(
 
 static int gPipboyPrevTab;
 
+// Nesting depth of `pipboyRest` (it calls itself for the heal options).
+static int gPipboyRestDepth = 0;
+
 static int totalPages; // for tracking between pipboyWindowHandleAutomaps and _PrintAMelevList/_PrintAMList and others for pagination
 
 static int gPipboyWindowQuestsCurrentPageCount; // kludge for tracking number of buttons for 'status' page entries
@@ -577,6 +580,9 @@ int pipboyOpen(int intent)
             // CE: Save previous tab selected so that the underlying handlers
             // (alarm clock in particular) can fallback if something goes wrong.
             gPipboyPrevTab = gPipboyTab;
+
+            // Switching tabs leaves the holodisk, so stop its narration.
+            pipboySoundStop();
 
             gPipboyTab = keyCode - 500;
             _view_page_automap_main = 0; // ensures button click to automaps renders first page
@@ -1042,6 +1048,12 @@ int pipboyLoad(File* stream)
     return _save_pipboy(stream);
 }
 
+// True while the alarm clock is passing time.
+bool pipboyIsResting()
+{
+    return gPipboyRestDepth > 0;
+}
+
 int pipboyGetWindow()
 {
     return windowGetWindow(gPipboyWindow) != nullptr ? gPipboyWindow : -1;
@@ -1064,6 +1076,8 @@ static void pipboyWindowHandleStatus(int userInput)
 
         _holo_flag = 0;
         _holodisk = -1;
+        // Back to the holodisk list, so stop the narration.
+        pipboySoundStop();
         gPipboyWindowHolodisksCount = 0;
         _view_page = 0;
         _view_page_questlist = 0;
@@ -2284,6 +2298,11 @@ static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventT
 // 0x499A24
 static bool pipboyRest(int hours, int minutes, int duration)
 {
+    struct RestDepthGuard {
+        RestDepthGuard() { gPipboyRestDepth++; }
+        ~RestDepthGuard() { gPipboyRestDepth--; }
+    } restDepthGuard;
+
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
 
     bool rc = false;
