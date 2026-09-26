@@ -1345,18 +1345,17 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, CharacterSoundEffect soun
     }
 
     WeaponAnimation weaponAnimation;
-    switch(soundEffect)
-    {
-        case CharacterSoundEffect::KnockDown:
-            weaponAnimation = WeaponAnimation::Knife;
-        case CharacterSoundEffect::PassOut:
-            weaponAnimation = WeaponAnimation::Club;
-        case CharacterSoundEffect::Die:
-            weaponAnimation = WeaponAnimation::Hammer;
-        case CharacterSoundEffect::Contact:
-            weaponAnimation = WeaponAnimation::Spear;
-        default:
-            weaponAnimation = WeaponAnimation::None;
+    switch (soundEffect) {
+    case CharacterSoundEffect::KnockDown:
+        weaponAnimation = WeaponAnimation::Knife;
+    case CharacterSoundEffect::PassOut:
+        weaponAnimation = WeaponAnimation::Club;
+    case CharacterSoundEffect::Die:
+        weaponAnimation = WeaponAnimation::Hammer;
+    case CharacterSoundEffect::Contact:
+        weaponAnimation = WeaponAnimation::Spear;
+    default:
+        weaponAnimation = WeaponAnimation::None;
     }
 
     if (anim == ANIM_TAKE_OUT) {

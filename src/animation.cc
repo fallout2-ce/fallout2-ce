@@ -1250,18 +1250,17 @@ int animationRegisterSetFrmId(Object* owner, const FrmId& frmId, int delay)
 int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay)
 {
     CharacterSoundEffect soundEffect;
-    switch(weaponAnimationCode)
-    {
-        case WeaponAnimation::Knife:
-            soundEffect = CharacterSoundEffect::KnockDown;
-        case WeaponAnimation::Club:
-            soundEffect = CharacterSoundEffect::PassOut;
-        case WeaponAnimation::Hammer:
-            soundEffect = CharacterSoundEffect::Die;
-        case WeaponAnimation::Spear:
-            soundEffect = CharacterSoundEffect::Contact;
-        default:
-            soundEffect = CharacterSoundEffect::Unused;
+    switch (weaponAnimationCode) {
+    case WeaponAnimation::Knife:
+        soundEffect = CharacterSoundEffect::KnockDown;
+    case WeaponAnimation::Club:
+        soundEffect = CharacterSoundEffect::PassOut;
+    case WeaponAnimation::Hammer:
+        soundEffect = CharacterSoundEffect::Die;
+    case WeaponAnimation::Spear:
+        soundEffect = CharacterSoundEffect::Contact;
+    default:
+        soundEffect = CharacterSoundEffect::Unused;
     }
 
     const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, soundEffect);
