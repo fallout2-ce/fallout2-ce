@@ -11,7 +11,7 @@ namespace fallout {
 #define AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING 0x00000001
 #define AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING 0x00000004
 
-bool audioEngineInit();
+bool audioEngineInit(int soundBufferCount);
 void audioEngineExit();
 void audioEnginePause();
 void audioEngineResume();

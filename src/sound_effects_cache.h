@@ -5,10 +5,6 @@
 
 namespace fallout {
 
-// The maximum number of sound effects that can be loaded and played
-// simultaneously.
-#define SOUND_EFFECTS_MAX_COUNT (4)
-
 int soundEffectsCacheInit(int cache_size, const char* effectsPath);
 void soundEffectsCacheExit();
 int soundEffectsCacheInitialized();
