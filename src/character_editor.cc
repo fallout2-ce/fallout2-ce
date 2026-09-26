@@ -3183,30 +3183,10 @@ static int characterEditorEditName()
     if (newName.has_value()) {
         dudeSetName(newName->c_str());
         characterEditorDrawName();
-    } else {
-        unsigned char* windowBuf = windowGetBuffer(gCharacterEditorWindow);
-        _PrintName(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getWidth());
+        windowRefresh(gCharacterEditorWindow);
     }
 
     return 0;
-}
-
-// 0x436F70 PrintName
-static void _PrintName(unsigned char* buf, int pitch)
-{
-    char str[64];
-    char* v4;
-
-    memcpy(str, byte_431D93, 64);
-
-    fontSetCurrent(101);
-
-    v4 = critterGetName(gDude);
-
-    // TODO: Check.
-    strcpy(str, v4);
-
-    fontDrawText(buf + 19 * pitch + 21, str, pitch, pitch, COLOR_GREEN);
 }
 
 // 0x436FEC AgeWindow

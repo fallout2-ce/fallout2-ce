@@ -170,18 +170,22 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     int lineHeight = fontGetLineHeight();
     unsigned char* windowBuffer = windowGetBuffer(win);
 
-    if (maxLength > 255) {
-        maxLength = 255;
-    }
+    if (maxLength > 255) maxLength = 255;
 
     std::string copy = text + " ";
 
+    int lastDrawnWidth = fontGetStringWidth(copy.c_str());
+
     auto redrawText = [&]() {
-        bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(copy.c_str()), lineHeight, windowWidth, backgroundColor);
+        int newWidth = fontGetStringWidth(copy.c_str());
+        int clearWidth = std::max(lastDrawnWidth, newWidth);
+
+        bufferFill(windowBuffer + windowWidth * y + x, clearWidth, lineHeight, windowWidth, backgroundColor);
         fontDrawText(windowBuffer + windowWidth * y + x, copy.c_str(), windowWidth, windowWidth, textColor);
         windowRefresh(win);
-    };
 
+        lastDrawnWidth = newWidth;
+    };
     redrawText();
 
     beginTextInput();
@@ -211,10 +215,8 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
             }
             // Input
             else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
-                if ((flags & 0x01) != 0) {
-                    if (!_isdoschar(keyCode)) {
-                        break;
-                    }
+                if ((flags & 0x01) != 0 && !_isdoschar(keyCode)) {
+                    continue;
                 }
 
                 text.push_back(static_cast<char>(keyCode & 0xFF));
@@ -236,10 +238,7 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
         windowRefresh(win);
 
-        int elapsed = getTicks() - frameTime;
-        if (elapsed < (1000 / 24)) {
-            delay_ms((1000 / 24) - elapsed);
-        }
+        delay_ms(1000 / 24 - (getTicks() - frameTime));
 
         renderPresent();
         sharedFpsLimiter.throttle();
