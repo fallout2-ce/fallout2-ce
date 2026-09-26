@@ -3229,7 +3229,7 @@ static int _combat_input()
         sharedFpsLimiter.throttle();
     }
 
-    int v4 = _game_user_wants_to_quit;
+    GameQuitRequest gameQuitRequest = _game_user_wants_to_quit;
     if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     }
@@ -3239,7 +3239,7 @@ static int _combat_input()
         return -1;
     }
 
-    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || v4 != GAME_QUIT_REQUEST_NONE || _combat_end_due_to_load != 0) {
+    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || gameQuitRequest != GAME_QUIT_REQUEST_NONE || _combat_end_due_to_load != 0) {
         return -1;
     }
 

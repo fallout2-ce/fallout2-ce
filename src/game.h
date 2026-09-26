@@ -17,12 +17,12 @@ enum class GameState : int {
     DialogRequested,
 };
 
-typedef enum GameQuitRequest {
+enum GameQuitRequest : int {
     GAME_QUIT_REQUEST_NONE = 0,
     GAME_QUIT_REQUEST_END_COMBAT = 1,
     GAME_QUIT_REQUEST_MAIN_MENU = 2,
     GAME_QUIT_REQUEST_EXIT = 3,
-} GameQuitRequest;
+};
 
 extern int* gGameGlobalVars;
 extern int gGameGlobalVarsLength;
