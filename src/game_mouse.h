@@ -23,7 +23,8 @@ enum GameMouseMode : int {
     GAME_MOUSE_MODE_SKILL_COUNT = GAME_MOUSE_MODE_COUNT - FIRST_GAME_MOUSE_MODE_SKILL,
 };
 
-typedef enum GameMouseActionMenuItem {
+enum GameMouseActionMenuItem : int {
+    GAME_MOUSE_ACTION_MENU_ITEM_INVALID = -1,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL = 0,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP = 1,
     GAME_MOUSE_ACTION_MENU_ITEM_INVENTORY = 2,
@@ -35,7 +36,7 @@ typedef enum GameMouseActionMenuItem {
     GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL = 8,
     GAME_MOUSE_ACTION_MENU_ITEM_PUSH = 9,
     GAME_MOUSE_ACTION_MENU_ITEM_COUNT,
-} GameMouseActionMenuItem;
+};
 
 typedef enum MouseCursorType {
     MOUSE_CURSOR_NONE,
@@ -99,9 +100,9 @@ void gameMouseResetBouncingCursorFrmId();
 void gameMouseObjectsShow();
 void gameMouseObjectsHide();
 bool gameMouseObjectsIsVisible();
-int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height);
+int gameMouseRenderPrimaryAction(int x, int y, GameMouseActionMenuItem menuItem, int width, int height);
 int _gmouse_3d_pick_frame_hot(int* x, int* y);
-int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuItemsCount, int width, int height);
+int gameMouseRenderActionMenuItems(int x, int y, const GameMouseActionMenuItem* menuItems, int menuItemsCount, int width, int height);
 int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex);
 void gameMouseLoadItemHighlight();
 void _gmouse_remove_item_outline(Object* object);

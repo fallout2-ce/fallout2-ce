@@ -707,7 +707,7 @@ void gameMouseRefresh()
 
                 Object* pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
                 if (pointedObject != nullptr) {
-                    int primaryAction = -1;
+                    GameMouseActionMenuItem primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_INVALID;
                     ObjectType objectType = FrmId(pointedObject).objectType();
                     switch (objectType) {
                     case OBJ_TYPE_SCENERY:
@@ -776,7 +776,7 @@ void gameMouseRefresh()
                         break;
                     }
 
-                    if (primaryAction != -1) {
+                    if (primaryAction != GAME_MOUSE_ACTION_MENU_ITEM_INVALID) {
                         if (gameMouseRenderPrimaryAction(mouseX, mouseY, primaryAction, _scr_size.right - _scr_size.left + 1, _scr_size.bottom - _scr_size.top - 99) == 0) {
                             Rect tmp;
                             // NOTE: Uninline.
@@ -1147,7 +1147,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
-            int actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
+            GameMouseActionMenuItem actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
             switch (FrmId(targetObj).objectType()) {
             case OBJ_TYPE_ITEM:
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
@@ -1222,7 +1222,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         inputGetInput();
 
                         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                            actionMenuItems[actionIndex] = 0;
+                            actionMenuItems[actionIndex] = GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;
                         }
 
                         int updatedMouseX;
@@ -1747,7 +1747,7 @@ Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, i
 }
 
 // 0x44CFA0 gmouse_3d_build_pick_frame
-int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height)
+int gameMouseRenderPrimaryAction(int x, int y, GameMouseActionMenuItem menuItem, int width, int height)
 {
     CacheEntry* menuItemFrmHandle;
     const FrmId menuItemFrmId = kGameMouseActionMenuItemFrmIds[menuItem][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL];
@@ -1865,7 +1865,7 @@ int _gmouse_3d_pick_frame_hot(int* x, int* y)
 }
 
 // 0x44D214 gmouse_3d_build_menu_frame
-int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuItemsLength, int width, int height)
+int gameMouseRenderActionMenuItems(int x, int y, const GameMouseActionMenuItem* menuItems, int menuItemsLength, int width, int height)
 {
     _gmouse_3d_menu_actions_start = nullptr;
     gGameMouseActionMenuHighlightedItemIndex = 0;
