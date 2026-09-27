@@ -149,15 +149,15 @@ static const AttackType _attack_subtype[9] = {
 
 // 0x5191CC drugInfoList
 static DrugDescription gDrugDescriptions[ADDICTION_COUNT] = {
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_NUKA_COLA).pid(), GVAR_NUKA_COLA_ADDICT, 0 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_BUFF_OUT).pid(), GVAR_BUFF_OUT_ADDICT, 4 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_MENTATS).pid(), GVAR_MENTATS_ADDICT, 4 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_PSYCHO).pid(), GVAR_PSYCHO_ADDICT, 4 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_RADAWAY).pid(), GVAR_RADAWAY_ADDICT, 0 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_BEER).pid(), GVAR_ALCOHOL_ADDICT, 0 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_BOOZE).pid(), GVAR_ALCOHOL_ADDICT, 0 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_JET).pid(), GVAR_ADDICT_JET, 4 },
-    { ProtoTypeId(ItemProtoTypeId::PROTO_ID_DECK_OF_TRAGIC_CARDS).pid(), GVAR_ADDICT_TRAGIC, 0 },
+    { ProtoTypeId(ItemProtoTypeId::NukaCola).pid(), GVAR_NUKA_COLA_ADDICT, 0 },
+    { ProtoTypeId(ItemProtoTypeId::Buffout).pid(), GVAR_BUFF_OUT_ADDICT, 4 },
+    { ProtoTypeId(ItemProtoTypeId::Mentats).pid(), GVAR_MENTATS_ADDICT, 4 },
+    { ProtoTypeId(ItemProtoTypeId::Psycho).pid(), GVAR_PSYCHO_ADDICT, 4 },
+    { ProtoTypeId(ItemProtoTypeId::Radaway).pid(), GVAR_RADAWAY_ADDICT, 0 },
+    { ProtoTypeId(ItemProtoTypeId::Beer).pid(), GVAR_ALCOHOL_ADDICT, 0 },
+    { ProtoTypeId(ItemProtoTypeId::Booze).pid(), GVAR_ALCOHOL_ADDICT, 0 },
+    { ProtoTypeId(ItemProtoTypeId::Jet).pid(), GVAR_ADDICT_JET, 4 },
+    { ProtoTypeId(ItemProtoTypeId::DeckOfTragicCards).pid(), GVAR_ADDICT_TRAGIC, 0 },
 };
 
 // 0x519238 name_item
@@ -364,7 +364,7 @@ int itemAdd(Object* owner, Object* itemToAdd, int quantity)
         inventory->items[inventory->length].item = itemToAdd;
         inventory->items[inventory->length].quantity = quantity;
 
-        if (ProtoTypeId(itemToAdd) == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+        if (ProtoTypeId(itemToAdd) == ItemProtoTypeId::ActivatedStealthBoy) {
             if ((itemToAdd->flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
                 // NOTE: Uninline.
                 stealthBoyTurnOn(owner);
@@ -479,7 +479,7 @@ static int itemRemoveInternal(Object* owner, Object* itemToRemove, int quantity,
         }
     }
 
-    if (ProtoTypeId(itemToRemove) == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I || ProtoTypeId(itemToRemove) == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+    if (ProtoTypeId(itemToRemove) == ItemProtoTypeId::StealthBoy || ProtoTypeId(itemToRemove) == ItemProtoTypeId::ActivatedStealthBoy) {
         if (itemToRemove == item1 || itemToRemove == item2) {
             Object* owner = objectGetOwner(itemToRemove);
             if (owner != nullptr) {
@@ -611,7 +611,7 @@ int itemDropAll(Object* critter, int tile)
     while (inventory->length > 0) {
         InventoryItem* inventoryItem = &(inventory->items[0]);
         Object* item = inventoryItem->item;
-        if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY) {
+        if (ProtoTypeId(item) == ItemProtoTypeId::Money) {
             int quantity = inventoryItem->quantity;
             if (itemRemove(critter, item, quantity) != 0) {
                 return -1;
@@ -739,7 +739,7 @@ static bool _item_identical(Object* item1, Object* item2)
     }
 
     int item2Quantity;
-    if (proto->item.type == ITEM_TYPE_AMMO || ProtoTypeId(item1) == ItemProtoTypeId::PROTO_ID_MONEY) {
+    if (proto->item.type == ITEM_TYPE_AMMO || ProtoTypeId(item1) == ItemProtoTypeId::Money) {
         item2Quantity = item2->data.item.ammo.quantity;
         item2->data.item.ammo.quantity = item1->data.item.ammo.quantity;
     }
@@ -750,7 +750,7 @@ static bool _item_identical(Object* item1, Object* item2)
     // should be safe to check only the item-specific data.
     bool same = sameFlags && memcmp(&(item1->data.item), &(item2->data.item), sizeof(ItemObjectData)) == 0;
 
-    if (proto->item.type == ITEM_TYPE_AMMO || ProtoTypeId(item1) == ItemProtoTypeId::PROTO_ID_MONEY) {
+    if (proto->item.type == ITEM_TYPE_AMMO || ProtoTypeId(item1) == ItemProtoTypeId::Money) {
         item2->data.item.ammo.quantity = item2Quantity;
     }
 
@@ -781,7 +781,7 @@ ItemType itemGetType(Object* item)
         return ITEM_TYPE_MISC;
     }
 
-    if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_SHIV) {
+    if (ProtoTypeId(item) == ItemProtoTypeId::Shiv) {
         return ITEM_TYPE_MISC;
     }
 
@@ -834,10 +834,10 @@ int itemGetWeight(Object* item)
     ItemType itemType = proto->item.type;
     if (itemType == ITEM_TYPE_ARMOR) {
         switch (ProtoTypeId(proto).protoId().item) {
-        case ItemProtoTypeId::PROTO_ID_POWER_ARMOR:
-        case ItemProtoTypeId::PROTO_ID_HARDENED_POWER_ARMOR:
-        case ItemProtoTypeId::PROTO_ID_ADVANCED_POWER_ARMOR:
-        case ItemProtoTypeId::PROTO_ID_ADVANCED_POWER_ARMOR_MK_II:
+        case ItemProtoTypeId::PowerArmor:
+        case ItemProtoTypeId::HardenedPowerArmor:
+        case ItemProtoTypeId::AdvancedPowerArmor:
+        case ItemProtoTypeId::AdvancedPowerArmorMkII:
             weight /= 2;
             break;
         default:
@@ -1523,7 +1523,7 @@ int weaponAttemptReload(Object* critter, Object* weapon)
         return -1;
     }
 
-    if (ProtoTypeId(weapon) != ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoTypeId(weapon) != ItemProtoTypeId::SolarScorcher) {
         int inventoryItemIndex = -1;
         for (;;) {
             Object* ammo = inventoryFindByType(critter, ITEM_TYPE_AMMO, &inventoryItemIndex);
@@ -1583,7 +1583,7 @@ static bool weaponCanBeReloadedWithInternal(Object* weapon, Object* ammo, bool a
         return false;
     }
 
-    if (ProtoTypeId(weapon) == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
         // Check light level to recharge solar scorcher.
         if (lightGetAmbientIntensity() > LIGHT_INTENSITY_MAX * 0.95) {
             return true;
@@ -1659,7 +1659,7 @@ int weaponReload(Object* weapon, Object* ammo)
     // NOTE: Uninline.
     int ammoCapacity = ammoGetCapacity(weapon);
 
-    if (ProtoTypeId(weapon) == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
         ammoSetQuantity(weapon, ammoCapacity);
         return 0;
     }
@@ -1750,7 +1750,7 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
             protoGetProto(weapon->pid, &proto);
             if (proto->item.data.weapon.perk == PERK_WEAPON_FAST_RELOAD) {
                 actionPoints = 1;
-            } else if (ProtoTypeId(weapon) == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+            } else if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
                 actionPoints = 0;
             } else {
                 actionPoints = 2;
@@ -1993,7 +1993,7 @@ int weaponCanBeUnloaded(Object* weapon)
         return false;
     }
 
-    if (ProtoTypeId(weapon) == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
         return false;
     }
 
@@ -2083,7 +2083,7 @@ int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
     }
 
     const ProtoTypeId protoId = ProtoTypeId(obj);
-    if (protoId == ItemProtoTypeId::PROTO_ID_SUPER_CATTLE_PROD || protoId == ItemProtoTypeId::PROTO_ID_MEGA_POWER_FIST) {
+    if (protoId == ItemProtoTypeId::SuperCattleProd || protoId == ItemProtoTypeId::MegaPowerFist) {
         *ammoQty *= 2;
     }
 
@@ -2429,10 +2429,10 @@ bool miscItemUsesCharges(Object* miscItem)
 UseItemResultCode miscItemUseCharged(Object* critter, Object* miscItem)
 {
     const ProtoTypeId miscItemProtoId = ProtoTypeId(miscItem);
-    if (miscItemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I
-        || miscItemProtoId == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_I
-        || miscItemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II
-        || miscItemProtoId == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_II) {
+    if (miscItemProtoId == ItemProtoTypeId::StealthBoy
+        || miscItemProtoId == ItemProtoTypeId::GeigerCounter
+        || miscItemProtoId == ItemProtoTypeId::ActivatedStealthBoy
+        || miscItemProtoId == ItemProtoTypeId::ActivatedGeigerCounter) {
         // NOTE: Uninline.
         bool isOn = miscItemIsOn(miscItem);
 
@@ -2441,7 +2441,7 @@ UseItemResultCode miscItemUseCharged(Object* critter, Object* miscItem)
         } else {
             miscItemTurnOn(miscItem);
         }
-    } else if (miscItemProtoId == ItemProtoTypeId::PROTO_ID_MOTION_SENSOR) {
+    } else if (miscItemProtoId == ItemProtoTypeId::MotionSensor) {
         // NOTE: Uninline.
         if (miscItemConsumeCharge(miscItem) == 0) {
             automapShow(true, true);
@@ -2483,7 +2483,7 @@ int miscItemTrickleEventProcess(Object* item, void* data)
     if (miscItemConsumeCharge(item) == 0) {
         int delay;
         const ProtoTypeId itemProtoId = ProtoTypeId(item);
-        if (itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I || itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+        if (itemProtoId == ItemProtoTypeId::StealthBoy || itemProtoId == ItemProtoTypeId::ActivatedStealthBoy) {
             delay = 600;
         } else {
             delay = 3000;
@@ -2557,9 +2557,9 @@ int miscItemTurnOn(Object* item)
     }
 
     ProtoTypeId itemProtoId = ProtoTypeId(item);
-    if (itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I || itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+    if (itemProtoId == ItemProtoTypeId::StealthBoy || itemProtoId == ItemProtoTypeId::ActivatedStealthBoy) {
         queueAddEvent(600, item, nullptr, EVENT_TYPE_ITEM_TRICKLE);
-        itemProtoId = ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II;
+        itemProtoId = ItemProtoTypeId::ActivatedStealthBoy;
 
         if (critter != nullptr) {
             // NOTE: Uninline.
@@ -2567,7 +2567,7 @@ int miscItemTurnOn(Object* item)
         }
     } else {
         queueAddEvent(3000, item, nullptr, EVENT_TYPE_ITEM_TRICKLE);
-        itemProtoId = ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_II;
+        itemProtoId = ItemProtoTypeId::ActivatedGeigerCounter;
     }
 
     item->pid = itemProtoId.pid();
@@ -2581,7 +2581,7 @@ int miscItemTurnOn(Object* item)
             displayMonitorAddMessage(text);
         }
 
-        if (itemProtoId == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_II) {
+        if (itemProtoId == ItemProtoTypeId::ActivatedGeigerCounter) {
             // You pass the Geiger counter over you body. The rem counter reads: %d
             messageListItem.num = 8;
             if (messageListGetItem(&gItemsMessageList, &messageListItem)) {
@@ -2605,14 +2605,14 @@ int miscItemTurnOff(Object* item)
     queueRemoveEventsByType(item, EVENT_TYPE_ITEM_TRICKLE);
 
     ProtoTypeId itemProtoId = ProtoTypeId(item);
-    if (owner != nullptr && itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+    if (owner != nullptr && itemProtoId == ItemProtoTypeId::ActivatedStealthBoy) {
         stealthBoyTurnOff(owner, item);
     }
 
-    if (itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I || itemProtoId == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
-        itemProtoId = ItemProtoTypeId::PROTO_ID_STEALTH_BOY_I;
+    if (itemProtoId == ItemProtoTypeId::StealthBoy || itemProtoId == ItemProtoTypeId::ActivatedStealthBoy) {
+        itemProtoId = ItemProtoTypeId::StealthBoy;
     } else {
-        itemProtoId = ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_I;
+        itemProtoId = ItemProtoTypeId::GeigerCounter;
     }
 
     item->pid = itemProtoId.pid();
@@ -2665,12 +2665,12 @@ static int stealthBoyTurnOn(Object* object)
 static int stealthBoyTurnOff(Object* critter, Object* item)
 {
     Object* item1 = critterGetItem1(critter);
-    if (item1 != nullptr && item1 != item && ProtoTypeId(item1) == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+    if (item1 != nullptr && item1 != item && ProtoTypeId(item1) == ItemProtoTypeId::ActivatedStealthBoy) {
         return -1;
     }
 
     Object* item2 = critterGetItem2(critter);
-    if (item2 != nullptr && item2 != item && ProtoTypeId(item2) == ItemProtoTypeId::PROTO_ID_STEALTH_BOY_II) {
+    if (item2 != nullptr && item2 != item && ProtoTypeId(item2) == ItemProtoTypeId::ActivatedStealthBoy) {
         return -1;
     }
 
@@ -2982,11 +2982,11 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
     Proto* proto;
     protoGetProto(item->pid, &proto);
 
-    if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_JET_ANTIDOTE) {
-        WithdrawalEvent* withdrawalEvent = withdrawalGetEvent(critter, ProtoTypeId(ItemProtoTypeId::PROTO_ID_JET).pid());
+    if (ProtoTypeId(item) == ItemProtoTypeId::JetAntidote) {
+        WithdrawalEvent* withdrawalEvent = withdrawalGetEvent(critter, ProtoTypeId(ItemProtoTypeId::Jet).pid());
         bool isLegacyDudeAddiction = critter == gDude
             && withdrawalEvent == nullptr
-            && dudeIsAddicted(ProtoTypeId(ItemProtoTypeId::PROTO_ID_JET).pid());
+            && dudeIsAddicted(ProtoTypeId(ItemProtoTypeId::Jet).pid());
 
         if (withdrawalEvent != nullptr || isLegacyDudeAddiction) {
             if (withdrawalEvent == nullptr || !withdrawalEvent->active) {
@@ -3000,7 +3000,7 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
 
             if (critter == gDude) {
                 // NOTE: Uninline.
-                dudeClearAddiction(ProtoTypeId(ItemProtoTypeId::PROTO_ID_JET).pid());
+                dudeClearAddiction(ProtoTypeId(ItemProtoTypeId::Jet).pid());
             }
 
             // SFALL: Fix for Jet antidote not being removed.
@@ -3203,7 +3203,7 @@ static int itemClearJetWithdrawal(Object* obj, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
 
-    return obj == _wd_obj && ProtoTypeId(withdrawalEvent->pid) == ItemProtoTypeId::PROTO_ID_JET;
+    return obj == _wd_obj && ProtoTypeId(withdrawalEvent->pid) == ItemProtoTypeId::Jet;
 }
 
 // 0x47A384
@@ -3399,7 +3399,7 @@ int itemGetTotalCaps(Object* obj)
         InventoryItem* inventoryItem = &(inventory->items[i]);
         Object* item = inventoryItem->item;
 
-        if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY) {
+        if (ProtoTypeId(item) == ItemProtoTypeId::Money) {
             amount += inventoryItem->quantity;
         } else {
             if (itemGetType(item) == ITEM_TYPE_CONTAINER) {
@@ -3427,7 +3427,7 @@ int itemCapsAdjust(Object* obj, int amount)
         for (int index = 0; index < inventory->length && amount != 0; index++) {
             InventoryItem* inventoryItem = &(inventory->items[index]);
             Object* item = inventoryItem->item;
-            if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY) {
+            if (ProtoTypeId(item) == ItemProtoTypeId::Money) {
                 if (amount <= 0 && -amount >= inventoryItem->quantity) {
                     objectDestroy(item, nullptr);
 
@@ -3473,7 +3473,7 @@ int itemCapsAdjust(Object* obj, int amount)
     }
 
     Object* item;
-    if (objectCreateWithPid(&item, ProtoTypeId(ItemProtoTypeId::PROTO_ID_MONEY).pid()) == 0) {
+    if (objectCreateWithPid(&item, ProtoTypeId(ItemProtoTypeId::Money).pid()) == 0) {
         _obj_disconnect(item, nullptr);
         if (itemAdd(obj, item, amount) != 0) {
             objectDestroy(item, nullptr);
@@ -3487,7 +3487,7 @@ int itemCapsAdjust(Object* obj, int amount)
 // 0x47A8C8
 int itemGetMoney(Object* item)
 {
-    if (ProtoTypeId(item) != ItemProtoTypeId::PROTO_ID_MONEY) {
+    if (ProtoTypeId(item) != ItemProtoTypeId::Money) {
         return -1;
     }
 
@@ -3497,7 +3497,7 @@ int itemGetMoney(Object* item)
 // 0x47A8D8
 int itemSetMoney(Object* item, int amount)
 {
-    if (ProtoTypeId(item) != ItemProtoTypeId::PROTO_ID_MONEY) {
+    if (ProtoTypeId(item) != ItemProtoTypeId::Money) {
         return -1;
     }
 
@@ -3520,19 +3520,19 @@ static void booksExit()
 static void booksInitVanilla()
 {
     // 802: You learn new science information.
-    booksAdd(ProtoTypeId(ItemProtoTypeId::PROTO_ID_BIG_BOOK_OF_SCIENCE).pid(), 802, SKILL_SCIENCE);
+    booksAdd(ProtoTypeId(ItemProtoTypeId::BigBookOfScience).pid(), 802, SKILL_SCIENCE);
 
     // 803: You learn a lot about repairing broken electronics.
-    booksAdd(ProtoTypeId(ItemProtoTypeId::PROTO_ID_DEANS_ELECTRONICS).pid(), 803, SKILL_REPAIR);
+    booksAdd(ProtoTypeId(ItemProtoTypeId::DeansElectronics).pid(), 803, SKILL_REPAIR);
 
     // 804: You learn new ways to heal injury.
-    booksAdd(ProtoTypeId(ItemProtoTypeId::PROTO_ID_FIRST_AID_BOOK).pid(), 804, SKILL_FIRST_AID);
+    booksAdd(ProtoTypeId(ItemProtoTypeId::FirstAidBook).pid(), 804, SKILL_FIRST_AID);
 
     // 805: You learn how to handle your guns better.
-    booksAdd(ProtoTypeId(ItemProtoTypeId::PROTO_ID_GUNS_AND_BULLETS).pid(), 805, SKILL_SMALL_GUNS);
+    booksAdd(ProtoTypeId(ItemProtoTypeId::GunsAndBullets).pid(), 805, SKILL_SMALL_GUNS);
 
     // 806: You learn a lot about wilderness survival.
-    booksAdd(ProtoTypeId(ItemProtoTypeId::PROTO_ID_SCOUT_HANDBOOK).pid(), 806, SKILL_OUTDOORSMAN);
+    booksAdd(ProtoTypeId(ItemProtoTypeId::ScoutHandBook).pid(), 806, SKILL_OUTDOORSMAN);
 }
 
 static void booksInitCustom()
@@ -3664,8 +3664,8 @@ void explosiveAdd(int pid, int activePid, int minDamage, int maxDamage)
 bool explosiveIsExplosive(int pid)
 {
     const ProtoTypeId protoId = ProtoTypeId(pid);
-    if (protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_I) return true;
-    if (protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_I) return true;
+    if (protoId == ItemProtoTypeId::Dynamite) return true;
+    if (protoId == ItemProtoTypeId::PlasticExplosives) return true;
 
     for (const auto& explosive : gExplosives) {
         if (ProtoTypeId(explosive.pid) == protoId) return true;
@@ -3677,8 +3677,8 @@ bool explosiveIsExplosive(int pid)
 bool explosiveIsActiveExplosive(int pid)
 {
     const ProtoTypeId protoId = ProtoTypeId(pid);
-    if (protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_II) return true;
-    if (protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_II) return true;
+    if (protoId == ItemProtoTypeId::ArmedDynamite) return true;
+    if (protoId == ItemProtoTypeId::ArmedPlasticExplosives) return true;
 
     for (const auto& explosive : gExplosives) {
         if (ProtoTypeId(explosive.activePid) == protoId) return true;
@@ -3690,13 +3690,13 @@ bool explosiveIsActiveExplosive(int pid)
 bool explosiveActivate(int* pidPtr)
 {
     const ProtoTypeId protoId = ProtoTypeId(*pidPtr);
-    if (protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_I) {
-        *pidPtr = ProtoTypeId(ItemProtoTypeId::PROTO_ID_DYNAMITE_II).pid();
+    if (protoId == ItemProtoTypeId::Dynamite) {
+        *pidPtr = ProtoTypeId(ItemProtoTypeId::ArmedDynamite).pid();
         return true;
     }
 
-    if (protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_I) {
-        *pidPtr = ProtoTypeId(ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_II).pid();
+    if (protoId == ItemProtoTypeId::PlasticExplosives) {
+        *pidPtr = ProtoTypeId(ItemProtoTypeId::ArmedPlasticExplosives).pid();
         return true;
     }
 
@@ -3713,13 +3713,13 @@ bool explosiveActivate(int* pidPtr)
 bool explosiveSetDamage(int pid, int minDamage, int maxDamage)
 {
     const ProtoTypeId protoId = ProtoTypeId(pid);
-    if (protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_I) {
+    if (protoId == ItemProtoTypeId::Dynamite) {
         gDynamiteMinDamage = minDamage;
         gDynamiteMaxDamage = maxDamage;
         return true;
     }
 
-    if (protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_I) {
+    if (protoId == ItemProtoTypeId::PlasticExplosives) {
         gPlasticExplosiveMinDamage = minDamage;
         gPlasticExplosiveMaxDamage = maxDamage;
         return true;
@@ -3735,13 +3735,13 @@ bool explosiveSetDamage(int pid, int minDamage, int maxDamage)
 bool explosiveGetDamage(int pid, int* minDamagePtr, int* maxDamagePtr)
 {
     const ProtoTypeId protoId = ProtoTypeId(pid);
-    if (protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_I || protoId == ItemProtoTypeId::PROTO_ID_DYNAMITE_II) {
+    if (protoId == ItemProtoTypeId::Dynamite || protoId == ItemProtoTypeId::ArmedDynamite) {
         *minDamagePtr = gDynamiteMinDamage;
         *maxDamagePtr = gDynamiteMaxDamage;
         return true;
     }
 
-    if (protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_I || protoId == ItemProtoTypeId::PROTO_ID_PLASTIC_EXPLOSIVES_II) {
+    if (protoId == ItemProtoTypeId::PlasticExplosives || protoId == ItemProtoTypeId::ArmedPlasticExplosives) {
         *minDamagePtr = gPlasticExplosiveMinDamage;
         *maxDamagePtr = gPlasticExplosiveMaxDamage;
         return true;
@@ -3817,9 +3817,9 @@ void explosionSetMaxTargets(int maxTargets)
 
 static void healingItemsInit()
 {
-    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "stimpak", &gHealingItemPids[HEALING_ITEM_STIMPAK], ProtoTypeId(ItemProtoTypeId::PROTO_ID_STIMPAK).pid());
-    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "super_stimpak", &gHealingItemPids[HEALING_ITEM_SUPER_STIMPAK], ProtoTypeId(ItemProtoTypeId::PROTO_ID_SUPER_STIMPAK).pid());
-    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "healing_powder", &gHealingItemPids[HEALING_ITEM_HEALING_POWDER], ProtoTypeId(ItemProtoTypeId::PROTO_ID_HEALING_POWDER).pid());
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "stimpak", &gHealingItemPids[HEALING_ITEM_STIMPAK], ProtoTypeId(ItemProtoTypeId::Stimpak).pid());
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "super_stimpak", &gHealingItemPids[HEALING_ITEM_SUPER_STIMPAK], ProtoTypeId(ItemProtoTypeId::SuperStimpak).pid());
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "healing_powder", &gHealingItemPids[HEALING_ITEM_HEALING_POWDER], ProtoTypeId(ItemProtoTypeId::HealingPowder).pid());
 }
 
 bool itemIsHealing(int pid)

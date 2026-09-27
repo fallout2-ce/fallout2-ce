@@ -3926,7 +3926,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (equippedItem != nullptr) {
             equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
-            if (ProtoTypeId(equippedItem) == ItemProtoTypeId::PROTO_ID_LIT_FLARE) {
+            if (ProtoTypeId(equippedItem) == ItemProtoTypeId::LitFlare) {
                 int lightIntensity;
                 int lightDistance;
                 if (critter == gDude) {
@@ -3946,7 +3946,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             }
         }
 
-        if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_LIT_FLARE) {
+        if (ProtoTypeId(item) == ItemProtoTypeId::LitFlare) {
             int lightDistance = item->lightDistance;
             if (lightDistance < critter->lightDistance) {
                 lightDistance = critter->lightDistance;
@@ -4581,7 +4581,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             *itemSlot = nullptr;
         }
 
-        if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY) {
+        if (ProtoTypeId(item) == ItemProtoTypeId::Money) {
             if (quantity > 1) {
                 quantity = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
             } else {
@@ -4769,7 +4769,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoTypeId(ItemProtoTypeId::PROTO_ID_JESSE_CONTAINER).pid()) == -1) {
+    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoTypeId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
         return 0;
     }
     CritterEquipped stealTargetEquipped {};
@@ -5372,7 +5372,7 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
             badOffer = true;
         } else {
             if (itemIsQueued(offerTable)) {
-                if (ProtoTypeId(offerTable) != ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_I || miscItemTurnOff(offerTable) == -1) {
+                if (ProtoTypeId(offerTable) != ItemProtoTypeId::GeigerCounter || miscItemTurnOff(offerTable) == -1) {
                     badOffer = true;
                 }
             }
@@ -5407,7 +5407,7 @@ static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer
     }
 
     int suggestedValue = 1;
-    if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY && !gGameDialogSpeakerIsPartyMember) {
+    if (ProtoTypeId(item) == ItemProtoTypeId::Money && !gGameDialogSpeakerIsPartyMember) {
         // Calculate change money automatically
         auto [totalCostNpc, totalCostPlayer] = barterComputeTablesValue(gDude, _target_stack[0]);
         // Actor's balance: negative - the actor must add money to balance the tables and vice versa
@@ -5705,7 +5705,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoTypeId(ItemProtoTypeId::PROTO_ID_JESSE_CONTAINER).pid()) == -1) {
+    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoTypeId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
         return;
     }
 
@@ -6139,7 +6139,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
-    if (ProtoTypeId(weapon) == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
