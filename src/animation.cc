@@ -1248,11 +1248,9 @@ int animationRegisterSetFrmId(Object* owner, const FrmId& frmId, int delay)
 
 // 0x415238
 int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay)
-{ 
+{
     // weapon animation and character sound effect is being mishmashed together within code
-    CharacterSoundEffect soundEffect = weaponAnimationIsValid(weaponAnimationCode) ? 
-        static_cast<CharacterSoundEffect>(weaponAnimationCode) : 
-        CharacterSoundEffect::Unused;
+    CharacterSoundEffect soundEffect = weaponAnimationIsValid(weaponAnimationCode) ? static_cast<CharacterSoundEffect>(weaponAnimationCode) : CharacterSoundEffect::Unused;
 
     const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, soundEffect);
     if (animationRegisterPlaySoundEffect(owner, sfx, delay) == -1) {

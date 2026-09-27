@@ -1345,9 +1345,7 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, CharacterSoundEffect soun
     }
 
     // weapon animation and character sound effect is being mishmashed together within code
-    WeaponAnimation weaponAnimation = weaponAnimationIsValid(static_cast<int>(soundEffect)) ? 
-        static_cast<WeaponAnimation>(soundEffect) : 
-        WeaponAnimation::None;
+    WeaponAnimation weaponAnimation = weaponAnimationIsValid(static_cast<int>(soundEffect)) ? static_cast<WeaponAnimation>(soundEffect) : WeaponAnimation::None;
 
     if (anim == ANIM_TAKE_OUT) {
         if (_art_get_code(anim, weaponAnimation, &weaponCode, &animationCode) == -1) {
