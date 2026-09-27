@@ -43,7 +43,7 @@
 namespace fallout {
 
 enum ScrollableDirections : int {
-    SCROLLABEL_NONE = 0x00,
+    SCROLLABLE_NONE = 0x00,
     SCROLLABLE_W = 0x01,
     SCROLLABLE_E = 0x02,
     SCROLLABLE_N = 0x04,
@@ -2577,7 +2577,7 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
         return -1;
     }
 
-    ScrollableDirections flags = SCROLLABEL_NONE;
+    ScrollableDirections flags = SCROLLABLE_NONE;
 
     if (x <= _scr_size.left) {
         flags = flags | SCROLLABLE_W;
