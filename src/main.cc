@@ -58,6 +58,7 @@ static void mainHandleDevEndgameRequests();
 static void mainRequestDevEndgameIfNeeded();
 static void mainRunDevEndgameMovieIfNeeded();
 static void mainLoop();
+static void mainRunGameLoopAndCleanup();
 static void showDeath();
 static void _main_death_voiceover_callback();
 static int _mainDeathGrabTextFile(const char* fileName, char* dest);
@@ -108,7 +109,9 @@ int falloutMain(int argc, char** argv)
         bool done = false;
         while (!done) {
             keyboardReset();
-            _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
+            if (!backgoundSoundIsPlaying()) {
+                _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
+            }
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
@@ -128,10 +131,11 @@ int falloutMain(int argc, char** argv)
                 gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_STOP_MUSIC);
                 gameMoviePlay(MOVIE_CREDITS, 0);
                 break;
-            case MAIN_MENU_NEW_GAME:
-                mainMenuWindowHide(true);
-                mainMenuWindowFree();
+            case MAIN_MENU_NEW_GAME: {
+                mainMenuBeginSubscreen();
                 if (characterSelectorOpen() == 2) {
+                    mainMenuFinishSubscreen();
+
                     gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
                     randomSeedPrerandom(-1);
 
@@ -153,64 +157,40 @@ int falloutMain(int argc, char** argv)
                     sfallOnAfterGameStarted();
                     gGameLoaded = true;
 
-                    mainHandleDevEndgameRequests();
-                    mainLoop();
-                    paletteFadeTo(gPaletteWhite);
-
-                    // NOTE: Uninline.
-                    main_unload_new();
-
-                    // NOTE: Uninline.
-                    main_reset_system();
-
-                    if (_main_show_death_scene != 0) {
-                        showDeath();
-                        _main_show_death_scene = 0;
-                    }
-                }
-
-                mainMenuWindowInit();
-
-                break;
-            case MAIN_MENU_LOAD_GAME:
-                if (1) {
-                    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-                    mainMenuWindowHide(true);
-                    mainMenuWindowFree();
-
-                    // NOTE: Uninline.
-                    main_loadgame_new();
-
-                    if (devLoadGameSlot != -1) {
-                        lsgDevSetLoadGameSlot(devLoadGameSlot);
-                    }
-                    int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
-                    if (loadGameRc == -1) {
-                        debugPrint("\n ** Error running LoadGame()! **\n");
-                    } else if (loadGameRc != 0) {
-                        windowDestroy(win);
-                        win = -1;
-                        mainHandleDevEndgameRequests();
-                        mainLoop();
-                        paletteFadeTo(gPaletteWhite);
-                    }
-                    if (win != -1) {
-                        windowDestroy(win);
-                    }
-
-                    // NOTE: Uninline.
-                    main_unload_new();
-
-                    // NOTE: Uninline.
-                    main_reset_system();
-
-                    if (_main_show_death_scene != 0) {
-                        showDeath();
-                        _main_show_death_scene = 0;
-                    }
+                    mainRunGameLoopAndCleanup();
                     mainMenuWindowInit();
+                } else {
+                    mainMenuCancelSubscreen();
                 }
                 break;
+            }
+            case MAIN_MENU_LOAD_GAME: {
+                mainMenuBeginSubscreen();
+
+                // NOTE: Uninline.
+                main_loadgame_new();
+
+                if (devLoadGameSlot != -1) {
+                    lsgDevSetLoadGameSlot(devLoadGameSlot);
+                }
+                int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                if (loadGameRc == -1) {
+                    debugPrint("\n ** Error running LoadGame()! **\n");
+                }
+
+                if (loadGameRc > 0) {
+                    mainMenuFinishSubscreen();
+                    mainRunGameLoopAndCleanup();
+                    mainMenuWindowInit();
+                } else {
+                    main_unload_new();
+                    mainMenuCancelSubscreen();
+                    if (loadGameRc < 0) {
+                        main_reset_system();
+                    }
+                }
+                break;
+            }
             case MAIN_MENU_TIMEOUT:
                 debugPrint("Main menu timed-out\n");
                 // FALLTHROUGH
@@ -218,10 +198,12 @@ int falloutMain(int argc, char** argv)
                 mainMenuWindowHide(true);
                 gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
                 break;
-            case MAIN_MENU_OPTIONS:
-                mainMenuWindowHide(true);
+            case MAIN_MENU_OPTIONS: {
+                mainMenuBeginSubscreen();
                 doPreferences(true);
+                mainMenuCancelSubscreen();
                 break;
+            }
             case MAIN_MENU_CREDITS:
                 mainMenuWindowHide(true);
                 creditsOpen("credits.txt", InterfaceFrameId::Invalid, false);
@@ -468,6 +450,24 @@ static void mainLoop()
 
     if (cursorWasHidden) {
         mouseHideCursor();
+    }
+}
+
+static void mainRunGameLoopAndCleanup()
+{
+    mainHandleDevEndgameRequests();
+    mainLoop();
+    paletteFadeTo(gPaletteWhite);
+
+    // NOTE: Uninline.
+    main_unload_new();
+
+    // NOTE: Uninline.
+    main_reset_system();
+
+    if (_main_show_death_scene != 0) {
+        showDeath();
+        _main_show_death_scene = 0;
     }
 }
 

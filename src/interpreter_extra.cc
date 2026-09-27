@@ -1948,13 +1948,13 @@ static void opStartGameDialog(Program* program)
         NpcReaction npcReactionType = reactionTranslateValue(npcReactionValue);
         switch (npcReactionType) {
         case NPC_REACTION_BAD:
-            gGameDialogReactionOrFidget = FIDGET_BAD;
+            gGameDialogReactionOrFidget = static_cast<int>(HeadFidget::Bad);
             break;
         case NPC_REACTION_NEUTRAL:
-            gGameDialogReactionOrFidget = FIDGET_NEUTRAL;
+            gGameDialogReactionOrFidget = static_cast<int>(HeadFidget::Neutral);
             break;
         case NPC_REACTION_GOOD:
-            gGameDialogReactionOrFidget = FIDGET_GOOD;
+            gGameDialogReactionOrFidget = static_cast<int>(HeadFidget::Good);
             break;
         }
     }

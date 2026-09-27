@@ -14,6 +14,7 @@ typedef enum PipboyOpenIntent {
 int pipboyOpen(int intent);
 void pipboyInit();
 void pipboyReset();
+void pipboySetRestHealTime(int minutes);
 int pipboySave(File* stream);
 int pipboyLoad(File* stream);
 int pipboyGetWindow();

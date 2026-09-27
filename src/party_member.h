@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "combat_ai_defs.h"
+#include "config.h"
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
@@ -12,8 +13,9 @@
 namespace fallout {
 
 extern int gPartyMemberDescriptionsLength;
-extern int* gPartyMemberPids;
+extern std::vector<int> gPartyMemberPids;
 
+int partyMemberParseConfig(Config* config, bool reindex = false);
 int partyMembersInit();
 void partyMembersReset();
 void partyMembersExit();

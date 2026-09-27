@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #include "animation.h"
 #include "color.h"
@@ -82,15 +83,14 @@ static int _partyMemberCopyLevelInfo(Object* object, int a2);
 int gPartyMemberDescriptionsLength = 0;
 
 // 0x519DA0 partyMemberPidList
-int* gPartyMemberPids = nullptr;
+std::vector<int> gPartyMemberPids;
 
-//
 static PartyMemberListItem* _itemSaveListHead = nullptr;
 
 // List of party members, it's length is [gPartyMemberDescriptionsLength] + 20.
 //
 // 0x519DA8 partyMemberList
-PartyMemberListItem* gPartyMembers = nullptr;
+std::vector<PartyMemberListItem> gPartyMembers;
 
 // Number of critters added to party.
 //
@@ -104,15 +104,137 @@ static int _partyMemberItemCount = 20000;
 static int _partyStatePrepped = 0;
 
 // 0x519DB8 partyMemberAIOptions
-static PartyMemberDescription* gPartyMemberDescriptions = nullptr;
+static std::vector<PartyMemberDescription> gPartyMemberDescriptions;
 
 // 0x519DBC partyMemberLevelUpInfoList
-static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
+static std::vector<PartyMemberLevelUpInfo> _partyMemberLevelUpInfoList;
 
 // 0x519DC0 curID
 static int _curID = 20000;
 
 static bool npcEngineLevelUp = true;
+
+// CE: extracted from partyMembersInit()
+int partyMembersParseConfig(Config* config, bool reindex)
+{
+    if (config == nullptr) return -1;
+
+    char section[50];
+    int loopSafetyCounter = 0;
+
+    int searchIdx = reindex ? 0 : static_cast<int>(gPartyMemberDescriptions.size());
+
+    while (loopSafetyCounter < 1000) {
+        snprintf(section, sizeof(section), "Party Member %d", searchIdx);
+
+        int partyMemberPid;
+        if (!configGetInt(config, section, "party_member_pid", &partyMemberPid)) {
+            break;
+        }
+
+        gPartyMemberPids.push_back(partyMemberPid);
+
+        PartyMemberDescription desc;
+        partyMemberDescriptionInit(&desc);
+
+        char* string;
+
+        if (configGetString(config, section, "area_attack_mode", &string)) {
+            while (*string != '\0') {
+                int areaAttackMode;
+                if (strParseStrFromList(&string, &areaAttackMode, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT) == 0) {
+                    desc.areaAttackMode[areaAttackMode] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "attack_who", &string)) {
+            while (*string != '\0') {
+                int attackWho;
+                if (strParseStrFromList(&string, &attackWho, gAttackWhoKeys, ATTACK_WHO_COUNT) == 0) {
+                    desc.attackWho[attackWho] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "best_weapon", &string)) {
+            while (*string != '\0') {
+                int bestWeapon;
+                if (strParseStrFromList(&string, &bestWeapon, gBestWeaponKeys, BEST_WEAPON_COUNT) == 0) {
+                    desc.bestWeapon[bestWeapon] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "chem_use", &string)) {
+            while (*string != '\0') {
+                int chemUse;
+                if (strParseStrFromList(&string, &chemUse, gChemUseKeys, CHEM_USE_COUNT) == 0) {
+                    desc.chemUse[chemUse] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "distance", &string)) {
+            while (*string != '\0') {
+                int distanceMode;
+                if (strParseStrFromList(&string, &distanceMode, gDistanceModeKeys, DISTANCE_COUNT) == 0) {
+                    desc.distanceMode[distanceMode] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "run_away_mode", &string)) {
+            while (*string != '\0') {
+                int runAwayMode;
+                if (strParseStrFromList(&string, &runAwayMode, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT) == 0) {
+                    desc.runAwayMode[runAwayMode] = true;
+                }
+            }
+        }
+
+        if (configGetString(config, section, "disposition", &string)) {
+            while (*string != '\0') {
+                int disposition;
+                if (strParseStrFromList(&string, &disposition, gDispositionKeys, DISPOSITION_COUNT) == 0) {
+                    desc.disposition[disposition] = true;
+                }
+            }
+        }
+
+        int levelUpEvery;
+        if (configGetInt(config, section, "level_up_every", &levelUpEvery)) {
+            desc.level_up_every = levelUpEvery;
+
+            int levelMinimum;
+            if (configGetInt(config, section, "level_minimum", &levelMinimum)) {
+                desc.level_minimum = levelMinimum;
+            }
+
+            if (configGetString(config, section, "level_pids", &string)) {
+                while (*string != '\0' && desc.level_pids_num < PARTY_MEMBER_MAX_LEVEL) {
+                    int levelPid;
+                    strParseInt(&string, &levelPid);
+                    desc.level_pids[desc.level_pids_num] = levelPid;
+                    desc.level_pids_num++;
+                }
+            }
+        }
+
+        gPartyMemberDescriptions.push_back(desc);
+
+        PartyMemberLevelUpInfo levelUpInfo {};
+        _partyMemberLevelUpInfoList.push_back(levelUpInfo);
+
+        searchIdx++;
+        loopSafetyCounter++;
+    }
+
+    gPartyMembers.resize(gPartyMemberDescriptions.size() + 20);
+    gPartyMemberDescriptionsLength = static_cast<int>(gPartyMemberDescriptions.size());
+
+    return 0;
+}
 
 // partyMember_init
 // 0x493BC0 partyMember_init
@@ -125,139 +247,8 @@ int partyMembersInit()
         return -1;
     }
 
-    char section[50];
-    snprintf(section, sizeof(section), "Party Member %d", gPartyMemberDescriptionsLength);
-
-    int partyMemberPid;
-    while (configGetInt(config.get(), section, "party_member_pid", &partyMemberPid)) {
-        gPartyMemberDescriptionsLength++;
-        snprintf(section, sizeof(section), "Party Member %d", gPartyMemberDescriptionsLength);
-    }
-
-    gPartyMemberPids = (int*)internal_malloc(sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
-    if (gPartyMemberPids == nullptr) {
+    if (partyMembersParseConfig(config.get(), false) == -1) {
         return -1;
-    }
-
-    memset(gPartyMemberPids, 0, sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
-
-    gPartyMembers = (PartyMemberListItem*)internal_malloc(sizeof(*gPartyMembers) * (gPartyMemberDescriptionsLength + 20));
-    if (gPartyMembers == nullptr) {
-        return -1;
-    }
-
-    memset(gPartyMembers, 0, sizeof(*gPartyMembers) * (gPartyMemberDescriptionsLength + 20));
-
-    gPartyMemberDescriptions = (PartyMemberDescription*)internal_malloc(sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
-    if (gPartyMemberDescriptions == nullptr) {
-        return -1;
-    }
-
-    memset(gPartyMemberDescriptions, 0, sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
-
-    _partyMemberLevelUpInfoList = (PartyMemberLevelUpInfo*)internal_malloc(sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
-    if (_partyMemberLevelUpInfoList == nullptr) {
-        return -1;
-    }
-
-    memset(_partyMemberLevelUpInfoList, 0, sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
-
-    for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        snprintf(section, sizeof(section), "Party Member %d", index);
-
-        if (!configGetInt(config.get(), section, "party_member_pid", &partyMemberPid)) {
-            break;
-        }
-
-        PartyMemberDescription* partyMemberDescription = &(gPartyMemberDescriptions[index]);
-
-        gPartyMemberPids[index] = partyMemberPid;
-
-        partyMemberDescriptionInit(partyMemberDescription);
-
-        char* string;
-
-        if (configGetString(config.get(), section, "area_attack_mode", &string)) {
-            while (*string != '\0') {
-                int areaAttackMode;
-                if (strParseStrFromList(&string, &areaAttackMode, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT) == 0) {
-                    partyMemberDescription->areaAttackMode[areaAttackMode] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "attack_who", &string)) {
-            while (*string != '\0') {
-                int attackWho;
-                if (strParseStrFromList(&string, &attackWho, gAttackWhoKeys, ATTACK_WHO_COUNT) == 0) {
-                    partyMemberDescription->attackWho[attackWho] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "best_weapon", &string)) {
-            while (*string != '\0') {
-                int bestWeapon;
-                if (strParseStrFromList(&string, &bestWeapon, gBestWeaponKeys, BEST_WEAPON_COUNT) == 0) {
-                    partyMemberDescription->bestWeapon[bestWeapon] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "chem_use", &string)) {
-            while (*string != '\0') {
-                int chemUse;
-                if (strParseStrFromList(&string, &chemUse, gChemUseKeys, CHEM_USE_COUNT) == 0) {
-                    partyMemberDescription->chemUse[chemUse] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "distance", &string)) {
-            while (*string != '\0') {
-                int distanceMode;
-                if (strParseStrFromList(&string, &distanceMode, gDistanceModeKeys, DISTANCE_COUNT) == 0) {
-                    partyMemberDescription->distanceMode[distanceMode] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "run_away_mode", &string)) {
-            while (*string != '\0') {
-                int runAwayMode;
-                if (strParseStrFromList(&string, &runAwayMode, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT) == 0) {
-                    partyMemberDescription->runAwayMode[runAwayMode] = true;
-                }
-            }
-        }
-
-        if (configGetString(config.get(), section, "disposition", &string)) {
-            while (*string != '\0') {
-                int disposition;
-                if (strParseStrFromList(&string, &disposition, gDispositionKeys, DISPOSITION_COUNT) == 0) {
-                    partyMemberDescription->disposition[disposition] = true;
-                }
-            }
-        }
-
-        int levelUpEvery;
-        if (configGetInt(config.get(), section, "level_up_every", &levelUpEvery)) {
-            partyMemberDescription->level_up_every = levelUpEvery;
-
-            int levelMinimum;
-            if (configGetInt(config.get(), section, "level_minimum", &levelMinimum)) {
-                partyMemberDescription->level_minimum = levelMinimum;
-            }
-
-            if (configGetString(config.get(), section, "level_pids", &string)) {
-                while (*string != '\0' && partyMemberDescription->level_pids_num < PARTY_MEMBER_MAX_LEVEL) {
-                    int levelPid;
-                    strParseInt(&string, &levelPid);
-                    partyMemberDescription->level_pids[partyMemberDescription->level_pids_num] = levelPid;
-                    partyMemberDescription->level_pids_num++;
-                }
-            }
-        }
     }
 
     return 0;
@@ -278,33 +269,12 @@ void partyMembersReset()
 // 0x494134 partyMember_exit
 void partyMembersExit()
 {
-    for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        _partyMemberLevelUpInfoList[index].level = 0;
-        _partyMemberLevelUpInfoList[index].numLevelUps = 0;
-        _partyMemberLevelUpInfoList[index].isEarly = 0;
-    }
-
     gPartyMemberDescriptionsLength = 0;
 
-    if (gPartyMemberPids != nullptr) {
-        internal_free(gPartyMemberPids);
-        gPartyMemberPids = nullptr;
-    }
-
-    if (gPartyMembers != nullptr) {
-        internal_free(gPartyMembers);
-        gPartyMembers = nullptr;
-    }
-
-    if (gPartyMemberDescriptions != nullptr) {
-        internal_free(gPartyMemberDescriptions);
-        gPartyMemberDescriptions = nullptr;
-    }
-
-    if (_partyMemberLevelUpInfoList != nullptr) {
-        internal_free(_partyMemberLevelUpInfoList);
-        _partyMemberLevelUpInfoList = nullptr;
-    }
+    gPartyMemberPids.clear();
+    gPartyMembers.clear();
+    gPartyMemberDescriptions.clear();
+    _partyMemberLevelUpInfoList.clear();
 }
 
 // 0x4941F0 partyMemberGetAIOptions
@@ -709,21 +679,18 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 // 0x494BBC partyMemberLoad
 int partyMembersLoad(File* stream)
 {
-    int result = -1;
+    std::vector<int> partyMemberObjectIds(gPartyMemberDescriptionsLength + 20, 0);
 
-    int* partyMemberObjectIds = (int*)internal_malloc(sizeof(*partyMemberObjectIds) * (gPartyMemberDescriptionsLength + 20));
-    if (partyMemberObjectIds == nullptr) {
-        return -1;
-    }
+    if (fileReadInt32(stream, &gPartyMembersLength) == -1) return -1;
+    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) return -1;
 
-    if (fileReadInt32(stream, &gPartyMembersLength) == -1) goto cleanup;
-    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) goto cleanup;
-
-    gPartyMembers->object = gDude;
+    gPartyMembers.front().object = gDude;
 
     if (gPartyMembersLength != 0) {
         for (int index = 1; index < gPartyMembersLength; index++) {
-            if (fileReadInt32(stream, &(partyMemberObjectIds[index])) == -1) goto cleanup;
+            if (fileReadInt32(stream, &partyMemberObjectIds[index]) == -1) {
+                return -1;
+            }
         }
 
         for (int index = 1; index < gPartyMembersLength; index++) {
@@ -741,11 +708,11 @@ int partyMembersLoad(File* stream)
                 gPartyMembers[index].object = object;
             } else {
                 debugPrint("Couldn't find party member on map...trying to load anyway.\n");
-                if (index + 1 >= gPartyMembersLength) {
-                    partyMemberObjectIds[index] = 0;
-                } else {
-                    memcpy(&(partyMemberObjectIds[index]), &(partyMemberObjectIds[index + 1]), sizeof(*partyMemberObjectIds) * (gPartyMembersLength - (index + 1)));
-                }
+
+                partyMemberObjectIds.erase(partyMemberObjectIds.begin() + index);
+                // Amend original alloc size just in case
+                // (safety push for _partyMemberLevelUpInfoList/gPartyMemberDescriptionsLength loop below)
+                partyMemberObjectIds.push_back(0);
 
                 index--;
                 gPartyMembersLength--;
@@ -753,7 +720,7 @@ int partyMembersLoad(File* stream)
         }
 
         if (_partyMemberUnPrepSave() == -1) {
-            goto cleanup;
+            return -1;
         }
     }
 
@@ -762,16 +729,12 @@ int partyMembersLoad(File* stream)
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
         PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[index]);
 
-        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) goto cleanup;
-        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) goto cleanup;
-        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) goto cleanup;
+        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) return -1;
+        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) return -1;
+        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) return -1;
     }
 
-    result = 0;
-
-cleanup:
-    internal_free(partyMemberObjectIds);
-    return result;
+    return 0;
 }
 
 // 0x494D7C partyMemberClear

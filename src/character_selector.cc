@@ -18,6 +18,7 @@
 #include "game_sound.h"
 #include "input.h"
 #include "kb.h"
+#include "mainmenu.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
@@ -176,8 +177,7 @@ int characterSelectorOpen()
         mouseShowCursor();
     }
 
-    colorPaletteLoad("color.pal");
-    paletteFadeTo(_cmap);
+    mainMenuShowSubscreen(true);
 
     int rc = 0;
     bool done = false;
@@ -263,7 +263,11 @@ int characterSelectorOpen()
         sharedFpsLimiter.throttle();
     }
 
-    paletteFadeTo(gPaletteBlack);
+    if (rc == 2) {
+        mainMenuFadeOutForGameStart(true);
+    } else {
+        mainMenuFadeOutForMenuReturn(true);
+    }
     characterSelectorWindowFree();
 
     if (cursorWasHidden) {
@@ -285,7 +289,8 @@ static bool characterSelectorWindowInit()
 
     int characterSelectorWindowX = (screenGetWidth() - CS_WINDOW_WIDTH) / 2;
     int characterSelectorWindowY = (screenGetHeight() - CS_WINDOW_HEIGHT) / 2;
-    gCharacterSelectorWindow = windowCreate(characterSelectorWindowX, characterSelectorWindowY, CS_WINDOW_WIDTH, CS_WINDOW_HEIGHT, COLOR_BLACK, 0);
+    int characterSelectorWindowFlags = mainMenuSubscreenWindowFlags(0, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    gCharacterSelectorWindow = windowCreate(characterSelectorWindowX, characterSelectorWindowY, CS_WINDOW_WIDTH, CS_WINDOW_HEIGHT, _colorTable[0], characterSelectorWindowFlags);
     if (gCharacterSelectorWindow == -1) {
         return characterSelectorWindowFatalError(false);
     }

@@ -1,11 +1,14 @@
 #include "mainmenu.h"
 
+#include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "art.h"
 #include "color.h"
 #include "content_config.h"
 #include "debug.h"
+#include "delay.h"
 #include "draw.h"
 #include "font_manager.h"
 #include "game.h"
@@ -48,6 +51,12 @@ namespace fallout {
 #define MAIN_MENU_VERSION_Y 440
 #define MAIN_MENU_BUILD_HASH_Y 450
 #define MAIN_MENU_BUILD_DATE_Y 460
+constexpr int mainMenuOverlayWindowWidth = 640;
+constexpr int mainMenuOverlayWindowHeight = 480;
+constexpr int mainMenuOverlayDimTargetIntensity = 0x8000;
+constexpr int mainMenuOverlayDimClearIntensity = 0x10000;
+constexpr int mainMenuOverlayDimAnimationSteps = 5;
+constexpr int mainMenuOverlayDimFrameDelay = 18;
 
 typedef enum MainMenuButton {
     MAIN_MENU_BUTTON_INTRO,
@@ -105,12 +114,21 @@ static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 
 // 0x614858 main_menu_is_hidden
 static bool gMainMenuWindowHidden;
+static int mainMenuOverlayCount = 0;
+static bool mainMenuOverlayBackgroundEnabled = false;
+static int mainMenuSubscreenBackdrop = -1;
 
 static FrmImage mainMenuBackgroundFrmImage;
 static FrmImage mainMenuButtonPanelFrmImage;
 static FrmImage mainMenuButtonNormalFrmImage;
 static FrmImage mainMenuButtonPressedFrmImage;
 static std::vector<unsigned char> mainMenuScaledButtonData;
+static std::vector<unsigned char> mainMenuOverlayDimmedBackup;
+static void mainMenuSetButtonsEnabled(bool enabled);
+static void mainMenuApplyOverlayDim();
+static void mainMenuRemoveOverlayDim();
+static void mainMenuSetOverlayDimIntensity(int intensity);
+static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity);
 
 struct MainMenuLayout {
     int screenWidth;
@@ -147,9 +165,14 @@ static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
+static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout);
 static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static bool mainMenuWindowIsOverlayActive();
+static void mainMenuWindowEnterOverlay();
+static void mainMenuWindowLeaveOverlay();
+static void mainMenuWindowShowOverlayDim();
 
 static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight)
 {
@@ -357,6 +380,13 @@ static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMarg
     return layout.backgroundX + layout.backgroundWidth - rightMargin - width;
 }
 
+static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout)
+{
+    return settings.ui.main_menu_overlay_subscreens
+        && (layout.backgroundWidth > mainMenuOverlayWindowWidth
+            || layout.backgroundHeight > mainMenuOverlayWindowHeight);
+}
+
 static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
     MessageListItem msg;
@@ -515,6 +545,7 @@ int mainMenuWindowInit()
     }
 
     MainMenuLayout layout = mainMenuBuildLayout();
+    mainMenuOverlayBackgroundEnabled = mainMenuShouldEnableOverlayBackground(layout);
     MainMenuOffsets offsets = mainMenuReadOffsets(layout);
 
     mainMenuDrawBackground(layout);
@@ -537,13 +568,25 @@ int mainMenuWindowInit()
 
     gMainMenuWindowInitialized = true;
     gMainMenuWindowHidden = true;
+    mainMenuOverlayCount = 0;
+    mainMenuOverlayDimmedBackup.clear();
 
     return 0;
+}
+
+static void mainMenuDestroySubscreenBackdrop()
+{
+    if (mainMenuSubscreenBackdrop != -1) {
+        windowDestroy(mainMenuSubscreenBackdrop);
+        mainMenuSubscreenBackdrop = -1;
+    }
 }
 
 // 0x481968 main_menu_destroy
 void mainMenuWindowFree()
 {
+    mainMenuDestroySubscreenBackdrop();
+
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         if (gMainMenuButtons[index] != -1) {
             buttonDestroy(gMainMenuButtons[index]);
@@ -552,6 +595,7 @@ void mainMenuWindowFree()
     }
 
     mainMenuScaledButtonData.clear();
+    mainMenuOverlayDimmedBackup.clear();
     mainMenuButtonPanelFrmImage.unlock();
     mainMenuButtonPressedFrmImage.unlock();
     mainMenuButtonNormalFrmImage.unlock();
@@ -565,6 +609,8 @@ void mainMenuWindowFree()
     gMainMenuWindow = -1;
     gMainMenuWindowBuffer = nullptr;
     gMainMenuWindowHidden = true;
+    mainMenuOverlayCount = 0;
+    mainMenuOverlayBackgroundEnabled = false;
 }
 
 // 0x481A00 main_menu_hide
@@ -587,6 +633,8 @@ void mainMenuWindowHide(bool animate)
 
     windowHide(gMainMenuWindow);
     touch_set_touchscreen_mode(false);
+    mainMenuOverlayDimmedBackup.clear();
+    mainMenuOverlayCount = 0;
 
     gMainMenuWindowHidden = true;
 }
@@ -611,6 +659,123 @@ void mainMenuWindowUnhide(bool animate)
     }
 
     gMainMenuWindowHidden = false;
+}
+
+static void mainMenuWindowEnterOverlay()
+{
+    if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
+        return;
+    }
+
+    if (mainMenuOverlayCount == 0) {
+        mainMenuSetButtonsEnabled(false);
+    }
+
+    mainMenuOverlayCount += 1;
+}
+
+static void mainMenuWindowLeaveOverlay()
+{
+    if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
+        mainMenuOverlayCount = 0;
+        return;
+    }
+
+    assert(mainMenuOverlayCount > 0);
+    if (mainMenuOverlayCount <= 0) {
+        mainMenuOverlayCount = 0;
+        return;
+    }
+
+    mainMenuOverlayCount -= 1;
+    if (mainMenuOverlayCount == 0) {
+        mainMenuRemoveOverlayDim();
+        mainMenuSetButtonsEnabled(true);
+        touch_set_touchscreen_mode(true);
+    }
+}
+
+static bool mainMenuWindowIsOverlayActive()
+{
+    return gMainMenuWindowInitialized && !gMainMenuWindowHidden && mainMenuOverlayCount > 0;
+}
+
+static void mainMenuWindowShowOverlayDim()
+{
+    if (!mainMenuWindowIsOverlayActive() || !mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    mainMenuApplyOverlayDim();
+}
+
+void mainMenuBeginSubscreen()
+{
+    if (mainMenuOverlayBackgroundEnabled) {
+        mainMenuWindowEnterOverlay();
+        return;
+    }
+
+    mainMenuWindowHide(true);
+    if (mainMenuSubscreenBackdrop == -1) {
+        // Palette index 0 in the root window is grey, so cover it around 640x480 dialogs.
+        mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, 0);
+        if (mainMenuSubscreenBackdrop != -1) {
+            windowRefresh(mainMenuSubscreenBackdrop);
+        }
+    }
+}
+
+void mainMenuCancelSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowLeaveOverlay();
+    }
+
+    mainMenuDestroySubscreenBackdrop();
+}
+
+void mainMenuFinishSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowHide(false);
+    }
+
+    mainMenuWindowFree();
+}
+
+int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags)
+{
+    return mainMenuWindowIsOverlayActive() ? overlayFlags : defaultFlags;
+}
+
+void mainMenuShowSubscreen(bool animate)
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        renderPresent();
+        mainMenuWindowShowOverlayDim();
+    } else if (animate) {
+        colorPaletteLoad("color.pal");
+        paletteFadeTo(_cmap);
+    }
+}
+
+void mainMenuFadeOutForMenuReturn(bool animate)
+{
+    if (!animate || mainMenuWindowIsOverlayActive()) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
+}
+
+void mainMenuFadeOutForGameStart(bool animate)
+{
+    if (!animate) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
 }
 
 // 0x481AA8 main_menu_is_enabled
@@ -726,6 +891,93 @@ static int main_menu_fatal_error()
 static void main_menu_play_sound(const char* fileName)
 {
     soundPlayFile(fileName);
+}
+
+static void mainMenuSetButtonsEnabled(bool enabled)
+{
+    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        if (gMainMenuButtons[index] == -1) {
+            continue;
+        }
+
+        if (enabled) {
+            buttonEnable(gMainMenuButtons[index]);
+        } else {
+            buttonDisable(gMainMenuButtons[index]);
+        }
+    }
+}
+
+static void mainMenuApplyOverlayDim()
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    int size = width * height;
+
+    mainMenuOverlayDimmedBackup.assign(gMainMenuWindowBuffer, gMainMenuWindowBuffer + size);
+    mainMenuAnimateOverlayDim(mainMenuOverlayDimClearIntensity, mainMenuOverlayDimTargetIntensity);
+}
+
+static void mainMenuRemoveOverlayDim()
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr || mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    int size = width * height;
+    if (static_cast<int>(mainMenuOverlayDimmedBackup.size()) != size) {
+        mainMenuOverlayDimmedBackup.clear();
+        return;
+    }
+
+    bool cursorWasHidden = cursorIsHidden();
+    if (cursorWasHidden) {
+        mouseShowCursor();
+    }
+
+    mainMenuAnimateOverlayDim(mainMenuOverlayDimTargetIntensity, mainMenuOverlayDimClearIntensity);
+
+    if (cursorWasHidden) {
+        mouseHideCursor();
+    }
+
+    memcpy(gMainMenuWindowBuffer, mainMenuOverlayDimmedBackup.data(), size);
+    mainMenuOverlayDimmedBackup.clear();
+    windowRefresh(gMainMenuWindow);
+}
+
+static void mainMenuSetOverlayDimIntensity(int intensity)
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr || mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    _dark_trans_buf_to_buf(mainMenuOverlayDimmedBackup.data(), width, height, width, gMainMenuWindowBuffer, 0, 0, width, intensity);
+    windowRefresh(gMainMenuWindow);
+    renderPresent();
+}
+
+static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)
+{
+    for (int step = 0; step < mainMenuOverlayDimAnimationSteps; step++) {
+        _GNW95_process_message();
+        _mouse_info();
+
+        int intensity = startIntensity + (endIntensity - startIntensity) * (step + 1) / mainMenuOverlayDimAnimationSteps;
+        mainMenuSetOverlayDimIntensity(intensity);
+
+        if (step + 1 < mainMenuOverlayDimAnimationSteps) {
+            delay_ms(mainMenuOverlayDimFrameDelay);
+        }
+    }
 }
 
 } // namespace fallout

@@ -49,11 +49,12 @@ struct UISettings {
     // Show the Help option in the in-game options menu.
     bool in_game_menu_help = true;
 
+    // Whether to keep the main menu visible behind 640x480 main-menu subwindows
+    // like load, options, and new game when the effective menu background is larger.
+    bool main_menu_overlay_subscreens = false;
+
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
-
-    // Draw progress bar for perk ranks.
-    bool perks_progress_bar = false;
 
     // This will increase the width of the interface bar expanding the area used to display text.
     int iface_bar_width = 800;
@@ -65,6 +66,9 @@ struct UISettings {
 
     // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
     bool iface_bar_sides_ori = false;
+
+    // Draw progress bar for perk ranks.
+    bool perks_progress_bar = false;
 
     // 0 - vanilla ammo lights, 1 - alternate ammo meter with burst segments, 2 - also segment low-capacity single-shot weapons.
     int alternate_ammo_meter = 0;
@@ -134,10 +138,10 @@ struct GameplaySettings {
 };
 
 struct PreferencesSettings {
-    int game_difficulty = GAME_DIFFICULTY_NORMAL;
-    int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
-    int violence_level = VIOLENCE_LEVEL_MAXIMUM_BLOOD;
-    int target_highlight = TARGET_HIGHLIGHT_TARGETING_ONLY;
+    GameDifficulty game_difficulty = GAME_DIFFICULTY_NORMAL;
+    CombatDifficulty combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
+    ViolenceLevel violence_level = VIOLENCE_LEVEL_MAXIMUM_BLOOD;
+    TargetHighlight target_highlight = TARGET_HIGHLIGHT_TARGETING_ONLY;
     bool item_highlight = true;
     bool combat_looks = false;
     bool combat_messages = true;
