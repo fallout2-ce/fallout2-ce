@@ -1344,24 +1344,10 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, CharacterSoundEffect soun
         return nullptr;
     }
 
-    WeaponAnimation weaponAnimation;
-    switch (soundEffect) {
-    case CharacterSoundEffect::KnockDown:
-        weaponAnimation = WeaponAnimation::Knife;
-        break;
-    case CharacterSoundEffect::PassOut:
-        weaponAnimation = WeaponAnimation::Club;
-        break;
-    case CharacterSoundEffect::Die:
-        weaponAnimation = WeaponAnimation::Hammer;
-        break;
-    case CharacterSoundEffect::Contact:
-        weaponAnimation = WeaponAnimation::Spear;
-        break;
-    default:
-        weaponAnimation = WeaponAnimation::None;
-        break;
-    }
+    // weapon animation and character sound effect is being mishmashed together within code
+    WeaponAnimation weaponAnimation = weaponAnimationIsValid(static_cast<int>(soundEffect)) ? 
+        static_cast<WeaponAnimation>(soundEffect) : 
+        WeaponAnimation::None;
 
     if (anim == ANIM_TAKE_OUT) {
         if (_art_get_code(anim, weaponAnimation, &weaponCode, &animationCode) == -1) {
