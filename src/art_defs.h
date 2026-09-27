@@ -3,11 +3,6 @@
 
 namespace fallout {
 
-constexpr inline int frameIdFromPid(int pid)
-{
-    return pid & 0xFFFFFF;
-}
-
 enum class HeadFrameId : int {
     Invalid = -1, // invalid frame id
     None = 0, // reser.frm

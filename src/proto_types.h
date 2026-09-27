@@ -631,6 +631,11 @@ typedef struct ProtoList {
     int max_entries_num;
 } ProtoList;
 
+constexpr inline int protoIdFromPid(int pid)
+{
+    return pid & 0xFFFFFF;
+}
+
 class ProtoTypeId {
 public:
     union ProtoId {
@@ -694,7 +699,7 @@ protected:
     constexpr ProtoTypeId(ObjectType objectType, int pid, int protoId)
         : _objectType(objectType)
         , _pid(pid)
-        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : frameIdFromPid(protoId) } { }
+        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId) } { }
 
 private:
     ObjectType _objectType;

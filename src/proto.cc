@@ -221,7 +221,7 @@ int _proto_list_str(int pid, char* proto_path)
     int i = 1;
     char string[256];
     while (fileReadString(string, sizeof(string), stream)) {
-        if (i == frameIdFromPid(pid)) {
+        if (i == protoIdFromPid(pid)) {
             break;
         }
 
@@ -230,7 +230,7 @@ int _proto_list_str(int pid, char* proto_path)
 
     fileClose(stream);
 
-    if (i != frameIdFromPid(pid)) {
+    if (i != protoIdFromPid(pid)) {
         return -1;
     }
 
@@ -373,7 +373,7 @@ char* protoGetDescription(int pid)
 // 0x49EB2C proto_item_init
 int proto_item_init(Proto* proto, int pid)
 {
-    int protoNum = frameIdFromPid(pid);
+    int protoNum = protoIdFromPid(pid);
 
     proto->item.pid = -1;
     proto->item.messageId = 100 * protoNum;
@@ -488,7 +488,7 @@ int proto_critter_init(Proto* proto, int pid)
         return -1;
     }
 
-    int num = frameIdFromPid(pid);
+    int num = protoIdFromPid(pid);
 
     proto->pid = -1;
     proto->messageId = 100 * num;
@@ -962,7 +962,7 @@ int _proto_dude_init(const char* path)
 // 0x49FBBC proto_scenery_init
 int proto_scenery_init(Proto* proto, int pid)
 {
-    int num = frameIdFromPid(pid);
+    int num = protoIdFromPid(pid);
 
     proto->scenery.pid = -1;
     proto->scenery.messageId = 100 * num;
@@ -1019,7 +1019,7 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
 // 0x49FCFC proto_wall_init
 int proto_wall_init(Proto* proto, int pid)
 {
-    int num = frameIdFromPid(pid);
+    int num = protoIdFromPid(pid);
 
     proto->wall.pid = -1;
     proto->wall.messageId = 100 * num;
@@ -1040,7 +1040,7 @@ int proto_wall_init(Proto* proto, int pid)
 // 0x49FD84 proto_tile_init
 int proto_tile_init(Proto* proto, int pid)
 {
-    int num = frameIdFromPid(pid);
+    int num = protoIdFromPid(pid);
 
     proto->tile.pid = -1;
     proto->tile.messageId = 100 * num;
@@ -1059,7 +1059,7 @@ int proto_tile_init(Proto* proto, int pid)
 // 0x49FDFC proto_misc_init
 int proto_misc_init(Proto* proto, int pid)
 {
-    int num = frameIdFromPid(pid);
+    int num = protoIdFromPid(pid);
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
