@@ -453,11 +453,11 @@ void automapShow(bool isInGame, bool isUsingScanner)
                 Object* scanner = nullptr;
 
                 Object* item1 = critterGetItem1(gDude);
-                if (item1 != nullptr && item1->pid == ItemProtoTypeId::PROTO_ID_MOTION_SENSOR) {
+                if (ProtoTypeId(item1) == ItemProtoTypeId::PROTO_ID_MOTION_SENSOR) {
                     scanner = item1;
                 } else {
                     Object* item2 = critterGetItem2(gDude);
-                    if (item2 != nullptr && item2->pid == ItemProtoTypeId::PROTO_ID_MOTION_SENSOR) {
+                    if (ProtoTypeId(item2) == ItemProtoTypeId::PROTO_ID_MOTION_SENSOR) {
                         scanner = item2;
                     }
                 }

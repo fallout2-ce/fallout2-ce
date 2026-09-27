@@ -605,7 +605,7 @@ int objectPickup(Object* critter, Object* item)
 
     if (!overriden) {
         int rc;
-        if (item->pid == ItemProtoTypeId::PROTO_ID_MONEY) {
+        if (ProtoTypeId(item) == ItemProtoTypeId::PROTO_ID_MONEY) {
             int amount = itemGetMoney(item);
             if (amount <= 0) {
                 amount = 1;
@@ -856,7 +856,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
 {
     MessageListItem messageListItem;
 
-    if (flare->pid != PROTO_ID_FLARE) {
+    if (ProtoTypeId(flare) != ItemProtoTypeId::PROTO_ID_FLARE) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -892,7 +892,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
             }
         }
 
-        flare->pid = ItemProtoTypeId::PROTO_ID_LIT_FLARE;
+        flare->pid = ProtoTypeId(ItemProtoTypeId::PROTO_ID_LIT_FLARE).pid();
 
         objectSetLight(flare, 8, 0x10000, nullptr);
         queueAddEvent(72000, flare, nullptr, EVENT_TYPE_FLARE);
@@ -999,7 +999,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     bool isEnergy = false;
     int energyDensity;
 
-    switch (item->pid) {
+    switch (ProtoTypeId(item).protoId().item) {
     case ItemProtoTypeId::PROTO_ID_SMALL_ENERGY_CELL:
         energyDensity = 16000;
         isEnergy = true;
@@ -1007,6 +1007,8 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     case ItemProtoTypeId::PROTO_ID_MICRO_FUSION_CELL:
         energyDensity = 40000;
         isEnergy = true;
+        break;
+    default:
         break;
     }
 
@@ -1048,7 +1050,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    switch (item->pid) {
+    switch (ProtoTypeId(item).protoId().item) {
     case ItemProtoTypeId::PROTO_ID_RAMIREZ_BOX_CLOSED:
     case ItemProtoTypeId::PROTO_ID_RAIDERS_MAP:
     case ItemProtoTypeId::PROTO_ID_CATS_PAW_ISSUE_5:
@@ -1064,9 +1066,9 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         }
 
         return USE_ITEM_RESULT_REMOVE;
+    default:
+        return USE_ITEM_RESULT_ERROR;
     }
-
-    return USE_ITEM_RESULT_ERROR;
 }
 
 // 0x49BF38
@@ -1274,7 +1276,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     case ITEM_TYPE_AMMO:
         // SFALL: Fix for being able to charge the car by using cells on other
         // scenery/critters.
-        if (targetObj->pid == PROTO_ID_CAR || targetObj->pid == ItemProtoTypeId::PROTO_ID_CAR_TRUNK) {
+        if (targetObj->pid == PROTO_ID_CAR || ProtoTypeId(targetObj) == ItemProtoTypeId::PROTO_ID_CAR_TRUNK) {
             rc = _obj_use_power_on_car(item);
             if (rc == USE_ITEM_RESULT_REMOVE) {
                 return USE_ITEM_RESULT_REMOVE;
@@ -1316,7 +1318,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     int skillBonus = 0;
     Skill skill = SKILL_INVALID;
 
-    switch (item->pid) {
+    switch (ProtoTypeId(item).protoId().item) {
     case ItemProtoTypeId::PROTO_ID_DOCTORS_BAG:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;
@@ -1340,6 +1342,8 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
         messageId = 911;
         skillBonus = 40;
         skill = SKILL_FIRST_AID;
+        break;
+    default:
         break;
     }
 

@@ -2091,10 +2091,10 @@ int _obj_inven_free(Inventory* inventory)
 // 0x48B24C obj_action_can_use
 bool _obj_action_can_use(Object* obj)
 {
-    int pid = obj->pid;
+    const ProtoTypeId protoId = ProtoTypeId(obj);
     // SFALL
-    if (pid != ItemProtoTypeId::PROTO_ID_LIT_FLARE && !explosiveIsActiveExplosive(pid)) {
-        return _proto_action_can_use(pid);
+    if (protoId != ItemProtoTypeId::PROTO_ID_LIT_FLARE && !explosiveIsActiveExplosive(protoId.pid())) {
+        return _proto_action_can_use(protoId.pid());
     } else {
         return false;
     }

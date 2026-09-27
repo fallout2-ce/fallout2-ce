@@ -125,7 +125,7 @@ public:
 
     constexpr explicit FrmId(int fid)
         : FrmId(
-              objectTypeFromFid(fid),
+              fid == kEmptyFid ? OBJ_TYPE_INVALID : objectTypeFromFid(fid),
               fid,
               fid,
               nullptr)

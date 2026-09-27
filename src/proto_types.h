@@ -631,6 +631,91 @@ typedef struct ProtoList {
     int max_entries_num;
 } ProtoList;
 
+class ProtoTypeId {
+public:
+    union ProtoId {
+        int id;
+        ItemProtoTypeId item;
+    };
+
+    static constexpr int kEmptyPid = -1;
+    static constexpr short kInvalidProtoId = -1;
+    static constexpr short kMinProtoId = 0;
+
+    constexpr ProtoTypeId()
+        : ProtoTypeId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId) { }
+
+
+    constexpr explicit ProtoTypeId(int pid)
+        : ProtoTypeId(pid == kEmptyPid ? OBJ_TYPE_INVALID : objectTypeFromPid(pid), pid, pid) { }
+
+    constexpr ProtoTypeId(const Proto* proto)
+        : ProtoTypeId(proto == nullptr ? kEmptyPid : proto->pid) { }
+
+    constexpr ProtoTypeId(const Object* object)
+        : ProtoTypeId(object == nullptr ? kEmptyPid : object->pid) { }
+
+    constexpr ProtoTypeId(ItemProtoTypeId item)
+        : ProtoTypeId(OBJ_TYPE_ITEM, buildPid(OBJ_TYPE_ITEM, static_cast<int>(item)), static_cast<int>(item)) { }
+
+    constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
+    constexpr bool hasPid() const { return _pid > kEmptyPid; }
+
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
+    constexpr int pid() const { return _pid; }
+    constexpr const ProtoId& protoId() const { return _protoId; }
+
+    constexpr bool operator==(const ProtoTypeId& other) const
+    {
+        return _pid == other._pid && _objectType == other._objectType;
+    }
+
+    constexpr bool operator!=(const ProtoTypeId& other) const
+    {
+        return _pid != other._pid || _objectType != other._objectType;
+    }
+
+    constexpr bool operator==(ItemProtoTypeId protoId) const
+    {
+        return _pid == buildPid(OBJ_TYPE_ITEM, static_cast<int>(protoId));
+    }
+
+    constexpr bool operator!=(ItemProtoTypeId protoId) const
+    {
+        return _pid != buildPid(OBJ_TYPE_ITEM, static_cast<int>(protoId));
+    }
+
+protected:
+    static constexpr int kProtoIdMask = 0x00FFFFFF;
+    static constexpr int kObjectTypeMask = 0x0F000000;
+
+    static constexpr int kObjectTypeMaskPosition = 24;
+
+    constexpr ProtoTypeId(ObjectType objectType, int pid, int protoId)
+        : _objectType(objectType)
+        , _pid(pid)
+        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : frameIdFromPid(protoId) } { }
+
+private:
+    ObjectType _objectType;
+    int _pid;
+    ProtoId _protoId;
+
+    /* PID Structure:
+        4  bits unused
+        4  bits for object type
+        24 bits for proto id
+    */
+    static constexpr int buildPid(ObjectType objectType, int protoId)
+    {
+        if (!objectTypeIsValid(objectType) || protoId < kMinProtoId) {
+            return kEmptyPid;
+        }
+
+        return ((objectType << kObjectTypeMaskPosition) & kObjectTypeMask) | (protoId & kProtoIdMask);
+    }
+};
+
 } // namespace fallout
 
 #endif /* PROTO_TYPES_H */
