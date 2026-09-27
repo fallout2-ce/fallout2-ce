@@ -42,12 +42,18 @@
 
 namespace fallout {
 
-typedef enum ScrollableDirections {
+enum ScrollableDirections : int {
+    SCROLLABEL_NONE = 0x00,
     SCROLLABLE_W = 0x01,
     SCROLLABLE_E = 0x02,
     SCROLLABLE_N = 0x04,
     SCROLLABLE_S = 0x08,
-} ScrollableDirections;
+};
+
+constexpr inline ScrollableDirections operator|(ScrollableDirections lhs, ScrollableDirections rhs)
+{
+    return static_cast<ScrollableDirections>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
 
 static constexpr int REFRESH_BOUNCING_CURSOR = 0x01;
 static constexpr int REFRESH_HEX_CURSOR = 0x02;
@@ -2567,22 +2573,22 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
         return -1;
     }
 
-    int flags = 0;
+    ScrollableDirections flags = SCROLLABEL_NONE;
 
     if (x <= _scr_size.left) {
-        flags |= SCROLLABLE_W;
+        flags = flags | SCROLLABLE_W;
     }
 
     if (x >= _scr_size.right) {
-        flags |= SCROLLABLE_E;
+        flags = flags | SCROLLABLE_E;
     }
 
     if (y <= _scr_size.top) {
-        flags |= SCROLLABLE_N;
+        flags = flags | SCROLLABLE_N;
     }
 
     if (y >= _scr_size.bottom) {
-        flags |= SCROLLABLE_S;
+        flags = flags | SCROLLABLE_S;
     }
 
     // Click-to-scroll mode (mapper Alt-Z): only scroll while the left button is held at an
