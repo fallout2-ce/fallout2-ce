@@ -644,8 +644,8 @@ public:
     };
 
     static constexpr int kEmptyPid = -1;
-    static constexpr short kInvalidProtoId = -1;
-    static constexpr short kMinProtoId = 0;
+    static constexpr int kInvalidProtoId = -1;
+    static constexpr int kMinProtoId = 0;
 
     constexpr ProtoTypeId()
         : ProtoTypeId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId) { }
