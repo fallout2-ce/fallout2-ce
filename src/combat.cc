@@ -3229,7 +3229,7 @@ static int _combat_input()
         sharedFpsLimiter.throttle();
     }
 
-    int v4 = _game_user_wants_to_quit;
+    GameQuitRequest gameQuitRequest = _game_user_wants_to_quit;
     if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     }
@@ -3239,7 +3239,7 @@ static int _combat_input()
         return -1;
     }
 
-    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || v4 != GAME_QUIT_REQUEST_NONE || _combat_end_due_to_load != 0) {
+    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || gameQuitRequest != GAME_QUIT_REQUEST_NONE || _combat_end_due_to_load != 0) {
         return -1;
     }
 
@@ -4645,11 +4645,13 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
 
     if (attacker->data.critter.combat.team != gDude->data.critter.combat.team) {
         switch (settings.preferences.combat_difficulty) {
-        case 0:
+        case COMBAT_DIFFICULTY_EASY:
             toHit -= 20;
             break;
-        case 2:
+        case COMBAT_DIFFICULTY_HARD:
             toHit += 20;
+            break;
+        case COMBAT_DIFFICULTY_NORMAL:
             break;
         }
     }
@@ -4729,6 +4731,8 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
             break;
         case COMBAT_DIFFICULTY_HARD:
             difficultyDamagePercent = 125;
+            break;
+        case COMBAT_DIFFICULTY_NORMAL:
             break;
         }
     }

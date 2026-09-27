@@ -978,7 +978,7 @@ void _gdialogSystemEnter()
 
     gameDialogRestoreCenterTile();
 
-    gameRequestState(GAME_STATE_2);
+    gameRequestState(GameState::DialogFinished);
 
     gameUpdateState();
 }
