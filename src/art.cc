@@ -628,7 +628,7 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
         }
         return 0;
     } else if (animation == ANIM_DODGE_ANIM) {
-        if (weaponType <= WeaponAnimation::None) {
+        if (weaponType == WeaponAnimation::None) {
             *weaponCodePtr = 'a';
             *animationCodePtr = 'n';
         } else {
@@ -639,7 +639,7 @@ int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* wea
     }
 
     *animationCodePtr = 'a' + animation;
-    if (animation <= ANIM_WALK && weaponType > WeaponAnimation::None) {
+    if (animation <= ANIM_WALK && weaponType != WeaponAnimation::None) {
         *weaponCodePtr = artGetCritterWeaponCode(weaponType);
         return 0;
     }

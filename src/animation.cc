@@ -1253,14 +1253,19 @@ int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimatio
     switch (weaponAnimationCode) {
     case WeaponAnimation::Knife:
         soundEffect = CharacterSoundEffect::KnockDown;
+        break;
     case WeaponAnimation::Club:
         soundEffect = CharacterSoundEffect::PassOut;
+        break;
     case WeaponAnimation::Hammer:
         soundEffect = CharacterSoundEffect::Die;
+        break;
     case WeaponAnimation::Spear:
         soundEffect = CharacterSoundEffect::Contact;
+        break;
     default:
         soundEffect = CharacterSoundEffect::Unused;
+        break;
     }
 
     const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, soundEffect);
