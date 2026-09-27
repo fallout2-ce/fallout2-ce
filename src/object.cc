@@ -354,7 +354,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFrmIdPid(&gDude, dudeFrmId, 0x1000000);
+    objectCreateWithFrmIdPid(&gDude, dudeFrmId, PROTO_ID_DUDE);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -2631,7 +2631,7 @@ int _obj_scroll_blocking_at(int tile, int elev)
             break;
         }
 
-        if (objectListNode->obj->elevation == elev && objectListNode->obj->pid == 0x500000C) {
+        if (objectListNode->obj->elevation == elev && objectListNode->obj->pid == PROTO_ID_0x500000C) {
             return 0;
         }
 

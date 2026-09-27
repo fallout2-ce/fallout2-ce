@@ -679,7 +679,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                 CritterFrameId defaultFrameId = CritterFrameId::First;
 
                 Proto* proto;
-                if (protoGetProto(0x1000000, &proto) != -1) {
+                if (protoGetProto(PROTO_ID_DUDE, &proto) != -1) {
                     defaultFrameId = FrmId(proto).frameId().critter;
                 }
 

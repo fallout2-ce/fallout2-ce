@@ -1259,7 +1259,7 @@ static int _map_age_dead_critters()
                     }
                 }
             }
-        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->fid == 0x500000B) {
+        } else if (agingType == 2 && type == OBJ_TYPE_MISC && FrmId(obj) == MiscFrameId::BloodPool) {
             objects[count++] = obj;
             if (count >= capacity) {
                 capacity *= 2;
