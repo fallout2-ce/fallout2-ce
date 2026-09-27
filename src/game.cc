@@ -1720,7 +1720,7 @@ ScopedGameMode::~ScopedGameMode()
 
 void gameHandleSkilldexResult(SkilldexRC rc)
 {
-    int mode = -1;
+    GameMouseMode mode = GAME_MOUSE_MODE_INVALID;
 
     switch (rc) {
     case SKILLDEX_RC_ERROR:
@@ -1754,7 +1754,7 @@ void gameHandleSkilldexResult(SkilldexRC rc)
         break;
     }
 
-    if (mode != -1) {
+    if (mode != GAME_MOUSE_MODE_INVALID) {
         gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
         gameMouseSetMode(mode);
     }

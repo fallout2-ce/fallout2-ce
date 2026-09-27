@@ -5,7 +5,8 @@
 
 namespace fallout {
 
-typedef enum GameMouseMode {
+enum GameMouseMode : int {
+    GAME_MOUSE_MODE_INVALID = -1,
     GAME_MOUSE_MODE_MOVE,
     GAME_MOUSE_MODE_ARROW,
     GAME_MOUSE_MODE_CROSSHAIR,
@@ -20,7 +21,7 @@ typedef enum GameMouseMode {
     GAME_MOUSE_MODE_COUNT,
     FIRST_GAME_MOUSE_MODE_SKILL = GAME_MOUSE_MODE_USE_FIRST_AID,
     GAME_MOUSE_MODE_SKILL_COUNT = GAME_MOUSE_MODE_COUNT - FIRST_GAME_MOUSE_MODE_SKILL,
-} GameMouseMode;
+};
 
 typedef enum GameMouseActionMenuItem {
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL = 0,
@@ -90,8 +91,8 @@ int gameMouseSetCursor(int cursor);
 int gameMouseGetCursor();
 Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation);
 void gmouse_set_mapper_mode(int mode);
-void gameMouseSetMode(int mode);
-int gameMouseGetMode();
+void gameMouseSetMode(GameMouseMode mode);
+GameMouseMode gameMouseGetMode();
 void gameMouseCycleMode();
 void _gmouse_3d_refresh();
 void gameMouseResetBouncingCursorFrmId();

@@ -252,7 +252,7 @@ static constexpr InterfaceFrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION
 static int _gmouse_3d_modes_enabled = 1;
 
 // 0x518D38 gmouse_3d_current_mode
-static int gGameMouseMode = GAME_MOUSE_MODE_MOVE;
+static GameMouseMode gGameMouseMode = GAME_MOUSE_MODE_MOVE;
 
 // 0x518D3C gmouse_3d_mode_nums
 static InterfaceFrameId gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
@@ -659,7 +659,7 @@ void gameMouseRefresh()
             gameMouseObjectsHide();
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-            if (gGameMouseMode >= 2 && !isInCombat()) {
+            if (gGameMouseMode >= GAME_MOUSE_MODE_CROSSHAIR && !isInCombat()) {
                 gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
             }
         }
@@ -1435,7 +1435,7 @@ void _gmouse_3d_enable_modes()
 }
 
 // 0x44CA18 gmouse_3d_set_mode
-void gameMouseSetMode(int mode)
+void gameMouseSetMode(GameMouseMode mode)
 {
     if (!gGameMouseInitialized) {
         return;
@@ -1473,12 +1473,12 @@ void gameMouseSetMode(int mode)
         v5 = -1;
     }
 
-    if (mode != 0) {
+    if (mode != GAME_MOUSE_MODE_MOVE) {
         if (mode == GAME_MOUSE_MODE_CROSSHAIR) {
             v5 = 1;
         }
 
-        if (gGameMouseMode == 0) {
+        if (gGameMouseMode == GAME_MOUSE_MODE_MOVE) {
             if (objectDisableOutline(gGameMouseHexCursor, &cursorRect) == 0) {
                 rectUnion(&rect, &cursorRect, &rect);
             }
@@ -1515,7 +1515,7 @@ void gameMouseSetMode(int mode)
 }
 
 // 0x44CB6C
-int gameMouseGetMode()
+GameMouseMode gameMouseGetMode()
 {
     return gGameMouseMode;
 }
@@ -1523,7 +1523,7 @@ int gameMouseGetMode()
 // 0x44CB74 gmouse_3d_toggle_mode
 void gameMouseCycleMode()
 {
-    int mode = (gGameMouseMode + 1) % 3;
+    GameMouseMode mode = static_cast<GameMouseMode>((gGameMouseMode + 1) % 3);
 
     if (isInCombat()) {
         Object* item;
