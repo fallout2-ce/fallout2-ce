@@ -1323,7 +1323,7 @@ int showQuitConfirmationDialog()
         mouseShowCursor();
     }
 
-    int oldCursor = gameMouseGetCursor();
+    MouseCursorType oldCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     int rc;
@@ -1627,7 +1627,7 @@ int gameShowDeathDialog(const char* message)
         mouseShowCursor();
     }
 
-    int oldCursor = gameMouseGetCursor();
+    MouseCursorType oldCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     GameQuitRequest oldUserWantsToQuit = _game_user_wants_to_quit;

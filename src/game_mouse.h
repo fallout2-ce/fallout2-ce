@@ -38,7 +38,8 @@ enum GameMouseActionMenuItem : int {
     GAME_MOUSE_ACTION_MENU_ITEM_COUNT,
 };
 
-typedef enum MouseCursorType {
+enum MouseCursorType : int {
+    MOUSE_CURSOR_INVALID = -1,
     MOUSE_CURSOR_NONE,
     MOUSE_CURSOR_ARROW,
     MOUSE_CURSOR_SMALL_ARROW_UP,
@@ -68,7 +69,7 @@ typedef enum MouseCursorType {
     MOUSE_CURSOR_WAIT_WATCH,
     MOUSE_CURSOR_TYPE_COUNT,
     FIRST_GAME_MOUSE_ANIMATED_CURSOR = MOUSE_CURSOR_WAIT_PLANET,
-} MouseCursorType;
+};
 
 extern bool _gmouse_clicked_on_edge;
 
@@ -88,8 +89,8 @@ bool _gmouse_get_click_to_scroll();
 void _gmouse_set_click_to_scroll(bool value);
 void gameMouseRefresh();
 void _gmouse_handle_event(int mouseX, int mouseY, int mouseState);
-int gameMouseSetCursor(int cursor);
-int gameMouseGetCursor();
+int gameMouseSetCursor(MouseCursorType cursor);
+MouseCursorType gameMouseGetCursor();
 Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation);
 void gmouse_set_mapper_mode(int mode);
 void gameMouseSetMode(GameMouseMode mode);

@@ -916,7 +916,7 @@ static int mapLoad(File* stream)
     _partyMemberPrepLoad();
     _gmouse_disable_scrolling();
 
-    int savedMouseCursorId = gameMouseGetCursor();
+    MouseCursorType savedMouseCursorId = gameMouseGetCursor();
     if (savedMouseCursorId >= MOUSE_CURSOR_SCROLL_NW && savedMouseCursorId <= MOUSE_CURSOR_SCROLL_W_INVALID) {
         savedMouseCursorId = MOUSE_CURSOR_ARROW; // reset if it was in view scrolling mode
     }

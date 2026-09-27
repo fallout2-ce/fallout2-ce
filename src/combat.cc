@@ -5500,7 +5500,7 @@ void _combat_anim_begin()
 {
     if (++_combat_turn_running == 1 && gDude == _main_ctd.attacker) {
         gameUiDisable(1);
-        gameMouseSetCursor(26);
+        gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
         if (_combat_highlight == 2) {
             _combat_outline_off();
         }

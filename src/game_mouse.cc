@@ -69,7 +69,7 @@ static bool _gmouse_click_to_scroll = false;
 static bool _gmouse_scrolling_enabled = true;
 
 // 0x518C0C gmouse_current_cursor
-static int gGameMouseCursor = MOUSE_CURSOR_NONE;
+static MouseCursorType gGameMouseCursor = MOUSE_CURSOR_NONE;
 
 // 0x518C10 gmouse_current_cursor_key
 static CacheEntry* gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
@@ -287,7 +287,7 @@ static int gGameMouseAnimatedCursorNextFrame = 0;
 static unsigned int gGameMouseAnimatedCursorLastUpdateTimestamp = 0;
 
 // 0x518D8C gmouse_bk_last_cursor
-static int _gmouse_bk_last_cursor = -1;
+static MouseCursorType _gmouse_bk_last_cursor = MOUSE_CURSOR_INVALID;
 
 // 0x518D90 gmouse_3d_item_highlight
 static bool gGameMouseItemHighlightEnabled = true;
@@ -333,7 +333,7 @@ static void gameMouseActionMenuFree();
 static int gameMouse3dSetFlatFrmId(const InterfaceFrmId& frmId, Rect* rect);
 static int gameMouseUpdateHexCursorFid(Rect* rect);
 static int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect);
-static int gameMouseHandleScrolling(int x, int y, int cursor);
+static int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor);
 static int objectIsDoor(Object* object);
 static bool gameMouseClickOnInterfaceBar();
 static bool gameMouseLongPressUsesLootActionForCritter(Object* object);
@@ -420,18 +420,18 @@ void gameMouseExit()
 
     _gmouse_enabled = false;
     gGameMouseInitialized = false;
-    gGameMouseCursor = -1;
+    gGameMouseCursor = MOUSE_CURSOR_INVALID;
 }
 
 // 0x44B454 gmouse_enable
 void _gmouse_enable()
 {
     if (!_gmouse_enabled) {
-        gGameMouseCursor = -1;
+        gGameMouseCursor = MOUSE_CURSOR_INVALID;
         gameMouseSetCursor(MOUSE_CURSOR_NONE);
         _gmouse_scrolling_enabled = true;
         _gmouse_enabled = true;
-        _gmouse_bk_last_cursor = -1;
+        _gmouse_bk_last_cursor = MOUSE_CURSOR_INVALID;
     }
 }
 
@@ -539,7 +539,7 @@ void gameMouseRefresh()
         // NOTE: Uninline.
         if (gmouse_scrolling_is_enabled()) {
             mouseGetPosition(&mouseX, &mouseY);
-            int oldMouseCursor = gGameMouseCursor;
+            MouseCursorType oldMouseCursor = gGameMouseCursor;
 
             if (gameMouseHandleScrolling(mouseX, mouseY, gGameMouseCursor) == 0) {
                 switch (oldMouseCursor) {
@@ -567,9 +567,9 @@ void gameMouseRefresh()
                 return;
             }
 
-            if (_gmouse_bk_last_cursor != -1) {
+            if (_gmouse_bk_last_cursor != MOUSE_CURSOR_INVALID) {
                 gameMouseSetCursor(_gmouse_bk_last_cursor);
-                _gmouse_bk_last_cursor = -1;
+                _gmouse_bk_last_cursor = MOUSE_CURSOR_INVALID;
                 return;
             }
         }
@@ -582,7 +582,7 @@ void gameMouseRefresh()
         // NOTE: Uninline.
         if (gmouse_scrolling_is_enabled()) {
             mouseGetPosition(&mouseX, &mouseY);
-            int oldMouseCursor = gGameMouseCursor;
+            MouseCursorType oldMouseCursor = gGameMouseCursor;
 
             if (gameMouseHandleScrolling(mouseX, mouseY, gGameMouseCursor) == 0) {
                 switch (oldMouseCursor) {
@@ -611,9 +611,9 @@ void gameMouseRefresh()
                 return;
             }
 
-            if (_gmouse_bk_last_cursor != -1) {
+            if (_gmouse_bk_last_cursor != MOUSE_CURSOR_INVALID) {
                 gameMouseSetCursor(_gmouse_bk_last_cursor);
-                _gmouse_bk_last_cursor = -1;
+                _gmouse_bk_last_cursor = MOUSE_CURSOR_INVALID;
             }
         }
 
@@ -622,7 +622,7 @@ void gameMouseRefresh()
 
     mouseGetPosition(&mouseX, &mouseY);
 
-    int oldMouseCursor = gGameMouseCursor;
+    MouseCursorType oldMouseCursor = gGameMouseCursor;
     if (gameMouseHandleScrolling(mouseX, mouseY, MOUSE_CURSOR_NONE) == 0) {
         switch (oldMouseCursor) {
         case MOUSE_CURSOR_SCROLL_NW:
@@ -649,9 +649,9 @@ void gameMouseRefresh()
         return;
     }
 
-    if (_gmouse_bk_last_cursor != -1) {
+    if (_gmouse_bk_last_cursor != MOUSE_CURSOR_INVALID) {
         gameMouseSetCursor(_gmouse_bk_last_cursor);
-        _gmouse_bk_last_cursor = -1;
+        _gmouse_bk_last_cursor = MOUSE_CURSOR_INVALID;
     }
 
     if (windowGetAtPoint(mouseX, mouseY) != gIsoWindow) {
@@ -1347,7 +1347,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 }
 
 // 0x44C840 gmouse_set_cursor
-int gameMouseSetCursor(int cursor)
+int gameMouseSetCursor(MouseCursorType cursor)
 {
     if (!gGameMouseInitialized) {
         return -1;
@@ -1417,7 +1417,7 @@ int gameMouseSetCursor(int cursor)
 }
 
 // 0x44C9E8 gmouse_get_cursor
-int gameMouseGetCursor()
+MouseCursorType gameMouseGetCursor()
 {
     return gGameMouseCursor;
 }
@@ -2561,7 +2561,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
 }
 
 // 0x44E42C gmouse_check_scrolling
-int gameMouseHandleScrolling(int x, int y, int cursor)
+int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
 {
     if (!_gmouse_scrolling_enabled) {
         return -1;
@@ -2654,7 +2654,7 @@ int gameMouseHandleScrolling(int x, int y, int cursor)
     case -1:
         // Scrolling is blocked for whatever reason, upgrade cursor to
         // appropriate blocked version.
-        cursor += 8;
+        cursor = static_cast<MouseCursorType>(cursor + 8);
         // FALLTHROUGH
     case 0:
         gameMouseSetCursor(cursor);
