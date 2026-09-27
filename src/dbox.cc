@@ -251,10 +251,13 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return rc;
 }
 
-const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText)
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, int flags)
 {
-    FrmImage frms[INPUT_DIALOG_FRM_COUNT];
     static std::string result;
+    FrmImage frms[INPUT_DIALOG_FRM_COUNT];
+
+    int savedFont = fontGetCurrent();
+    fontSetCurrent(101); // default font for input box
 
     for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
         if (!frms[i].lock(kInputDialogFrmIds[i])) {
@@ -271,8 +274,11 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     int windowWidth = bgFrm.getWidth();
     int windowHeight = bgFrm.getHeight();
 
-    int win = windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
-    if (win == -1) return nullptr;
+    int win = windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags);
+    if (win == -1) {
+        fontSetCurrent(savedFont);
+        return nullptr;
+    }
 
     unsigned char* windowBuf = windowGetBuffer(win);
 
@@ -281,7 +287,7 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     blitBufferToBufferTrans(nameBoxFrm.getData(), nameBoxFrm.getWidth(), nameBoxFrm.getHeight(), nameBoxFrm.getWidth(), windowBuf + static_cast<size_t>(windowWidth) * 13 + 13, windowWidth);
     blitBufferToBufferTrans(doneBoxFrm.getData(), doneBoxFrm.getWidth(), doneBoxFrm.getHeight(), doneBoxFrm.getWidth(), windowBuf + windowWidth * 40 + 13, windowWidth);
 
-    fontSetCurrent(103);
+    fontSetCurrent(103); // "Done" button font
     fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
 
     int doneBtn = buttonCreate(win, 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
@@ -296,6 +302,7 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     int status = _get_input_str(win, 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     windowDestroy(win);
+    fontSetCurrent(savedFont);
 
     if (status == 0 && !editableText.empty()) {
         result = std::move(editableText);
@@ -303,6 +310,11 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     }
 
     return nullptr;
+}
+
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText)
+{
+    return showInputDialog(currentInput, windowX, windowY, doneText, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 }
 
 // 0x41CF20 dialog_out

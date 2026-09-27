@@ -3148,8 +3148,7 @@ static void characterEditorDrawCard()
 
         const char* base = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 137);
         std::string formatted = std::string(base) + " " + std::to_string(skillGetDefaultValue(skill)) + "% " + skillGetAttributes(skill);
-
-        characterEditorDrawCardWithOptions(skillGetFrmId(skill), skillGetName(skill), formatted.c_str(), skillGetDescription(skill));
+        characterEditorDrawCardWithOptions(skillGetFrmId(skill), skillGetName(skill), formatted.data(), skillGetDescription(skill));
     }
     // TAG SKILLS
     else if (item >= EDITOR_TAG_SKILL && item < EDITOR_FIRST_TRAIT) {
@@ -3184,7 +3183,7 @@ static int characterEditorEditName()
     int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
     const char* doneBtnText = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
 
-    auto newName = showInputDialog(critterGetName(gDude), nameWindowX, nameWindowY, doneBtnText);
+    auto newName = showInputDialog(critterGetName(gDude), nameWindowX, nameWindowY, doneBtnText, characterEditorGetModalWindowFlags());
 
     if (newName != nullptr) {
         dudeSetName(newName);
