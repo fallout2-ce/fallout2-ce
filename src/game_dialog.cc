@@ -217,7 +217,7 @@ typedef enum PartyMemberCustomizationOption {
 
 // 0x444D10 Dogs
 static int _Dogs[3] = {
-    PROTO_ID_DOG_1, 
+    PROTO_ID_DOG_1,
     PROTO_ID_DOG_2,
     PROTO_ID_DOG_3,
 };
