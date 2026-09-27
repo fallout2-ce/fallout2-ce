@@ -1812,7 +1812,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
         *ammoPtr = nullptr;
     }
 
-    if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+    if (weapon->pid == ItemProtoTypeId::PROTO_ID_SOLAR_SCORCHER) {
         return lightGetAmbientIntensity() > LIGHT_INTENSITY_MAX * 0.95;
     }
 
@@ -2098,11 +2098,11 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
         return avgDamage2 > avgDamage1 ? weapon2 : weapon1;
     }
 
-    if (weapon1 != nullptr && weapon1->pid == PROTO_ID_FLARE && weapon2 != nullptr) {
+    if (weapon1 != nullptr && weapon1->pid == ItemProtoTypeId::PROTO_ID_FLARE && weapon2 != nullptr) {
         return weapon2;
     }
 
-    if (weapon2 != nullptr && weapon2->pid == PROTO_ID_FLARE && weapon1 != nullptr) {
+    if (weapon2 != nullptr && weapon2->pid == ItemProtoTypeId::PROTO_ID_FLARE && weapon1 != nullptr) {
         return weapon1;
     }
 

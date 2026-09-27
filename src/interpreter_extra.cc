@@ -3381,7 +3381,7 @@ static void opMetarule(Program* program)
     case METARULE_SET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(PROTO_ID_CAR_TRUNK, &proto) != -1) {
+            if (protoGetProto(ItemProtoTypeId::PROTO_ID_CAR_TRUNK, &proto) != -1) {
                 proto->item.data.container.maxSize = param.integerValue;
                 result = 1;
             }
@@ -3390,7 +3390,7 @@ static void opMetarule(Program* program)
     case METARULE_GET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(PROTO_ID_CAR_TRUNK, &proto) != -1) {
+            if (protoGetProto(ItemProtoTypeId::PROTO_ID_CAR_TRUNK, &proto) != -1) {
                 result = proto->item.data.container.maxSize;
             }
         }

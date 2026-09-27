@@ -2093,7 +2093,7 @@ bool _obj_action_can_use(Object* obj)
 {
     int pid = obj->pid;
     // SFALL
-    if (pid != PROTO_ID_LIT_FLARE && !explosiveIsActiveExplosive(pid)) {
+    if (pid != ItemProtoTypeId::PROTO_ID_LIT_FLARE && !explosiveIsActiveExplosive(pid)) {
         return _proto_action_can_use(pid);
     } else {
         return false;

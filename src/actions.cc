@@ -230,7 +230,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
 
     DamageType damageType = weaponGetDamageType(attacker, weapon);
 
-    if (weapon != nullptr && weapon->pid == PROTO_ID_MOLOTOV_COCKTAIL) {
+    if (weapon != nullptr && weapon->pid == ItemProtoTypeId::PROTO_ID_MOLOTOV_COCKTAIL) {
         normalViolenceLevelDamageThreshold = 5;
         maximumBloodViolenceLevelDamageThreshold = 15;
         damageType = DAMAGE_TYPE_FIRE;

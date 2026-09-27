@@ -421,14 +421,14 @@ int critterAdjustRadiation(Object* obj, int amount)
 
         Object* item1 = critterGetItem1(gDude);
         if (item1 != nullptr) {
-            if (item1->pid == PROTO_ID_GEIGER_COUNTER_I || item1->pid == PROTO_ID_GEIGER_COUNTER_II) {
+            if (item1->pid == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_I || item1->pid == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_II) {
                 geigerCounter = item1;
             }
         }
 
         Object* item2 = critterGetItem2(gDude);
         if (item2 != nullptr) {
-            if (item2->pid == PROTO_ID_GEIGER_COUNTER_I || item2->pid == PROTO_ID_GEIGER_COUNTER_II) {
+            if (item2->pid == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_I || item2->pid == ItemProtoTypeId::PROTO_ID_GEIGER_COUNTER_II) {
                 geigerCounter = item2;
             }
         }

@@ -605,7 +605,7 @@ int objectPickup(Object* critter, Object* item)
 
     if (!overriden) {
         int rc;
-        if (item->pid == PROTO_ID_MONEY) {
+        if (item->pid == ItemProtoTypeId::PROTO_ID_MONEY) {
             int amount = itemGetMoney(item);
             if (amount <= 0) {
                 amount = 1;
@@ -892,7 +892,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
             }
         }
 
-        flare->pid = PROTO_ID_LIT_FLARE;
+        flare->pid = ItemProtoTypeId::PROTO_ID_LIT_FLARE;
 
         objectSetLight(flare, 8, 0x10000, nullptr);
         queueAddEvent(72000, flare, nullptr, EVENT_TYPE_FLARE);
@@ -1000,11 +1000,11 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     int energyDensity;
 
     switch (item->pid) {
-    case PROTO_ID_SMALL_ENERGY_CELL:
+    case ItemProtoTypeId::PROTO_ID_SMALL_ENERGY_CELL:
         energyDensity = 16000;
         isEnergy = true;
         break;
-    case PROTO_ID_MICRO_FUSION_CELL:
+    case ItemProtoTypeId::PROTO_ID_MICRO_FUSION_CELL:
         energyDensity = 40000;
         isEnergy = true;
         break;
@@ -1049,12 +1049,12 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
     }
 
     switch (item->pid) {
-    case PROTO_ID_RAMIREZ_BOX_CLOSED:
-    case PROTO_ID_RAIDERS_MAP:
-    case PROTO_ID_CATS_PAW_ISSUE_5:
-    case PROTO_ID_PIP_BOY_LINGUAL_ENHANCER:
-    case PROTO_ID_SURVEY_MAP:
-    case PROTO_ID_PIP_BOY_MEDICAL_ENHANCER:
+    case ItemProtoTypeId::PROTO_ID_RAMIREZ_BOX_CLOSED:
+    case ItemProtoTypeId::PROTO_ID_RAIDERS_MAP:
+    case ItemProtoTypeId::PROTO_ID_CATS_PAW_ISSUE_5:
+    case ItemProtoTypeId::PROTO_ID_PIP_BOY_LINGUAL_ENHANCER:
+    case ItemProtoTypeId::PROTO_ID_SURVEY_MAP:
+    case ItemProtoTypeId::PROTO_ID_PIP_BOY_MEDICAL_ENHANCER:
         if (item->sid == -1) {
             return USE_ITEM_RESULT_REMOVE;
         }
@@ -1274,7 +1274,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     case ITEM_TYPE_AMMO:
         // SFALL: Fix for being able to charge the car by using cells on other
         // scenery/critters.
-        if (targetObj->pid == PROTO_ID_CAR || targetObj->pid == PROTO_ID_CAR_TRUNK) {
+        if (targetObj->pid == PROTO_ID_CAR || targetObj->pid == ItemProtoTypeId::PROTO_ID_CAR_TRUNK) {
             rc = _obj_use_power_on_car(item);
             if (rc == USE_ITEM_RESULT_REMOVE) {
                 return USE_ITEM_RESULT_REMOVE;
@@ -1317,25 +1317,25 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     Skill skill = SKILL_INVALID;
 
     switch (item->pid) {
-    case PROTO_ID_DOCTORS_BAG:
+    case ItemProtoTypeId::PROTO_ID_DOCTORS_BAG:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;
         skillBonus = 20;
         skill = SKILL_DOCTOR;
         break;
-    case PROTO_ID_FIRST_AID_KIT:
+    case ItemProtoTypeId::PROTO_ID_FIRST_AID_KIT:
         // The supplies in the First Aid Kit run out.
         messageId = 901;
         skillBonus = 20;
         skill = SKILL_FIRST_AID;
         break;
-    case PROTO_ID_PARAMEDICS_BAG:
+    case ItemProtoTypeId::PROTO_ID_PARAMEDICS_BAG:
         // The supplies in the Paramedic's Bag run out.
         messageId = 910;
         skillBonus = 40;
         skill = SKILL_DOCTOR;
         break;
-    case PROTO_ID_FIELD_MEDIC_FIRST_AID_KIT:
+    case ItemProtoTypeId::PROTO_ID_FIELD_MEDIC_FIRST_AID_KIT:
         // The supplies in the Field Medic First Aid Kit run out.
         messageId = 911;
         skillBonus = 40;
@@ -1343,7 +1343,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
         break;
     }
 
-    if (skill == -1) {
+    if (skill == SKILL_INVALID) {
         const int itemSid = item->sid;
         if (itemSid != -1) {
             Script* itemScript;

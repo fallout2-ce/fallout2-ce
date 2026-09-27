@@ -225,7 +225,7 @@ inline bool killTypeOverrideIsValid(int killType)
     return killType >= KILL_TYPE_FIRST && killType <= KILL_TYPE_OVERRIDE_COUNT;
 }
 
-enum {
+enum class ItemProtoTypeId : int {
     PROTO_ID_POWER_ARMOR = 3,
     PROTO_ID_SMALL_ENERGY_CELL = 38,
     PROTO_ID_MICRO_FUSION_CELL = 39,
