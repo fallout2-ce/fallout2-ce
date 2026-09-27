@@ -4385,13 +4385,18 @@ static void opSfxBuildCharName(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
-        char soundEffectName[16];
-        strcpy(soundEffectName, sfxBuildCharName(obj, anim, soundEffect));
-        programStackPushString(program, soundEffectName);
+        const char* charName = sfxBuildCharName(obj, anim, soundEffect);
+        if (charName != nullptr) {
+            char soundEffectName[16];
+            strcpy(soundEffectName, charName);
+            programStackPushString(program, soundEffectName);
+            return;
+        }
     } else {
         scriptPredefinedError(program, "sfx_build_char_name", SCRIPT_ERROR_OBJECT_IS_NULL);
-        programStackPushString(program, nullptr);
     }
+
+    programStackPushString(program, nullptr);
 }
 
 // sfx_build_ambient_name
