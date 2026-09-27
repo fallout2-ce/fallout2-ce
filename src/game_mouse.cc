@@ -689,6 +689,8 @@ void gameMouseRefresh()
         }
 
         break;
+    default:
+        break;
     }
 
     Rect r1;
@@ -1344,6 +1346,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_PUSH:
                         actionPush(gDude, targetObj);
+                        break;
+                    default:
                         break;
                     }
                 }
@@ -2607,43 +2611,34 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
     int dx = 0;
     int dy = 0;
 
-    switch (flags) {
-    case SCROLLABLE_W:
+    if (flags == SCROLLABLE_W) {
         dx = -1;
         cursor = MOUSE_CURSOR_SCROLL_W;
-        break;
-    case SCROLLABLE_E:
+    } else if (flags == SCROLLABLE_E) {
         dx = 1;
         cursor = MOUSE_CURSOR_SCROLL_E;
-        break;
-    case SCROLLABLE_N:
+    } else if (flags == SCROLLABLE_N) {
         dy = -1;
         cursor = MOUSE_CURSOR_SCROLL_N;
-        break;
-    case SCROLLABLE_N | SCROLLABLE_W:
+    } else if (flags == (SCROLLABLE_N | SCROLLABLE_W)) {
         dx = -1;
         dy = -1;
         cursor = MOUSE_CURSOR_SCROLL_NW;
-        break;
-    case SCROLLABLE_N | SCROLLABLE_E:
+    } else if (flags == (SCROLLABLE_N | SCROLLABLE_E)) {
         dx = 1;
         dy = -1;
         cursor = MOUSE_CURSOR_SCROLL_NE;
-        break;
-    case SCROLLABLE_S:
+    } else if (flags == SCROLLABLE_S) {
         dy = 1;
         cursor = MOUSE_CURSOR_SCROLL_S;
-        break;
-    case SCROLLABLE_S | SCROLLABLE_W:
+    } else if (flags == (SCROLLABLE_S | SCROLLABLE_W)) {
         dx = -1;
         dy = 1;
         cursor = MOUSE_CURSOR_SCROLL_SW;
-        break;
-    case SCROLLABLE_S | SCROLLABLE_E:
+    } else if (flags == (SCROLLABLE_S | SCROLLABLE_E)) {
         dx = 1;
         dy = 1;
         cursor = MOUSE_CURSOR_SCROLL_SE;
-        break;
     }
 
     if (dx == 0 && dy == 0) {
