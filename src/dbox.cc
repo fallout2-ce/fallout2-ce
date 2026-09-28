@@ -261,6 +261,7 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
 
     for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
         if (!frms[i].lock(kInputDialogFrmIds[i])) {
+            fontSetCurrent(savedFont);
             return nullptr;
         }
     }
