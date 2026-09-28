@@ -480,7 +480,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
         fn(formattedText);
     } else if (type == OBJ_TYPE_SCENERY) {
-        if (target->pid == PROTO_ID_CAR) {
+        if (ProtoId(target) == SceneryProtoTypeId::Car) {
             MessageListItem carMessageListItem;
             carMessageListItem.num = 549; // The car is running at %d%% power.
 
@@ -1276,7 +1276,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     case ITEM_TYPE_AMMO:
         // SFALL: Fix for being able to charge the car by using cells on other
         // scenery/critters.
-        if (targetObj->pid == PROTO_ID_CAR || ProtoId(targetObj) == ItemProtoTypeId::CarTrunk) {
+        if (ProtoId(targetObj) == SceneryProtoTypeId::Car || ProtoId(targetObj) == ItemProtoTypeId::CarTrunk) {
             rc = _obj_use_power_on_car(item);
             if (rc == USE_ITEM_RESULT_REMOVE) {
                 return USE_ITEM_RESULT_REMOVE;

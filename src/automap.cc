@@ -553,13 +553,14 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
                     continue;
                 }
 
-                if (object->pid == PROTO_ID_EXIT_GRID_MAP_MARKER) {
+                const ProtoId objectProtoId = ProtoId(object);
+                if (objectProtoId == SceneryProtoTypeId::ExitGridAutomapMarker) {
                     objectColor = COLOR_AMBER;
                 } else if (objectType == OBJ_TYPE_WALL) {
                     objectColor = COLOR_GREEN;
                 } else if (objectType == OBJ_TYPE_SCENERY
                     && (flags & AUTOMAP_WTH_HIGH_DETAILS) != AUTOMAP_NONE
-                    && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
+                    && objectProtoId != SceneryProtoTypeId::BlockingHexAutomap) {
                     objectColor = COLOR_DARK_GREEN;
                 } else if (object == gDude) {
                     objectColor = COLOR_RED;
@@ -1142,8 +1143,9 @@ static void _decode_map_data(int elevation)
         if (object->tile != -1 && (object->flags & OBJECT_SEEN) != OBJECT_NONE) {
             int contentType;
 
-            ObjectType objectType = FrmId(object).objectType();
-            if (objectType == OBJ_TYPE_SCENERY && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
+            const ProtoId objectProtoId = ProtoId(object);
+            ObjectType objectType = objectProtoId.objectType();
+            if (objectType == OBJ_TYPE_SCENERY && objectProtoId != SceneryProtoTypeId::BlockingHexAutomap) {
                 contentType = 2;
             } else if (objectType == OBJ_TYPE_WALL) {
                 contentType = 1;

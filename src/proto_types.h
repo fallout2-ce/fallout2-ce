@@ -296,16 +296,19 @@ enum class CritterProtoTypeId : int {
     AutoCannon = 480
 };
 
-#define PROTO_ID_EXIT_GRID_MAP_MARKER 0x2000031
-#define PROTO_ID_BLOCK_HEX_AUTO_INVISO 0x2000158
-#define PROTO_ID_CAR 0x20003F1
-#define PROTO_ID_ELEVATOR_STUB 0x200050D
-#define PROTO_ID_BROTHERHOOD_DOOR 0x2000099
-#define PROTO_ID_ELEVATOR_DOOR 0x20001A5
-#define PROTO_ID_ELEVATOR_DOOR_ALT 0x20001D6
-#define PROTO_ID_FORCE_FIELD_NS 0x20001EB
-#define FIRST_RADIOACTIVE_GOO_PID 0x20003D9
-#define LAST_RADIOACTIVE_GOO_PID 0x20003DC
+enum class SceneryProtoTypeId : int {
+    ExitGridAutomapMarker = 49,
+    BrotherhoodDoor = 153,
+    BlockingHexAutomap = 344,
+    ElevatorDoor = 421,
+    ElevatorDoorAlternate = 470,
+    ForceFieldNorthSouth = 491,
+    FirstRadioactiveGoo = 985,
+    LastRadioactiveGoo = 988,
+    Car = 1009,
+    ElevatorStub = 1293
+};
+
 #define PROTO_ID_BLOOD 0x5000004
 #define PROTO_ID_0x500000C 0x500000C
 #define FIRST_EXIT_GRID_PID 0x5000010
@@ -652,6 +655,11 @@ struct MapProtoTypeIdToObjectType<ItemProtoTypeId> {
 template <>
 struct MapProtoTypeIdToObjectType<CritterProtoTypeId> {
     static constexpr ObjectType value = OBJ_TYPE_CRITTER;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<SceneryProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_SCENERY;
 };
 
 class ProtoId {

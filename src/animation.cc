@@ -1944,7 +1944,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (isCritter) {
                 Object* o = objectFindFirstAtLocation(object->elevation, v27->tile);
                 while (o != nullptr) {
-                    if (o->pid >= FIRST_RADIOACTIVE_GOO_PID && o->pid <= LAST_RADIOACTIVE_GOO_PID) {
+                    if (o->pid >= ProtoId(SceneryProtoTypeId::FirstRadioactiveGoo).pid() && o->pid <= ProtoId(SceneryProtoTypeId::LastRadioactiveGoo).pid()) {
                         break;
                     }
                     o = objectFindNextAtLocation();

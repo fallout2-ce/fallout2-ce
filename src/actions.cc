@@ -218,7 +218,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
     if (FrmId(attacker) == MiscFrameId::RocketExplosion) {
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
-    if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
+    if (ProtoId(attacker) == SceneryProtoTypeId::ForceFieldNorthSouth) {
         return checkDeathAnim(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
     if (FrmId(attacker) == SceneryFrameId::ForceField3) {
