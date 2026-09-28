@@ -90,7 +90,7 @@ static int _protos_been_initialized = 0;
 // obj_dude_proto
 // 0x51C370 pc_proto
 static CritterProto gDudeProto = {
-    0x1000000,
+    PROTO_ID_DUDE,
     -1,
     0x1000001,
     0,
@@ -357,7 +357,7 @@ char* protoGetMessage(int pid, int message)
 // 0x49EAFC proto_name
 char* protoGetName(int pid)
 {
-    if (pid == 0x1000000) {
+    if (pid == PROTO_ID_DUDE) {
         return critterGetName(gDude);
     }
 
@@ -869,7 +869,7 @@ int _proto_update_init(Object* obj)
 int _proto_dude_update_gender()
 {
     Proto* proto;
-    if (protoGetProto(0x1000000, &proto) == -1) {
+    if (protoGetProto(PROTO_ID_DUDE, &proto) == -1) {
         return -1;
     }
 
@@ -917,7 +917,7 @@ int _proto_dude_init(const char* path)
     _init_true = 1;
 
     Proto* proto;
-    if (protoGetProto(0x1000000, &proto) == -1) {
+    if (protoGetProto(PROTO_ID_DUDE, &proto) == -1) {
         return -1;
     }
 
@@ -1374,12 +1374,12 @@ int protoInit()
     compat_mkdir(path);
 
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, 0x1000000);
+    proto_critter_init((Proto*)&gDudeProto, PROTO_ID_DUDE);
 
-    gDudeProto.pid = 0x1000000;
+    gDudeProto.pid = PROTO_ID_DUDE;
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
-    gDude->pid = 0x1000000;
+    gDude->pid = PROTO_ID_DUDE;
     gDude->sid = 1;
 
     for (ObjectType i = OBJ_TYPE_FIRST; i < OBJ_TYPE_PROTO_COUNT; i++) {
@@ -1491,11 +1491,11 @@ int protoInit()
 void protoReset()
 {
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, 0x1000000);
-    gDudeProto.pid = 0x1000000;
+    proto_critter_init((Proto*)&gDudeProto, PROTO_ID_DUDE);
+    gDudeProto.pid = PROTO_ID_DUDE;
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
-    gDude->pid = 0x1000000;
+    gDude->pid = PROTO_ID_DUDE;
     gDude->sid = -1;
     gDude->flags &= ~OBJECT_FLAG_0xFC000;
 
@@ -2153,7 +2153,7 @@ int protoGetProto(int pid, Proto** protoPtr)
         return -1;
     }
 
-    if (pid == 0x1000000) {
+    if (pid == PROTO_ID_DUDE) {
         *protoPtr = (Proto*)&gDudeProto;
         return 0;
     }

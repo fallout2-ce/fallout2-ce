@@ -8,21 +8,21 @@
 
 namespace fallout {
 
-typedef enum GameState {
-    GAME_STATE_0,
-    GAME_STATE_1,
-    GAME_STATE_2,
-    GAME_STATE_3,
-    GAME_STATE_4,
-    GAME_STATE_5,
-} GameState;
+enum class GameState : int {
+    Normal,
+    NormalPending,
+    DialogFinished,
+    DialogFinishedPending,
+    DialogActive,
+    DialogRequested,
+};
 
-typedef enum GameQuitRequest {
+enum GameQuitRequest : int {
     GAME_QUIT_REQUEST_NONE = 0,
     GAME_QUIT_REQUEST_END_COMBAT = 1,
     GAME_QUIT_REQUEST_MAIN_MENU = 2,
     GAME_QUIT_REQUEST_EXIT = 3,
-} GameQuitRequest;
+};
 
 extern int* gGameGlobalVars;
 extern int gGameGlobalVarsLength;
@@ -43,8 +43,8 @@ bool gameUiIsDisabled();
 int gameGetGlobalVar(GameGlobalVar var);
 int gameSetGlobalVar(GameGlobalVar var, int value);
 int globalVarsRead(const char* path, const char* section, int* variablesListLengthPtr, int** variablesListPtr);
-int gameGetState();
-int gameRequestState(int newGameState);
+GameState gameGetState();
+int gameRequestState(GameState newGameState);
 void gameUpdateState();
 int showQuitConfirmationDialog();
 
@@ -62,7 +62,8 @@ inline bool globalVariableIsValid(int var)
 
 class GameMode {
 public:
-    enum Flags {
+    enum Flags : unsigned int {
+        kNone = 0x0,
         kWorldmap = 0x1,
         kDialog = 0x4,
         kOptions = 0x8,
@@ -86,23 +87,38 @@ public:
         kSpecial = 0x80000000,
     };
 
-    static void enterGameMode(int gameMode);
-    static void exitGameMode(int gameMode);
-    static void exitGameModeQuietly(int gameMode);
-    static bool isInGameMode(int gameMode);
-    static int getCurrentGameMode() { return currentGameMode; }
+    static void enterGameMode(Flags gameMode);
+    static void exitGameMode(Flags gameMode);
+    static void exitGameModeQuietly(Flags gameMode);
+    static bool isInGameMode(Flags gameMode);
+    static Flags getCurrentGameMode() { return currentGameMode; }
 
 private:
-    static int currentGameMode;
+    static Flags currentGameMode;
 };
+
+constexpr inline GameMode::Flags operator~(GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(~static_cast<unsigned int>(rhs));
+}
+
+constexpr inline GameMode::Flags operator&(GameMode::Flags lhs, GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline GameMode::Flags operator|(GameMode::Flags lhs, GameMode::Flags rhs)
+{
+    return static_cast<GameMode::Flags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 class ScopedGameMode {
 public:
-    ScopedGameMode(int gameMode);
+    ScopedGameMode(GameMode::Flags gameMode);
     ~ScopedGameMode();
 
 private:
-    int gameMode;
+    GameMode::Flags gameMode;
 };
 
 } // namespace fallout

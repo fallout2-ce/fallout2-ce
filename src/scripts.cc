@@ -1060,7 +1060,7 @@ static void _script_chk_timed_events()
         shouldProcessQueue = true;
     }
 
-    if (gameGetState() != GAME_STATE_4) {
+    if (gameGetState() != GameState::DialogActive) {
         if (getTicksBetween(currentTime, gLastMapUpdateTime) >= 30000) {
             gLastMapUpdateTime = currentTime;
             scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -1841,7 +1841,7 @@ int scriptsSetDudeScript()
     }
 
     Proto* proto;
-    if (protoGetProto(0x1000000, &proto) == -1) {
+    if (protoGetProto(PROTO_ID_DUDE, &proto) == -1) {
         debugPrint("Error in scr_set_dude_script: can't find obj_dude proto!");
         return -1;
     }
