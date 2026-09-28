@@ -93,7 +93,7 @@ int map_scr_remove_all_spatials()
     for (sid = 0; sid < 15000; sid++) {
         if (scriptGetScript(sid, &scr) != -1) {
             if (scr->owner != NULL) {
-                if (scr->owner->pid == PROTO_ID_0x500000C) {
+                if (ProtoId(scr->owner) == MiscProtoTypeId::Id0x0C) {
                     scr->owner->sid = -1;
                     scriptRemove(sid);
                 }

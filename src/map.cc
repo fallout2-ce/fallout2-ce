@@ -1306,7 +1306,7 @@ static int replaceDeadCritter(Object* critter)
     }
 
     Object* blood;
-    if (objectCreateWithPid(&blood, PROTO_ID_BLOOD) == -1) {
+    if (objectCreateWithPid(&blood, ProtoId(MiscProtoTypeId::Blood).pid()) == -1) {
         return -1;
     }
 

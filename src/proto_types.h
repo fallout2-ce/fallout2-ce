@@ -309,10 +309,12 @@ enum class SceneryProtoTypeId : int {
     ElevatorStub = 1293
 };
 
-#define PROTO_ID_BLOOD 0x5000004
-#define PROTO_ID_0x500000C 0x500000C
-#define FIRST_EXIT_GRID_PID 0x5000010
-#define LAST_EXIT_GRID_PID 0x5000017
+enum class MiscProtoTypeId : int {
+    Blood = 4,
+    Id0x0C = 12,
+    FirstExitGrid = 16,
+    LastExitGrid = 23
+};
 
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
@@ -660,6 +662,11 @@ struct MapProtoTypeIdToObjectType<CritterProtoTypeId> {
 template <>
 struct MapProtoTypeIdToObjectType<SceneryProtoTypeId> {
     static constexpr ObjectType value = OBJ_TYPE_SCENERY;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<MiscProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_MISC;
 };
 
 class ProtoId {

@@ -2631,7 +2631,7 @@ int _obj_scroll_blocking_at(int tile, int elev)
             break;
         }
 
-        if (objectListNode->obj->elevation == elev && objectListNode->obj->pid == PROTO_ID_0x500000C) {
+        if (objectListNode->obj->elevation == elev && ProtoId(objectListNode->obj) == MiscProtoTypeId::Id0x0C) {
             return 0;
         }
 
