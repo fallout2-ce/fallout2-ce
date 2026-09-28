@@ -1882,7 +1882,7 @@ void mf_set_combat_free_move(OpcodeContext& ctx)
 
 void mf_set_cursor_mode(OpcodeContext& ctx)
 {
-    int mode = ctx.arg(0).asInt();
+    GameMouseMode mode = static_cast<GameMouseMode>(ctx.arg(0).asInt());
     gameMouseSetMode(mode);
 }
 

@@ -325,6 +325,7 @@ enum class MiscFrameId : int {
     Reserved = 0, // reserved.frm
     EmpExplosion = 2, // empxpld.frm
     RocketExplosion = 10, // roktxpd.frm
+    BloodPool = 11, // rscorpbl.frm
     ScrollBlocker = 12, // scrblk.frm
     FireExplosion = 29, // expa.frm
     PlasmaExplosion = 31, // expp.frm

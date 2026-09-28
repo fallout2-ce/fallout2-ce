@@ -217,9 +217,9 @@ typedef enum PartyMemberCustomizationOption {
 
 // 0x444D10 Dogs
 static int _Dogs[3] = {
-    0x1000088,
-    0x1000156,
-    0x1000180,
+    PROTO_ID_DOG_1,
+    PROTO_ID_DOG_2,
+    PROTO_ID_DOG_3,
 };
 
 static std::unordered_map<int, AiMessageRange> partyMemberCcMsgIds;
@@ -978,7 +978,7 @@ void _gdialogSystemEnter()
 
     gameDialogRestoreCenterTile();
 
-    gameRequestState(GAME_STATE_2);
+    gameRequestState(GameState::DialogFinished);
 
     gameUpdateState();
 }

@@ -1,6 +1,8 @@
 #ifndef SFALL_BEHAVIOURS_H
 #define SFALL_BEHAVIOURS_H
 
+#include "game.h"
+
 namespace fallout {
 
 void sfallOnBeforeGameInit();
@@ -11,7 +13,7 @@ void sfallOnGameReset();
 void sfallOnBeforeGameStart();
 void sfallOnAfterGameStarted();
 void sfallOnAfterNewGame();
-void sfallOnGameModeChange(int exit, int previousGameMode);
+void sfallOnGameModeChange(int exit, GameMode::Flags previousGameMode);
 void sfallOnBeforeGameClose();
 void sfallOnCombatStart();
 void sfallOnCombatEnd();

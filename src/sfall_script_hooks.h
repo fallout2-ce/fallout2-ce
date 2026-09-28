@@ -3,6 +3,7 @@
 
 #include "animation_defs.h"
 #include "art.h"
+#include "game.h"
 #include "interpreter.h"
 #include "interpreter_extra.h"
 #include "queue.h"
@@ -351,7 +352,7 @@ bool scriptHooksInit();
 void scriptHooksReset();
 void scriptHooksExit();
 
-void scriptHooks_GameModeChange(int exit, int previousGameMode);
+void scriptHooks_GameModeChange(int exit, GameMode::Flags previousGameMode);
 bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
 int scriptHooks_ExplosiveTimer(Object* explosive, int delay, EventType eventType);

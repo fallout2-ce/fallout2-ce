@@ -916,7 +916,7 @@ static int mapLoad(File* stream)
     _partyMemberPrepLoad();
     _gmouse_disable_scrolling();
 
-    int savedMouseCursorId = gameMouseGetCursor();
+    MouseCursorType savedMouseCursorId = gameMouseGetCursor();
     if (savedMouseCursorId >= MOUSE_CURSOR_SCROLL_NW && savedMouseCursorId <= MOUSE_CURSOR_SCROLL_W_INVALID) {
         savedMouseCursorId = MOUSE_CURSOR_ARROW; // reset if it was in view scrolling mode
     }
@@ -1259,7 +1259,7 @@ static int _map_age_dead_critters()
                     }
                 }
             }
-        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->fid == 0x500000B) {
+        } else if (agingType == 2 && type == OBJ_TYPE_MISC && FrmId(obj) == MiscFrameId::BloodPool) {
             objects[count++] = obj;
             if (count >= capacity) {
                 capacity *= 2;
