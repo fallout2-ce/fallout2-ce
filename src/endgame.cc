@@ -317,7 +317,7 @@ static int endgameEndingHandleContinuePlaying()
         mouseShowCursor();
     }
 
-    int oldCursor = gameMouseGetCursor();
+    MouseCursorType oldCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     int rc;

@@ -518,7 +518,7 @@ static constexpr InterfaceFrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CU
 static Object* _last_target = nullptr;
 
 // 0x519114 act_use
-static const int _act_use[4] = {
+static const GameMouseActionMenuItem _act_use[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
@@ -526,27 +526,27 @@ static const int _act_use[4] = {
 };
 
 // 0x519124 act_no_use
-static const int _act_no_use[3] = {
+static const GameMouseActionMenuItem _act_no_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x519130 act_just_use
-static const int _act_just_use[3] = {
+static const GameMouseActionMenuItem _act_just_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x51913C act_nothing
-static const int _act_nothing[2] = {
+static const GameMouseActionMenuItem _act_nothing[2] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x519144 act_weap
-static const int _act_weap[4] = {
+static const GameMouseActionMenuItem _act_weap[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
@@ -554,7 +554,7 @@ static const int _act_weap[4] = {
 };
 
 // 0x519154 act_weap2
-static const int _act_weap2[3] = {
+static const GameMouseActionMenuItem _act_weap2[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
@@ -2739,7 +2739,7 @@ static void inventoryItemSlotOnMouseEnter(int btn, int keyCode)
 
         Object* item = nullptr;
         if (_inven_from_button(keyCode, &item, nullptr, nullptr) != 0) {
-            gameMouseRenderPrimaryAction(x, y, 3, gInventoryWindowMaxX, gInventoryWindowMaxY);
+            gameMouseRenderPrimaryAction(x, y, GAME_MOUSE_ACTION_MENU_ITEM_LOOK, gInventoryWindowMaxX, gInventoryWindowMaxY);
 
             int cursorHotspotX = 0;
             int cursorHotspotY = 0;
@@ -4423,7 +4423,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     mouseGetPosition(&x, &y);
 
     int actionMenuItemsLength;
-    const int* actionMenuItems;
+    const GameMouseActionMenuItem* actionMenuItems;
     if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
         if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL && objectGetOwner(item) != gDude) {
             actionMenuItemsLength = 3;
