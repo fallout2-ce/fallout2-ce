@@ -744,7 +744,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
     Proto* weaponProto;
     Object* weapon = attack->weapon;
-    protoGetProto(weapon->pid, &weaponProto);
+    protoGetProto(weapon, &weaponProto);
 
     const FrmId frmId = FrmId(attack->attacker, anim, attack->attacker->rotation + 1);
     CacheEntry* artHandle;
@@ -786,9 +786,10 @@ int _action_ranged(Attack* attack, AnimationType anim)
         if ((attack->attackerFlags & DAM_HIT) != DAM_NONE || (attack->attackerFlags & DAM_CRITICAL) == DAM_NONE) {
             bool l56 = false;
 
-            int projectilePid = weaponGetProjectilePid(weapon);
+            const ProtoId projectileProtoId = ProtoId(weaponGetProjectilePid(weapon));
             Proto* projectileProto;
-            if (protoGetProto(projectilePid, &projectileProto) != -1 && projectileProto->fid != -1) {
+            const FrmId projectileFrmId = FrmId(projectileProto);
+            if (protoGetProto(projectileProtoId, &projectileProto) != -1 && projectileFrmId.valid()) {
                 if (anim == ANIM_THROW_ANIM) {
                     projectile = weapon;
                     weaponFrmId = FrmId(weapon);
@@ -800,7 +801,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
-                    objectSetFrmId(projectile, FrmId(projectileProto), nullptr);
+                    objectSetFrmId(projectile, projectileFrmId, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
 
                     if (attack->attacker == gDude) {
@@ -1111,7 +1112,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
     ObjectType type = FrmId(targetObj).objectType();
     int sceneryType = -1;
     if (type == OBJ_TYPE_SCENERY) {
-        if (protoGetProto(targetObj->pid, &proto) == -1) {
+        if (protoGetProto(targetObj, &proto) == -1) {
             return -1;
         }
 
@@ -1228,7 +1229,7 @@ int actionPickUp(Object* critter, Object* item)
     animationRegisterCallback(critter, item, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
 
     Proto* itemProto;
-    protoGetProto(item->pid, &itemProto);
+    protoGetProto(item, &itemProto);
 
     if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item->pid)) {
         animationRegisterAnimate(critter, ANIM_MAGIC_HANDS_GROUND, 0);

@@ -2680,16 +2680,13 @@ void _gmouse_remove_item_outline(Object* object)
 // 0x44E580 gmObjIsValidTarget
 int objectIsDoor(Object* object)
 {
-    if (object == nullptr) {
-        return false;
-    }
-
-    if (objectTypeFromPid(object->pid) != OBJ_TYPE_SCENERY) {
+    const ProtoId protoId = object;
+    if (protoId.objectType() != OBJ_TYPE_SCENERY) {
         return false;
     }
 
     Proto* proto;
-    if (protoGetProto(object->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 

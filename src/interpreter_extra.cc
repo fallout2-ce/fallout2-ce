@@ -867,20 +867,21 @@ static void opCreateObject(Program* program)
     int sid = data[0];
 
     Object* object = nullptr;
+    const ProtoId protoId = ProtoId(pid);
 
     if (_isLoadingGame() != 0) {
         debugPrint("\nError: attempt to Create critter in load/save-game: %s!", program->name);
         goto out;
     }
 
-    if (pid == 0) {
+    if (protoId.pid() == 0) {
         debugPrint("\nError: attempt to Create critter With PID of 0: %s!", program->name);
         goto out;
     }
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) != -1) {
-        if (objectCreateWithFrmIdPid(&object, FrmId(proto), pid) != -1) {
+    if (protoGetProto(protoId, &proto) != -1) {
+        if (objectCreateWithFrmIdPid(&object, FrmId(proto), protoId.pid()) != -1) {
             if (tile == -1) {
                 tile = 0;
             }
@@ -1272,12 +1273,11 @@ static void opGetItemType(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     ItemType itemType = ITEM_TYPE_INVALID;
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            Proto* proto;
-            if (protoGetProto(obj->pid, &proto) != -1) {
-                itemType = itemGetType(obj);
-            }
+    const ProtoId protoId = obj;
+    if (protoId.objectType() == OBJ_TYPE_ITEM) {
+        Proto* proto;
+        if (protoGetProto(protoId, &proto) != -1) {
+            itemType = itemGetType(obj);
         }
     }
 
@@ -1924,9 +1924,10 @@ static void opStartGameDialog(Program* program)
     }
 
     gGameDialogHeadFrmId = HeadFrameId::Invalid;
-    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = obj;
+    if (protoId.objectType() == OBJ_TYPE_CRITTER) {
         Proto* proto;
-        if (protoGetProto(obj->pid, &proto) == -1) {
+        if (protoGetProto(protoId, &proto) == -1) {
             return;
         }
     }
@@ -3366,9 +3367,10 @@ static void opMetarule(Program* program)
     case METARULE_CRITTER_BARTERS:
         if (1) {
             Object* object = static_cast<Object*>(param.pointerValue);
-            if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+            const ProtoId protoId = object;
+            if (protoId.objectType() == OBJ_TYPE_CRITTER) {
                 Proto* proto;
-                protoGetProto(object->pid, &proto);
+                protoGetProto(protoId, &proto);
                 if ((proto->critter.data.flags & CRITTER_BARTER) != CRITTER_NONE) {
                     result = 1;
                 }
@@ -3381,7 +3383,7 @@ static void opMetarule(Program* program)
     case METARULE_SET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(ProtoId(ItemProtoTypeId::CarTrunk).pid(), &proto) != -1) {
+            if (protoGetProto(ItemProtoTypeId::CarTrunk, &proto) != -1) {
                 proto->item.data.container.maxSize = param.integerValue;
                 result = 1;
             }
@@ -3390,7 +3392,7 @@ static void opMetarule(Program* program)
     case METARULE_GET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(ProtoId(ItemProtoTypeId::CarTrunk).pid(), &proto) != -1) {
+            if (protoGetProto(ItemProtoTypeId::CarTrunk, &proto) != -1) {
                 result = proto->item.data.container.maxSize;
             }
         }

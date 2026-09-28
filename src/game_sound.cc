@@ -1423,19 +1423,19 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
     if (effectTypeCode != 'H' || target == nullptr || damageType == explosionGetDamageType() || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_EMP) {
         materialCode = 'X';
     } else {
-        const ObjectType type = FrmId(target).objectType();
+        const ProtoId protoId = target;
         MaterialType material;
-        switch (type) {
+        switch (protoId.objectType()) {
         case OBJ_TYPE_ITEM:
-            protoGetProto(target->pid, &proto);
+            protoGetProto(protoId, &proto);
             material = proto->item.material;
             break;
         case OBJ_TYPE_SCENERY:
-            protoGetProto(target->pid, &proto);
+            protoGetProto(protoId, &proto);
             material = proto->scenery.material;
             break;
         case OBJ_TYPE_WALL:
-            protoGetProto(target->pid, &proto);
+            protoGetProto(protoId, &proto);
             material = proto->wall.material;
             break;
         default:
@@ -1485,10 +1485,11 @@ char* sfxBuildSceneryName(int actionType, int action, const char* name)
 // 0x4518D
 char* sfxBuildOpenName(Object* object, int action)
 {
-    if (FrmId(object).objectType() == OBJ_TYPE_SCENERY) {
+    const ProtoId protoId = object;
+    if (protoId.objectType() == OBJ_TYPE_SCENERY) {
         char scenerySoundId;
         Proto* proto;
-        if (protoGetProto(object->pid, &proto) != -1) {
+        if (protoGetProto(protoId, &proto) != -1) {
             scenerySoundId = proto->scenery.soundId;
         } else {
             scenerySoundId = 'A';
@@ -1496,7 +1497,7 @@ char* sfxBuildOpenName(Object* object, int action)
         snprintf(_sfx_file_name, sizeof(_sfx_file_name), "S%cDOORS%c", _snd_lookup_scenery_action[action], scenerySoundId);
     } else {
         Proto* proto;
-        protoGetProto(object->pid, &proto);
+        protoGetProto(protoId, &proto);
         snprintf(_sfx_file_name, sizeof(_sfx_file_name), "I%cCNTNR%c", _snd_lookup_scenery_action[action], proto->item.soundId);
     }
     compat_strupr(_sfx_file_name);

@@ -252,7 +252,7 @@ void map_toggle_block_obj_viewing(int mode)
             } else {
                 if (blockedFidCache[index] == 0) {
                     Proto* proto;
-                    if (protoGetProto(obj->pid, &proto) == 0) {
+                    if (protoGetProto(obj, &proto) == 0) {
                         blockedFidCache[index] = proto->fid;
                     }
                 }
@@ -654,11 +654,12 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     bool useArtNotProtos = settings.mapper.use_art_not_protos;
 
     Proto* proto = nullptr;
+    const ProtoId protoId = srcObj;
     bool gatePassed = useArtNotProtos
         || existing == nullptr
         || srcObj == nullptr
-        || objectTypeFromPid(srcObj->pid) == OBJ_TYPE_TILE
-        || protoGetProto(srcObj->pid, &proto) == -1
+        || protoId.objectType() == OBJ_TYPE_TILE
+        || protoGetProto(protoId, &proto) == -1
         || (proto != nullptr && (proto->flags & 0x10) != 0);
 
     if (!gatePassed) {

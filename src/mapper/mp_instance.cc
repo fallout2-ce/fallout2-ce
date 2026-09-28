@@ -95,8 +95,9 @@ void protoInstEdit(Object* obj)
 // proto_inst_setup_edit_
 static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, int* pObjProtoOff, int* pBufOff, const char* title)
 {
+    const ProtoId protoId = obj;
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
@@ -111,7 +112,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, in
     if (win == -1) return -1;
 
     *pWinId = win;
-    *pObjType = objectTypeFromPid(obj->pid);
+    *pObjType = protoId.objectType();
     *pObjProtoOff = 0;
 
     windowDrawBorder(win);
@@ -427,13 +428,14 @@ static int protoInstItemEdit(Object* obj)
 // proto_inst_add_to_inven
 static int protoInstAddToInven(int pid, int count)
 {
+    const ProtoId protoId = ProtoId(pid);
     if (proto_inst_who_obj == nullptr) return -1;
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) return 0;
+    if (protoGetProto(protoId, &proto) == -1) return 0;
 
     Object* newObj;
-    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto), pid) == -1) return 0;
+    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto), protoId.pid()) == -1) return 0;
 
     objectSetLocation(newObj, 0, 0, nullptr);
 
@@ -473,13 +475,14 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     int count = 0;
 
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
+        const ProtoId protoId = ProtoId(pid);
         Proto* proto;
-        if (protoGetProto(pid, &proto) == -1) break;
-        if (objectTypeFromPid(pid) != OBJ_TYPE_ITEM) continue;
+        if (protoGetProto(protoId, &proto) == -1) break;
+        if (protoId.objectType() != OBJ_TYPE_ITEM) continue;
 
         names[count] = static_cast<char*>(internal_malloc(64));
-        snprintf(names[count], 64, "%s", protoGetName(pid));
-        pids[count] = pid;
+        snprintf(names[count], 64, "%s", protoGetName(protoId.pid()));
+        pids[count] = protoId.pid();
         count++;
     }
 
@@ -717,7 +720,7 @@ static int protoInstSceneryEdit(Object* obj)
     int bufOff;
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(obj, &proto) == -1) {
         return -1;
     }
 
