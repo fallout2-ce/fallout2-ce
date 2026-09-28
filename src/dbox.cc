@@ -308,9 +308,9 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     return nullptr;
 }
 
-const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText)
+const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText)
 {
-    return showInputDialog(currentInput, windowX, windowY, doneText, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    return showInputDialog(currentInput, x, y, doneText, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 }
 
 // 0x41CF20 dialog_out
@@ -385,62 +385,51 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonNormalFrmImage;
     FrmImage buttonPressedFrmImage;
 
+    // Resources init
+    if ((flags & DIALOG_BOX_NO_BUTTONS) == 0 && !initializedButtons) {
+        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox) ||
+            !buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown) ||
+            !buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp) ||
+            !messageListInit(&messageList))
+        {
+            return -1;
+        }
+
+        std::string path = std::string(asc_5186C8) + "DBOX.MSG";
+        if (!messageListLoad(&messageList, path.c_str())) {
+            return -1;
+        }
+    }
+
+    int bgWidth = backgroundFrmImage.getWidth();
+    int doneY = _doneY[dialogType];
+
+    // First button
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
-            return -1;
-        }
+        ScopedFont buttonFontGuard(103);
 
-        if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
-            return -1;
-        }
+        int v27 = hasTwoButtons ? _doneX[dialogType] : (bgWidth - doneBoxFrmImage.getWidth()) / 2;
 
-        if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
-            return -1;
-        }
-
-        int v27 = hasTwoButtons
-            ? _doneX[dialogType]
-            : (backgroundFrmImage.getWidth() - doneBoxFrmImage.getWidth()) / 2;
         blitBufferToBuffer(doneBoxFrmImage.getData(),
-            doneBoxFrmImage.getWidth(),
-            doneBoxFrmImage.getHeight(),
-            doneBoxFrmImage.getWidth(),
-            windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + v27,
-            backgroundFrmImage.getWidth());
+            doneBoxFrmImage.getWidth(), doneBoxFrmImage.getHeight(), doneBoxFrmImage.getWidth(),
+            windowBuf + bgWidth * doneY + v27,
+            bgWidth);
 
-        if (!messageListInit(&messageList)) {
-            return -1;
-        }
-
-        char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-        if (!messageListLoad(&messageList, path)) {
-            return -1;
-        }
-
-        ScopedFont buttonFontGuard(103); // button font
-
-        // 100 - DONE
-        // 101 - YES
         messageListItem.num = (flags & DIALOG_BOX_YES_NO) == 0 ? 100 : 101;
         if (messageListGetItem(&messageList, &messageListItem)) {
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + v27 + 35,
+            fontDrawText(windowBuf + bgWidth * (doneY + 3) + v27 + 35,
                 messageListItem.text,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
+                bgWidth,
+                bgWidth,
                 COLOR_DARK_YELLOW);
         }
 
         int btn = buttonCreate(win.get(),
             v27 + 13,
-            _doneY[dialogType] + 4,
+            doneY + 4,
             buttonPressedFrmImage.getWidth(),
             buttonPressedFrmImage.getHeight(),
-            -1,
-            -1,
-            -1,
-            500,
+            -1, -1, -1, 500,
             buttonNormalFrmImage.getData(),
             buttonPressedFrmImage.getData(),
             nullptr,
@@ -449,100 +438,46 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
         }
 
+        // Buttons rendered
         initializedButtons = true;
     }
 
+    // Second button
     if (hasTwoButtons && dialogType == DIALOG_TYPE_LARGE) {
-        if (initializedButtons) {
-            if ((flags & DIALOG_BOX_YES_NO) != 0) {
-                secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
-            }
+        ScopedFont buttonFontGuard(103);
 
-            ScopedFont buttonFontGuard(103); // Button font
+        if ((flags & DIALOG_BOX_YES_NO) != 0) {
+            secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
+        }
 
-            blitBufferToBufferTrans(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(),
-                doneBoxFrmImage.getHeight(),
-                doneBoxFrmImage.getWidth(),
-                windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + _doneX[dialogType] + doneBoxFrmImage.getWidth() + 24,
-                backgroundFrmImage.getWidth());
+        int doneX = _doneX[dialogType];
 
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + doneBoxFrmImage.getWidth() + 59,
-                secondaryButtonText,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                COLOR_DARK_YELLOW);
+        int blitXOffset   = initializedButtons ? (doneX + doneBoxFrmImage.getWidth() + 24) : doneX;
+        int textXOffset   = initializedButtons ? (doneX + doneBoxFrmImage.getWidth() + 59) : (doneX + 35);
+        int buttonXOffset = initializedButtons ? (doneBoxFrmImage.getWidth() + doneX + 37)  : (doneX + 13);
 
-            int btn = buttonCreate(win.get(),
-                doneBoxFrmImage.getWidth() + _doneX[dialogType] + 37,
-                _doneY[dialogType] + 4,
-                buttonPressedFrmImage.getWidth(),
-                buttonPressedFrmImage.getHeight(),
-                -1,
-                -1,
-                -1,
-                501,
-                buttonNormalFrmImage.getData(),
-                buttonPressedFrmImage.getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
-        } else {
-            if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
-                return -1;
-            }
+        blitBufferToBufferTrans(doneBoxFrmImage.getData(),
+            doneBoxFrmImage.getWidth(),
+            doneBoxFrmImage.getHeight(),
+            doneBoxFrmImage.getWidth(),
+            windowBuf + bgWidth * doneY + blitXOffset,
+            bgWidth);
 
-            if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
-                return -1;
-            }
+        fontDrawText(windowBuf + bgWidth * (doneY + 3) + textXOffset, secondaryButtonText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
 
-            if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
-                return -1;
-            }
+        int btn = buttonCreate(win.get(),
+            buttonXOffset,
+            doneY + 4,
+            buttonPressedFrmImage.getWidth(),
+            buttonPressedFrmImage.getHeight(),
+            -1, -1, -1, 501,
+            buttonNormalFrmImage.getData(),
+            buttonPressedFrmImage.getData(),
+            nullptr,
+            BUTTON_FLAG_TRANSPARENT);
 
-            if (!messageListInit(&messageList)) {
-                return -1;
-            }
-
-            char path[COMPAT_MAX_PATH];
-            snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-            if (!messageListLoad(&messageList, path)) {
-                return -1;
-            }
-
-            blitBufferToBufferTrans(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(),
-                doneBoxFrmImage.getHeight(),
-                doneBoxFrmImage.getWidth(),
-                windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + _doneX[dialogType],
-                backgroundFrmImage.getWidth());
-
-            fontSetCurrent(103);
-
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + 35,
-                secondaryButtonText, backgroundFrmImage.getWidth(), backgroundFrmImage.getWidth(), COLOR_DARK_YELLOW);
-
-            int btn = buttonCreate(win.get(),
-                _doneX[dialogType] + 13,
-                _doneY[dialogType] + 4,
-                buttonPressedFrmImage.getWidth(),
-                buttonPressedFrmImage.getHeight(),
-                -1,
-                -1,
-                -1,
-                501,
-                buttonNormalFrmImage.getData(),
-                buttonPressedFrmImage.getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
-
-            initializedButtons = true;
+        if (btn != -1) {
+            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
         }
     }
 
