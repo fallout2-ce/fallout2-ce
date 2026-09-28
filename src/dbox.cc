@@ -318,7 +318,6 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 {
     MessageList messageList;
     MessageListItem messageListItem;
-    int savedFont = fontGetCurrent();
 
     bool initializedButtons = false;
 
@@ -369,25 +368,17 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage backgroundFrmImage;
     const FrmId backgroundFid = kDialogBoxBackgroundFrmIds[dialogType];
     if (!backgroundFrmImage.lock(backgroundFid)) {
-        fontSetCurrent(savedFont);
         return -1;
     }
 
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x,
-        y,
-        backgroundFrmImage.getWidth(),
-        backgroundFrmImage.getHeight(),
-        static_cast<ColorWithFlags>(256),
-        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        fontSetCurrent(savedFont);
-        return -1;
-    }
 
-    unsigned char* windowBuf = windowGetBuffer(win);
+    UniqueWindow win(windowCreate(x, y, backgroundFrmImage.getWidth(), backgroundFrmImage.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    if (win.get() == -1) return -1;
+
+    unsigned char* windowBuf = windowGetBuffer(win.get());
     memcpy(windowBuf, backgroundFrmImage.getData(), static_cast<size_t>(backgroundFrmImage.getWidth()) * backgroundFrmImage.getHeight());
 
     FrmImage doneBoxFrmImage;
@@ -396,20 +387,14 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
         if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
             return -1;
         }
 
         if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
             return -1;
         }
 
         if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
             return -1;
         }
 
@@ -424,8 +409,6 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             backgroundFrmImage.getWidth());
 
         if (!messageListInit(&messageList)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
             return -1;
         }
 
@@ -433,12 +416,10 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
 
         if (!messageListLoad(&messageList, path)) {
-            fontSetCurrent(savedFont);
-            // FIXME: Window is not removed.
             return -1;
         }
 
-        fontSetCurrent(103);
+        ScopedFont buttonFontGuard(103); // button font
 
         // 100 - DONE
         // 101 - YES
@@ -451,7 +432,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 COLOR_DARK_YELLOW);
         }
 
-        int btn = buttonCreate(win,
+        int btn = buttonCreate(win.get(),
             v27 + 13,
             _doneY[dialogType] + 4,
             buttonPressedFrmImage.getWidth(),
@@ -477,7 +458,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
             }
 
-            fontSetCurrent(103);
+            ScopedFont buttonFontGuard(103); // Button font
 
             blitBufferToBufferTrans(doneBoxFrmImage.getData(),
                 doneBoxFrmImage.getWidth(),
@@ -492,7 +473,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 backgroundFrmImage.getWidth(),
                 COLOR_DARK_YELLOW);
 
-            int btn = buttonCreate(win,
+            int btn = buttonCreate(win.get(),
                 doneBoxFrmImage.getWidth() + _doneX[dialogType] + 37,
                 _doneY[dialogType] + 4,
                 buttonPressedFrmImage.getWidth(),
@@ -510,26 +491,18 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
         } else {
             if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
                 return -1;
             }
 
             if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
                 return -1;
             }
 
             if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
                 return -1;
             }
 
             if (!messageListInit(&messageList)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
                 return -1;
             }
 
@@ -537,8 +510,6 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
 
             if (!messageListLoad(&messageList, path)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
                 return -1;
             }
 
@@ -554,7 +525,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + 35,
                 secondaryButtonText, backgroundFrmImage.getWidth(), backgroundFrmImage.getWidth(), COLOR_DARK_YELLOW);
 
-            int btn = buttonCreate(win,
+            int btn = buttonCreate(win.get(),
                 _doneX[dialogType] + 13,
                 _doneY[dialogType] + 4,
                 buttonPressedFrmImage.getWidth(),
@@ -575,7 +546,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         }
     }
 
-    fontSetCurrent(101);
+    ScopedFont mainFontGuard(101);
 
     int nextY = _ytable[dialogType];
     int maxY = _ytable[dialogType] + _dblines[dialogType] * fontGetLineHeight();
@@ -682,7 +653,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         }
     }
 
-    windowRefresh(win);
+    windowRefresh(win.get());
 
     int rc = -1;
     while (rc == -1) {
@@ -714,9 +685,6 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
-    windowDestroy(win);
-    fontSetCurrent(savedFont);
 
     if (initializedButtons) {
         messageListFree(&messageList);
