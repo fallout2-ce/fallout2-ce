@@ -1512,7 +1512,7 @@ static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int sc
 void inventoryResetDude()
 {
     _inven_dude = gDude;
-    _inven_pid = 0x1000000;
+    _inven_pid = PROTO_ID_DUDE;
 }
 
 int inventoryGetInvenApCost()
