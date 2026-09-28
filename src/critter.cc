@@ -1035,7 +1035,7 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
         return CritterFrameId::Invalid;
     }
 
-    assert(critter->pid == PROTO_ID_GORIS);
+    assert(ProtoId(critter) == CritterProtoTypeId::Goris);
 
     const FrmId frmId = FrmId(critter);
 

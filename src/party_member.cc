@@ -865,7 +865,7 @@ bool partyMemberPidCanEquipArmor(int pid)
         return false;
     }
 
-    return proto->critter.data.bodyType == BODY_TYPE_BIPED && pid != PROTO_ID_MARCUS;
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && ProtoId(pid) != CritterProtoTypeId::Marcus;
 }
 
 // Returns number of active critters in the party.

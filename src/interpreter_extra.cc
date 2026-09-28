@@ -3533,7 +3533,7 @@ static void opRegAnimAnimate(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
-        if (anim != ANIM_FALL_BACK || object == nullptr || object->pid != PROTO_ID_0x100002F || (settings.preferences.violence_level >= 2)) {
+        if (anim != ANIM_FALL_BACK || ProtoId(object) != CritterProtoTypeId::GunGuardFemale || (settings.preferences.violence_level >= 2)) {
             if (object != nullptr) {
                 animationRegisterAnimate(object, anim, delay);
             } else {

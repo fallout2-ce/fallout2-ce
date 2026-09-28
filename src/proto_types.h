@@ -286,25 +286,16 @@ enum class ItemProtoTypeId : int {
 
 enum class CritterProtoTypeId : int {
     Dude = 0,
-    Id0x2F = 47,
-    Dog1 = 136,
+    GunGuardFemale = 47,
+    Cyberdog = 136,
     Goris = 152,
     Marcus = 161,
-    Id0xFA = 250,
-    Dog2 = 342,
-    Dog3 = 384,
-    Id0x1E0 = 480
+    EnclavePatrolMale = 250,
+    Dogmeat = 342,
+    PariahDog = 384,
+    AutoCannon = 480
 };
 
-#define PROTO_ID_DUDE 0x1000000
-#define PROTO_ID_0x100002F 0x100002F
-#define PROTO_ID_DOG_1 0x1000088
-#define PROTO_ID_GORIS 0x1000098
-#define PROTO_ID_MARCUS 0x10000A1
-#define PROTO_ID_0x10000FA 0x10000FA
-#define PROTO_ID_DOG_2 0x1000156
-#define PROTO_ID_DOG_3 0x1000180
-#define PROTO_ID_0x10001E0 0x10001E0
 #define PROTO_ID_EXIT_GRID_MAP_MARKER 0x2000031
 #define PROTO_ID_BLOCK_HEX_AUTO_INVISO 0x2000158
 #define PROTO_ID_CAR 0x20003F1

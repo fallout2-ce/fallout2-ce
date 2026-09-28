@@ -354,7 +354,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFrmIdPid(&gDude, dudeFrmId, PROTO_ID_DUDE);
+    objectCreateWithFrmIdPid(&gDude, dudeFrmId, ProtoId(CritterProtoTypeId::Dude).pid());
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;

@@ -90,7 +90,7 @@ static int _protos_been_initialized = 0;
 // obj_dude_proto
 // 0x51C370 pc_proto
 static CritterProto gDudeProto = {
-    PROTO_ID_DUDE,
+    ProtoId(CritterProtoTypeId::Dude).pid(),
     -1,
     0x1000001,
     0,
@@ -357,7 +357,7 @@ char* protoGetMessage(int pid, int message)
 // 0x49EAFC proto_name
 char* protoGetName(int pid)
 {
-    if (pid == PROTO_ID_DUDE) {
+    if (ProtoId(pid) == CritterProtoTypeId::Dude) {
         return critterGetName(gDude);
     }
 
@@ -869,7 +869,7 @@ int _proto_update_init(Object* obj)
 int _proto_dude_update_gender()
 {
     Proto* proto;
-    if (protoGetProto(PROTO_ID_DUDE, &proto) == -1) {
+    if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) == -1) {
         return -1;
     }
 
@@ -917,7 +917,7 @@ int _proto_dude_init(const char* path)
     _init_true = 1;
 
     Proto* proto;
-    if (protoGetProto(PROTO_ID_DUDE, &proto) == -1) {
+    if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) == -1) {
         return -1;
     }
 
@@ -1373,13 +1373,14 @@ int protoInit()
     strcpy(path + len, "\\items");
     compat_mkdir(path);
 
+    constexpr ProtoId kDudeProtoId = ProtoId(CritterProtoTypeId::Dude);
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, PROTO_ID_DUDE);
+    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId.pid());
 
-    gDudeProto.pid = PROTO_ID_DUDE;
+    gDudeProto.pid = kDudeProtoId.pid();
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
 
-    gDude->pid = PROTO_ID_DUDE;
+    gDude->pid = kDudeProtoId.pid();
     gDude->sid = 1;
 
     for (ObjectType i = OBJ_TYPE_FIRST; i < OBJ_TYPE_PROTO_COUNT; i++) {
@@ -1490,12 +1491,13 @@ int protoInit()
 // 0x4A0814 proto_reset
 void protoReset()
 {
+    constexpr ProtoId kDudeProtoId = ProtoId(CritterProtoTypeId::Dude);
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, PROTO_ID_DUDE);
-    gDudeProto.pid = PROTO_ID_DUDE;
+    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId.pid());
+    gDudeProto.pid = kDudeProtoId.pid();
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
 
-    gDude->pid = PROTO_ID_DUDE;
+    gDude->pid = kDudeProtoId.pid();
     gDude->sid = -1;
     gDude->flags &= ~OBJECT_FLAG_0xFC000;
 
@@ -2153,7 +2155,7 @@ int protoGetProto(int pid, Proto** protoPtr)
         return -1;
     }
 
-    if (pid == PROTO_ID_DUDE) {
+    if (ProtoId(pid) == CritterProtoTypeId::Dude) {
         *protoPtr = (Proto*)&gDudeProto;
         return 0;
     }

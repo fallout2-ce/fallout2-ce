@@ -2141,7 +2141,7 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
     BodyType bodyType = critterGetBodyType(critter);
     if (bodyType != BODY_TYPE_BIPED
         && bodyType != BODY_TYPE_ROBOTIC
-        && critter->pid != PROTO_ID_GORIS) {
+        && ProtoId(critter) != CritterProtoTypeId::Goris) {
         return nullptr;
     }
 
