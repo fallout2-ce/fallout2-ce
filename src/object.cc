@@ -2091,7 +2091,7 @@ int _obj_inven_free(Inventory* inventory)
 // 0x48B24C obj_action_can_use
 bool _obj_action_can_use(Object* obj)
 {
-    const ProtoTypeId protoId = ProtoTypeId(obj);
+    const ProtoId protoId = ProtoId(obj);
     // SFALL
     if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId.pid())) {
         return _proto_action_can_use(protoId.pid());

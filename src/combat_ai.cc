@@ -1812,7 +1812,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
         *ammoPtr = nullptr;
     }
 
-    if (ProtoTypeId(weapon) == ItemProtoTypeId::SolarScorcher) {
+    if (ProtoId(weapon) == ItemProtoTypeId::SolarScorcher) {
         return lightGetAmbientIntensity() > LIGHT_INTENSITY_MAX * 0.95;
     }
 
@@ -2098,11 +2098,11 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
         return avgDamage2 > avgDamage1 ? weapon2 : weapon1;
     }
 
-    if (ProtoTypeId(weapon1) == ItemProtoTypeId::Flare && weapon2 != nullptr) {
+    if (ProtoId(weapon1) == ItemProtoTypeId::Flare && weapon2 != nullptr) {
         return weapon2;
     }
 
-    if (ProtoTypeId(weapon2) == ItemProtoTypeId::Flare && weapon1 != nullptr) {
+    if (ProtoId(weapon2) == ItemProtoTypeId::Flare && weapon1 != nullptr) {
         return weapon1;
     }
 
@@ -3079,7 +3079,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 // 0x42AE90
 int _cAIPrepWeaponItem(Object* critter, Object* item)
 {
-    if (critterGetStat(critter, STAT_INTELLIGENCE) >= 3 && ProtoTypeId(item) == ItemProtoTypeId::Flare && lightGetAmbientIntensity() < LIGHT_INTENSITY_MAX * 0.85) {
+    if (critterGetStat(critter, STAT_INTELLIGENCE) >= 3 && ProtoId(item) == ItemProtoTypeId::Flare && lightGetAmbientIntensity() < LIGHT_INTENSITY_MAX * 0.85) {
         objectUseItem(critter, item);
     }
     return 0;

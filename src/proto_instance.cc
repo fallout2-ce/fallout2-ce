@@ -605,7 +605,7 @@ int objectPickup(Object* critter, Object* item)
 
     if (!overriden) {
         int rc;
-        if (ProtoTypeId(item) == ItemProtoTypeId::Money) {
+        if (ProtoId(item) == ItemProtoTypeId::Money) {
             int amount = itemGetMoney(item);
             if (amount <= 0) {
                 amount = 1;
@@ -856,7 +856,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
 {
     MessageListItem messageListItem;
 
-    if (ProtoTypeId(flare) != ItemProtoTypeId::Flare) {
+    if (ProtoId(flare) != ItemProtoTypeId::Flare) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -892,7 +892,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
             }
         }
 
-        flare->pid = ProtoTypeId(ItemProtoTypeId::LitFlare).pid();
+        flare->pid = ProtoId(ItemProtoTypeId::LitFlare).pid();
 
         objectSetLight(flare, 8, 0x10000, nullptr);
         queueAddEvent(72000, flare, nullptr, EVENT_TYPE_FLARE);
@@ -999,7 +999,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     bool isEnergy = false;
     int energyDensity;
 
-    switch (ProtoTypeId(item).protoId().item) {
+    switch (ProtoId(item).protoId().item) {
     case ItemProtoTypeId::SmallEnergyCell:
         energyDensity = 16000;
         isEnergy = true;
@@ -1050,7 +1050,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    switch (ProtoTypeId(item).protoId().item) {
+    switch (ProtoId(item).protoId().item) {
     case ItemProtoTypeId::RamirezBoxClosed:
     case ItemProtoTypeId::RaidersMap:
     case ItemProtoTypeId::CatsPawIssue5:
@@ -1276,7 +1276,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     case ITEM_TYPE_AMMO:
         // SFALL: Fix for being able to charge the car by using cells on other
         // scenery/critters.
-        if (targetObj->pid == PROTO_ID_CAR || ProtoTypeId(targetObj) == ItemProtoTypeId::CarTrunk) {
+        if (targetObj->pid == PROTO_ID_CAR || ProtoId(targetObj) == ItemProtoTypeId::CarTrunk) {
             rc = _obj_use_power_on_car(item);
             if (rc == USE_ITEM_RESULT_REMOVE) {
                 return USE_ITEM_RESULT_REMOVE;
@@ -1318,7 +1318,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     int skillBonus = 0;
     Skill skill = SKILL_INVALID;
 
-    switch (ProtoTypeId(item).protoId().item) {
+    switch (ProtoId(item).protoId().item) {
     case ItemProtoTypeId::DoctorsBag:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;

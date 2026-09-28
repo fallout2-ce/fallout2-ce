@@ -3962,7 +3962,7 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
     if (wmEncounterDetectionEnabled) {
         if (frequency > chance) {
             int outdoorsman = partyGetBestSkillValue(SKILL_OUTDOORSMAN);
-            Object* scanner = objectGetCarriedObjectByPid(gDude, ProtoTypeId(ItemProtoTypeId::MotionSensor).pid());
+            Object* scanner = objectGetCarriedObjectByPid(gDude, ProtoId(ItemProtoTypeId::MotionSensor).pid());
             if (scanner != nullptr) {
                 if (gDude == scanner->owner) {
                     outdoorsman += 20;
@@ -4407,7 +4407,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                     return -1;
                 }
 
-                if (ProtoTypeId(encounterItem->pid) == ItemProtoTypeId::Money) {
+                if (ProtoId(encounterItem->pid) == ItemProtoTypeId::Money) {
                     if (perkHasRank(gDude, PERK_FORTUNE_FINDER)) {
                         quantity *= 2;
                     }

@@ -1556,10 +1556,10 @@ static void op_explosions_metarule(Program* program)
         }
         break;
     case EXPL_SET_DYNAMITE_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoTypeId(ItemProtoTypeId::Dynamite).pid(), param1, param2);
+        explosiveSetDamage(ProtoId(ItemProtoTypeId::Dynamite).pid(), param1, param2);
         break;
     case EXPL_SET_PLASTIC_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoTypeId(ItemProtoTypeId::PlasticExplosives).pid(), param1, param2);
+        explosiveSetDamage(ProtoId(ItemProtoTypeId::PlasticExplosives).pid(), param1, param2);
         break;
     case EXPL_SET_EXPLOSION_MAX_TARGET:
         explosionSetMaxTargets(param1);
