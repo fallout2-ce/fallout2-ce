@@ -5523,7 +5523,7 @@ static void wmMouseBkProc()
         }
 
         if (!couldScroll) {
-            newMouseCursor = static_cast<MouseCursorType>(newMouseCursor + 8);
+            newMouseCursor = newMouseCursor + MOUSE_CURSOR_SCROLL_OFFSET_INVALID;
         }
     } else {
         if (oldMouseCursor != MOUSE_CURSOR_ARROW) {

@@ -69,7 +69,13 @@ enum MouseCursorType : int {
     MOUSE_CURSOR_WAIT_WATCH,
     MOUSE_CURSOR_TYPE_COUNT,
     FIRST_GAME_MOUSE_ANIMATED_CURSOR = MOUSE_CURSOR_WAIT_PLANET,
+    MOUSE_CURSOR_SCROLL_OFFSET_INVALID = MOUSE_CURSOR_SCROLL_NW_INVALID - MOUSE_CURSOR_SCROLL_NW
 };
+
+constexpr inline MouseCursorType operator+(MouseCursorType lhs, MouseCursorType rhs)
+{
+    return static_cast<MouseCursorType>(static_cast<int>(lhs) + static_cast<int>(rhs));
+}
 
 extern bool _gmouse_clicked_on_edge;
 

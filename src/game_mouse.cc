@@ -2655,7 +2655,7 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
     case -1:
         // Scrolling is blocked for whatever reason, upgrade cursor to
         // appropriate blocked version.
-        cursor = static_cast<MouseCursorType>(cursor + 8);
+        cursor = cursor + MOUSE_CURSOR_SCROLL_OFFSET_INVALID;
         // FALLTHROUGH
     case 0:
         gameMouseSetCursor(cursor);
