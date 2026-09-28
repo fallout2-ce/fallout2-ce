@@ -21,6 +21,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "interface.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "memory.h"
@@ -793,6 +794,9 @@ int _action_ranged(Attack* attack, AnimationType anim)
                     projectile = weapon;
                     weaponFrmId = FrmId(weapon);
                     ObjectFlags weaponFlags = weapon->flags;
+                    // CE: Read before the throw. _cAIPrepWeaponItem() below lights an unlit flare
+                    // on its way out, which would make it look like a lit one that had been held.
+                    int weaponPid = weapon->pid;
 
                     InterfaceItemAction leftItemAction;
                     InterfaceItemAction rightItemAction;
@@ -802,6 +806,13 @@ int _action_ranged(Attack* attack, AnimationType anim)
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
                     objectSetFrmId(projectile, FrmId(projectileProto), nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
+
+                    // CE: Fix the light staying up when a lit flare is thrown out of a hand. The
+                    // next one off the same stack may have just moved into that hand, which the
+                    // call checks for.
+                    if (weaponPid == PROTO_ID_LIT_FLARE && (weaponFlags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
+                        critterRestoreLightWithoutFlare(attack->attacker);
+                    }
 
                     if (attack->attacker == gDude) {
                         if (replacedWeapon == nullptr) {

@@ -5,6 +5,7 @@
 #include "display_monitor.h"
 #include "game.h"
 #include "game_sound.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "memory.h"
@@ -457,7 +458,19 @@ unsigned int queueGetNextEventTime()
 // 0x4A281C queue_destroy
 static int flareEventProcess(Object* obj, void* data)
 {
+    // CE: Fix the light staying up when a lit flare burns out in someone's hand. Only a flare in
+    // a hand raised anything, so one burning out in a pack is left alone, and the hand is given
+    // up before the flare is destroyed rather than after, so nothing reads it once it is gone.
+    if ((obj->flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
+        Object* holder = objectGetOwner(obj);
+        obj->flags &= ~OBJECT_IN_ANY_HAND;
+        if (holder != nullptr) {
+            critterRestoreLightWithoutFlare(holder);
+        }
+    }
+
     objectDestroy(obj);
+
     return 1;
 }
 
