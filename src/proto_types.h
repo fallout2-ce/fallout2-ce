@@ -316,6 +316,9 @@ enum class MiscProtoTypeId : int {
     LastExitGrid = 23
 };
 
+enum class WallProtoTypeId : int {};
+enum class TileProtoTypeId : int {};
+
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
     PROTO_FLAG_FLAT = 0x08,
@@ -662,6 +665,16 @@ struct MapProtoTypeIdToObjectType<CritterProtoTypeId> {
 template <>
 struct MapProtoTypeIdToObjectType<SceneryProtoTypeId> {
     static constexpr ObjectType value = OBJ_TYPE_SCENERY;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<WallProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_WALL;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<TileProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_TILE;
 };
 
 template <>
