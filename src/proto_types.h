@@ -699,23 +699,32 @@ public:
     static constexpr int kMinProtoId = 0;
 
     constexpr ProtoId()
-        : ProtoId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId) { }
-
+        : ProtoId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId)
+    {
+    }
 
     constexpr explicit ProtoId(int pid)
-        : ProtoId(pid == kEmptyPid ? OBJ_TYPE_INVALID : objectTypeFromPid(pid), pid, pid) { }
+        : ProtoId(pid == kEmptyPid ? OBJ_TYPE_INVALID : objectTypeFromPid(pid), pid, pid)
+    {
+    }
 
     constexpr ProtoId(const Proto* proto)
-        : ProtoId(proto == nullptr ? kEmptyPid : proto->pid) { }
+        : ProtoId(proto == nullptr ? kEmptyPid : proto->pid)
+    {
+    }
 
     constexpr ProtoId(const Object* object)
-        : ProtoId(object == nullptr ? kEmptyPid : object->pid) { }
+        : ProtoId(object == nullptr ? kEmptyPid : object->pid)
+    {
+    }
 
     template <typename TProtoTypeId,
         typename = std::void_t<
             decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
     constexpr ProtoId(TProtoTypeId protoId)
-        : ProtoId(MapProtoTypeIdToObjectType<TProtoTypeId>::value, buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId)), static_cast<int>(protoId)) { }
+        : ProtoId(MapProtoTypeIdToObjectType<TProtoTypeId>::value, buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId)), static_cast<int>(protoId))
+    {
+    }
 
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     constexpr bool hasPid() const { return _pid > kEmptyPid; }
@@ -759,7 +768,9 @@ protected:
     constexpr ProtoId(ObjectType objectType, int pid, int protoId)
         : _objectType(objectType)
         , _pid(pid)
-        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId) } { }
+        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId) }
+    {
+    }
 
 private:
     ObjectType _objectType;
