@@ -688,6 +688,10 @@ public:
         int id;
         ItemProtoTypeId item;
         CritterProtoTypeId critter;
+        SceneryProtoTypeId scenery;
+        WallProtoTypeId wall;
+        TileProtoTypeId tile;
+        MiscProtoTypeId misc;
     };
 
     static constexpr int kEmptyPid = -1;
