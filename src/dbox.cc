@@ -256,12 +256,10 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     static std::string result;
     FrmImage frms[INPUT_DIALOG_FRM_COUNT];
 
-    int savedFont = fontGetCurrent();
-    fontSetCurrent(101); // default font for input box
+    ScopedFont mainFontGuard(101); // default font for input box
 
     for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
         if (!frms[i].lock(kInputDialogFrmIds[i])) {
-            fontSetCurrent(savedFont);
             return nullptr;
         }
     }
@@ -275,35 +273,32 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     int windowWidth = bgFrm.getWidth();
     int windowHeight = bgFrm.getHeight();
 
-    int win = windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags);
-    if (win == -1) {
-        fontSetCurrent(savedFont);
+    UniqueWindow win(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
+    if (win.get() == -1) {
         return nullptr;
     }
 
-    unsigned char* windowBuf = windowGetBuffer(win);
+    unsigned char* windowBuf = windowGetBuffer(win.get());
 
     memcpy(windowBuf, bgFrm.getData(), static_cast<size_t>(windowWidth) * windowHeight);
 
     blitBufferToBufferTrans(nameBoxFrm.getData(), nameBoxFrm.getWidth(), nameBoxFrm.getHeight(), nameBoxFrm.getWidth(), windowBuf + static_cast<size_t>(windowWidth) * 13 + 13, windowWidth);
     blitBufferToBufferTrans(doneBoxFrm.getData(), doneBoxFrm.getWidth(), doneBoxFrm.getHeight(), doneBoxFrm.getWidth(), windowBuf + windowWidth * 40 + 13, windowWidth);
 
-    fontSetCurrent(103); // "Done" button font
-    fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
-
-    int doneBtn = buttonCreate(win, 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+    {
+        ScopedFont buttonFontGuard(103); // "Done" button font
+        fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
     }
 
-    windowRefresh(win);
-    fontSetCurrent(101);
+    UniqueButton doneBtn(buttonCreate(win.get(), 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT));
+    if (doneBtn.get() != -1) {
+        buttonSetCallbacks(doneBtn.get(), _gsound_red_butt_press, _gsound_red_butt_release);
+    }
+
+    windowRefresh(win.get());
 
     std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
-    int status = _get_input_str(win, 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
-
-    windowDestroy(win);
-    fontSetCurrent(savedFont);
+    int status = _get_input_str(win.get(), 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     if (status == 0 && !editableText.empty()) {
         result = std::move(editableText);
