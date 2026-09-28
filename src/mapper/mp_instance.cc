@@ -591,7 +591,7 @@ static int protoInstCritterEdit(Object* obj)
                 inventoryResetDude();
 
                 Object* rightHandItem = critterGetItem2(obj);
-                WeaponAnimation animCode = WEAPON_ANIMATION_NONE;
+                WeaponAnimation animCode = WeaponAnimation::None;
                 if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
                     animCode = weaponGetAnimationCode(rightHandItem);
                 }

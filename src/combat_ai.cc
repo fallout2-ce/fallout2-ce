@@ -1831,7 +1831,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
             return true;
         }
 
-        if (weaponGetAnimationCode(weapon)) {
+        if (weaponGetAnimationCode(weapon) != WeaponAnimation::None) {
             if (weaponGetRange(critter, HIT_MODE_RIGHT_WEAPON_PRIMARY) < 3) {
                 inventoryUnequip(critter, HAND_RIGHT);
             }
@@ -2863,8 +2863,8 @@ static int _ai_try_attack(Object* attacker, Object* defender)
     int actionPointsToUse = 0;
     if (weapon != nullptr
         || (critterGetBodyType(defender) == BODY_TYPE_BIPED
-            && (FrmId(defender).weaponAnimation() == WEAPON_ANIMATION_NONE)
-            && FrmId(attacker, ANIM_THROW_PUNCH, WEAPON_ANIMATION_NONE, attacker->rotation + 1).exist())) {
+            && (FrmId(defender).weaponAnimation() == WeaponAnimation::None)
+            && FrmId(attacker, ANIM_THROW_PUNCH, WeaponAnimation::None, attacker->rotation + 1).exist())) {
         // SFALL: Check the safety of weapons based on the selected attack mode
         // instead of always the primary weapon hit mode.
         if (_combat_safety_invalidate_weapon(attacker, weapon, hitMode, defender, &safeDistance)) {
