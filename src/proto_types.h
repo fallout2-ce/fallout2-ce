@@ -1,6 +1,8 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include <type_traits>
+
 #include "art_defs.h"
 #include "obj_types.h"
 #include "perk_defs.h"
@@ -280,6 +282,18 @@ enum class ItemProtoTypeId : int {
     PibBoyLingualEnhancer = 499,
     PipBoyMedicalEnhancer = 516,
     SurveyMap = 523,
+};
+
+enum class CritterProtoTypeId : int {
+    Dude = 0,
+    Id0x2F = 47,
+    Dog1 = 136,
+    Goris = 152,
+    Marcus = 161,
+    Id0xFA = 250,
+    Dog2 = 342,
+    Dog3 = 384,
+    Id0x1E0 = 480
 };
 
 #define PROTO_ID_DUDE 0x1000000
@@ -636,11 +650,25 @@ constexpr inline int protoIdFromPid(int pid)
     return pid & 0xFFFFFF;
 }
 
+template <typename T>
+struct MapProtoTypeIdToObjectType;
+
+template <>
+struct MapProtoTypeIdToObjectType<ItemProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_ITEM;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<CritterProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_CRITTER;
+};
+
 class ProtoId {
 public:
     union ProtoTypeId {
         int id;
         ItemProtoTypeId item;
+        CritterProtoTypeId critter;
     };
 
     static constexpr int kEmptyPid = -1;
@@ -660,8 +688,11 @@ public:
     constexpr ProtoId(const Object* object)
         : ProtoId(object == nullptr ? kEmptyPid : object->pid) { }
 
-    constexpr ProtoId(ItemProtoTypeId item)
-        : ProtoId(OBJ_TYPE_ITEM, buildPid(OBJ_TYPE_ITEM, static_cast<int>(item)), static_cast<int>(item)) { }
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr ProtoId(TProtoTypeId protoId)
+        : ProtoId(MapProtoTypeIdToObjectType<TProtoTypeId>::value, buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId)), static_cast<int>(protoId)) { }
 
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     constexpr bool hasPid() const { return _pid > kEmptyPid; }
@@ -680,14 +711,20 @@ public:
         return _pid != other._pid || _objectType != other._objectType;
     }
 
-    constexpr bool operator==(ItemProtoTypeId protoId) const
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr bool operator==(TProtoTypeId protoId) const
     {
-        return _pid == buildPid(OBJ_TYPE_ITEM, static_cast<int>(protoId));
+        return _pid == buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId));
     }
 
-    constexpr bool operator!=(ItemProtoTypeId protoId) const
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr bool operator!=(TProtoTypeId protoId) const
     {
-        return _pid != buildPid(OBJ_TYPE_ITEM, static_cast<int>(protoId));
+        return _pid != buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId));
     }
 
 protected:
