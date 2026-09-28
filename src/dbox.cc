@@ -415,7 +415,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             windowBuf + bgWidth * doneY + v27,
             bgWidth);
 
-        messageListItem.num = (flags & DIALOG_BOX_YES_NO) == 0 ? 100 : 101;
+        messageListItem.num = (flags & DIALOG_BOX_YES_NO) == 0 ? 100 : 101; // 100 - dONE, 101 - yES
         if (messageListGetItem(&messageList, &messageListItem)) {
             fontDrawText(windowBuf + bgWidth * (doneY + 3) + v27 + 35,
                 messageListItem.text,
@@ -485,18 +485,30 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
     int nextY = _ytable[dialogType];
     int maxY = _ytable[dialogType] + _dblines[dialogType] * fontGetLineHeight();
+    int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
 
-    if ((flags & DIALOG_BOX_NO_VERTICAL_CENTERING) == 0) {
-        int numberOfLines = 0;
+    auto drawLine = [&](const char* text, int currentY, int textColor) {
+        int bgWidth = backgroundFrmImage.getWidth();
+        int xOffset = 0;
 
-        if (hasTitle) {
-            numberOfLines++;
+        if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
+            xOffset = _xtable[dialogType];
+        } else {
+            xOffset = (bgWidth - fontGetStringWidth(text)) / 2;
         }
 
+        fontDrawText(windowBuf + bgWidth * currentY + xOffset, text, bgWidth, bgWidth, bodyColor);
+    };
+
+    // Vertical center
+    if ((flags & DIALOG_BOX_NO_VERTICAL_CENTERING) == 0) {
+        int numberOfLines = hasTitle ? 1 : 0;
+
         for (int index = 0; index < bodyLength; index++) {
+            if (body[index] == nullptr) continue;
+
             short beginnings[WORD_WRAP_MAX_COUNT];
             short subLineCount;
-            int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
             if (wordWrap(body[index], maxWidth, beginnings, &subLineCount) == 0) {
                 numberOfLines += subLineCount - 1;
             }
@@ -509,80 +521,41 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         nextY += (_dblines[dialogType] - numberOfLines) * fontGetLineHeight() / 2;
     }
 
-    if (hasTitle) {
-        if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                title,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                titleColor);
-        } else {
-            int length = fontGetStringWidth(title);
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                title,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                titleColor);
-        }
+    if (hasTitle && title != nullptr) {
+        drawLine(title, nextY, titleColor);
         nextY += fontGetLineHeight();
     }
 
     for (int index = 0; index < bodyLength && nextY < maxY; index++) {
+        if (body[index] == nullptr) continue;
+
         int width = fontGetStringWidth(body[index]);
-        int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
         if (width <= maxWidth) {
-            if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-                fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                    body[index],
-                    backgroundFrmImage.getWidth(),
-                    backgroundFrmImage.getWidth(),
-                    bodyColor);
-            } else {
-                int length = fontGetStringWidth(body[index]);
-                fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                    body[index],
-                    backgroundFrmImage.getWidth(),
-                    backgroundFrmImage.getWidth(),
-                    bodyColor);
-            }
+            // Line's short
+            drawLine(body[index], nextY, bodyColor);
             nextY += fontGetLineHeight();
         } else {
+            // Line's long, use word wrap
             short beginnings[WORD_WRAP_MAX_COUNT];
             short count;
             if (wordWrap(body[index], maxWidth, beginnings, &count) != 0) {
                 debugPrint("\nError: dialog_out");
             }
 
+            std::string_view fullText(body[index]);
+
             for (int beginningIndex = 1; beginningIndex < count && nextY < maxY; beginningIndex++) {
-                int subLineLength = beginnings[beginningIndex] - beginnings[beginningIndex - 1];
-                if (subLineLength >= 260) {
-                    subLineLength = 259;
-                }
+                size_t start = beginnings[beginningIndex - 1];
+                size_t length = beginnings[beginningIndex] - start;
 
-                char string[260];
-                strncpy(string, body[index] + beginnings[beginningIndex - 1], subLineLength);
-                string[subLineLength] = '\0';
+                if (length >= 260) length = 259;
 
-                // Remove trailing space as it affects width calculation.
-                if (subLineLength > 0 && string[subLineLength - 1] == ' ') {
-                    string[subLineLength - 1] = '\0';
-                    subLineLength -= 1;
-                }
+                std::string_view subLine = fullText.substr(start, length);
+                if (!subLine.empty() && subLine.back() == ' ') subLine.remove_suffix(1);
 
-                if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-                    fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                        string,
-                        backgroundFrmImage.getWidth(),
-                        backgroundFrmImage.getWidth(),
-                        bodyColor);
-                } else {
-                    int length = fontGetStringWidth(string);
-                    fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                        string,
-                        backgroundFrmImage.getWidth(),
-                        backgroundFrmImage.getWidth(),
-                        bodyColor);
-                }
+                std::string safeString(subLine);
+
+                drawLine(safeString.c_str(), nextY, bodyColor);
                 nextY += fontGetLineHeight();
             }
         }
