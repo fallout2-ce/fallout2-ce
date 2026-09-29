@@ -205,6 +205,7 @@ public:
             decltype(MapFrameIdToObjectType<TFrameId>::value)>>
     constexpr TFrameId frameId() const
     {
+        assert(_objectType == MapFrameIdToObjectType<TFrameId>::value && "FrmId::frameId() object type doesn't match the FrameId!");
         return _objectType == MapFrameIdToObjectType<TFrameId>::value
             ? static_cast<TFrameId>(_frameId)
             : static_cast<TFrameId>(kInvalidFrameId);
