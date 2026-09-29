@@ -999,7 +999,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     bool isEnergy = false;
     int energyDensity;
 
-    switch (ProtoId(item).protoId().item) {
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
     case ItemProtoTypeId::SmallEnergyCell:
         energyDensity = 16000;
         isEnergy = true;
@@ -1050,7 +1050,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    switch (ProtoId(item).protoId().item) {
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
     case ItemProtoTypeId::RamirezBoxClosed:
     case ItemProtoTypeId::RaidersMap:
     case ItemProtoTypeId::CatsPawIssue5:
@@ -1318,7 +1318,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     int skillBonus = 0;
     Skill skill = SKILL_INVALID;
 
-    switch (ProtoId(item).protoId().item) {
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
     case ItemProtoTypeId::DoctorsBag:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;

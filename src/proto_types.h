@@ -684,16 +684,6 @@ struct MapProtoTypeIdToObjectType<MiscProtoTypeId> {
 
 class ProtoId {
 public:
-    union ProtoTypeId {
-        int id;
-        ItemProtoTypeId item;
-        CritterProtoTypeId critter;
-        SceneryProtoTypeId scenery;
-        WallProtoTypeId wall;
-        TileProtoTypeId tile;
-        MiscProtoTypeId misc;
-    };
-
     static constexpr int kEmptyPid = -1;
     static constexpr int kInvalidProtoId = -1;
     static constexpr int kMinProtoId = 0;
@@ -731,7 +721,12 @@ public:
 
     constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
     constexpr int pid() const { return _pid; }
-    constexpr const ProtoTypeId& protoId() const { return _protoId; }
+    constexpr int protoId() const { return _protoId; }
+    
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr TProtoTypeId protoId() const { return static_cast<TProtoTypeId>(_protoId); }
 
     constexpr bool operator==(const ProtoId& other) const
     {
@@ -768,14 +763,14 @@ protected:
     constexpr ProtoId(ObjectType objectType, int pid, int protoId)
         : _objectType(objectType)
         , _pid(pid)
-        , _protoId { protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId) }
+        , _protoId(protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId))
     {
     }
 
 private:
     ObjectType _objectType;
     int _pid;
-    ProtoTypeId _protoId;
+    int _protoId;
 
     /* PID Structure:
         4  bits unused

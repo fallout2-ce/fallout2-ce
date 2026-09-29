@@ -833,7 +833,7 @@ int itemGetWeight(Object* item)
 
     ItemType itemType = proto->item.type;
     if (itemType == ITEM_TYPE_ARMOR) {
-        switch (ProtoId(proto).protoId().item) {
+        switch (ProtoId(proto).protoId<ItemProtoTypeId>()) {
         case ItemProtoTypeId::PowerArmor:
         case ItemProtoTypeId::HardenedPowerArmor:
         case ItemProtoTypeId::AdvancedPowerArmor:
