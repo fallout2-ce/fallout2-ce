@@ -1054,7 +1054,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
     case ItemProtoTypeId::RamirezBoxClosed:
     case ItemProtoTypeId::RaidersMap:
     case ItemProtoTypeId::CatsPawIssue5:
-    case ItemProtoTypeId::PibBoyLingualEnhancer:
+    case ItemProtoTypeId::PipBoyLingualEnhancer:
     case ItemProtoTypeId::SurveyMap:
     case ItemProtoTypeId::PipBoyMedicalEnhancer:
         if (item->sid == -1) {

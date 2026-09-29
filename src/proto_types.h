@@ -279,7 +279,7 @@ enum class ItemProtoTypeId : int {
     RaidersMap = 444,
     CarTrunk = 455,
     JesseContainer = 467,
-    PibBoyLingualEnhancer = 499,
+    PipBoyLingualEnhancer = 499,
     PipBoyMedicalEnhancer = 516,
     SurveyMap = 523,
 };
