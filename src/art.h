@@ -229,8 +229,8 @@ public:
             decltype(MapFrameIdToObjectType<TFrameId>::value)>>
     constexpr bool operator==(TFrameId frameId) const
     {
-        // Path-backed IDs are not comparable to enum FrameIds
-        return _path == nullptr && _objectType == MapFrameIdToObjectType<TFrameId>::value && _frameId == static_cast<int>(frameId);
+        // Path-backed IDs are not comparable to enum FrameIds via FID.
+        return _path == nullptr && _fid == buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId));
     }
 
     template <typename TFrameId,
