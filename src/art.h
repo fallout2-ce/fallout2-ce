@@ -203,7 +203,12 @@ public:
     template <typename TFrameId,
         typename = std::void_t<
             decltype(MapFrameIdToObjectType<TFrameId>::value)>>
-    constexpr TFrameId frameId() const { return static_cast<TFrameId>(_frameId); }
+    constexpr TFrameId frameId() const
+    {
+        return _objectType == MapFrameIdToObjectType<TFrameId>::value
+            ? static_cast<TFrameId>(_frameId)
+            : static_cast<TFrameId>(kInvalidFrameId);
+    }
 
     constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WeaponAnimation::None; }
     constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
