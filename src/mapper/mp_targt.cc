@@ -148,21 +148,22 @@ int target_header_load()
 // 0x49B58C
 int target_save(int pid)
 {
+    const ProtoId protoId = ProtoId(pid);
     char path[COMPAT_MAX_PATH];
     size_t len;
     char* extension;
     FILE* stream;
     TargetSubNode* subnode;
 
-    if (target_ptr(pid, &subnode) == -1) {
+    if (target_ptr(protoId.pid(), &subnode) == -1) {
         return -1;
     }
 
-    target_make_path(path, pid);
+    target_make_path(path, protoId.pid());
 
     len = strlen(path);
     path[len] = '\\';
-    _proto_list_str(pid, path + len + 1);
+    _proto_list_str(protoId, path + len + 1);
 
     extension = strchr(path + len + 1, '.');
     if (extension != NULL) {
@@ -189,17 +190,18 @@ int target_save(int pid)
 // 0x49B6BC
 int target_load(int pid, TargetSubNode** subnode_ptr)
 {
+    const ProtoId protoId = ProtoId(pid);
     char path[COMPAT_MAX_PATH];
     size_t len;
     char* extension;
     FILE* stream;
     TargetSubNode* subnode;
 
-    target_make_path(path, pid);
+    target_make_path(path, protoId.pid());
 
     len = strlen(path);
     path[len] = '\\';
-    _proto_list_str(pid, path + len + 1);
+    _proto_list_str(protoId, path + len + 1);
 
     extension = strchr(path + len + 1, '.');
     if (extension != NULL) {

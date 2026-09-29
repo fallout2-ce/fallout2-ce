@@ -188,21 +188,21 @@ static char** _perk_code_strs;
 static char** _critter_stats_list;
 
 // 0x49E270 proto_make_path
-void proto_make_path(char* path, int pid)
+void proto_make_path(char* path, const ProtoId& protoId)
 {
     strcpy(path, _cd_path_base);
     strcat(path, _proto_path_base);
-    if (pid != -1) {
-        strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
+    if (protoId.valid()) {
+        strcat(path, artGetObjectTypeName(protoId.objectType()));
     }
 }
 
 // Append proto file name to proto_path from proto.lst.
 //
 // 0x49E758 proto_list_str
-int _proto_list_str(int pid, char* proto_path)
+int _proto_list_str(const ProtoId& protoId, char* proto_path)
 {
-    if (pid == -1) {
+    if (!protoId.valid()) {
         return -1;
     }
 
@@ -211,9 +211,9 @@ int _proto_list_str(int pid, char* proto_path)
     }
 
     char path[COMPAT_MAX_PATH];
-    proto_make_path(path, pid);
+    proto_make_path(path, protoId);
     strcat(path, "\\");
-    strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
+    strcat(path, artGetObjectTypeName(protoId.objectType()));
     strcat(path, ".lst");
 
     File* stream = fileOpen(path, "rt");
@@ -221,7 +221,7 @@ int _proto_list_str(int pid, char* proto_path)
     int i = 1;
     char string[256];
     while (fileReadString(string, sizeof(string), stream)) {
-        if (i == protoIdFromPid(pid)) {
+        if (i == protoId.protoId()) {
             break;
         }
 
@@ -230,7 +230,7 @@ int _proto_list_str(int pid, char* proto_path)
 
     fileClose(stream);
 
-    if (i != protoIdFromPid(pid)) {
+    if (i != protoId.protoId()) {
         return -1;
     }
 
@@ -256,9 +256,8 @@ size_t proto_size(ObjectType type)
 }
 
 // 0x49E99C proto_action_can_use
-bool _proto_action_can_use(int pid)
+bool _proto_action_can_use(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) == -1) {
         return false;
@@ -276,9 +275,8 @@ bool _proto_action_can_use(int pid)
 }
 
 // 0x49E9DC proto_action_can_use_on
-bool _proto_action_can_use_on(int pid)
+bool _proto_action_can_use_on(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) == -1) {
         return false;
@@ -296,9 +294,8 @@ bool _proto_action_can_use_on(int pid)
 }
 
 // 0x49EA24 proto_action_can_talk_to
-bool _proto_action_can_talk_to(int pid)
+bool _proto_action_can_talk_to(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) == -1) {
         return false;
@@ -318,9 +315,8 @@ bool _proto_action_can_talk_to(int pid)
 // Likely returns true if item with given pid can be picked up.
 //
 // 0x49EA5C proto_action_can_pickup
-int _proto_action_can_pickup(int pid)
+int _proto_action_can_pickup(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     if (protoId.objectType() != OBJ_TYPE_ITEM) {
         return false;
     }
@@ -338,10 +334,9 @@ int _proto_action_can_pickup(int pid)
 }
 
 // 0x49EAA4 proto_get_msg_info
-char* protoGetMessage(int pid, int message)
+char* protoGetMessage(const ProtoId& protoId, int message)
 {
     char* messageText = _proto_none_str;
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) != -1) {
         if (proto->messageId != -1) {
@@ -359,25 +354,25 @@ char* protoGetMessage(int pid, int message)
 }
 
 // 0x49EAFC proto_name
-char* protoGetName(int pid)
+char* protoGetName(const ProtoId& protoId)
 {
-    if (ProtoId(pid) == CritterProtoTypeId::Dude) {
+    if (protoId == CritterProtoTypeId::Dude) {
         return critterGetName(gDude);
     }
 
-    return protoGetMessage(pid, PROTOTYPE_MESSAGE_NAME);
+    return protoGetMessage(protoId, PROTOTYPE_MESSAGE_NAME);
 }
 
 // 0x49EB1C proto_description
-char* protoGetDescription(int pid)
+char* protoGetDescription(const ProtoId& protoId)
 {
-    return protoGetMessage(pid, PROTOTYPE_MESSAGE_DESCRIPTION);
+    return protoGetMessage(protoId, PROTOTYPE_MESSAGE_DESCRIPTION);
 }
 
 // 0x49EB2C proto_item_init
-int proto_item_init(Proto* proto, int pid)
+int proto_item_init(Proto* proto, const ProtoId& protoId)
 {
-    int protoNum = protoIdFromPid(pid);
+    int protoNum = protoId.protoId();
 
     proto->item.pid = -1;
     proto->item.messageId = 100 * protoNum;
@@ -486,13 +481,13 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
 }
 
 // 0x49EDB4 proto_critter_init
-int proto_critter_init(Proto* proto, int pid)
+int proto_critter_init(Proto* proto, const ProtoId& protoId)
 {
     if (!_protos_been_initialized) {
         return -1;
     }
 
-    int num = protoIdFromPid(pid);
+    int num = protoId.protoId();
 
     proto->pid = -1;
     proto->messageId = 100 * num;
@@ -653,7 +648,7 @@ int objectDataRead(Object* obj, File* stream)
 
             break;
         case OBJ_TYPE_MISC:
-            if (isExitGridPid(obj->pid)) {
+            if (isExitGridProtoId(obj)) {
                 if (fileReadInt32Enum<Map>(stream, &(obj->data.misc.map)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.tile)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
@@ -739,7 +734,7 @@ int objectDataWrite(Object* obj, File* stream)
             }
             break;
         case OBJ_TYPE_MISC:
-            if (isExitGridPid(obj->pid)) {
+            if (isExitGridProtoId(obj)) {
                 if (fileWriteInt32Enum<Map>(stream, data->misc.map) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.tile) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.elevation) == -1) return -1;
@@ -818,7 +813,7 @@ static int _proto_update_gen(Object* obj)
         }
         break;
     case OBJ_TYPE_MISC:
-        if (isExitGridPid(obj->pid)) {
+        if (isExitGridProtoId(obj)) {
             data->misc.tile = -1;
             data->misc.elevation = 0;
             data->misc.rotation = ROTATION_NE;
@@ -965,9 +960,9 @@ int _proto_dude_init(const char* path)
 }
 
 // 0x49FBBC proto_scenery_init
-int proto_scenery_init(Proto* proto, int pid)
+int proto_scenery_init(Proto* proto, const ProtoId& protoId)
 {
-    int num = protoIdFromPid(pid);
+    int num = protoId.protoId();
 
     proto->scenery.pid = -1;
     proto->scenery.messageId = 100 * num;
@@ -1022,9 +1017,9 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
 }
 
 // 0x49FCFC proto_wall_init
-int proto_wall_init(Proto* proto, int pid)
+int proto_wall_init(Proto* proto, const ProtoId& protoId)
 {
-    int num = protoIdFromPid(pid);
+    int num = protoId.protoId();
 
     proto->wall.pid = -1;
     proto->wall.messageId = 100 * num;
@@ -1043,9 +1038,9 @@ int proto_wall_init(Proto* proto, int pid)
 }
 
 // 0x49FD84 proto_tile_init
-int proto_tile_init(Proto* proto, int pid)
+int proto_tile_init(Proto* proto, const ProtoId& protoId)
 {
-    int num = protoIdFromPid(pid);
+    int num = protoId.protoId();
 
     proto->tile.pid = -1;
     proto->tile.messageId = 100 * num;
@@ -1062,9 +1057,9 @@ int proto_tile_init(Proto* proto, int pid)
 }
 
 // 0x49FDFC proto_misc_init
-int proto_misc_init(Proto* proto, int pid)
+int proto_misc_init(Proto* proto, const ProtoId& protoId)
 {
-    int num = protoIdFromPid(pid);
+    int num = protoId.protoId();
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
@@ -1081,13 +1076,11 @@ int proto_misc_init(Proto* proto, int pid)
 }
 
 // 0x49FE74 proto_copy_proto
-int proto_copy_proto(int srcPid, int dstPid)
+int proto_copy_proto(const ProtoId& srcProtoId, const ProtoId& dstProtoId)
 {
     Proto* src;
     Proto* dst;
 
-    const ProtoId srcProtoId = ProtoId(srcPid);
-    const ProtoId dstProtoId = ProtoId(dstPid);
     if (srcProtoId.objectType() != dstProtoId.objectType()) {
         return -1;
     }
@@ -1101,7 +1094,7 @@ int proto_copy_proto(int srcPid, int dstPid)
     }
 
     memcpy(dst, src, _proto_sizes[srcProtoId.objectType()]);
-    dst->pid = dstPid;
+    dst->pid = dstProtoId.pid();
 
     return 0;
 }
@@ -1125,9 +1118,8 @@ bool proto_is_subtype(Proto* proto, int subtype)
 
 // proto_data_member
 // 0x49FFD8 proto_data_member
-int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
+int protoGetDataMember(const ProtoId& protoId, int member, ProtoDataMemberValue* value)
 {
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) == -1) {
         return -1;
@@ -1141,11 +1133,11 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             break;
         case ITEM_DATA_MEMBER_NAME:
             // NOTE: uninline
-            value->stringValue = protoGetName(proto->scenery.pid);
+            value->stringValue = protoGetName(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_DESCRIPTION:
             // NOTE: Uninline.
-            value->stringValue = protoGetDescription(proto->pid);
+            value->stringValue = protoGetDescription(proto);
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_FID:
             value->integerValue = proto->fid;
@@ -1200,11 +1192,11 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             break;
         case CRITTER_DATA_MEMBER_NAME:
             // NOTE: Uninline.
-            value->stringValue = protoGetName(proto->critter.pid);
+            value->stringValue = protoGetName(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_DESCRIPTION:
             // NOTE: Uninline.
-            value->stringValue = protoGetDescription(proto->critter.pid);
+            value->stringValue = protoGetDescription(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_FID:
             value->integerValue = proto->critter.fid;
@@ -1242,11 +1234,11 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             break;
         case SCENERY_DATA_MEMBER_NAME:
             // NOTE: Uninline.
-            value->stringValue = protoGetName(proto->scenery.pid);
+            value->stringValue = protoGetName(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_DESCRIPTION:
             // NOTE: Uninline.
-            value->stringValue = protoGetDescription(proto->scenery.pid);
+            value->stringValue = protoGetDescription(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_FID:
             value->integerValue = proto->scenery.fid;
@@ -1284,11 +1276,11 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             break;
         case WALL_DATA_MEMBER_NAME:
             // NOTE: Uninline.
-            value->stringValue = protoGetName(proto->wall.pid);
+            value->stringValue = protoGetName(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_DESCRIPTION:
             // NOTE: Uninline.
-            value->stringValue = protoGetDescription(proto->wall.pid);
+            value->stringValue = protoGetDescription(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_FID:
             value->integerValue = proto->wall.fid;
@@ -1326,11 +1318,11 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             break;
         case MISC_DATA_MEMBER_NAME:
             // NOTE: Uninline.
-            value->stringValue = protoGetName(proto->misc.pid);
+            value->stringValue = protoGetName(ProtoId(proto->misc.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case MISC_DATA_MEMBER_DESCRIPTION:
             // NOTE: Uninline.
-            value->stringValue = protoGetDescription(proto->misc.pid);
+            value->stringValue = protoGetDescription(ProtoId(proto->misc.pid));
             // FIXME: Errornously report type as int, should be string.
             return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_FID:
@@ -1381,7 +1373,7 @@ int protoInit()
 
     constexpr ProtoId kDudeProtoId = ProtoId(CritterProtoTypeId::Dude);
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId.pid());
+    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId);
 
     gDudeProto.pid = kDudeProtoId.pid();
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
@@ -1499,7 +1491,7 @@ void protoReset()
 {
     constexpr ProtoId kDudeProtoId = ProtoId(CritterProtoTypeId::Dude);
     // TODO: Get rid of cast.
-    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId.pid());
+    proto_critter_init((Proto*)&gDudeProto, kDudeProtoId);
     gDudeProto.pid = kDudeProtoId.pid();
     gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
 
@@ -1546,7 +1538,7 @@ static int _proto_header_load()
         ptr->max_entries_num = 1;
 
         char path[COMPAT_MAX_PATH];
-        proto_make_path(path, index << 24);
+        proto_make_path(path, ProtoId(index, ProtoId::kMinProtoId));
         strcat(path, "\\");
         strcat(path, artGetObjectTypeName(index));
         strcat(path, ".lst");
@@ -1950,19 +1942,18 @@ static int protoWrite(Proto* proto, File* stream)
 }
 
 // 0x4A1B30 proto_save_pid
-int _proto_save_pid(int pid)
+int protoSaveProtoId(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
     char path[260];
-    proto_make_path(path, protoId.pid());
+    proto_make_path(path, protoId);
     strcat(path, "\\");
 
-    _proto_list_str(protoId.pid(), path + strlen(path));
+    _proto_list_str(protoId, path + strlen(path));
 
     File* stream = fileOpen(path, "wb");
     if (stream == nullptr) {
@@ -1980,10 +1971,10 @@ int _proto_save_pid(int pid)
 static int protoLoadProtoId(const ProtoId& protoId, Proto** protoPtr)
 {
     char path[COMPAT_MAX_PATH];
-    proto_make_path(path, protoId.pid());
+    proto_make_path(path, protoId);
     strcat(path, "\\");
 
-    if (_proto_list_str(protoId.pid(), path + strlen(path)) == -1) {
+    if (_proto_list_str(protoId, path + strlen(path)) == -1) {
         return -1;
     }
 
@@ -2060,7 +2051,7 @@ static int _proto_find_free_subnode(ObjectType type, Proto** protoPtr)
 }
 
 // 0x4A1E90 proto_new
-int proto_new(int* pid, ObjectType type)
+int proto_new(ProtoId& protoId, ObjectType type)
 {
     Proto* proto;
 
@@ -2068,31 +2059,32 @@ int proto_new(int* pid, ObjectType type)
         return -1;
     }
 
-    *pid = _proto_new_id(type) | (type << 24);
+    protoId = ProtoId(type, _proto_new_id(type));
+
     switch (type) {
     case OBJ_TYPE_ITEM:
-        proto_item_init(proto, *pid);
-        proto->item.pid = *pid;
+        proto_item_init(proto, protoId);
+        proto->item.pid = protoId.pid();
         break;
     case OBJ_TYPE_CRITTER:
-        proto_critter_init(proto, *pid);
-        proto->critter.pid = *pid;
+        proto_critter_init(proto, protoId);
+        proto->critter.pid = protoId.pid();
         break;
     case OBJ_TYPE_SCENERY:
-        proto_scenery_init(proto, *pid);
-        proto->scenery.pid = *pid;
+        proto_scenery_init(proto, protoId);
+        proto->scenery.pid = protoId.pid();
         break;
     case OBJ_TYPE_WALL:
-        proto_wall_init(proto, *pid);
-        proto->wall.pid = *pid;
+        proto_wall_init(proto, protoId);
+        proto->wall.pid = protoId.pid();
         break;
     case OBJ_TYPE_TILE:
-        proto_tile_init(proto, *pid);
-        proto->tile.pid = *pid;
+        proto_tile_init(proto, protoId);
+        proto->tile.pid = protoId.pid();
         break;
     case OBJ_TYPE_MISC:
-        proto_misc_init(proto, *pid);
-        proto->misc.pid = *pid;
+        proto_misc_init(proto, protoId);
+        proto->misc.pid = protoId.pid();
         break;
     default:
         return -1;

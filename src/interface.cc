@@ -1372,7 +1372,7 @@ void _intface_use_item()
                 _combat(nullptr);
             }
         }
-    } else if (_proto_action_can_use_on(ptr->item->pid)) {
+    } else if (_proto_action_can_use_on(ptr->item)) {
         gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
         gameMouseSetMode(GAME_MOUSE_MODE_USE_CROSSHAIR);
     } else if (_obj_action_can_use(ptr->item)) {
@@ -1639,7 +1639,7 @@ static int interfaceBarRefreshMainAction()
 
         if (itemState->isWeapon == 0) {
             InterfaceFrmId frmId;
-            if (_proto_action_can_use_on(itemState->item->pid)) {
+            if (_proto_action_can_use_on(itemState->item)) {
                 frmId = InterfaceFrameId::UseOnText;
             } else if (_obj_action_can_use(itemState->item)) {
                 frmId = InterfaceFrameId::UseText;

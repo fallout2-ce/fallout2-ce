@@ -456,7 +456,7 @@ int objectRead(Object* obj, File* stream)
         return -1;
     }
 
-    if (isExitGridPid(obj->pid)) {
+    if (isExitGridProtoId(obj)) {
         if (obj->data.misc.map <= 0) {
             constexpr int kExit2Grid1FrameId = MiscFrmId(MiscFrameId::Exit2Grid1).frameId();
             constexpr int kExit3Grid8FrameId = MiscFrmId(MiscFrameId::Exit3Grid8).frameId();
@@ -677,7 +677,7 @@ static void _object_fix_weapon_ammo(Object* obj)
                 charges = proto->item.data.misc.charges;
                 obj->data.item.misc.charges = charges;
                 if (charges == 0xCCCCCCCC) {
-                    debugPrint("\nError: Misc Item Prototype %s: charges incorrect!", protoGetName(obj->pid));
+                    debugPrint("\nError: Misc Item Prototype %s: charges incorrect!", protoGetName(obj));
                     obj->data.item.misc.charges = 0;
                 }
             } else {
@@ -1466,7 +1466,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 
             if (elevation == elev) {
                 if (FrmId(obj).objectType() == OBJ_TYPE_MISC) {
-                    if (isExitGridPid(obj->pid)) {
+                    if (isExitGridProtoId(obj)) {
                         if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
                             objectListNode = objectListNode->next;
                             continue;
@@ -2097,7 +2097,7 @@ bool _obj_action_can_use(Object* obj)
     const ProtoId protoId = ProtoId(obj);
     // SFALL
     if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId.pid())) {
-        return _proto_action_can_use(protoId.pid());
+        return _proto_action_can_use(protoId);
     } else {
         return false;
     }
@@ -2106,7 +2106,8 @@ bool _obj_action_can_use(Object* obj)
 // 0x48B278 obj_action_can_talk_to
 bool _obj_action_can_talk_to(Object* obj)
 {
-    return _proto_action_can_talk_to(obj->pid) && (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) && critterIsActive(obj);
+    const ProtoId protoId = obj;
+    return _proto_action_can_talk_to(protoId) && (protoId.objectType() == OBJ_TYPE_CRITTER) && critterIsActive(obj);
 }
 
 // 0x48B2A8 obj_portal_is_walk_thru
@@ -3202,7 +3203,7 @@ char* objectGetName(Object* obj)
     case OBJ_TYPE_CRITTER:
         return critterGetName(obj);
     default:
-        return protoGetName(obj->pid);
+        return protoGetName(obj);
     }
 }
 
@@ -3213,7 +3214,7 @@ char* objectGetDescription(Object* obj)
         return itemGetDescription(obj);
     }
 
-    return protoGetDescription(obj->pid);
+    return protoGetDescription(obj);
 }
 
 // Warm objects cache?
@@ -5309,7 +5310,7 @@ bool isExitGridAt(int tile, int elevation)
         Object* obj = objectListNode->obj;
         if (obj->elevation == elevation) {
             if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
-                if (isExitGridPid(obj->pid)) {
+                if (isExitGridProtoId(obj)) {
                     return true;
                 }
             }

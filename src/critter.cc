@@ -243,7 +243,7 @@ char* critterGetName(Object* obj)
     }
 
     if (name == nullptr || *name == '\0') {
-        name = protoGetName(obj->pid);
+        name = protoGetName(obj);
     }
 
     _name_critter = name;

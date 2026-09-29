@@ -724,6 +724,11 @@ public:
     {
     }
 
+    constexpr ProtoId(ObjectType objectType, int protoId)
+        : ProtoId(objectType, buildPid(objectType, protoId), protoId)
+    {
+    }
+
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     constexpr bool hasPid() const { return _pid > kEmptyPid; }
 
@@ -781,7 +786,7 @@ protected:
     static constexpr int kObjectTypeMaskPosition = 24;
 
     constexpr ProtoId(ObjectType objectType, int pid, int protoId)
-        : _objectType(objectType)
+        : _objectType(objectTypeIsValid(objectType) ? objectType : OBJ_TYPE_INVALID)
         , _pid(pid)
         , _protoId(protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId))
     {

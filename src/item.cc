@@ -760,14 +760,14 @@ static bool _item_identical(Object* item1, Object* item2)
 // 0x477AE4
 char* itemGetName(Object* obj)
 {
-    _name_item = protoGetName(obj->pid);
+    _name_item = protoGetName(obj);
     return _name_item;
 }
 
 // 0x477AF4
 char* itemGetDescription(Object* obj)
 {
-    return protoGetDescription(obj->pid);
+    return protoGetDescription(obj);
 }
 
 // 0x477AFC

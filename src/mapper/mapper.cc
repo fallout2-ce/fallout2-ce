@@ -2019,11 +2019,11 @@ void edit_mapper()
         // --- ':' — Edit proto from toolbar slot ---
         case kBtnProtoNewEdit:
             if (!map_entered && !settings.mapper.use_art_not_protos && tool_active != -1) {
-                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
-                if (pid == -1) {
-                    proto_new(&pid, currentType);
+                ProtoId protoId = ProtoId(toolbar_proto(currentType, scrollOffset + tool_active));
+                if (!protoId.valid()) {
+                    proto_new(protoId, currentType);
                 }
-                protoEdit(pid);
+                protoEdit(protoId.pid());
             }
             break;
 
@@ -2350,7 +2350,7 @@ void update_toolname(int* pid, ObjectType type, int id)
     }
 
     windowDrawText(tool_win,
-        protoGetName(proto->pid),
+        protoGetName(proto),
         kToolNameWidth,
         kToolNameX,
         kToolNameY1,
@@ -2423,7 +2423,7 @@ void update_high_obj_name(Object* obj)
     Proto* proto;
 
     if (protoGetProto(obj, &proto) != -1) {
-        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
+        windowDrawText(tool_win, protoGetName(obj), kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
         windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, static_cast<ColorWithFlags>(260));
         windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, static_cast<ColorWithFlags>(260));
         redraw_toolname();
@@ -2697,7 +2697,7 @@ int mapper_mark_exit_grid()
 
             obj = objectFindFirstAtElevation(gElevation);
             while (obj != nullptr) {
-                if (isExitGridPid(obj->pid)) {
+                if (isExitGridProtoId(obj)) {
                     obj->data.misc.map = mapInfo.map;
                     obj->data.misc.tile = mapInfo.tile;
                     obj->data.misc.elevation = mapInfo.elevation;
@@ -2876,7 +2876,7 @@ static void mapper_mark_all_exit_grids()
 
     obj = objectFindFirstAtElevation(gElevation);
     while (obj != nullptr) {
-        if (isExitGridPid(obj->pid)) {
+        if (isExitGridProtoId(obj)) {
             obj->data.misc.map = mapInfo.map;
             obj->data.misc.tile = mapInfo.tile;
             obj->data.misc.elevation = mapInfo.elevation;
