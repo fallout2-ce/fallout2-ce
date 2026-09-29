@@ -97,12 +97,13 @@ bool OptionsSettingsModel::commit(std::string* error)
             settingsSetValue(*edit.descriptor, edit.originalValue);
         }
         settingsWriteToConfig();
-        if (error != nullptr) *error = "Unable to save fallout2.cfg.";
+        if (error != nullptr) *error = "Unable to save the configuration file.";
         return false;
     }
 
     for (auto& edit : edits_) {
-        edit.originalValue = edit.value;
+        edit.originalValue = settingsGetValue(*edit.descriptor);
+        edit.value = edit.originalValue;
     }
     return true;
 }

@@ -7,6 +7,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "db.h"
 #include "main.h"
 #include "platform_compat.h"
@@ -37,6 +42,35 @@ Config gGameConfig;
 // 0x58E978 gconfig_file_name
 char gGameConfigFilePath[COMPAT_MAX_PATH];
 
+struct CommandLineOverride {
+    std::string section;
+    std::string key;
+    std::optional<std::string> originalValue;
+};
+
+static std::vector<CommandLineOverride> commandLineOverrides;
+
+static void gameConfigRecordCommandLineOverride(const char* section, const char* key)
+{
+    settingsMarkCommandLineOverride(section, key);
+
+    for (const auto& override : commandLineOverrides) {
+        if (compat_stricmp(override.section.c_str(), section) == 0
+            && compat_stricmp(override.key.c_str(), key) == 0) {
+            return;
+        }
+    }
+
+    CommandLineOverride override;
+    override.section = section;
+    override.key = key;
+    char* originalValue = nullptr;
+    if (configGetString(&gGameConfig, section, key, &originalValue)) {
+        override.originalValue = originalValue;
+    }
+    commandLineOverrides.push_back(std::move(override));
+}
+
 // Inits main game config.
 //
 // [isMapper] is a flag indicating whether we're initing config for a main
@@ -64,6 +98,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     if (!configInit(&gGameConfig)) {
         return false;
     }
+    commandLineOverrides.clear();
 
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
@@ -128,7 +163,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
-    configParseCommandLineArguments(&gGameConfig, argc, argv);
+    configParseCommandLineArguments(&gGameConfig, argc, argv, gameConfigRecordCommandLineOverride);
 
     // Writes default values to config, skipping keys that were already loaded.
     settingsWriteToConfig(true);
@@ -146,7 +181,7 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 // clang-format on
 #endif
 
-// Saves game config into `fallout2.cfg`.
+// Saves game config into the active config file.
 //
 // 0x444C14 gconfig_save
 bool gameConfigSave()
@@ -155,9 +190,42 @@ bool gameConfigSave()
         return false;
     }
 
-    if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL)) {
-        return false;
+    std::vector<std::optional<std::string>> currentValues;
+    currentValues.reserve(commandLineOverrides.size());
+    for (const auto& override : commandLineOverrides) {
+        char* value = nullptr;
+        if (configGetString(&gGameConfig, override.section.c_str(), override.key.c_str(), &value)) {
+            currentValues.emplace_back(value);
+        } else {
+            currentValues.emplace_back(std::nullopt);
+        }
     }
+
+    bool restored = true;
+    for (const auto& override : commandLineOverrides) {
+        if (override.originalValue.has_value()) {
+            restored &= configSetString(&gGameConfig, override.section.c_str(), override.key.c_str(), override.originalValue->c_str());
+        } else {
+            restored &= configRemoveKey(&gGameConfig, override.section.c_str(), override.key.c_str());
+        }
+    }
+
+    bool saved = restored && configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
+
+    bool reapplied = true;
+    for (size_t index = 0; index < commandLineOverrides.size(); index++) {
+        const auto& override = commandLineOverrides[index];
+        if (currentValues[index].has_value()) {
+            reapplied &= configSetString(&gGameConfig, override.section.c_str(), override.key.c_str(), currentValues[index]->c_str());
+        } else {
+            reapplied &= configRemoveKey(&gGameConfig, override.section.c_str(), override.key.c_str());
+        }
+    }
+    if (!reapplied) {
+        debugPrint("Unable to restore command-line settings after saving the game config.\n");
+    }
+
+    if (!saved) return false;
 
 #if defined(__EMSCRIPTEN__)
     do_save_idbfs_gameconfig();
@@ -178,7 +246,7 @@ bool gameConfigExit(bool shouldSave)
     bool result = true;
 
     if (shouldSave) {
-        if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL)) {
+        if (!gameConfigSave()) {
             result = false;
         }
     }
@@ -186,6 +254,7 @@ bool gameConfigExit(bool shouldSave)
     configFree(&gGameConfig);
 
     gGameConfigInitialized = false;
+    commandLineOverrides.clear();
 
     return result;
 }

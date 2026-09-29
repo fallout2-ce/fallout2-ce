@@ -2,7 +2,9 @@
 
 #include "debug.h"
 #include "game_config.h"
+#include "mouse.h"
 #include "platform_compat.h"
+#include "sound.h"
 
 #include <algorithm>
 #include <cassert>
@@ -214,7 +216,10 @@ void registerSetting(const char* section,
                 settingsWrite(section, key, variable);
             },
             [&variable]() { return makeSettingValue(variable); },
-            [&variable](const SettingValue& value) { assignSettingValue(variable, value); },
+            [&variable, section, key, postProcess](const SettingValue& value) {
+                assignSettingValue(variable, value);
+                if (postProcess) postProcess(variable, section, key);
+            },
             [section, key, postProcess](const SettingValue& value) {
                 T candidate;
                 assignSettingValue(candidate, value);
@@ -301,11 +306,11 @@ void initSettingsRegistry(bool isMapper)
 #undef SECT
 
 #define SECT preferences
-    // Clamping for most of these values is handled in preferences.cc
-    SETTING(game_difficulty);
-    SETTING(combat_difficulty);
-    SETTING(violence_level);
-    SETTING(target_highlight);
+    // Match the ranges applied by the legacy preferences screen.
+    SETTING_P(game_difficulty, clamp(GAME_DIFFICULTY_MIN, GAME_DIFFICULTY_MAX));
+    SETTING_P(combat_difficulty, clamp(COMBAT_DIFFICULTY_MIN, COMBAT_DIFFICULTY_MAX));
+    SETTING_P(violence_level, clamp(VIOLENCE_LEVEL_MIN, VIOLENCE_LEVEL_MAX));
+    SETTING_P(target_highlight, clamp(TARGET_HIGHLIGHT_MIN, TARGET_HIGHLIGHT_MAX));
     SETTING(item_highlight);
     SETTING(combat_looks);
     SETTING(combat_messages);
@@ -313,12 +318,12 @@ void initSettingsRegistry(bool isMapper)
     SETTING(language_filter);
     SETTING(running);
     SETTING(subtitles);
-    SETTING(combat_speed);
+    SETTING_P(combat_speed, clamp(0, 50));
     SETTING(player_speedup);
-    SETTING(text_base_delay);
-    SETTING(text_line_delay);
-    SETTING(brightness);
-    SETTING(mouse_sensitivity);
+    SETTING_P(text_base_delay, clamp(1.0, 6.0));
+    SETTING_P(text_line_delay, clamp(0.0, 2.0));
+    SETTING_P(brightness, clamp(1.0, 1.17999267578125));
+    SETTING_P(mouse_sensitivity, clamp(MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX));
     SETTING(running_burning_guy);
 #undef SECT
 
@@ -329,10 +334,10 @@ void initSettingsRegistry(bool isMapper)
     SETTING(sounds);
     SETTING(music);
     SETTING(speech);
-    SETTING(master_volume);
-    SETTING(music_volume);
-    SETTING(sndfx_volume);
-    SETTING(speech_volume);
+    SETTING_P(master_volume, clamp(0, VOLUME_MAX));
+    SETTING_P(music_volume, clamp(0, VOLUME_MAX));
+    SETTING_P(sndfx_volume, clamp(0, VOLUME_MAX));
+    SETTING_P(speech_volume, clamp(0, VOLUME_MAX));
     SETTING(cache_size);
     SETTING_P(music_path1, normalizePath);
     SETTING_P(music_path2, normalizePath);
@@ -403,6 +408,10 @@ void initSettingsRegistry(bool isMapper)
 bool settingsInit(bool isMapper, int argc, char** argv)
 {
     initSettingsRegistry(isMapper);
+    for (size_t index = 0; index < settingsRegistry.size(); index++) {
+        settingsRegistry[index].descriptor.commandLineOverride = false;
+        settingDescriptors[index].commandLineOverride = false;
+    }
     if (!gameConfigInit(isMapper, argc, argv)) {
         return false;
     }
@@ -412,6 +421,19 @@ bool settingsInit(bool isMapper, int argc, char** argv)
     }
 
     return true;
+}
+
+void settingsMarkCommandLineOverride(const char* section, const char* key)
+{
+    for (size_t index = 0; index < settingsRegistry.size(); index++) {
+        SettingDescriptor& descriptor = settingDescriptors[index];
+        if (compat_stricmp(descriptor.section.c_str(), section) == 0
+            && compat_stricmp(descriptor.key.c_str(), key) == 0) {
+            descriptor.commandLineOverride = true;
+            settingsRegistry[index].descriptor.commandLineOverride = true;
+            return;
+        }
+    }
 }
 
 void settingsWriteToConfig(bool onlyAdd)

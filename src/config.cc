@@ -96,7 +96,7 @@ void configFree(Config* config)
 // I don't know if this is intentional or it's bug.
 //
 // 0x42BE38
-bool configParseCommandLineArguments(Config* config, int argc, char** argv)
+bool configParseCommandLineArguments(Config* config, int argc, char** argv, void (*onOverride)(const char*, const char*))
 {
     if (config == nullptr) {
         return false;
@@ -125,6 +125,9 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
         std::string key;
         std::string value;
         if (configParseKeyValue(pch + 1, key, value)) {
+            if (onOverride != nullptr) {
+                onOverride(sectionKey, key.c_str());
+            }
             if (!configSetString(config, sectionKey, key.c_str(), value.c_str())) {
                 *pch = ']';
                 return false;
@@ -215,6 +218,27 @@ bool configSetString(Config* config, const char* sectionKey, const char* key, co
     }
 
     return true;
+}
+
+bool configRemoveKey(Config* config, const char* sectionKey, const char* key)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr) {
+        return false;
+    }
+
+    int sectionIndex = dictionaryGetIndexByKey(config, sectionKey);
+    if (sectionIndex == -1) {
+        return true;
+    }
+
+    ConfigSection* section = static_cast<ConfigSection*>(config->entries[sectionIndex].value);
+    int keyIndex = dictionaryGetIndexByKey(section, key);
+    if (keyIndex == -1) {
+        return true;
+    }
+
+    internal_free(*static_cast<char**>(section->entries[keyIndex].value));
+    return dictionaryRemoveValue(section, key) == 0;
 }
 
 // 0x42C05C
@@ -632,9 +656,9 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
         return false;
     }
 
-    if (compat_remove(backupPath.c_str()) != 0 && errno != ENOENT) {
-        return false;
-    }
+    // The new config is already installed. Backup cleanup failure does not
+    // make the save fail, since callers cannot roll back an installed file.
+    compat_remove(backupPath.c_str());
     return true;
 }
 

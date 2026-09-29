@@ -302,6 +302,7 @@ bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
 void settingsWriteToConfig(bool onlyAdd = false);
 bool settingsExit(bool shouldSave);
+void settingsMarkCommandLineOverride(const char* section, const char* key);
 const std::vector<SettingDescriptor>& settingsGetDescriptors();
 SettingValue settingsGetValue(const SettingDescriptor& descriptor);
 bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
