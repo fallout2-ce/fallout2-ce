@@ -151,6 +151,9 @@ public:
               static_cast<int>(frameId),
               nullptr)
     {
+        static_assert(
+            MapFrameIdToObjectType<TFrameId>::value != OBJ_TYPE_CRITTER,
+            "FrmId(CritterFrameId) is not supported, use other overload!");
     }
 
     // cannot be made constexpr as internally calls FrmId::exist and that checks file system
