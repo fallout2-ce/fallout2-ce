@@ -1,8 +1,8 @@
 #ifndef FALLOUT_SETTINGS_H_
 #define FALLOUT_SETTINGS_H_
 
-#include <string>
 #include <optional>
+#include <string>
 #include <variant>
 #include <vector>
 

@@ -206,8 +206,8 @@ void registerSetting(const char* section,
     settingsRegistry.push_back(
         { descriptor,
             [&, section, key, postProcess]() {
-             settingsRead(section, key, variable);
-             if (postProcess) postProcess(variable, section, key);
+                settingsRead(section, key, variable);
+                if (postProcess) postProcess(variable, section, key);
             },
             [&, section, key](bool onlyAdd) {
                 if (onlyAdd && settingsKeyExists(section, key)) return;
