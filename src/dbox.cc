@@ -371,13 +371,10 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
     // Resources init
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0 && !initializedButtons) {
-        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox) ||
-            !buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown) ||
-            !buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp) ||
-            !messageListInit(&messageList))
-        {
-            return -1;
-        }
+        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)
+            || !buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)
+            || !buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)
+            || !messageListInit(&messageList)) return -1;
 
         std::string path = std::string(asc_5186C8) + "DBOX.MSG";
         if (!messageListLoad(&messageList, path.c_str())) {
@@ -430,8 +427,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
             const int doneX = _doneX[dialogType];
 
-            const int blitXOffset   = doneX + doneBoxFrmImage.getWidth() + 24;
-            const int textXOffset   = doneX + doneBoxFrmImage.getWidth() + 59;
+            const int blitXOffset = doneX + doneBoxFrmImage.getWidth() + 24;
+            const int textXOffset = doneX + doneBoxFrmImage.getWidth() + 59;
             const int buttonXOffset = doneX + doneBoxFrmImage.getWidth() + 37;
 
             blitBufferToBufferTrans(doneBoxFrmImage.getData(),
