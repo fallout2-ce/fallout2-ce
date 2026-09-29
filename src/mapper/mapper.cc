@@ -2601,9 +2601,9 @@ static int mapperPickTile(int* outOffset)
     int tileFid = _square[gElevation]->tileFid[tileNum];
     TileFrameId tileFrameId;
     if (tileRoofIsVisible()) {
-        tileFrameId = RoofTileFrmId(tileFid).frameId().tile;
+        tileFrameId = RoofTileFrmId(tileFid).frameId<TileFrameId>();
     } else {
-        tileFrameId = FloorTileFrmId(tileFid).frameId().tile;
+        tileFrameId = FloorTileFrmId(tileFid).frameId<TileFrameId>();
     }
     if (tileFrameId == TileFrameId::Invalid) {
         tileFrameId = TileFrameId::Last;

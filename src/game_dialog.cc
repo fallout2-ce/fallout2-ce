@@ -2716,7 +2716,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
 
     if (_lipsFrmId == HeadFrameId::None) {
         _phone_anim = anim;
-        _lipsFrmId = HeadFrmId(headFrmId.frameId().head, anim);
+        _lipsFrmId = HeadFrmId(headFrmId.frameId<HeadFrameId>(), anim);
         _lipsFp = artLock(_lipsFrmId, &_lipsKey);
         if (_lipsFp == nullptr) {
             debugPrint("failure!\n");
@@ -2727,7 +2727,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId().head, reaction));
+    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId<HeadFrameId>(), reaction));
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
         return;
@@ -2767,7 +2767,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId().head, reaction, fidget);
+    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId<HeadFrameId>(), reaction, fidget);
     gameDialogFidgetFrmCurrentFrame = 0;
     gameDialogFidgetFrm = artLock(gameDialogFidgetFrmId, &gameDialogFidgetFrmHandle);
     if (gameDialogFidgetFrm == nullptr) {
@@ -2893,7 +2893,7 @@ void _gdPlayTransition(HeadAnimation anim)
     }
 
     CacheEntry* headFrmHandle;
-    const HeadFrmId headFid = HeadFrmId(gGameDialogHeadFrmId.frameId().head, anim);
+    const HeadFrmId headFid = HeadFrmId(gGameDialogHeadFrmId.frameId<HeadFrameId>(), anim);
     Art* headFrm = artLock(headFid, &headFrmHandle);
     if (headFrm == nullptr) {
         debugPrint("\tError locking transition...\n");

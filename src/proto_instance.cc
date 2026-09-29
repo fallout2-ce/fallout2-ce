@@ -680,7 +680,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
 
                 Proto* proto;
                 if (protoGetProto(PROTO_ID_DUDE, &proto) != -1) {
-                    defaultFrameId = FrmId(proto).frameId().critter;
+                    defaultFrameId = FrmId(proto).frameId<CritterFrameId>();
                 }
 
                 const FrmId dudeFrmId = FrmId(critter);
