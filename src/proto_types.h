@@ -722,7 +722,7 @@ public:
     constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
     constexpr int pid() const { return _pid; }
     constexpr int protoId() const { return _protoId; }
-    
+
     template <typename TProtoTypeId,
         typename = std::void_t<
             decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
