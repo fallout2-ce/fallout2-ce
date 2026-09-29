@@ -726,8 +726,8 @@ public:
     template <typename TProtoTypeId,
         typename = std::void_t<
             decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
-    constexpr TProtoTypeId protoId() const 
-    { 
+    constexpr TProtoTypeId protoId() const
+    {
         assert(_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value && "ProtoId::protoId() object type doesn't match the ProtoTypeId!");
         return _objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value
             ? static_cast<TProtoTypeId>(_protoId)
