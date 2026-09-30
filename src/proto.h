@@ -140,9 +140,9 @@ int protoGetProto(int pid, Proto** protoPtr);
 int _ResetPlayer();
 int proto_max_id(ObjectType type);
 
-static bool isExitGridPid(int pid)
+constexpr inline bool isExitGridPid(int pid)
 {
-    return pid >= FIRST_EXIT_GRID_PID && pid <= LAST_EXIT_GRID_PID;
+    return pid >= ProtoId(MiscProtoTypeId::FirstExitGrid).pid() && pid <= ProtoId(MiscProtoTypeId::LastExitGrid).pid();
 }
 
 } // namespace fallout

@@ -680,7 +680,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
 
     if (existing != nullptr) {
         // Stackable item (PID 41 in F2 == bottle caps) auto-merges by bumping count.
-        if (existing->pid == PROTO_ID_MONEY) {
+        if (ProtoId(existing) == ItemProtoTypeId::Money) {
             existing->data.item.misc.charges++;
         }
         return;

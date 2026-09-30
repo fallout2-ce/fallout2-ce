@@ -423,12 +423,12 @@ int critterGetStat(Object* critter, Stat stat)
                     bool hasMirrorShades = false;
 
                     Object* item2 = critterGetItem2(critter);
-                    if (item2 != nullptr && item2->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item2) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 
                     Object* item1 = critterGetItem1(critter);
-                    if (item1 != nullptr && item1->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item1) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 

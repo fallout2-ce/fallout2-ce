@@ -354,7 +354,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFrmIdPid(&gDude, dudeFrmId, PROTO_ID_DUDE);
+    objectCreateWithFrmIdPid(&gDude, dudeFrmId, ProtoId(CritterProtoTypeId::Dude).pid());
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -2091,10 +2091,10 @@ int _obj_inven_free(Inventory* inventory)
 // 0x48B24C obj_action_can_use
 bool _obj_action_can_use(Object* obj)
 {
-    int pid = obj->pid;
+    const ProtoId protoId = ProtoId(obj);
     // SFALL
-    if (pid != PROTO_ID_LIT_FLARE && !explosiveIsActiveExplosive(pid)) {
-        return _proto_action_can_use(pid);
+    if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId.pid())) {
+        return _proto_action_can_use(protoId.pid());
     } else {
         return false;
     }
@@ -2631,7 +2631,7 @@ int _obj_scroll_blocking_at(int tile, int elev)
             break;
         }
 
-        if (objectListNode->obj->elevation == elev && objectListNode->obj->pid == PROTO_ID_0x500000C) {
+        if (objectListNode->obj->elevation == elev && ProtoId(objectListNode->obj) == MiscProtoTypeId::Id0x0C) {
             return 0;
         }
 

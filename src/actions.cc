@@ -218,7 +218,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
     if (FrmId(attacker) == MiscFrameId::RocketExplosion) {
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
-    if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
+    if (ProtoId(attacker) == SceneryProtoTypeId::ForceFieldNorthSouth) {
         return checkDeathAnim(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
     if (FrmId(attacker) == SceneryFrameId::ForceField3) {
@@ -230,7 +230,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
 
     DamageType damageType = weaponGetDamageType(attacker, weapon);
 
-    if (weapon != nullptr && weapon->pid == PROTO_ID_MOLOTOV_COCKTAIL) {
+    if (ProtoId(weapon) == ItemProtoTypeId::MolotovCocktail) {
         normalViolenceLevelDamageThreshold = 5;
         maximumBloodViolenceLevelDamageThreshold = 15;
         damageType = DAMAGE_TYPE_FIRE;

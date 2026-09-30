@@ -1,6 +1,9 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include <cassert>
+#include <type_traits>
+
 #include "art_defs.h"
 #include "obj_types.h"
 #include "perk_defs.h"
@@ -225,86 +228,97 @@ inline bool killTypeOverrideIsValid(int killType)
     return killType >= KILL_TYPE_FIRST && killType <= KILL_TYPE_OVERRIDE_COUNT;
 }
 
-enum {
-    PROTO_ID_POWER_ARMOR = 3,
-    PROTO_ID_SMALL_ENERGY_CELL = 38,
-    PROTO_ID_MICRO_FUSION_CELL = 39,
-    PROTO_ID_STIMPAK = 40,
-    PROTO_ID_MONEY = 41,
-    PROTO_ID_FIRST_AID_KIT = 47,
-    PROTO_ID_RADAWAY = 48,
-    PROTO_ID_DYNAMITE_I = 51,
-    PROTO_ID_GEIGER_COUNTER_I = 52,
-    PROTO_ID_MENTATS = 53,
-    PROTO_ID_STEALTH_BOY_I = 54,
-    PROTO_ID_MOTION_SENSOR = 59,
-    PROTO_ID_BIG_BOOK_OF_SCIENCE = 73,
-    PROTO_ID_DEANS_ELECTRONICS = 76,
-    PROTO_ID_FLARE = 79,
-    PROTO_ID_FIRST_AID_BOOK = 80,
-    PROTO_ID_PLASTIC_EXPLOSIVES_I = 85,
-    PROTO_ID_SCOUT_HANDBOOK = 86,
-    PROTO_ID_BUFF_OUT = 87,
-    PROTO_ID_DOCTORS_BAG = 91,
-    PROTO_ID_GUNS_AND_BULLETS = 102,
-    PROTO_ID_NUKA_COLA = 106,
-    PROTO_ID_PSYCHO = 110,
-    PROTO_ID_BEER = 124,
-    PROTO_ID_BOOZE = 125,
-    PROTO_ID_SUPER_STIMPAK = 144,
-    PROTO_ID_MOLOTOV_COCKTAIL = 159,
-    PROTO_ID_LIT_FLARE = 205,
-    PROTO_ID_DYNAMITE_II = 206, // armed
-    PROTO_ID_GEIGER_COUNTER_II = 207,
-    PROTO_ID_PLASTIC_EXPLOSIVES_II = 209, // armed
-    PROTO_ID_STEALTH_BOY_II = 210,
-    PROTO_ID_HARDENED_POWER_ARMOR = 232,
-    PROTO_ID_JET = 259,
-    PROTO_ID_JET_ANTIDOTE = 260,
-    PROTO_ID_HEALING_POWDER = 273,
-    PROTO_ID_DECK_OF_TRAGIC_CARDS = 304,
-    PROTO_ID_CATS_PAW_ISSUE_5 = 331,
-    PROTO_ID_ADVANCED_POWER_ARMOR = 348,
-    PROTO_ID_ADVANCED_POWER_ARMOR_MK_II = 349,
-    PROTO_ID_SHIV = 383,
-    PROTO_ID_SOLAR_SCORCHER = 390,
-    PROTO_ID_SUPER_CATTLE_PROD = 399,
-    PROTO_ID_MEGA_POWER_FIST = 407,
-    PROTO_ID_FIELD_MEDIC_FIRST_AID_KIT = 408,
-    PROTO_ID_PARAMEDICS_BAG = 409,
-    PROTO_ID_RAMIREZ_BOX_CLOSED = 431,
-    PROTO_ID_MIRRORED_SHADES = 433,
-    PROTO_ID_RAIDERS_MAP = 444,
-    PROTO_ID_CAR_TRUNK = 455,
-    PROTO_ID_JESSE_CONTAINER = 467,
-    PROTO_ID_PIP_BOY_LINGUAL_ENHANCER = 499,
-    PROTO_ID_PIP_BOY_MEDICAL_ENHANCER = 516,
-    PROTO_ID_SURVEY_MAP = 523,
+enum class ItemProtoTypeId : int {
+    PowerArmor = 3,
+    SmallEnergyCell = 38,
+    MicroFusionCell = 39,
+    Stimpak = 40,
+    Money = 41,
+    FirstAidKit = 47,
+    Radaway = 48,
+    Dynamite = 51,
+    GeigerCounter = 52,
+    Mentats = 53,
+    StealthBoy = 54,
+    MotionSensor = 59,
+    BigBookOfScience = 73,
+    DeansElectronics = 76,
+    Flare = 79,
+    FirstAidBook = 80,
+    PlasticExplosives = 85,
+    ScoutHandBook = 86,
+    Buffout = 87,
+    DoctorsBag = 91,
+    GunsAndBullets = 102,
+    NukaCola = 106,
+    Psycho = 110,
+    Beer = 124,
+    Booze = 125,
+    SuperStimpak = 144,
+    MolotovCocktail = 159,
+    LitFlare = 205,
+    ArmedDynamite = 206,
+    ActivatedGeigerCounter = 207,
+    ArmedPlasticExplosives = 209,
+    ActivatedStealthBoy = 210,
+    HardenedPowerArmor = 232,
+    Jet = 259,
+    JetAntidote = 260,
+    HealingPowder = 273,
+    DeckOfTragicCards = 304,
+    CatsPawIssue5 = 331,
+    AdvancedPowerArmor = 348,
+    AdvancedPowerArmorMkII = 349,
+    Shiv = 383,
+    SolarScorcher = 390,
+    SuperCattleProd = 399,
+    MegaPowerFist = 407,
+    FieldMedicsFirstAidKit = 408,
+    ParamedicsBag = 409,
+    RamirezBoxClosed = 431,
+    MirroredShades = 433,
+    RaidersMap = 444,
+    CarTrunk = 455,
+    JesseContainer = 467,
+    PipBoyLingualEnhancer = 499,
+    PipBoyMedicalEnhancer = 516,
+    SurveyMap = 523,
 };
 
-#define PROTO_ID_DUDE 0x1000000
-#define PROTO_ID_0x100002F 0x100002F
-#define PROTO_ID_DOG_1 0x1000088
-#define PROTO_ID_GORIS 0x1000098
-#define PROTO_ID_MARCUS 0x10000A1
-#define PROTO_ID_0x10000FA 0x10000FA
-#define PROTO_ID_DOG_2 0x1000156
-#define PROTO_ID_DOG_3 0x1000180
-#define PROTO_ID_0x10001E0 0x10001E0
-#define PROTO_ID_EXIT_GRID_MAP_MARKER 0x2000031
-#define PROTO_ID_BLOCK_HEX_AUTO_INVISO 0x2000158
-#define PROTO_ID_CAR 0x20003F1
-#define PROTO_ID_ELEVATOR_STUB 0x200050D
-#define PROTO_ID_BROTHERHOOD_DOOR 0x2000099
-#define PROTO_ID_ELEVATOR_DOOR 0x20001A5
-#define PROTO_ID_ELEVATOR_DOOR_ALT 0x20001D6
-#define PROTO_ID_FORCE_FIELD_NS 0x20001EB
-#define FIRST_RADIOACTIVE_GOO_PID 0x20003D9
-#define LAST_RADIOACTIVE_GOO_PID 0x20003DC
-#define PROTO_ID_BLOOD 0x5000004
-#define PROTO_ID_0x500000C 0x500000C
-#define FIRST_EXIT_GRID_PID 0x5000010
-#define LAST_EXIT_GRID_PID 0x5000017
+enum class CritterProtoTypeId : int {
+    Dude = 0,
+    GunGuardFemale = 47,
+    Cyberdog = 136,
+    Goris = 152,
+    Marcus = 161,
+    EnclavePatrolMale = 250,
+    Dogmeat = 342,
+    PariahDog = 384,
+    AutoCannon = 480
+};
+
+enum class SceneryProtoTypeId : int {
+    ExitGridAutomapMarker = 49,
+    BrotherhoodDoor = 153,
+    BlockingHexAutomap = 344,
+    ElevatorDoor = 421,
+    ElevatorDoorAlternate = 470,
+    ForceFieldNorthSouth = 491,
+    FirstRadioactiveGoo = 985,
+    LastRadioactiveGoo = 988,
+    Car = 1009,
+    ElevatorStub = 1293
+};
+
+enum class MiscProtoTypeId : int {
+    Blood = 4,
+    Id0x0C = 12,
+    FirstExitGrid = 16,
+    LastExitGrid = 23
+};
+
+enum class WallProtoTypeId : int {};
+enum class TileProtoTypeId : int {};
 
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
@@ -630,6 +644,159 @@ typedef struct ProtoList {
     // Number of lines in proto/{type}/{type}.lst.
     int max_entries_num;
 } ProtoList;
+
+constexpr inline int protoIdFromPid(int pid)
+{
+    return pid & 0xFFFFFF;
+}
+
+template <typename T>
+struct MapProtoTypeIdToObjectType;
+
+template <>
+struct MapProtoTypeIdToObjectType<ItemProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_ITEM;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<CritterProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_CRITTER;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<SceneryProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_SCENERY;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<WallProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_WALL;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<TileProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_TILE;
+};
+
+template <>
+struct MapProtoTypeIdToObjectType<MiscProtoTypeId> {
+    static constexpr ObjectType value = OBJ_TYPE_MISC;
+};
+
+class ProtoId {
+public:
+    static constexpr int kEmptyPid = -1;
+    static constexpr int kInvalidProtoId = -1;
+    static constexpr int kMinProtoId = 0;
+
+    constexpr ProtoId()
+        : ProtoId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId)
+    {
+    }
+
+    constexpr explicit ProtoId(int pid)
+        : ProtoId(pid == kEmptyPid ? OBJ_TYPE_INVALID : objectTypeFromPid(pid), pid, pid)
+    {
+    }
+
+    constexpr ProtoId(const Proto* proto)
+        : ProtoId(proto == nullptr ? kEmptyPid : proto->pid)
+    {
+    }
+
+    constexpr ProtoId(const Object* object)
+        : ProtoId(object == nullptr ? kEmptyPid : object->pid)
+    {
+    }
+
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr ProtoId(TProtoTypeId protoId)
+        : ProtoId(MapProtoTypeIdToObjectType<TProtoTypeId>::value, buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId)), static_cast<int>(protoId))
+    {
+    }
+
+    constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
+    constexpr bool hasPid() const { return _pid > kEmptyPid; }
+
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
+    constexpr int pid() const { return _pid; }
+    constexpr int protoId() const { return _protoId; }
+
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr TProtoTypeId protoId() const
+    {
+        if (hasPid()) {
+            assert(_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value && "ProtoId::protoId<TProtoTypeId>() object type doesn't match the TProtoTypeId type!");
+            if (_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value) {
+                return static_cast<TProtoTypeId>(_protoId);
+            }
+        }
+
+        return static_cast<TProtoTypeId>(kInvalidProtoId);
+    }
+
+    constexpr bool operator==(const ProtoId& other) const
+    {
+        return _pid == other._pid && _objectType == other._objectType;
+    }
+
+    constexpr bool operator!=(const ProtoId& other) const
+    {
+        return _pid != other._pid || _objectType != other._objectType;
+    }
+
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr bool operator==(TProtoTypeId protoId) const
+    {
+        return _pid == buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId));
+    }
+
+    template <typename TProtoTypeId,
+        typename = std::void_t<
+            decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
+    constexpr bool operator!=(TProtoTypeId protoId) const
+    {
+        return _pid != buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId));
+    }
+
+protected:
+    static constexpr int kProtoIdMask = 0x00FFFFFF;
+    static constexpr int kObjectTypeMask = 0x0F000000;
+
+    static constexpr int kObjectTypeMaskPosition = 24;
+
+    constexpr ProtoId(ObjectType objectType, int pid, int protoId)
+        : _objectType(objectType)
+        , _pid(pid)
+        , _protoId(protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId))
+    {
+    }
+
+private:
+    ObjectType _objectType;
+    int _pid;
+    int _protoId;
+
+    /* PID Structure:
+        4  bits unused
+        4  bits for object type
+        24 bits for proto id
+    */
+    static constexpr int buildPid(ObjectType objectType, int protoId)
+    {
+        if (!objectTypeIsValid(objectType) || protoId < kMinProtoId) {
+            return kEmptyPid;
+        }
+
+        return ((objectType << kObjectTypeMaskPosition) & kObjectTypeMask) | (protoId & kProtoIdMask);
+    }
+};
 
 } // namespace fallout
 

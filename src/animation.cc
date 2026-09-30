@@ -1944,7 +1944,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (isCritter) {
                 Object* o = objectFindFirstAtLocation(object->elevation, v27->tile);
                 while (o != nullptr) {
-                    if (o->pid >= FIRST_RADIOACTIVE_GOO_PID && o->pid <= LAST_RADIOACTIVE_GOO_PID) {
+                    if (o->pid >= ProtoId(SceneryProtoTypeId::FirstRadioactiveGoo).pid() && o->pid <= ProtoId(SceneryProtoTypeId::LastRadioactiveGoo).pid()) {
                         break;
                     }
                     o = objectFindNextAtLocation();
@@ -3178,7 +3178,7 @@ void _dude_fidget()
             objectGetRect(object, &rect);
 
             Rect intersection;
-            if (rectIntersection(&rect, &_scr_size, &intersection) == 0 && (gMapHeader.index != MAP_SPECIAL_RND_WOODSMAN || object->pid != PROTO_ID_0x10000FA)) {
+            if (rectIntersection(&rect, &_scr_size, &intersection) == 0 && (gMapHeader.index != MAP_SPECIAL_RND_WOODSMAN || ProtoId(object) != CritterProtoTypeId::EnclavePatrolMale)) {
                 candidates[candidatesLength++] = object;
             }
         }

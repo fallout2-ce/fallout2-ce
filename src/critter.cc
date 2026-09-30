@@ -420,17 +420,15 @@ int critterAdjustRadiation(Object* obj, int amount)
         Object* geigerCounter = nullptr;
 
         Object* item1 = critterGetItem1(gDude);
-        if (item1 != nullptr) {
-            if (item1->pid == PROTO_ID_GEIGER_COUNTER_I || item1->pid == PROTO_ID_GEIGER_COUNTER_II) {
-                geigerCounter = item1;
-            }
+        const ProtoId item1ProtoId = ProtoId(item1);
+        if (item1ProtoId == ItemProtoTypeId::GeigerCounter || item1ProtoId == ItemProtoTypeId::ActivatedGeigerCounter) {
+            geigerCounter = item1;
         }
 
         Object* item2 = critterGetItem2(gDude);
-        if (item2 != nullptr) {
-            if (item2->pid == PROTO_ID_GEIGER_COUNTER_I || item2->pid == PROTO_ID_GEIGER_COUNTER_II) {
-                geigerCounter = item2;
-            }
+        const ProtoId item2ProtoId = ProtoId(item2);
+        if (item2ProtoId == ItemProtoTypeId::GeigerCounter || item2ProtoId == ItemProtoTypeId::ActivatedGeigerCounter) {
+            geigerCounter = item2;
         }
 
         if (geigerCounter != nullptr) {
@@ -1037,7 +1035,7 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
         return CritterFrameId::Invalid;
     }
 
-    assert(critter->pid == PROTO_ID_GORIS);
+    assert(ProtoId(critter) == CritterProtoTypeId::Goris);
 
     const FrmId frmId = FrmId(critter);
 
