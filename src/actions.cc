@@ -788,8 +788,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
             const ProtoId projectileProtoId = ProtoId(weaponGetProjectilePid(weapon));
             Proto* projectileProto;
-            const FrmId projectileFrmId = FrmId(projectileProto);
-            if (protoGetProto(projectileProtoId, &projectileProto) != -1 && projectileFrmId.valid()) {
+            if (protoGetProto(projectileProtoId, &projectileProto) != -1 && FrmId(projectileProto).valid()) {
                 if (anim == ANIM_THROW_ANIM) {
                     projectile = weapon;
                     weaponFrmId = FrmId(weapon);
@@ -801,7 +800,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
-                    objectSetFrmId(projectile, projectileFrmId, nullptr);
+                    objectSetFrmId(projectile, projectileProto, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
 
                     if (attack->attacker == gDude) {
