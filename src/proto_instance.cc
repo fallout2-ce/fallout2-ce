@@ -205,13 +205,12 @@ int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* str
         return -1;
     }
 
-    const ProtoId targetProtoId = target;
-    if (targetProtoId.objectType() == OBJ_TYPE_TILE) {
+    if (FrmId(target).objectType() == OBJ_TYPE_TILE) {
         return -1;
     }
 
     Proto* proto;
-    if (protoGetProto(targetProtoId, &proto) == -1) {
+    if (protoGetProto(target, &proto) == -1) {
         return -1;
     }
 
@@ -229,7 +228,7 @@ int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* str
     if (!scriptOverrides) {
         MessageListItem messageListItem;
 
-        if (targetProtoId.objectType() == OBJ_TYPE_CRITTER && critterIsDead(target)) {
+        if (ProtoId(target).objectType() == OBJ_TYPE_CRITTER && critterIsDead(target)) {
             messageListItem.num = 491 + randomBetween(0, 1);
         } else {
             messageListItem.num = 490;
@@ -1501,8 +1500,7 @@ int checkSceneryUseActionPointCost(Object* obj, Object* _)
 // 0x49C740
 int objectUse(Object* user, Object* targetObj)
 {
-    const ProtoId targetProtoId = targetObj;
-    ObjectType type = targetProtoId.objectType();
+    ObjectType type = FrmId(targetObj).objectType();
     if (user == gDude) {
         if (type != OBJ_TYPE_SCENERY) {
             return -1;
@@ -1514,11 +1512,11 @@ int objectUse(Object* user, Object* targetObj)
     }
 
     Proto* sceneryProto;
-    if (protoGetProto(targetProtoId, &sceneryProto) == -1) {
+    if (protoGetProto(targetObj, &sceneryProto) == -1) {
         return -1;
     }
 
-    if (targetProtoId.objectType() == OBJ_TYPE_SCENERY && sceneryProto->scenery.type == SCENERY_TYPE_DOOR) {
+    if (ProtoId(targetObj).objectType() == OBJ_TYPE_SCENERY && sceneryProto->scenery.type == SCENERY_TYPE_DOOR) {
         return objectUseDoor(user, targetObj);
     }
 
@@ -1534,7 +1532,7 @@ int objectUse(Object* user, Object* targetObj)
     }
 
     if (!scriptOverrides) {
-        if (targetProtoId.objectType() == OBJ_TYPE_SCENERY) {
+        if (ProtoId(targetObj).objectType() == OBJ_TYPE_SCENERY) {
             if (sceneryProto->scenery.type == SCENERY_TYPE_LADDER_DOWN) {
                 if (useLadderDown(user, targetObj) == 0) {
                     scriptOverrides = true;
@@ -1851,13 +1849,12 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
 // 0x49CE7C
 int objectUseContainer(Object* critter, Object* item)
 {
-    const ProtoId itemProtoId = item;
-    if (itemProtoId.objectType() != OBJ_TYPE_ITEM) {
+    if (FrmId(item).objectType() != OBJ_TYPE_ITEM) {
         return -1;
     }
 
     Proto* itemProto;
-    if (protoGetProto(itemProtoId, &itemProto) == -1) {
+    if (protoGetProto(item, &itemProto) == -1) {
         return -1;
     }
 
