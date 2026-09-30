@@ -728,10 +728,14 @@ public:
             decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
     constexpr TProtoTypeId protoId() const
     {
-        assert(_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value && "ProtoId::protoId() object type doesn't match the ProtoTypeId!");
-        return _objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value
-            ? static_cast<TProtoTypeId>(_protoId)
-            : static_cast<TProtoTypeId>(kInvalidProtoId);
+        if (hasPid()) {
+            assert(_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value && "ProtoId::protoId<TProtoTypeId>() object type doesn't match the TProtoTypeId type!");
+            if (_objectType == MapProtoTypeIdToObjectType<TProtoTypeId>::value) {
+                return static_cast<TProtoTypeId>(_protoId);
+            }
+        }
+        
+        return static_cast<TProtoTypeId>(kInvalidProtoId);
     }
 
     constexpr bool operator==(const ProtoId& other) const
