@@ -735,7 +735,7 @@ public:
                 return static_cast<TProtoTypeId>(_protoId);
             }
         }
-        
+
         return static_cast<TProtoTypeId>(kInvalidProtoId);
     }
 
