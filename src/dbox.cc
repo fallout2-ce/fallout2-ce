@@ -431,8 +431,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
             const int doneX = _doneX[dialogType];
 
-            const int blitXOffset   = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 24) : doneX;
-            const int textXOffset   = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 59) : (doneX + 35);
+            const int blitXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 24) : doneX;
+            const int textXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 59) : (doneX + 35);
             const int buttonXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 37) : (doneX + 13);
 
             blitBufferToBufferTrans(doneBoxFrmImage.getData(),
