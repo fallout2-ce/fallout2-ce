@@ -400,7 +400,7 @@ int artGetFidgetCount(const HeadFrmId& frmId)
         return -1;
     }
 
-    int head = frmId.frameId().id;
+    int head = frmId.frameId();
 
     if (head >= gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -568,11 +568,11 @@ int artCopyFileName(const FrmId& frmId, char* dest)
 
     ptr = &(gArtListDescriptions[frmId.objectType()]);
 
-    if (!frmId.hasFid() || frmId.frameId().id >= ptr->fileNamesLength) {
+    if (!frmId.hasFid() || frmId.frameId() >= ptr->fileNamesLength) {
         return -1;
     }
 
-    strcpy(dest, ptr->fileNames + frmId.frameId().id * ART_NAME_SIZE);
+    strcpy(dest, ptr->fileNames + frmId.frameId() * ART_NAME_SIZE);
 
     return 0;
 }
@@ -935,7 +935,7 @@ CritterFrameId _art_alias_num(CritterFrameId index)
 int artCritterFrmIdShouldRun(const FrmId& frmId)
 {
     if (frmId.objectType() == OBJ_TYPE_CRITTER && frmId.valid() && frmId.hasFid()) {
-        return gArtCritterFidShoudRunData[frmId.frameId().id];
+        return gArtCritterFidShoudRunData[frmId.frameId()];
     }
 
     return 0;

@@ -1481,12 +1481,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrameId frameId;
 
-            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
+            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
             if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
+            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
             if (frameId != TileFrameId::Grid) {
                 break;
             }
@@ -1867,7 +1867,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
 
                 TileFlags roofTileFlags = roofTileFrmId.flags() & ~TileFlags::TemporarilyHidden;
 
-                TileFrameId roofTileArtId = roofTileFrmId.frameId().tile;
+                TileFrameId roofTileArtId = roofTileFrmId.frameId<TileFrameId>();
                 if (roofTileArtId == TileFrameId::Invalid) {
                     roofTileArtId = TileFrameId::Last;
                 }

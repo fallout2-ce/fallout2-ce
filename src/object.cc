@@ -458,12 +458,12 @@ int objectRead(Object* obj, File* stream)
 
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
-            constexpr int kExit2Grid1FrameId = MiscFrmId(MiscFrameId::Exit2Grid1).frameId().id;
-            constexpr int kExit3Grid8FrameId = MiscFrmId(MiscFrameId::Exit3Grid8).frameId().id;
+            constexpr int kExit2Grid1FrameId = MiscFrmId(MiscFrameId::Exit2Grid1).frameId();
+            constexpr int kExit3Grid8FrameId = MiscFrmId(MiscFrameId::Exit3Grid8).frameId();
             constexpr int kExitGridCount = kExit3Grid8FrameId - kExit2Grid1FrameId + 1;
             const FrmId frmId = FrmId(obj);
-            if (frmId.valid() && frmId.frameId().id < kExit2Grid1FrameId) {
-                obj->fid = MiscFrmId(static_cast<MiscFrameId>(frmId.frameId().id + kExitGridCount), frmId.animationType()).fid();
+            if (frmId.valid() && frmId.frameId() < kExit2Grid1FrameId) {
+                obj->fid = MiscFrmId(static_cast<MiscFrameId>(frmId.frameId() + kExitGridCount), frmId.animationType()).fid();
             }
         }
     } else {
@@ -1496,7 +1496,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->tileFid[roofX + 100 * roofY];
             const RoofTileFrmId currentSquareRoofFrmId = RoofTileFrmId(currentSquare);
-            const TileFrameId currentSquareRoofFrameId = currentSquareRoofFrmId.frameId().tile;
+            const TileFrameId currentSquareRoofFrameId = currentSquareRoofFrmId.frameId<TileFrameId>();
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]
@@ -1553,7 +1553,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    TileFrameId frameId = RoofTileFrmId(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]).frameId().tile;
+    TileFrameId frameId = RoofTileFrmId(_square[gDude->elevation]->tileFid[_obj_last_roof_x + 100 * _obj_last_roof_y]).frameId<TileFrameId>();
     if (frameId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -3239,12 +3239,12 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
             int tileFids = _square[elevation]->tileFid[tile];
             const FloorTileFrmId floorTileFrmId = FloorTileFrmId(tileFids);
             const RoofTileFrmId roofTileFrmId = RoofTileFrmId(tileFids);
-            TileFrameId floorTileFrameId = floorTileFrmId.frameId().tile;
+            TileFrameId floorTileFrameId = floorTileFrmId.frameId<TileFrameId>();
             if (floorTileFrameId == TileFrameId::Invalid) {
                 floorTileFrameId = TileFrameId::Last;
             }
 
-            TileFrameId roofTileFrameId = roofTileFrmId.frameId().tile;
+            TileFrameId roofTileFrameId = roofTileFrmId.frameId<TileFrameId>();
             if (roofTileFrameId == TileFrameId::Invalid) {
                 roofTileFrameId = TileFrameId::Last;
             }
@@ -5234,7 +5234,7 @@ void _obj_fix_violence_settings(int* fid)
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = CritterFrmId(frmId.frameId().critter, anim, frmId.weaponAnimation(), frmId.rotation()).fid();
+        *fid = CritterFrmId(frmId.frameId<CritterFrameId>(), anim, frmId.weaponAnimation(), frmId.rotation()).fid();
     }
 
     if (shouldResetViolenceLevel) {
@@ -5271,7 +5271,7 @@ static int _obj_preload_sort(const void* fid1, const void* fid2)
         }
     }
 
-    cmp = frmId1.frameId().id - frmId2.frameId().id;
+    cmp = frmId1.frameId() - frmId2.frameId();
     if (cmp != 0) {
         return cmp;
     }

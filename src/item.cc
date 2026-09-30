@@ -605,7 +605,7 @@ int itemDropAll(Object* critter, int tile)
 {
     bool hasEquippedItems = false;
 
-    CritterFrameId frameId = FrmId(critter).frameId().critter;
+    CritterFrameId frameId = FrmId(critter).frameId<CritterFrameId>();
 
     Inventory* inventory = &(critter->data.inventory);
     while (inventory->length > 0) {
@@ -644,7 +644,7 @@ int itemDropAll(Object* critter, int tile)
                         return -1;
                     }
 
-                    frameId = FrmId(proto).frameId().critter;
+                    frameId = FrmId(proto).frameId<CritterFrameId>();
                     adjustCritterStatsOnArmorChange(critter, item, nullptr);
                 }
             }
@@ -2322,7 +2322,7 @@ CritterFrameId armorGetMaleFrameId(Object* armor)
     Proto* proto;
     protoGetProto(armor->pid, &proto);
 
-    return FrmId(proto->item.data.armor.maleFid).frameId().critter;
+    return FrmId(proto->item.data.armor.maleFid).frameId<CritterFrameId>();
 }
 
 // 0x4793A8
@@ -2335,7 +2335,7 @@ CritterFrameId armorGetFemaleFrameId(Object* armor)
     Proto* proto;
     protoGetProto(armor->pid, &proto);
 
-    return FrmId(proto->item.data.armor.femaleFid).frameId().critter;
+    return FrmId(proto->item.data.armor.femaleFid).frameId<CritterFrameId>();
 }
 
 // 0x4793D0
