@@ -205,10 +205,14 @@ public:
             decltype(MapFrameIdToObjectType<TFrameId>::value)>>
     constexpr TFrameId frameId() const
     {
-        assert(_objectType == MapFrameIdToObjectType<TFrameId>::value && "FrmId::frameId() object type doesn't match the FrameId!");
-        return _objectType == MapFrameIdToObjectType<TFrameId>::value
-            ? static_cast<TFrameId>(_frameId)
-            : static_cast<TFrameId>(kInvalidFrameId);
+        if (hasFid()) {
+            assert(_objectType == MapFrameIdToObjectType<TFrameId>::value && "FrmId::frameId<TFrameId>() object type doesn't match the TFrameId type!");
+            if (_objectType == MapFrameIdToObjectType<TFrameId>::value) {
+                return static_cast<TFrameId>(_frameId);
+            }
+        }
+
+        return static_cast<TFrameId>(kInvalidFrameId);
     }
 
     constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WeaponAnimation::None; }
