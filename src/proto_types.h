@@ -1,6 +1,7 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include <cassert>
 #include <type_traits>
 
 #include "art_defs.h"
