@@ -370,7 +370,10 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     // Resources init
-    if ((flags & DIALOG_BOX_NO_BUTTONS) == 0 && !initializedButtons) {
+    const bool hasPrimaryButton = (flags & DIALOG_BOX_NO_BUTTONS) == 0;
+    const bool hasSecondaryButton = hasTwoButtons && dialogType == DIALOG_TYPE_LARGE;
+
+    if (hasPrimaryButton || hasSecondaryButton) {
         if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)
             || !buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)
             || !buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)
@@ -378,6 +381,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
         std::string path = std::string(asc_5186C8) + "DBOX.MSG";
         if (!messageListLoad(&messageList, path.c_str())) {
+            messageListFree(&messageList);
             return -1;
         }
     }
@@ -390,7 +394,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         ScopedFont buttonFontGuard(103);
 
         // First button
-        if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
+        if (hasPrimaryButton) {
             const int doneBoxX = hasTwoButtons ? _doneX[dialogType] : (bgWidth - doneBoxFrmImage.getWidth()) / 2;
 
             blitBufferToBuffer(doneBoxFrmImage.getData(),
@@ -420,16 +424,16 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         }
 
         // Second button
-        if (hasTwoButtons && dialogType == DIALOG_TYPE_LARGE) {
+        if (hasSecondaryButton) {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
                 secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
             }
 
             const int doneX = _doneX[dialogType];
 
-            const int blitXOffset = doneX + doneBoxFrmImage.getWidth() + 24;
-            const int textXOffset = doneX + doneBoxFrmImage.getWidth() + 59;
-            const int buttonXOffset = doneX + doneBoxFrmImage.getWidth() + 37;
+            const int blitXOffset   = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 24) : doneX;
+            const int textXOffset   = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 59) : (doneX + 35);
+            const int buttonXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 37) : (doneX + 13);
 
             blitBufferToBufferTrans(doneBoxFrmImage.getData(),
                 doneBoxFrmImage.getWidth(), doneBoxFrmImage.getHeight(), doneBoxFrmImage.getWidth(),
@@ -452,6 +456,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             if (btn != -1) {
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
+
+            initializedButtons = true;
         }
     }
 
@@ -489,7 +495,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 short subLineCount = 0;
 
                 if (wordWrap(body[index], maxWidth, beginnings, &subLineCount) == 0) {
-                    numberOfLines += subLineCount;
+                    numberOfLines += subLineCount - 1;
                 } else {
                     numberOfLines += 1;
                 }
