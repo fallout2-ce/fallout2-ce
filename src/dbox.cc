@@ -487,18 +487,13 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         for (int index = 0; index < bodyLength; index++) {
             if (body[index] == nullptr) continue;
 
-            const int width = fontGetStringWidth(body[index]);
-            if (width <= maxWidth) {
-                numberOfLines += 1;
-            } else {
-                short beginnings[WORD_WRAP_MAX_COUNT];
-                short subLineCount = 0;
+            const int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
 
-                if (wordWrap(body[index], maxWidth, beginnings, &subLineCount) == 0) {
-                    numberOfLines += subLineCount - 1;
-                } else {
-                    numberOfLines += 1;
-                }
+            short beginnings[WORD_WRAP_MAX_COUNT];
+            short subLineCount = 0;
+
+            if (wordWrap(body[index], maxWidth, beginnings, &subLineCount) == 0) {
+                numberOfLines += subLineCount - 1;
             }
         }
 
