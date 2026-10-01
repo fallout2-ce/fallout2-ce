@@ -3600,7 +3600,7 @@ static int _ai_print_msg(Object* critter, int type)
         tileWindowRefreshRect(&rect, critter->elevation);
 
         if (audio[0] != '\0') {
-            floatSoundPlay(audio);
+            floatSoundPlay(audio, critter);
         }
     }
 

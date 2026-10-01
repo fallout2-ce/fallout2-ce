@@ -3208,7 +3208,7 @@ char* _scr_get_msg_str(int messageListId, int messageId)
 
 // message_str
 // 0x4A6C5C
-char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech)
+char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech, Object* speaker)
 {
     if (messageListId == 0 && messageId == 0) {
         return gEmptyString;
@@ -3255,8 +3255,9 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
                 speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
             } else {
                 // Outside dialogue (float_msg barks, timed events...), so use
-                // the float channels and let several lines overlap.
-                floatSoundPlay(messageListItem.audio);
+                // the float channels and let lines from different speakers
+                // overlap.
+                floatSoundPlay(messageListItem.audio, speaker);
             }
         }
     }
