@@ -9,7 +9,7 @@ OptionsSettingsModel::OptionsSettingsModel()
     const auto& descriptors = settingsGetDescriptors();
     edits_.reserve(descriptors.size());
     for (const auto& descriptor : descriptors) {
-        SettingValue value = settingsGetValue(descriptor);
+        SettingValue value = settingsGetConfiguredValue(descriptor);
         edits_.push_back({ &descriptor, value, std::move(value) });
     }
 }
@@ -102,7 +102,7 @@ bool OptionsSettingsModel::commit(std::string* error)
     }
 
     for (auto& edit : edits_) {
-        edit.originalValue = settingsGetValue(*edit.descriptor);
+        edit.originalValue = settingsGetConfiguredValue(*edit.descriptor);
         edit.value = edit.originalValue;
     }
     return true;

@@ -24,6 +24,7 @@ struct SettingRegistryEntry {
     std::function<SettingValue()> getValue;
     std::function<void(const SettingValue&)> setValue;
     std::function<bool(const SettingValue&)> validateValue;
+    std::optional<SettingValue> restartValue;
 };
 
 static std::vector<SettingRegistryEntry> settingsRegistry;
@@ -409,6 +410,7 @@ bool settingsInit(bool isMapper, int argc, char** argv)
 {
     initSettingsRegistry(isMapper);
     for (size_t index = 0; index < settingsRegistry.size(); index++) {
+        settingsRegistry[index].restartValue.reset();
         settingsRegistry[index].descriptor.commandLineOverride = false;
         settingDescriptors[index].commandLineOverride = false;
     }
@@ -439,7 +441,15 @@ void settingsMarkCommandLineOverride(const char* section, const char* key)
 void settingsWriteToConfig(bool onlyAdd)
 {
     for (const auto& entry : settingsRegistry) {
-        entry.write(onlyAdd);
+        if (entry.restartValue.has_value()) {
+            const auto& descriptor = entry.descriptor;
+            if (onlyAdd && settingsKeyExists(descriptor.section.c_str(), descriptor.key.c_str())) continue;
+            std::visit([&descriptor](const auto& value) {
+                settingsWrite(descriptor.section.c_str(), descriptor.key.c_str(), value);
+            }, *entry.restartValue);
+        } else {
+            entry.write(onlyAdd);
+        }
     }
 }
 
@@ -455,7 +465,11 @@ bool settingsExit(bool shouldSave)
         settingsWriteToConfig();
     }
 
-    return gameConfigExit(shouldSave);
+    bool result = gameConfigExit(shouldSave);
+    for (auto& entry : settingsRegistry) {
+        entry.restartValue.reset();
+    }
+    return result;
 }
 
 const std::vector<SettingDescriptor>& settingsGetDescriptors()
@@ -463,7 +477,7 @@ const std::vector<SettingDescriptor>& settingsGetDescriptors()
     return settingDescriptors;
 }
 
-static const SettingRegistryEntry* settingsFindEntry(const SettingDescriptor& descriptor)
+static SettingRegistryEntry* settingsFindEntry(const SettingDescriptor& descriptor)
 {
     auto it = std::find_if(settingsRegistry.begin(), settingsRegistry.end(), [&descriptor](const SettingRegistryEntry& entry) {
         return entry.descriptor.id == descriptor.id;
@@ -476,6 +490,15 @@ SettingValue settingsGetValue(const SettingDescriptor& descriptor)
     const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
     assert(entry != nullptr);
     return entry != nullptr ? entry->getValue() : descriptor.defaultValue;
+}
+
+SettingValue settingsGetConfiguredValue(const SettingDescriptor& descriptor)
+{
+    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    assert(entry != nullptr);
+    return entry != nullptr && entry->restartValue.has_value()
+        ? *entry->restartValue
+        : settingsGetValue(descriptor);
 }
 
 bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error)
@@ -513,7 +536,7 @@ bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingVal
 
 bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error)
 {
-    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    SettingRegistryEntry* entry = settingsFindEntry(descriptor);
     if (entry == nullptr) {
         if (error != nullptr) *error = "Setting is not registered.";
         return false;
@@ -530,7 +553,21 @@ bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& v
         return false;
     }
 
-    entry->setValue(value);
+    switch (entry->descriptor.applyPolicy) {
+    case SettingApplyPolicy::OnClose:
+        entry->setValue(value);
+        break;
+    case SettingApplyPolicy::Restart:
+        if (value == entry->getValue()) {
+            entry->restartValue.reset();
+        } else {
+            entry->restartValue = value;
+        }
+        break;
+    case SettingApplyPolicy::NextGame:
+        if (error != nullptr) *error = "Applying settings on the next game is not supported yet.";
+        return false;
+    }
     return true;
 }
 

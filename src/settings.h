@@ -305,7 +305,10 @@ bool settingsExit(bool shouldSave);
 void settingsMarkCommandLineOverride(const char* section, const char* key);
 const std::vector<SettingDescriptor>& settingsGetDescriptors();
 SettingValue settingsGetValue(const SettingDescriptor& descriptor);
+// Includes committed restart-required edits without changing the active runtime value.
+SettingValue settingsGetConfiguredValue(const SettingDescriptor& descriptor);
 bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
+// Honors applyPolicy. NextGame is rejected until a game lifecycle apply path exists.
 bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
 
 } // namespace fallout
