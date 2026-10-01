@@ -4742,9 +4742,9 @@ static void opGetFidAnim(Program* program)
 // 0x45C66C op_party_member_obj
 static void opGetPartyMember(Program* program)
 {
-    int data = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
-    Object* object = partyMemberFindByPid(data);
+    Object* object = partyMemberFindByProtoId(protoId);
     programStackPushPointer(program, object);
 }
 

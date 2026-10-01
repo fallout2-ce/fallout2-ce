@@ -1417,7 +1417,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
             displayMonitorAddMessage("I can't use that."); // TODO: translate
             return false;
         }
-    } else if (partySlot == InvenSlot::Armor && !partyMemberPidCanEquipArmor(partyBaseTarget->pid)) {
+    } else if (partySlot == InvenSlot::Armor && !partyMemberProtoIdCanEquipArmor(partyBaseTarget)) {
         displayMonitorAddMessage("I can't use that."); // TODO: translate
         return false;
     }
