@@ -589,7 +589,7 @@ static int protoInstCritterEdit(Object* obj)
             } else if (key == kInstKeyViewInven) {
                 windowDestroy(winId);
 
-                inventorySetDude(obj, obj->pid);
+                inventorySetDude(obj, obj);
                 inventoryOpen();
                 inventoryResetDude();
 

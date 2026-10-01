@@ -3962,7 +3962,7 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
     if (wmEncounterDetectionEnabled) {
         if (frequency > chance) {
             int outdoorsman = partyGetBestSkillValue(SKILL_OUTDOORSMAN);
-            Object* scanner = objectGetCarriedObjectByPid(gDude, ProtoId(ItemProtoTypeId::MotionSensor).pid());
+            Object* scanner = objectGetCarriedObjectByProtoId(gDude, ItemProtoTypeId::MotionSensor);
             if (scanner != nullptr) {
                 if (gDude == scanner->owner) {
                     outdoorsman += 20;

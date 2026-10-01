@@ -1032,7 +1032,7 @@ static void opObjectIsCarryingObjectWithPid(Program* program)
 
     int result = 0;
     if (obj != nullptr) {
-        result = objectGetCarriedQuantityByPid(obj, protoId.pid());
+        result = objectGetCarriedQuantityByProtoId(obj, protoId);
     } else {
         scriptPredefinedError(program, "obj_is_carrying_obj_pid", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
@@ -3494,7 +3494,7 @@ static void opObjectCarryingObjectByPid(Program* program)
 
     Object* result = nullptr;
     if (object != nullptr) {
-        result = objectGetCarriedObjectByPid(object, protoId.pid());
+        result = objectGetCarriedObjectByProtoId(object, protoId);
     } else {
         scriptPredefinedError(program, "obj_carrying_pid_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
