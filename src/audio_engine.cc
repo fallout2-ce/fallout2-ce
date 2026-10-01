@@ -12,18 +12,68 @@ namespace fallout {
 static constexpr int kAudioEngineTargetSampleRate = 44100;
 
 struct AudioEngineSoundBuffer {
-    bool active;
-    unsigned int size;
-    int bitsPerSample;
-    int channels;
-    int rate;
-    void* data;
-    int volume;
-    bool playing;
-    bool looping;
-    unsigned int pos;
-    SDL_AudioStream* stream;
+    bool active = false;
+    unsigned int size = 0;
+    int bitsPerSample = 0;
+    int channels = 0;
+    int rate = 0;
+    void* data = nullptr;
+    int volume = 0;
+    bool playing = false;
+    bool looping = false;
+    unsigned int pos = 0;
+    SDL_AudioStream* stream = nullptr;
     std::recursive_mutex mutex;
+
+    AudioEngineSoundBuffer() = default;
+
+    ~AudioEngineSoundBuffer()
+    {
+        if (active) {
+            if (data) {
+                free(data);
+                data = nullptr;
+            }
+            if (stream) {
+                SDL_FreeAudioStream(stream);
+                stream = nullptr;
+            }
+        }
+    }
+
+    // deny copy
+    AudioEngineSoundBuffer(const AudioEngineSoundBuffer&) = delete;
+    AudioEngineSoundBuffer& operator=(const AudioEngineSoundBuffer&) = delete;
+
+    // allow move
+    AudioEngineSoundBuffer(AudioEngineSoundBuffer&& other) noexcept
+    {
+        *this = std::move(other);
+    }
+
+    AudioEngineSoundBuffer& operator=(AudioEngineSoundBuffer&& other) noexcept
+    {
+        if (this != &other) {
+            std::lock_guard<std::recursive_mutex> lockOther(other.mutex);
+            std::lock_guard<std::recursive_mutex> lockThis(this->mutex);
+            active = other.active;
+            size = other.size;
+            bitsPerSample = other.bitsPerSample;
+            channels = other.channels;
+            rate = other.rate;
+            data = other.data;
+            volume = other.volume;
+            playing = other.playing;
+            looping = other.looping;
+            pos = other.pos;
+            stream = other.stream;
+
+            other.active = false;
+            other.data = nullptr;
+            other.stream = nullptr;
+        }
+        return *this;
+    }
 };
 
 extern bool gProgramIsActive;
@@ -135,14 +185,6 @@ void audioEngineExit()
     if (audioEngineIsInitialized()) {
         SDL_CloseAudioDevice(gAudioEngineDeviceId);
         gAudioEngineDeviceId = -1;
-
-        for (int index = 0; index < audioEngineSoundBufferCount; index++) {
-            AudioEngineSoundBuffer* soundBuffer = &(gAudioEngineSoundBuffers[index]);
-            if (soundBuffer->active) {
-                free(soundBuffer->data);
-                SDL_FreeAudioStream(soundBuffer->stream);
-            }
-        }
 
         gAudioEngineSoundBuffers.reset();
         audioEngineSoundBufferCount = 0;
