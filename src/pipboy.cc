@@ -460,7 +460,7 @@ void handlePipboyPageNavigation(
 static int gPipboyPrevTab;
 
 // Nesting depth of `pipboyRest` (it calls itself for the heal options).
-static int gPipboyRestDepth = 0;
+static int pipboyRestDepth = 0;
 
 static int totalPages; // for tracking between pipboyWindowHandleAutomaps and _PrintAMelevList/_PrintAMList and others for pagination
 
@@ -1062,7 +1062,7 @@ int pipboyLoad(File* stream)
 // True while the alarm clock is passing time.
 bool pipboyIsResting()
 {
-    return gPipboyRestDepth > 0;
+    return pipboyRestDepth > 0;
 }
 
 int pipboyGetWindow()
@@ -2310,8 +2310,8 @@ static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventT
 static bool pipboyRest(int hours, int minutes, int duration)
 {
     struct RestDepthGuard {
-        RestDepthGuard() { gPipboyRestDepth++; }
-        ~RestDepthGuard() { gPipboyRestDepth--; }
+        RestDepthGuard() { pipboyRestDepth++; }
+        ~RestDepthGuard() { pipboyRestDepth--; }
     } restDepthGuard;
 
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);

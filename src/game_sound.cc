@@ -153,8 +153,8 @@ struct GameSoundChannelPool {
     unsigned int nextSerial = 0;
 };
 
-static GameSoundChannelPool gFloatChannelPool;
-static GameSoundChannelPool gPipboyChannelPool;
+static GameSoundChannelPool floatChannelPool;
+static GameSoundChannelPool pipboyChannelPool;
 
 // 0x518E94 detectDevices
 static int _detectDevices = -1;
@@ -277,8 +277,8 @@ int gameSoundInit()
         debugPrint("success.\n");
     }
 
-    gameSoundChannelPoolInit(&gFloatChannelPool, AUDIO_CHANNEL_FLOAT);
-    gameSoundChannelPoolInit(&gPipboyChannelPool, AUDIO_CHANNEL_PIPBOY);
+    gameSoundChannelPoolInit(&floatChannelPool, AUDIO_CHANNEL_FLOAT);
+    gameSoundChannelPoolInit(&pipboyChannelPool, AUDIO_CHANNEL_PIPBOY);
     scriptSoundInit();
 
     audioInit(gameSoundIsCompressed);
@@ -954,8 +954,8 @@ void speechSetVolume(int volume)
 
     // Voiced floats and Pip-Boy lines follow the speech slider until they
     // get sliders of their own.
-    gameSoundChannelPoolSetVolume(&gFloatChannelPool, (int)(volume * 0.69));
-    gameSoundChannelPoolSetVolume(&gPipboyChannelPool, (int)(volume * 0.69));
+    gameSoundChannelPoolSetVolume(&floatChannelPool, (int)(volume * 0.69));
+    gameSoundChannelPoolSetVolume(&pipboyChannelPool, (int)(volume * 0.69));
 }
 
 // 0x450C5C
@@ -1136,12 +1136,12 @@ int floatSoundPlay(const char* fileName)
     }
 
     // Same scaling as speech, so they sound equally loud.
-    return gameSoundChannelPoolPlay(&gFloatChannelPool, path, (int)(gSpeechVolume * 0.69));
+    return gameSoundChannelPoolPlay(&floatChannelPool, path, (int)(gSpeechVolume * 0.69));
 }
 
 void floatSoundStopAll()
 {
-    gameSoundChannelPoolStopAll(&gFloatChannelPool);
+    gameSoundChannelPoolStopAll(&floatChannelPool);
 }
 
 int pipboySoundPlay(const char* fileName)
@@ -1166,12 +1166,12 @@ int pipboySoundPlay(const char* fileName)
         return -1;
     }
 
-    return gameSoundChannelPoolPlay(&gPipboyChannelPool, path, (int)(gSpeechVolume * 0.69));
+    return gameSoundChannelPoolPlay(&pipboyChannelPool, path, (int)(gSpeechVolume * 0.69));
 }
 
 void pipboySoundStop()
 {
-    gameSoundChannelPoolStopAll(&gPipboyChannelPool);
+    gameSoundChannelPoolStopAll(&pipboyChannelPool);
 }
 
 // 0x45108C
