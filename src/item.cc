@@ -71,7 +71,7 @@ static bool dudeIsAddicted(const ProtoId& drugProtoId);
 static void booksInit();
 static void booksInitVanilla();
 static void booksInitCustom();
-static void booksAdd(int bookPid, int messageId, Skill skill);
+static void booksAdd(const ProtoId& bookProtoId, int messageId, Skill skill);
 static void booksExit();
 
 static void explosionsInit();
@@ -3515,19 +3515,19 @@ static void booksExit()
 static void booksInitVanilla()
 {
     // 802: You learn new science information.
-    booksAdd(ProtoId(ItemProtoTypeId::BigBookOfScience).pid(), 802, SKILL_SCIENCE);
+    booksAdd(ItemProtoTypeId::BigBookOfScience, 802, SKILL_SCIENCE);
 
     // 803: You learn a lot about repairing broken electronics.
-    booksAdd(ProtoId(ItemProtoTypeId::DeansElectronics).pid(), 803, SKILL_REPAIR);
+    booksAdd(ItemProtoTypeId::DeansElectronics, 803, SKILL_REPAIR);
 
     // 804: You learn new ways to heal injury.
-    booksAdd(ProtoId(ItemProtoTypeId::FirstAidBook).pid(), 804, SKILL_FIRST_AID);
+    booksAdd(ItemProtoTypeId::FirstAidBook, 804, SKILL_FIRST_AID);
 
     // 805: You learn how to handle your guns better.
-    booksAdd(ProtoId(ItemProtoTypeId::GunsAndBullets).pid(), 805, SKILL_SMALL_GUNS);
+    booksAdd(ItemProtoTypeId::GunsAndBullets, 805, SKILL_SMALL_GUNS);
 
     // 806: You learn a lot about wilderness survival.
-    booksAdd(ProtoId(ItemProtoTypeId::ScoutHandBook).pid(), 806, SKILL_OUTDOORSMAN);
+    booksAdd(ItemProtoTypeId::ScoutHandBook, 806, SKILL_OUTDOORSMAN);
 }
 
 static void booksInitCustom()
@@ -3569,14 +3569,14 @@ static void booksInitCustom()
         Skill skill;
         if (!configGetEnum<Skill>(booksConfig.get(), sectionKey, "Skill", &skill)) continue;
 
-        booksAdd(bookPid, messageId, skill);
+        booksAdd(ProtoId(bookPid), messageId, skill);
     }
 }
 
-static void booksAdd(int bookPid, int messageId, Skill skill)
+static void booksAdd(const ProtoId& bookProtoId, int messageId, Skill skill)
 {
     BookDescription bookDescription;
-    bookDescription.bookPid = bookPid;
+    bookDescription.bookPid = bookProtoId.pid();
     bookDescription.messageId = messageId;
     bookDescription.skill = skill;
     gBooks.emplace_back(std::move(bookDescription));
