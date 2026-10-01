@@ -217,9 +217,9 @@ typedef enum PartyMemberCustomizationOption {
 
 // 0x444D10 Dogs
 static int _Dogs[3] = {
-    0x1000088,
-    0x1000156,
-    0x1000180,
+    ProtoId(CritterProtoTypeId::Cyberdog).pid(),
+    ProtoId(CritterProtoTypeId::Dogmeat).pid(),
+    ProtoId(CritterProtoTypeId::PariahDog).pid(),
 };
 
 static std::unordered_map<int, AiMessageRange> partyMemberCcMsgIds;
@@ -978,7 +978,7 @@ void _gdialogSystemEnter()
 
     gameDialogRestoreCenterTile();
 
-    gameRequestState(GAME_STATE_2);
+    gameRequestState(GameState::DialogFinished);
 
     gameUpdateState();
 }
@@ -2722,7 +2722,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
 
     if (_lipsFrmId == HeadFrameId::None) {
         _phone_anim = anim;
-        _lipsFrmId = HeadFrmId(headFrmId.frameId().head, anim);
+        _lipsFrmId = HeadFrmId(headFrmId.frameId<HeadFrameId>(), anim);
         _lipsFp = artLock(_lipsFrmId, &_lipsKey);
         if (_lipsFp == nullptr) {
             debugPrint("failure!\n");
@@ -2733,7 +2733,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId().head, reaction));
+    int fidgetCount = artGetFidgetCount(HeadFrmId(headFrmId.frameId<HeadFrameId>(), reaction));
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
         return;
@@ -2773,7 +2773,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         }
     }
 
-    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId().head, reaction, fidget);
+    gameDialogFidgetFrmId = HeadFrmId(headFrmId.frameId<HeadFrameId>(), reaction, fidget);
     gameDialogFidgetFrmCurrentFrame = 0;
     gameDialogFidgetFrm = artLock(gameDialogFidgetFrmId, &gameDialogFidgetFrmHandle);
     if (gameDialogFidgetFrm == nullptr) {
@@ -2899,7 +2899,7 @@ void _gdPlayTransition(HeadAnimation anim)
     }
 
     CacheEntry* headFrmHandle;
-    const HeadFrmId headFid = HeadFrmId(gGameDialogHeadFrmId.frameId().head, anim);
+    const HeadFrmId headFid = HeadFrmId(gGameDialogHeadFrmId.frameId<HeadFrameId>(), anim);
     Art* headFrm = artLock(headFid, &headFrmHandle);
     if (headFrm == nullptr) {
         debugPrint("\tError locking transition...\n");

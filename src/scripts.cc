@@ -1061,7 +1061,7 @@ static void _script_chk_timed_events()
         shouldProcessQueue = true;
     }
 
-    if (gameGetState() != GAME_STATE_4) {
+    if (gameGetState() != GameState::DialogActive) {
         if (getTicksBetween(currentTime, gLastMapUpdateTime) >= 30000) {
             gLastMapUpdateTime = currentTime;
             scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -1249,9 +1249,9 @@ static void scriptsCloseNearbyElevatorDoors()
 {
     Object* elevatorDoors = objectFindFirstAtElevation(gDude->elevation);
     while (elevatorDoors != nullptr) {
-        int pid = elevatorDoors->pid;
-        if (objectTypeFromPid(pid) == OBJ_TYPE_SCENERY
-            && (pid == PROTO_ID_BROTHERHOOD_DOOR || pid == PROTO_ID_ELEVATOR_DOOR || pid == PROTO_ID_ELEVATOR_DOOR_ALT)
+        const ProtoId elevatorProtoId = ProtoId(elevatorDoors);
+        if (elevatorProtoId.objectType() == OBJ_TYPE_SCENERY
+            && (elevatorProtoId == SceneryProtoTypeId::BrotherhoodDoor || elevatorProtoId == SceneryProtoTypeId::ElevatorDoor || elevatorProtoId == SceneryProtoTypeId::ElevatorDoorAlternate)
             && tileDistanceBetween(elevatorDoors->tile, gDude->tile) <= 4) {
             break;
         }
@@ -1486,7 +1486,7 @@ int scriptsRequestElevator(Object* obj, int elevatorType)
         for (int x = -5; x < 5; x++) {
             elevator = objectFindFirstAtElevation(obj->elevation);
             while (elevator != nullptr) {
-                if (tile == elevator->tile && elevator->pid == PROTO_ID_ELEVATOR_STUB) {
+                if (tile == elevator->tile && ProtoId(elevator) == SceneryProtoTypeId::ElevatorStub) {
                     break;
                 }
 
@@ -1842,7 +1842,7 @@ int scriptsSetDudeScript()
     }
 
     Proto* proto;
-    if (protoGetProto(0x1000000, &proto) == -1) {
+    if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) == -1) {
         debugPrint("Error in scr_set_dude_script: can't find obj_dude proto!");
         return -1;
     }

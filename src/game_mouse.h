@@ -5,7 +5,8 @@
 
 namespace fallout {
 
-typedef enum GameMouseMode {
+enum GameMouseMode : int {
+    GAME_MOUSE_MODE_INVALID = -1,
     GAME_MOUSE_MODE_MOVE,
     GAME_MOUSE_MODE_ARROW,
     GAME_MOUSE_MODE_CROSSHAIR,
@@ -20,9 +21,10 @@ typedef enum GameMouseMode {
     GAME_MOUSE_MODE_COUNT,
     FIRST_GAME_MOUSE_MODE_SKILL = GAME_MOUSE_MODE_USE_FIRST_AID,
     GAME_MOUSE_MODE_SKILL_COUNT = GAME_MOUSE_MODE_COUNT - FIRST_GAME_MOUSE_MODE_SKILL,
-} GameMouseMode;
+};
 
-typedef enum GameMouseActionMenuItem {
+enum GameMouseActionMenuItem : int {
+    GAME_MOUSE_ACTION_MENU_ITEM_INVALID = -1,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL = 0,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP = 1,
     GAME_MOUSE_ACTION_MENU_ITEM_INVENTORY = 2,
@@ -34,9 +36,10 @@ typedef enum GameMouseActionMenuItem {
     GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL = 8,
     GAME_MOUSE_ACTION_MENU_ITEM_PUSH = 9,
     GAME_MOUSE_ACTION_MENU_ITEM_COUNT,
-} GameMouseActionMenuItem;
+};
 
-typedef enum MouseCursorType {
+enum MouseCursorType : int {
+    MOUSE_CURSOR_INVALID = -1,
     MOUSE_CURSOR_NONE,
     MOUSE_CURSOR_ARROW,
     MOUSE_CURSOR_SMALL_ARROW_UP,
@@ -66,7 +69,13 @@ typedef enum MouseCursorType {
     MOUSE_CURSOR_WAIT_WATCH,
     MOUSE_CURSOR_TYPE_COUNT,
     FIRST_GAME_MOUSE_ANIMATED_CURSOR = MOUSE_CURSOR_WAIT_PLANET,
-} MouseCursorType;
+    MOUSE_CURSOR_SCROLL_OFFSET_INVALID = MOUSE_CURSOR_SCROLL_NW_INVALID - MOUSE_CURSOR_SCROLL_NW
+};
+
+constexpr inline MouseCursorType operator+(MouseCursorType lhs, MouseCursorType rhs)
+{
+    return static_cast<MouseCursorType>(static_cast<int>(lhs) + static_cast<int>(rhs));
+}
 
 extern bool _gmouse_clicked_on_edge;
 
@@ -86,21 +95,21 @@ bool _gmouse_get_click_to_scroll();
 void _gmouse_set_click_to_scroll(bool value);
 void gameMouseRefresh();
 void _gmouse_handle_event(int mouseX, int mouseY, int mouseState);
-int gameMouseSetCursor(int cursor);
-int gameMouseGetCursor();
+int gameMouseSetCursor(MouseCursorType cursor);
+MouseCursorType gameMouseGetCursor();
 Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation);
 void gmouse_set_mapper_mode(int mode);
-void gameMouseSetMode(int mode);
-int gameMouseGetMode();
+void gameMouseSetMode(GameMouseMode mode);
+GameMouseMode gameMouseGetMode();
 void gameMouseCycleMode();
 void _gmouse_3d_refresh();
 void gameMouseResetBouncingCursorFrmId();
 void gameMouseObjectsShow();
 void gameMouseObjectsHide();
 bool gameMouseObjectsIsVisible();
-int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height);
+int gameMouseRenderPrimaryAction(int x, int y, GameMouseActionMenuItem menuItem, int width, int height);
 int _gmouse_3d_pick_frame_hot(int* x, int* y);
-int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuItemsCount, int width, int height);
+int gameMouseRenderActionMenuItems(int x, int y, const GameMouseActionMenuItem* menuItems, int menuItemsCount, int width, int height);
 int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex);
 void gameMouseLoadItemHighlight();
 void _gmouse_remove_item_outline(Object* object);

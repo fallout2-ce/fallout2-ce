@@ -732,7 +732,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
 
     if ((FrmId(owner).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
+        || !FrmId(owner, ANIM_RUNNING, WeaponAnimation::None, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -815,7 +815,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
 
     if ((FrmId(owner).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
+        || !FrmId(owner, ANIM_RUNNING, WeaponAnimation::None, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -1249,7 +1249,10 @@ int animationRegisterSetFrmId(Object* owner, const FrmId& frmId, int delay)
 // 0x415238
 int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay)
 {
-    const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, weaponAnimationCode);
+    // weapon animation and character sound effect is being mishmashed together within code
+    CharacterSoundEffect soundEffect = weaponAnimationIsValid(weaponAnimationCode) ? static_cast<CharacterSoundEffect>(weaponAnimationCode) : CharacterSoundEffect::Unused;
+
+    const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, soundEffect);
     if (animationRegisterPlaySoundEffect(owner, sfx, delay) == -1) {
         return -1;
     }
@@ -1265,7 +1268,7 @@ int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimatio
     animationDescription->anim = ANIM_TAKE_OUT;
     animationDescription->delay = 0; // TODO: should use `delay`?
     animationDescription->owner = owner;
-    animationDescription->weaponAnimationCode = weaponAnimationCode;
+    animationDescription->weaponAnimationCode = static_cast<int>(weaponAnimationCode);
 
     const FrmId frmId = FrmId(owner, ANIM_TAKE_OUT, weaponAnimationCode, owner->rotation + 1);
 
@@ -1941,7 +1944,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (isCritter) {
                 Object* o = objectFindFirstAtLocation(object->elevation, v27->tile);
                 while (o != nullptr) {
-                    if (o->pid >= FIRST_RADIOACTIVE_GOO_PID && o->pid <= LAST_RADIOACTIVE_GOO_PID) {
+                    if (o->pid >= ProtoId(SceneryProtoTypeId::FirstRadioactiveGoo).pid() && o->pid <= ProtoId(SceneryProtoTypeId::LastRadioactiveGoo).pid()) {
                         break;
                     }
                     o = objectFindNextAtLocation();
@@ -3175,7 +3178,7 @@ void _dude_fidget()
             objectGetRect(object, &rect);
 
             Rect intersection;
-            if (rectIntersection(&rect, &_scr_size, &intersection) == 0 && (gMapHeader.index != MAP_SPECIAL_RND_WOODSMAN || object->pid != 0x10000FA)) {
+            if (rectIntersection(&rect, &_scr_size, &intersection) == 0 && (gMapHeader.index != MAP_SPECIAL_RND_WOODSMAN || ProtoId(object) != CritterProtoTypeId::EnclavePatrolMale)) {
                 candidates[candidatesLength++] = object;
             }
         }
@@ -3205,7 +3208,7 @@ void _dude_fidget()
         }
 
         if (shoudPlaySound) {
-            const char* sfx = sfxBuildCharName(object, ANIM_STAND, CHARACTER_SOUND_EFFECT_UNUSED);
+            const char* sfx = sfxBuildCharName(object, ANIM_STAND, CharacterSoundEffect::Unused);
             animationRegisterPlaySoundEffect(object, sfx, 0);
         }
 
@@ -3237,7 +3240,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     int y = 0;
 
     WeaponAnimation weaponAnimationCode = FrmId(obj).weaponAnimation();
-    if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
+    if (weaponAnimationCode != WeaponAnimation::None) {
         if (!frmId.valid()) {
             FrmId takeOutFrmId = FrmId(obj, ANIM_TAKE_OUT, weaponAnimationCode, obj->rotation + 1);
             CacheEntry* takeOutFrmHandle;
@@ -3254,7 +3257,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
                 artUnlock(takeOutFrmHandle);
 
                 CacheEntry* standFrmHandle;
-                FrmId standFid = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, obj->rotation + 1);
+                FrmId standFid = FrmId(obj, ANIM_STAND, WeaponAnimation::None, obj->rotation + 1);
                 Art* standFrm = artLock(standFid, &standFrmHandle);
                 if (standFrm != nullptr) {
                     int offsetX;
@@ -3393,7 +3396,7 @@ static int _check_gravity(int tile, int elevation)
         tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
-        const TileFrameId frameId = FloorTileFrmId(_square[elevation]->tileFid[squareTile]).frameId().tile;
+        const TileFrameId frameId = FloorTileFrmId(_square[elevation]->tileFid[squareTile]).frameId<TileFrameId>();
         if (frameId != TileFrameId::Grid) {
             break;
         }

@@ -480,7 +480,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
         fn(formattedText);
     } else if (type == OBJ_TYPE_SCENERY) {
-        if (target->pid == PROTO_ID_CAR) {
+        if (ProtoId(target) == SceneryProtoTypeId::Car) {
             MessageListItem carMessageListItem;
             carMessageListItem.num = 549; // The car is running at %d%% power.
 
@@ -605,7 +605,7 @@ int objectPickup(Object* critter, Object* item)
 
     if (!overriden) {
         int rc;
-        if (item->pid == PROTO_ID_MONEY) {
+        if (ProtoId(item) == ItemProtoTypeId::Money) {
             int amount = itemGetMoney(item);
             if (amount <= 0) {
                 amount = 1;
@@ -660,7 +660,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                frmId = FrmId(critter, WEAPON_ANIMATION_NONE, critter->rotation);
+                frmId = FrmId(critter, WeaponAnimation::None, critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -668,7 +668,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                frmId = FrmId(critter, WEAPON_ANIMATION_NONE, critter->rotation);
+                frmId = FrmId(critter, WeaponAnimation::None, critter->rotation);
                 objectSetFrmId(critter, frmId, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -679,8 +679,8 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                 CritterFrameId defaultFrameId = CritterFrameId::First;
 
                 Proto* proto;
-                if (protoGetProto(0x1000000, &proto) != -1) {
-                    defaultFrameId = FrmId(proto).frameId().critter;
+                if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) != -1) {
+                    defaultFrameId = FrmId(proto).frameId<CritterFrameId>();
                 }
 
                 const FrmId dudeFrmId = FrmId(critter);
@@ -856,7 +856,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
 {
     MessageListItem messageListItem;
 
-    if (flare->pid != PROTO_ID_FLARE) {
+    if (ProtoId(flare) != ItemProtoTypeId::Flare) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -892,7 +892,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
             }
         }
 
-        flare->pid = PROTO_ID_LIT_FLARE;
+        flare->pid = ProtoId(ItemProtoTypeId::LitFlare).pid();
 
         objectSetLight(flare, 8, 0x10000, nullptr);
         queueAddEvent(72000, flare, nullptr, EVENT_TYPE_FLARE);
@@ -999,14 +999,16 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     bool isEnergy = false;
     int energyDensity;
 
-    switch (item->pid) {
-    case PROTO_ID_SMALL_ENERGY_CELL:
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
+    case ItemProtoTypeId::SmallEnergyCell:
         energyDensity = 16000;
         isEnergy = true;
         break;
-    case PROTO_ID_MICRO_FUSION_CELL:
+    case ItemProtoTypeId::MicroFusionCell:
         energyDensity = 40000;
         isEnergy = true;
+        break;
+    default:
         break;
     }
 
@@ -1048,13 +1050,13 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    switch (item->pid) {
-    case PROTO_ID_RAMIREZ_BOX_CLOSED:
-    case PROTO_ID_RAIDERS_MAP:
-    case PROTO_ID_CATS_PAW_ISSUE_5:
-    case PROTO_ID_PIP_BOY_LINGUAL_ENHANCER:
-    case PROTO_ID_SURVEY_MAP:
-    case PROTO_ID_PIP_BOY_MEDICAL_ENHANCER:
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
+    case ItemProtoTypeId::RamirezBoxClosed:
+    case ItemProtoTypeId::RaidersMap:
+    case ItemProtoTypeId::CatsPawIssue5:
+    case ItemProtoTypeId::PipBoyLingualEnhancer:
+    case ItemProtoTypeId::SurveyMap:
+    case ItemProtoTypeId::PipBoyMedicalEnhancer:
         if (item->sid == -1) {
             return USE_ITEM_RESULT_REMOVE;
         }
@@ -1064,9 +1066,9 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
         }
 
         return USE_ITEM_RESULT_REMOVE;
+    default:
+        return USE_ITEM_RESULT_ERROR;
     }
-
-    return USE_ITEM_RESULT_ERROR;
 }
 
 // 0x49BF38
@@ -1274,7 +1276,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     case ITEM_TYPE_AMMO:
         // SFALL: Fix for being able to charge the car by using cells on other
         // scenery/critters.
-        if (targetObj->pid == PROTO_ID_CAR || targetObj->pid == PROTO_ID_CAR_TRUNK) {
+        if (ProtoId(targetObj) == SceneryProtoTypeId::Car || ProtoId(targetObj) == ItemProtoTypeId::CarTrunk) {
             rc = _obj_use_power_on_car(item);
             if (rc == USE_ITEM_RESULT_REMOVE) {
                 return USE_ITEM_RESULT_REMOVE;
@@ -1316,34 +1318,36 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     int skillBonus = 0;
     Skill skill = SKILL_INVALID;
 
-    switch (item->pid) {
-    case PROTO_ID_DOCTORS_BAG:
+    switch (ProtoId(item).protoId<ItemProtoTypeId>()) {
+    case ItemProtoTypeId::DoctorsBag:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;
         skillBonus = 20;
         skill = SKILL_DOCTOR;
         break;
-    case PROTO_ID_FIRST_AID_KIT:
+    case ItemProtoTypeId::FirstAidKit:
         // The supplies in the First Aid Kit run out.
         messageId = 901;
         skillBonus = 20;
         skill = SKILL_FIRST_AID;
         break;
-    case PROTO_ID_PARAMEDICS_BAG:
+    case ItemProtoTypeId::ParamedicsBag:
         // The supplies in the Paramedic's Bag run out.
         messageId = 910;
         skillBonus = 40;
         skill = SKILL_DOCTOR;
         break;
-    case PROTO_ID_FIELD_MEDIC_FIRST_AID_KIT:
+    case ItemProtoTypeId::FieldMedicsFirstAidKit:
         // The supplies in the Field Medic First Aid Kit run out.
         messageId = 911;
         skillBonus = 40;
         skill = SKILL_FIRST_AID;
         break;
+    default:
+        break;
     }
 
-    if (skill == -1) {
+    if (skill == SKILL_INVALID) {
         const int itemSid = item->sid;
         if (itemSid != -1) {
             Script* itemScript;

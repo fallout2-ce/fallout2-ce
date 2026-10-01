@@ -1439,7 +1439,7 @@ static void op_get_tile_fid(Program* program)
     switch (mode) {
     case 1:
         // roof tile frame id
-        programStackPushInteger(program, RoofTileFrmId(squareData).frameId().id);
+        programStackPushInteger(program, RoofTileFrmId(squareData).frameId());
         break;
     case 2:
         // floor tile and roof tile fid
@@ -1447,7 +1447,7 @@ static void op_get_tile_fid(Program* program)
         break;
     default:
         // floor tile frame id
-        programStackPushInteger(program, FloorTileFrmId(squareData).frameId().id);
+        programStackPushInteger(program, FloorTileFrmId(squareData).frameId());
         break;
     }
 }
@@ -1556,10 +1556,10 @@ static void op_explosions_metarule(Program* program)
         }
         break;
     case EXPL_SET_DYNAMITE_EXPLOSION_DAMAGE:
-        explosiveSetDamage(PROTO_ID_DYNAMITE_I, param1, param2);
+        explosiveSetDamage(ProtoId(ItemProtoTypeId::Dynamite).pid(), param1, param2);
         break;
     case EXPL_SET_PLASTIC_EXPLOSION_DAMAGE:
-        explosiveSetDamage(PROTO_ID_PLASTIC_EXPLOSIVES_I, param1, param2);
+        explosiveSetDamage(ProtoId(ItemProtoTypeId::PlasticExplosives).pid(), param1, param2);
         break;
     case EXPL_SET_EXPLOSION_MAX_TARGET:
         explosionSetMaxTargets(param1);

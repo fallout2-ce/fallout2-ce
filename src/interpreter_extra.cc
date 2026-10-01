@@ -430,21 +430,21 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         if (critter == gDude) {
             if (interfaceGetCurrentHand() == HAND_RIGHT) {
                 if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                    weaponCode = WEAPON_ANIMATION_NONE;
+                    weaponCode = WeaponAnimation::None;
                 }
             } else {
                 if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
-                    weaponCode = WEAPON_ANIMATION_NONE;
+                    weaponCode = WeaponAnimation::None;
                 }
             }
         } else {
             if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                weaponCode = WEAPON_ANIMATION_NONE;
+                weaponCode = WeaponAnimation::None;
             }
         }
 
-        if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFrmId = FrmId(critter, WEAPON_ANIMATION_NONE, frmId.rotation());
+        if (weaponCode == WeaponAnimation::None) {
+            newFrmId = FrmId(critter, WeaponAnimation::None, frmId.rotation());
         }
     } else {
         if (critter == gDude) {
@@ -2059,7 +2059,7 @@ static void opMetarule3(Program* program)
 
             int frameId = param2.integerValue;
             if (frameId > FrmId::kMaxFrameId) {
-                frameId = FrmId(frameId).frameId().id;
+                frameId = FrmId(frameId).frameId();
             }
 
             const FrmId frmId = FrmId(obj);
@@ -2219,7 +2219,7 @@ static void opSetExitGrids(Program* program)
 
     Object* object = objectFindFirstAtElevation(elevation);
     while (object != nullptr) {
-        if (object->pid >= FIRST_EXIT_GRID_PID && object->pid <= LAST_EXIT_GRID_PID) {
+        if (isExitGridPid(object->pid)) {
             object->data.misc.map = destinationMap;
             object->data.misc.tile = destinationTile;
             object->data.misc.elevation = destinationElevation;
@@ -2737,7 +2737,7 @@ static void opGameDialogSystemEnter(Program* program)
         return;
     }
 
-    if (gameRequestState(GAME_STATE_4) == -1) {
+    if (gameRequestState(GameState::DialogActive) == -1) {
         return;
     }
 
@@ -3381,7 +3381,7 @@ static void opMetarule(Program* program)
     case METARULE_SET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(PROTO_ID_CAR_TRUNK, &proto) != -1) {
+            if (protoGetProto(ProtoId(ItemProtoTypeId::CarTrunk).pid(), &proto) != -1) {
                 proto->item.data.container.maxSize = param.integerValue;
                 result = 1;
             }
@@ -3390,7 +3390,7 @@ static void opMetarule(Program* program)
     case METARULE_GET_CAR_CARRY_AMOUNT:
         if (1) {
             Proto* proto;
-            if (protoGetProto(PROTO_ID_CAR_TRUNK, &proto) != -1) {
+            if (protoGetProto(ProtoId(ItemProtoTypeId::CarTrunk).pid(), &proto) != -1) {
                 result = proto->item.data.container.maxSize;
             }
         }
@@ -3533,7 +3533,7 @@ static void opRegAnimAnimate(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
-        if (anim != ANIM_FALL_BACK || object == nullptr || object->pid != 0x100002F || (settings.preferences.violence_level >= 2)) {
+        if (anim != ANIM_FALL_BACK || ProtoId(object) != CritterProtoTypeId::GunGuardFemale || (settings.preferences.violence_level >= 2)) {
             if (object != nullptr) {
                 animationRegisterAnimate(object, anim, delay);
             } else {
@@ -4292,7 +4292,7 @@ static void _op_anim_action_frame(Program* program)
     int actionFrame = 0;
 
     if (object != nullptr) {
-        FrmId fid = FrmId(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
+        FrmId fid = FrmId(object, anim, WeaponAnimation::None, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {
@@ -4380,18 +4380,23 @@ static void opCritterModifySkill(Program* program)
 // 0x45B9C4 op_sfx_build_char_name
 static void opSfxBuildCharName(Program* program)
 {
-    WeaponAnimation weaponType = programStackPopEnum<WeaponAnimation>(program);
+    CharacterSoundEffect soundEffect = programStackPopEnum<CharacterSoundEffect>(program);
     AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
-        char soundEffectName[16];
-        strcpy(soundEffectName, sfxBuildCharName(obj, anim, weaponType));
-        programStackPushString(program, soundEffectName);
+        const char* charName = sfxBuildCharName(obj, anim, soundEffect);
+        if (charName != nullptr) {
+            char soundEffectName[16];
+            strcpy(soundEffectName, charName);
+            programStackPushString(program, soundEffectName);
+            return;
+        }
     } else {
         scriptPredefinedError(program, "sfx_build_char_name", SCRIPT_ERROR_OBJECT_IS_NULL);
-        programStackPushString(program, nullptr);
     }
+
+    programStackPushString(program, nullptr);
 }
 
 // sfx_build_ambient_name

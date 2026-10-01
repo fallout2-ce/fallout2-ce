@@ -916,7 +916,7 @@ static int mapLoad(File* stream)
     _partyMemberPrepLoad();
     _gmouse_disable_scrolling();
 
-    int savedMouseCursorId = gameMouseGetCursor();
+    MouseCursorType savedMouseCursorId = gameMouseGetCursor();
     if (savedMouseCursorId >= MOUSE_CURSOR_SCROLL_NW && savedMouseCursorId <= MOUSE_CURSOR_SCROLL_W_INVALID) {
         savedMouseCursorId = MOUSE_CURSOR_ARROW; // reset if it was in view scrolling mode
     }
@@ -1259,7 +1259,7 @@ static int _map_age_dead_critters()
                     }
                 }
             }
-        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->fid == 0x500000B) {
+        } else if (agingType == 2 && type == OBJ_TYPE_MISC && FrmId(obj) == MiscFrameId::BloodPool) {
             objects[count++] = obj;
             if (count >= capacity) {
                 capacity *= 2;
@@ -1306,7 +1306,7 @@ static int replaceDeadCritter(Object* critter)
     }
 
     Object* blood;
-    if (objectCreateWithPid(&blood, PROTO_ID_BLOOD) == -1) {
+    if (objectCreateWithPid(&blood, ProtoId(MiscProtoTypeId::Blood).pid()) == -1) {
         return -1;
     }
 
@@ -1481,12 +1481,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrameId frameId;
 
-            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
+            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
             if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId().tile;
+            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
             if (frameId != TileFrameId::Grid) {
                 break;
             }
@@ -1867,7 +1867,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
 
                 TileFlags roofTileFlags = roofTileFrmId.flags() & ~TileFlags::TemporarilyHidden;
 
-                TileFrameId roofTileArtId = roofTileFrmId.frameId().tile;
+                TileFrameId roofTileArtId = roofTileFrmId.frameId<TileFrameId>();
                 if (roofTileArtId == TileFrameId::Invalid) {
                     roofTileArtId = TileFrameId::Last;
                 }

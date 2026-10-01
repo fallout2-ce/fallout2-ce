@@ -357,7 +357,7 @@ int critterGetStat(Object* critter, Stat stat)
                             Object* item2 = critterGetItem2(gDude);
                             if (item2 != nullptr) {
                                 if (itemGetType(item2) == ITEM_TYPE_WEAPON) {
-                                    if (weaponGetAnimationCode(item2) != WEAPON_ANIMATION_NONE) {
+                                    if (weaponGetAnimationCode(item2) != WeaponAnimation::None) {
                                         hasWeapon = true;
                                     }
                                 }
@@ -367,7 +367,7 @@ int critterGetStat(Object* critter, Stat stat)
                                 Object* item1 = critterGetItem1(gDude);
                                 if (item1 != nullptr) {
                                     if (itemGetType(item1) == ITEM_TYPE_WEAPON) {
-                                        if (weaponGetAnimationCode(item1) != WEAPON_ANIMATION_NONE) {
+                                        if (weaponGetAnimationCode(item1) != WeaponAnimation::None) {
                                             hasWeapon = true;
                                         }
                                     }
@@ -423,12 +423,12 @@ int critterGetStat(Object* critter, Stat stat)
                     bool hasMirrorShades = false;
 
                     Object* item2 = critterGetItem2(critter);
-                    if (item2 != nullptr && item2->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item2) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 
                     Object* item1 = critterGetItem1(critter);
-                    if (item1 != nullptr && item1->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item1) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 

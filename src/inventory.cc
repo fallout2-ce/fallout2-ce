@@ -518,7 +518,7 @@ static constexpr InterfaceFrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CU
 static Object* _last_target = nullptr;
 
 // 0x519114 act_use
-static const int _act_use[4] = {
+static const GameMouseActionMenuItem _act_use[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
@@ -526,27 +526,27 @@ static const int _act_use[4] = {
 };
 
 // 0x519124 act_no_use
-static const int _act_no_use[3] = {
+static const GameMouseActionMenuItem _act_no_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x519130 act_just_use
-static const int _act_just_use[3] = {
+static const GameMouseActionMenuItem _act_just_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x51913C act_nothing
-static const int _act_nothing[2] = {
+static const GameMouseActionMenuItem _act_nothing[2] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
 // 0x519144 act_weap
-static const int _act_weap[4] = {
+static const GameMouseActionMenuItem _act_weap[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
@@ -554,7 +554,7 @@ static const int _act_weap[4] = {
 };
 
 // 0x519154 act_weap2
-static const int _act_weap2[3] = {
+static const GameMouseActionMenuItem _act_weap2[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
@@ -1276,7 +1276,7 @@ static void createPartySlotButtons()
 
 static FrmId buildPartyDisplayFrmId()
 {
-    WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation weaponAnimationCode = WeaponAnimation::None;
     Object* rightHandItem = partyTargetEquipped->rightHand;
     if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
@@ -1512,7 +1512,7 @@ static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int sc
 void inventoryResetDude()
 {
     _inven_dude = gDude;
-    _inven_pid = 0x1000000;
+    _inven_pid = ProtoId(CritterProtoTypeId::Dude).pid();
 }
 
 int inventoryGetInvenApCost()
@@ -1556,15 +1556,15 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
 
     CritterFrameId inventoryFrameId = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
-        inventoryFrameId = FrmId(proto).frameId().critter;
+        inventoryFrameId = FrmId(proto).frameId<CritterFrameId>();
     }
 
     if (armor != nullptr) {
         if (protoGetProto(armor->pid, &proto) != -1 && proto != nullptr) {
             if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
-                inventoryFrameId = FrmId(proto->item.data.armor.femaleFid).frameId().critter;
+                inventoryFrameId = FrmId(proto->item.data.armor.femaleFid).frameId<CritterFrameId>();
             } else {
-                inventoryFrameId = FrmId(proto->item.data.armor.maleFid).frameId().critter;
+                inventoryFrameId = FrmId(proto->item.data.armor.maleFid).frameId<CritterFrameId>();
             }
 
             if (inventoryFrameId == CritterFrameId::Invalid) {
@@ -1573,7 +1573,7 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
         }
     }
 
-    WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation animationCode = WeaponAnimation::None;
     Object* itemInHand = activeHand == HAND_RIGHT ? rightHandItem : leftHandItem;
     if (itemInHand != nullptr) {
         if (protoGetProto(itemInHand->pid, &proto) != -1
@@ -1700,7 +1700,7 @@ void inventoryOpen()
 
         _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
 
-        if (gameGetState() == GAME_STATE_5) {
+        if (gameGetState() == GameState::DialogRequested) {
             break;
         }
 
@@ -2739,7 +2739,7 @@ static void inventoryItemSlotOnMouseEnter(int btn, int keyCode)
 
         Object* item = nullptr;
         if (_inven_from_button(keyCode, &item, nullptr, nullptr) != 0) {
-            gameMouseRenderPrimaryAction(x, y, 3, gInventoryWindowMaxX, gInventoryWindowMaxY);
+            gameMouseRenderPrimaryAction(x, y, GAME_MOUSE_ACTION_MENU_ITEM_LOOK, gInventoryWindowMaxX, gInventoryWindowMaxY);
 
             int cursorHotspotX = 0;
             int cursorHotspotY = 0;
@@ -3400,7 +3400,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
     _stack[0] = critter;
     _stack_offset[0] = 0;
 
-    WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
+    WeaponAnimation animationCode = WeaponAnimation::None;
     Object* itemInHand = interfaceGetCurrentHand() == HAND_RIGHT ? gInventoryRightHandItem : gInventoryLeftHandItem;
     if (itemInHand != nullptr) {
         Proto* proto = nullptr;
@@ -3926,7 +3926,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (equippedItem != nullptr) {
             equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
-            if (equippedItem->pid == PROTO_ID_LIT_FLARE) {
+            if (ProtoId(equippedItem) == ItemProtoTypeId::LitFlare) {
                 int lightIntensity;
                 int lightDistance;
                 if (critter == gDude) {
@@ -3946,7 +3946,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             }
         }
 
-        if (item->pid == PROTO_ID_LIT_FLARE) {
+        if (ProtoId(item) == ItemProtoTypeId::LitFlare) {
             int lightDistance = item->lightDistance;
             if (lightDistance < critter->lightDistance) {
                 lightDistance = critter->lightDistance;
@@ -3964,14 +3964,14 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (itemGetType(item) == ITEM_TYPE_WEAPON) {
             weaponAnimationCode = weaponGetAnimationCode(item);
         } else {
-            weaponAnimationCode = WEAPON_ANIMATION_NONE;
+            weaponAnimationCode = WeaponAnimation::None;
         }
 
         if (hand == handIndex) {
-            if (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE) {
+            if (FrmId(critter).weaponAnimation() != WeaponAnimation::None) {
                 if (animate) {
                     if (!isoIsDisabled()) {
-                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
                         animationRegisterPlaySoundEffect(critter, soundEffectName, 0);
                         animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
                     }
@@ -3979,10 +3979,10 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             }
 
             if (animate && !isoIsDisabled()) {
-                if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
+                if (weaponAnimationCode != WeaponAnimation::None) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
                     animationRegisterSetFrmId(critter, frmId, -1);
                 }
             } else {
@@ -4038,22 +4038,22 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
         item->flags &= ~OBJECT_IN_ANY_HAND;
     }
 
-    if (activeHand == hand && (FrmId(critter).weaponAnimation() != WEAPON_ANIMATION_NONE)) {
+    if (activeHand == hand && (FrmId(critter).weaponAnimation() != WeaponAnimation::None)) {
         if (animate && !isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
-            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
             animationRegisterPlaySoundEffect(critter, sfx, 0);
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
             animationRegisterSetFrmId(critter, frmId, -1);
 
             return reg_anim_end();
         }
 
-        const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        const FrmId frmId = FrmId(critter, ANIM_STAND, WeaponAnimation::None, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, frmId);
     }
 
@@ -4423,7 +4423,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     mouseGetPosition(&x, &y);
 
     int actionMenuItemsLength;
-    const int* actionMenuItems;
+    const GameMouseActionMenuItem* actionMenuItems;
     if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
         if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL && objectGetOwner(item) != gDude) {
             actionMenuItemsLength = 3;
@@ -4581,7 +4581,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             *itemSlot = nullptr;
         }
 
-        if (item->pid == PROTO_ID_MONEY) {
+        if (ProtoId(item) == ItemProtoTypeId::Money) {
             if (quantity > 1) {
                 quantity = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
             } else {
@@ -4769,7 +4769,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), PROTO_ID_JESSE_CONTAINER) == -1) {
+    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
         return 0;
     }
     CritterEquipped stealTargetEquipped {};
@@ -5266,7 +5266,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = FrmId(targetObj, WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
+                            targetObj->fid = FrmId(targetObj, WeaponAnimation::None, targetObj->rotation + 1).fid();
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;
@@ -5372,7 +5372,7 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
             badOffer = true;
         } else {
             if (itemIsQueued(offerTable)) {
-                if (offerTable->pid != PROTO_ID_GEIGER_COUNTER_I || miscItemTurnOff(offerTable) == -1) {
+                if (ProtoId(offerTable) != ItemProtoTypeId::GeigerCounter || miscItemTurnOff(offerTable) == -1) {
                     badOffer = true;
                 }
             }
@@ -5407,7 +5407,7 @@ static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer
     }
 
     int suggestedValue = 1;
-    if (item->pid == PROTO_ID_MONEY && !gGameDialogSpeakerIsPartyMember) {
+    if (ProtoId(item) == ItemProtoTypeId::Money && !gGameDialogSpeakerIsPartyMember) {
         // Calculate change money automatically
         auto [totalCostNpc, totalCostPlayer] = barterComputeTablesValue(gDude, _target_stack[0]);
         // Actor's balance: negative - the actor must add money to balance the tables and vice versa
@@ -5705,7 +5705,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), PROTO_ID_JESSE_CONTAINER) == -1) {
+    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
         return;
     }
 
@@ -6139,7 +6139,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
-    if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+    if (ProtoId(weapon) == ItemProtoTypeId::SolarScorcher) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 

@@ -1275,7 +1275,7 @@ void edit_mapper()
         // (F8, Escape, mouse clicks, keyboard, everything).
         // ----------------------------------------------------------------
 
-        if (gameGetState() == GAME_STATE_5) {
+        if (gameGetState() == GameState::DialogRequested) {
             _gdialogSystemEnter();
         }
 
@@ -2601,9 +2601,9 @@ static int mapperPickTile(int* outOffset)
     int tileFid = _square[gElevation]->tileFid[tileNum];
     TileFrameId tileFrameId;
     if (tileRoofIsVisible()) {
-        tileFrameId = RoofTileFrmId(tileFid).frameId().tile;
+        tileFrameId = RoofTileFrmId(tileFid).frameId<TileFrameId>();
     } else {
-        tileFrameId = FloorTileFrmId(tileFid).frameId().tile;
+        tileFrameId = FloorTileFrmId(tileFid).frameId<TileFrameId>();
     }
     if (tileFrameId == TileFrameId::Invalid) {
         tileFrameId = TileFrameId::Last;
@@ -2676,7 +2676,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE);
+    const FrmId frmId = FrmId(obj, ANIM_STAND, WeaponAnimation::None);
     animationRegisterSetFrmId(obj, frmId, 0);
 
     return reg_anim_end();
@@ -2766,7 +2766,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
+    gDude->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
 
     _scr_game_init();
 
