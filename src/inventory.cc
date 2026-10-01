@@ -3712,7 +3712,7 @@ static void inventoryRenderSummary()
         offset += pitch * fontGetLineHeight();
 
         if (ammoGetCapacity(item) > 0) {
-            const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item));
+            const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(item);
 
             formattedText[0] = '\0';
 
@@ -4610,7 +4610,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                     }
                 }
             }
-        } else if (explosiveIsActiveExplosive(item->pid)) {
+        } else if (explosiveIsActiveExplosive(item)) {
             if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
                 _dropped_explosive = 1;
                 objectDrop(owner, item);

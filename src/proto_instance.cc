@@ -353,7 +353,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 snprintf(format, sizeof(format), "%s%s", hpMessageListItem.text, weaponMessageListItem.text);
 
                 if (ammoGetCaliber(item2) != CALIBER_TYPE_NONE) {
-                    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item2));
+                    const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(item2);
                     const char* ammoName = protoGetName(ammoTypeProtoId);
                     const int ammoCapacity = ammoGetCapacity(item2);
                     const int ammoQuantity = ammoGetQuantity(item2);
@@ -515,7 +515,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                     exit(1);
                 }
 
-                const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(target));
+                const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(target);
                 const char* ammoName = protoGetName(ammoTypeProtoId);
                 int ammoCapacity = ammoGetCapacity(target);
                 int ammoQuantity = ammoGetQuantity(target);
@@ -791,7 +791,7 @@ static UseItemResultCode _obj_use_book(Object* book)
     Skill skill;
 
     // SFALL
-    if (!booksGetInfo(book->pid, &messageId, &skill)) {
+    if (!booksGetInfo(book, &messageId, &skill)) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -928,9 +928,8 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
 {
     MessageListItem messageListItem;
 
-    int pid = explosive->pid;
     // SFALL
-    if (!explosiveIsExplosive(pid)) {
+    if (!explosiveIsExplosive(explosive)) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -950,7 +949,9 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
             }
 
             // SFALL
-            explosiveActivate(&(explosive->pid));
+            ProtoId explosiveProtoId = explosive;
+            explosiveActivate(explosiveProtoId);
+            explosive->pid = explosiveProtoId.pid();
 
             int delay = 10 * seconds;
 
@@ -1139,7 +1140,7 @@ UseItemResultCode objectUseItemInternal(Object* critter, Object* item)
 static int _protinstTestDroppedExplosive(Object* explosiveItem)
 {
     // SFALL
-    if (explosiveIsActiveExplosive(explosiveItem->pid)) {
+    if (explosiveIsActiveExplosive(explosiveItem)) {
         Attack attack;
         attackInit(&attack, gDude, nullptr, HIT_MODE_PUNCH, HIT_LOCATION_TORSO);
         attack.attackerFlags = DAM_HIT;

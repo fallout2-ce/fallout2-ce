@@ -1111,23 +1111,21 @@ static void op_get_weapon_ammo_pid(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int pid = -1;
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                pid = weaponGetAmmoTypePid(obj);
-                break;
-            case ITEM_TYPE_MISC:
-                pid = miscItemGetPowerTypePid(obj);
-                break;
-            default:
-                break;
-            }
+    ProtoId protoId = ProtoId::Empty();
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            protoId = weaponGetAmmoTypeProtoId(obj);
+            break;
+        case ITEM_TYPE_MISC:
+            protoId = miscItemGetPowerTypeProtoId(obj);
+            break;
+        default:
+            break;
         }
     }
 
-    programStackPushInteger(program, pid);
+    programStackPushInteger(program, protoId.pid());
 }
 
 // There are two problems with this function.
@@ -1341,14 +1339,14 @@ static void op_get_attack_type(Program* program)
 
 static void op_force_aimed_shots(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    forceAimedShots(pid);
+    const ProtoId protoId = programStackPopProtoId(program);
+    forceAimedShots(protoId);
 }
 
 static void op_disable_aimed_shots(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    disableAimedShots(pid);
+    const ProtoId protoId = programStackPopProtoId(program);
+    disableAimedShots(protoId);
 }
 
 static void op_play_sfall_sound(Program* program)
@@ -1546,7 +1544,7 @@ static void op_explosions_metarule(Program* program)
         if (1) {
             int minDamage;
             int maxDamage;
-            explosiveGetDamage(param1, &minDamage, &maxDamage);
+            explosiveGetDamage(ProtoId(param1), &minDamage, &maxDamage);
 
             ArrayId arrayId = CreateTempArray(2, 0);
             SetArray(arrayId, ProgramValue { 0 }, ProgramValue { minDamage }, false, program);
@@ -1556,10 +1554,10 @@ static void op_explosions_metarule(Program* program)
         }
         break;
     case EXPL_SET_DYNAMITE_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoId(ItemProtoTypeId::Dynamite).pid(), param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::Dynamite, param1, param2);
         break;
     case EXPL_SET_PLASTIC_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoId(ItemProtoTypeId::PlasticExplosives).pid(), param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::PlasticExplosives, param1, param2);
         break;
     case EXPL_SET_EXPLOSION_MAX_TARGET:
         explosionSetMaxTargets(param1);

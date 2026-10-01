@@ -2096,7 +2096,7 @@ bool _obj_action_can_use(Object* obj)
 {
     const ProtoId protoId = ProtoId(obj);
     // SFALL
-    if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId.pid())) {
+    if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId)) {
         return _proto_action_can_use(protoId);
     } else {
         return false;

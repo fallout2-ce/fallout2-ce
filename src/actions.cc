@@ -786,7 +786,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
         if ((attack->attackerFlags & DAM_HIT) != DAM_NONE || (attack->attackerFlags & DAM_CRITICAL) == DAM_NONE) {
             bool l56 = false;
 
-            const ProtoId projectileProtoId = ProtoId(weaponGetProjectilePid(weapon));
+            const ProtoId projectileProtoId = weaponGetProjectileProtoId(weapon);
             Proto* projectileProto;
             if (protoGetProto(projectileProtoId, &projectileProto) != -1 && FrmId(projectileProto).valid()) {
                 if (anim == ANIM_THROW_ANIM) {

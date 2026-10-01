@@ -56,17 +56,17 @@ static int stealthBoyTurnOn(Object* object);
 static int stealthBoyTurnOff(Object* critter, Object* item);
 static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat* stats, int* mods);
 static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate);
-static bool _drug_effect_allowed(Object* critter, int pid);
-static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid);
-static WithdrawalEvent* withdrawalGetEvent(Object* obj, int pid);
+static bool _drug_effect_allowed(Object* critter, const ProtoId& protoId);
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, const ProtoId& protoId);
+static WithdrawalEvent* withdrawalGetEvent(Object* obj, const ProtoId& protoId);
 static int _item_wd_clear_all(Object* obj, void* data);
 static int itemClearJetWithdrawal(Object* obj, void* data);
-static void performWithdrawalStart(Object* obj, Perk perk, int pid);
+static void performWithdrawalStart(Object* obj, Perk perk, const ProtoId& protoId);
 static void performWithdrawalEnd(Object* obj, Perk perk);
-static int drugGetAddictionGvarByPid(int drugPid);
-static void dudeSetAddiction(int drugPid);
-static void dudeClearAddiction(int drugPid);
-static bool dudeIsAddicted(int drugPid);
+static int drugGetAddictionGvarByProtoId(const ProtoId& drugProtoId);
+static void dudeSetAddiction(const ProtoId& drugProtoId);
+static void dudeClearAddiction(const ProtoId& drugProtoId);
+static bool dudeIsAddicted(const ProtoId& drugProtoId);
 
 static void booksInit();
 static void booksInitVanilla();
@@ -196,11 +196,6 @@ static int gHealingItemPids[HEALING_ITEM_COUNT];
 static std::unordered_set<int> forcedAimedShotPids;
 static std::unordered_set<int> disabledAimedShotPids;
 
-static int normalizeAimedShotPid(int pid)
-{
-    return pid == -1 ? 0 : pid;
-}
-
 // 0x4770E0
 int itemsInit()
 {
@@ -300,8 +295,8 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
             }
         } else if (itemType == ITEM_TYPE_MISC) {
             // NOTE: Uninline.
-            int powerTypePid = miscItemGetPowerTypePid(owner);
-            if (powerTypePid != itemToAdd->pid) {
+            const ProtoId powerTypeProtoId = miscItemGetPowerTypeProtoId(owner);
+            if (powerTypeProtoId != ProtoId(itemToAdd)) {
                 return -1;
             }
         } else {
@@ -847,7 +842,7 @@ int itemGetWeight(Object* item)
         int ammoQuantity = ammoGetQuantity(item);
         if (ammoQuantity > 0) {
             // NOTE: Uninline.
-            const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item));
+            const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(item);
             if (ammoTypeProtoId.valid()) {
                 Proto* ammoProto;
                 if (protoGetProto(ammoTypeProtoId, &ammoProto) != -1) {
@@ -894,7 +889,7 @@ int itemGetCost(Object* obj)
             int ammoQuantity = ammoGetQuantity(obj);
             if (ammoQuantity > 0) {
                 // NOTE: Uninline.
-                const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(obj));
+                const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(obj);
                 if (ammoTypeProtoId.valid()) {
                     Proto* ammoProto;
                     protoGetProto(ammoTypeProtoId, &ammoProto);
@@ -1877,30 +1872,30 @@ WeaponAnimation weaponGetAnimationCode(Object* weapon)
 }
 
 // 0x478DD0
-int weaponGetProjectilePid(Object* weapon)
+ProtoId weaponGetProjectileProtoId(Object* weapon)
 {
     if (weapon == nullptr) {
-        return -1;
+        return ProtoId::Empty();
     }
 
     Proto* proto;
     protoGetProto(weapon, &proto);
 
-    return proto->item.data.weapon.projectilePid;
+    return ProtoId(proto->item.data.weapon.projectilePid);
 }
 
 // 0x478DF8
-int weaponGetAmmoTypePid(Object* weapon)
+ProtoId weaponGetAmmoTypeProtoId(Object* weapon)
 {
     if (weapon == nullptr) {
-        return -1;
+        return ProtoId::Empty();
     }
 
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
-        return -1;
+        return ProtoId::Empty();
     }
 
-    return weapon->data.item.weapon.ammoTypePid;
+    return ProtoId(weapon->data.item.weapon.ammoTypePid);
 }
 
 // 0x478E18
@@ -1924,8 +1919,12 @@ bool critterCanAim(Object* critter, HitMode hitMode)
     }
 
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
-    int pid = normalizeAimedShotPid(weapon != nullptr ? weapon->pid : 0);
-    if (disabledAimedShotPids.find(pid) != disabledAimedShotPids.end()) {
+    ProtoId protoId = ProtoId(weapon);
+    if (!protoId.valid()) {
+        protoId = ProtoId(0);
+    }
+
+    if (disabledAimedShotPids.find(protoId.pid()) != disabledAimedShotPids.end()) {
         return false;
     }
 
@@ -1935,7 +1934,7 @@ bool critterCanAim(Object* critter, HitMode hitMode)
         return false;
     }
 
-    if (forcedAimedShotPids.find(pid) != forcedAimedShotPids.end()) {
+    if (forcedAimedShotPids.find(protoId.pid()) != forcedAimedShotPids.end()) {
         return true;
     }
 
@@ -1954,18 +1953,18 @@ void aimedShotOverridesReset()
     disabledAimedShotPids.clear();
 }
 
-void forceAimedShots(int pid)
+void forceAimedShots(const ProtoId& protoId)
 {
-    pid = normalizeAimedShotPid(pid);
-    disabledAimedShotPids.erase(pid);
-    forcedAimedShotPids.insert(pid);
+    const ProtoId normalizedProtoId = ProtoId(protoId.valid() ? protoId.pid() : 0);
+    disabledAimedShotPids.erase(normalizedProtoId.pid());
+    forcedAimedShotPids.insert(normalizedProtoId.pid());
 }
 
-void disableAimedShots(int pid)
+void disableAimedShots(const ProtoId& protoId)
 {
-    pid = normalizeAimedShotPid(pid);
-    forcedAimedShotPids.erase(pid);
-    disabledAimedShotPids.insert(pid);
+    const ProtoId normalizedProtoId = ProtoId(protoId.valid() ? protoId.pid() : 0);
+    forcedAimedShotPids.erase(normalizedProtoId.pid());
+    disabledAimedShotPids.insert(normalizedProtoId.pid());
 }
 
 // 0x478EF4
@@ -1995,11 +1994,7 @@ int weaponCanBeUnloaded(Object* weapon)
         return false;
     }
 
-    if (weaponGetAmmoTypePid(weapon) == -1) {
-        return false;
-    }
-
-    return true;
+    return weaponGetAmmoTypeProtoId(weapon).valid();
 }
 
 // 0x478F80
@@ -2010,13 +2005,13 @@ Object* weaponUnload(Object* weapon)
     }
 
     // NOTE: Uninline.
-    int ammoTypePid = weaponGetAmmoTypePid(weapon);
-    if (ammoTypePid == -1) {
+    ProtoId ammoTyperotoId = weaponGetAmmoTypeProtoId(weapon);
+    if (!ammoTyperotoId.valid()) {
         return nullptr;
     }
 
     Object* ammo;
-    if (objectCreateWithPid(&ammo, ammoTypePid) != 0) {
+    if (objectCreateWithPid(&ammo, ammoTyperotoId.pid()) != 0) {
         return nullptr;
     }
 
@@ -2194,7 +2189,7 @@ int weaponGetRocketExplosionRadius(Object* weapon)
 int weaponGetAmmoArmorClassModifier(Object* weapon)
 {
     // NOTE: Uninline.
-    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(weapon));
+    const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(weapon);
     if (!ammoTypeProtoId.valid()) {
         return 0;
     }
@@ -2211,7 +2206,7 @@ int weaponGetAmmoArmorClassModifier(Object* weapon)
 int weaponGetAmmoDamageResistanceModifier(Object* weapon)
 {
     // NOTE: Uninline.
-    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(weapon));
+    const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(weapon);
     if (!ammoTypeProtoId.valid()) {
         return 0;
     }
@@ -2228,7 +2223,7 @@ int weaponGetAmmoDamageResistanceModifier(Object* weapon)
 int weaponGetAmmoDamageMultiplier(Object* weapon)
 {
     // NOTE: Uninline.
-    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(weapon));
+    const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(weapon);
     if (!ammoTypeProtoId.valid()) {
         return 1;
     }
@@ -2245,7 +2240,7 @@ int weaponGetAmmoDamageMultiplier(Object* weapon)
 int weaponGetAmmoDamageDivisor(Object* weapon)
 {
     // NOTE: Uninline.
-    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(weapon));
+    const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(weapon);
     if (!ammoTypeProtoId.valid()) {
         return 1;
     }
@@ -2398,16 +2393,16 @@ int miscItemGetPowerType(Object* miscItem)
 // NOTE: Inlined.
 //
 // 0x479454
-int miscItemGetPowerTypePid(Object* miscItem)
+ProtoId miscItemGetPowerTypeProtoId(Object* miscItem)
 {
     if (miscItem == nullptr) {
-        return -1;
+        return ProtoId::Empty();
     }
 
     Proto* proto;
     protoGetProto(miscItem, &proto);
 
-    return proto->item.data.misc.powerTypePid;
+    return ProtoId(proto->item.data.misc.powerTypePid);
 }
 
 // 0x47947C
@@ -2924,13 +2919,13 @@ static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool i
 }
 
 // 0x479EE4
-static bool _drug_effect_allowed(Object* critter, int pid)
+static bool _drug_effect_allowed(Object* critter, const ProtoId& protoId)
 {
     int index;
     DrugDescription* drugDescription;
     for (index = 0; index < ADDICTION_COUNT; index++) {
         drugDescription = &(gDrugDescriptions[index]);
-        if (drugDescription->drugPid == pid) {
+        if (ProtoId(drugDescription->drugPid) == protoId) {
             break;
         }
     }
@@ -2947,7 +2942,7 @@ static bool _drug_effect_allowed(Object* critter, int pid)
     int count = 0;
     DrugEffectEvent* drugEffectEvent = (DrugEffectEvent*)queueFindFirstEvent(critter, EVENT_TYPE_DRUG);
     while (drugEffectEvent != nullptr) {
-        if (drugEffectEvent->drugPid == pid) {
+        if (ProtoId(drugEffectEvent->drugPid) == protoId) {
             count++;
             if (count >= drugDescription->maxActiveEffects) {
                 return false;
@@ -2981,10 +2976,10 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
     protoGetProto(item, &proto);
 
     if (ProtoId(item) == ItemProtoTypeId::JetAntidote) {
-        WithdrawalEvent* withdrawalEvent = withdrawalGetEvent(critter, ProtoId(ItemProtoTypeId::Jet).pid());
+        WithdrawalEvent* withdrawalEvent = withdrawalGetEvent(critter, ItemProtoTypeId::Jet);
         bool isLegacyDudeAddiction = critter == gDude
             && withdrawalEvent == nullptr
-            && dudeIsAddicted(ProtoId(ItemProtoTypeId::Jet).pid());
+            && dudeIsAddicted(ItemProtoTypeId::Jet);
 
         if (withdrawalEvent != nullptr || isLegacyDudeAddiction) {
             if (withdrawalEvent == nullptr || !withdrawalEvent->active) {
@@ -2998,7 +2993,7 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
 
             if (critter == gDude) {
                 // NOTE: Uninline.
-                dudeClearAddiction(ProtoId(ItemProtoTypeId::Jet).pid());
+                dudeClearAddiction(ItemProtoTypeId::Jet);
             }
 
             // SFALL: Fix for Jet antidote not being removed.
@@ -3007,12 +3002,12 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
     }
 
     _wd_obj = critter;
-    _wd_gvar = drugGetAddictionGvarByPid(item->pid);
+    _wd_gvar = drugGetAddictionGvarByProtoId(item);
     _wd_onset = proto->item.data.drug.withdrawalOnset;
 
     queueClearByEventType(EVENT_TYPE_WITHDRAWAL, _item_wd_clear_all);
 
-    if (_drug_effect_allowed(critter, item->pid)) {
+    if (_drug_effect_allowed(critter, item)) {
         _perform_drug_effect(critter, proto->item.data.drug.stat, proto->item.data.drug.amount, true);
         _insert_drug_effect(critter, item, proto->item.data.drug.duration1, proto->item.data.drug.stat, proto->item.data.drug.amount1);
         _insert_drug_effect(critter, item, proto->item.data.drug.duration2, proto->item.data.drug.stat, proto->item.data.drug.amount2);
@@ -3025,11 +3020,11 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
         }
     }
 
-    bool isAddicted = withdrawalGetEvent(critter, item->pid) != nullptr;
+    bool isAddicted = withdrawalGetEvent(critter, item) != nullptr;
     if (critter == gDude) {
         // Preserve addictions from saves created before permanent Jet
         // withdrawal events were kept in the queue.
-        isAddicted = isAddicted || dudeIsAddicted(item->pid);
+        isAddicted = isAddicted || dudeIsAddicted(item);
     }
 
     if (!isAddicted) {
@@ -3049,11 +3044,11 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
         }
 
         if (randomBetween(1, 100) <= addictionChance) {
-            _insert_withdrawal(critter, 1, proto->item.data.drug.withdrawalOnset, proto->item.data.drug.withdrawalEffect, item->pid);
+            _insert_withdrawal(critter, 1, proto->item.data.drug.withdrawalOnset, proto->item.data.drug.withdrawalEffect, item);
 
             if (critter == gDude) {
                 // NOTE: Uninline.
-                dudeSetAddiction(item->pid);
+                dudeSetAddiction(item);
             }
         }
     }
@@ -3127,7 +3122,7 @@ int drugEffectEventWrite(File* stream, void* data)
 }
 
 // 0x47A290
-static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid)
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, const ProtoId& protoId)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)internal_malloc(sizeof(*withdrawalEvent));
     if (withdrawalEvent == nullptr) {
@@ -3135,7 +3130,7 @@ static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, 
     }
 
     withdrawalEvent->active = active;
-    withdrawalEvent->pid = pid;
+    withdrawalEvent->pid = protoId.pid();
     withdrawalEvent->perk = perk;
 
     if (queueAddEvent(600 * duration, obj, withdrawalEvent, EVENT_TYPE_WITHDRAWAL) == -1) {
@@ -3146,10 +3141,10 @@ static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, 
     return 0;
 }
 
-static WithdrawalEvent* withdrawalGetEvent(Object* obj, int pid)
+static WithdrawalEvent* withdrawalGetEvent(Object* obj, const ProtoId& protoId)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)queueFindFirstEvent(obj, EVENT_TYPE_WITHDRAWAL);
-    while (withdrawalEvent != nullptr && withdrawalEvent->pid != pid) {
+    while (withdrawalEvent != nullptr && ProtoId(withdrawalEvent->pid) != protoId) {
         withdrawalEvent = (WithdrawalEvent*)queueFindNextEvent(obj, EVENT_TYPE_WITHDRAWAL);
     }
 
@@ -3181,7 +3176,8 @@ static int _item_wd_clear_all(Object* obj, void* data)
         return 0;
     }
 
-    if (drugGetAddictionGvarByPid(withdrawalEvent->pid) != _wd_gvar) {
+    const ProtoId protoId = ProtoId(withdrawalEvent->pid);
+    if (drugGetAddictionGvarByProtoId(protoId) != _wd_gvar) {
         return 0;
     }
 
@@ -3190,7 +3186,7 @@ static int _item_wd_clear_all(Object* obj, void* data)
     }
 
     // schedule start of withdrawal
-    _insert_withdrawal(obj, 1, _wd_onset, withdrawalEvent->perk, withdrawalEvent->pid);
+    _insert_withdrawal(obj, 1, _wd_onset, withdrawalEvent->perk, protoId);
 
     _wd_obj = nullptr;
 
@@ -3208,9 +3204,10 @@ static int itemClearJetWithdrawal(Object* obj, void* data)
 int withdrawalEventProcess(Object* obj, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
+    const ProtoId protoId = ProtoId(withdrawalEvent->pid);
 
     if (withdrawalEvent->active) {
-        performWithdrawalStart(obj, withdrawalEvent->perk, withdrawalEvent->pid);
+        performWithdrawalStart(obj, withdrawalEvent->perk, protoId);
     } else {
         if (withdrawalEvent->perk == PERK_JET_ADDICTION) {
             // TODO: Support sfall's Drugs.ini JetWithdrawal setting, which can
@@ -3218,7 +3215,7 @@ int withdrawalEventProcess(Object* obj, void* data)
             // SFALL: Keep a queue entry for permanent Jet addiction. Besides
             // preserving the addiction state, this lets UI code distinguish an
             // addicted critter from one whose withdrawal has ended.
-            _insert_withdrawal(obj, 0, 10080, withdrawalEvent->perk, withdrawalEvent->pid);
+            _insert_withdrawal(obj, 0, 10080, withdrawalEvent->perk, protoId);
             return 0;
         }
 
@@ -3226,7 +3223,7 @@ int withdrawalEventProcess(Object* obj, void* data)
 
         if (obj == gDude) {
             // NOTE: Uninline.
-            dudeClearAddiction(withdrawalEvent->pid);
+            dudeClearAddiction(protoId);
         }
     }
 
@@ -3273,9 +3270,9 @@ int withdrawalEventWrite(File* stream, void* data)
 
 // perform_withdrawal_start
 // 0x47A4C4
-static void performWithdrawalStart(Object* obj, Perk perk, int pid)
+static void performWithdrawalStart(Object* obj, Perk perk, const ProtoId& protoId)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_start: Was called on non-critter!");
         return;
     }
@@ -3302,7 +3299,7 @@ static void performWithdrawalStart(Object* obj, Perk perk, int pid)
     }
 
     // schedule end of withdrawal
-    _insert_withdrawal(obj, 0, duration, perk, pid);
+    _insert_withdrawal(obj, 0, duration, perk, protoId);
 }
 
 // perform_withdrawal_end
@@ -3326,11 +3323,11 @@ static void performWithdrawalEnd(Object* obj, Perk perk)
 }
 
 // 0x47A5B4
-static int drugGetAddictionGvarByPid(int drugPid)
+static int drugGetAddictionGvarByProtoId(const ProtoId& drugProtoId)
 {
     for (int index = 0; index < ADDICTION_COUNT; index++) {
         DrugDescription* drugDescription = &(gDrugDescriptions[index]);
-        if (drugDescription->drugPid == drugPid) {
+        if (ProtoId(drugDescription->drugPid) == drugProtoId) {
             return drugDescription->gvar;
         }
     }
@@ -3341,9 +3338,9 @@ static int drugGetAddictionGvarByPid(int drugPid)
 // NOTE: Inlined.
 //
 // 0x47A5E8
-static void dudeSetAddiction(int drugPid)
+static void dudeSetAddiction(const ProtoId& drugProtoId)
 {
-    int gvar = drugGetAddictionGvarByPid(drugPid);
+    int gvar = drugGetAddictionGvarByProtoId(drugProtoId);
     if (gvar != -1) {
         gGameGlobalVars[gvar] = 1;
     }
@@ -3354,14 +3351,14 @@ static void dudeSetAddiction(int drugPid)
 // NOTE: Inlined.
 //
 // 0x47A60C
-static void dudeClearAddiction(int drugPid)
+static void dudeClearAddiction(const ProtoId& drugProtoId)
 {
-    int gvar = drugGetAddictionGvarByPid(drugPid);
+    int gvar = drugGetAddictionGvarByProtoId(drugProtoId);
     if (gvar != -1) {
         gGameGlobalVars[gvar] = 0;
     }
 
-    if (!dudeIsAddicted(-1)) {
+    if (!dudeIsAddicted(ProtoId::Empty())) {
         dudeDisableState(DUDE_STATE_ADDICTED);
     }
 }
@@ -3370,14 +3367,14 @@ static void dudeClearAddiction(int drugPid)
 // if [pid] is -1.
 //
 // 0x47A640
-static bool dudeIsAddicted(int drugPid)
+static bool dudeIsAddicted(const ProtoId& drugProtoId)
 {
     for (int index = 0; index < ADDICTION_COUNT; index++) {
         DrugDescription* drugDescription = &(gDrugDescriptions[index]);
-        if (drugPid == -1 || drugPid == drugDescription->drugPid) {
+        if (!drugProtoId.valid() || drugProtoId == ProtoId(drugDescription->drugPid)) {
             if (gGameGlobalVars[drugDescription->gvar] != 0) {
                 return true;
-            } else if (drugPid != -1) {
+            } else if (drugProtoId.valid()) {
                 return false;
             }
         }
@@ -3585,10 +3582,10 @@ static void booksAdd(int bookPid, int messageId, Skill skill)
     gBooks.emplace_back(std::move(bookDescription));
 }
 
-bool booksGetInfo(int bookPid, int* messageIdPtr, Skill* skillPtr)
+bool booksGetInfo(const ProtoId& protoId, int* messageIdPtr, Skill* skillPtr)
 {
     for (auto& bookDescription : gBooks) {
-        if (bookDescription.bookPid == bookPid) {
+        if (ProtoId(bookDescription.bookPid) == protoId) {
             *messageIdPtr = bookDescription.messageId;
             *skillPtr = bookDescription.skill;
             return true;
@@ -3649,19 +3646,18 @@ void weaponSetRocketExplosionRadius(int value)
     gRocketExplosionRadius = value;
 }
 
-void explosiveAdd(int pid, int activePid, int minDamage, int maxDamage)
+void explosiveAdd(const ProtoId& protoId, const ProtoId& activeProtoId, int minDamage, int maxDamage)
 {
     ExplosiveDescription explosiveDescription;
-    explosiveDescription.pid = pid;
-    explosiveDescription.activePid = activePid;
+    explosiveDescription.pid = protoId.pid();
+    explosiveDescription.activePid = activeProtoId.pid();
     explosiveDescription.minDamage = minDamage;
     explosiveDescription.maxDamage = maxDamage;
     gExplosives.push_back(std::move(explosiveDescription));
 }
 
-bool explosiveIsExplosive(int pid)
+bool explosiveIsExplosive(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     if (protoId == ItemProtoTypeId::Dynamite) return true;
     if (protoId == ItemProtoTypeId::PlasticExplosives) return true;
 
@@ -3672,9 +3668,8 @@ bool explosiveIsExplosive(int pid)
     return false;
 }
 
-bool explosiveIsActiveExplosive(int pid)
+bool explosiveIsActiveExplosive(const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     if (protoId == ItemProtoTypeId::ArmedDynamite) return true;
     if (protoId == ItemProtoTypeId::ArmedPlasticExplosives) return true;
 
@@ -3685,22 +3680,21 @@ bool explosiveIsActiveExplosive(int pid)
     return false;
 }
 
-bool explosiveActivate(int* pidPtr)
+bool explosiveActivate(ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(*pidPtr);
     if (protoId == ItemProtoTypeId::Dynamite) {
-        *pidPtr = ProtoId(ItemProtoTypeId::ArmedDynamite).pid();
+        protoId = ItemProtoTypeId::ArmedDynamite;
         return true;
     }
 
     if (protoId == ItemProtoTypeId::PlasticExplosives) {
-        *pidPtr = ProtoId(ItemProtoTypeId::ArmedPlasticExplosives).pid();
+        protoId = ItemProtoTypeId::ArmedPlasticExplosives;
         return true;
     }
 
     for (const auto& explosive : gExplosives) {
         if (ProtoId(explosive.pid) == protoId) {
-            *pidPtr = explosive.activePid;
+            protoId = ProtoId(explosive.activePid);
             return true;
         }
     }
@@ -3708,9 +3702,8 @@ bool explosiveActivate(int* pidPtr)
     return false;
 }
 
-bool explosiveSetDamage(int pid, int minDamage, int maxDamage)
+bool explosiveSetDamage(const ProtoId& protoId, int minDamage, int maxDamage)
 {
-    const ProtoId protoId = ProtoId(pid);
     if (protoId == ItemProtoTypeId::Dynamite) {
         gDynamiteMinDamage = minDamage;
         gDynamiteMaxDamage = maxDamage;
@@ -3730,9 +3723,8 @@ bool explosiveSetDamage(int pid, int minDamage, int maxDamage)
     return false;
 }
 
-bool explosiveGetDamage(int pid, int* minDamagePtr, int* maxDamagePtr)
+bool explosiveGetDamage(const ProtoId& protoId, int* minDamagePtr, int* maxDamagePtr)
 {
-    const ProtoId protoId = ProtoId(pid);
     if (protoId == ItemProtoTypeId::Dynamite || protoId == ItemProtoTypeId::ArmedDynamite) {
         *minDamagePtr = gDynamiteMinDamage;
         *maxDamagePtr = gDynamiteMaxDamage;
@@ -3820,10 +3812,10 @@ static void healingItemsInit()
     configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "healing_powder", &gHealingItemPids[HEALING_ITEM_HEALING_POWDER], ProtoId(ItemProtoTypeId::HealingPowder).pid());
 }
 
-bool itemIsHealing(int pid)
+bool itemIsHealing(const ProtoId& protoId)
 {
     for (HealingItem index = HEALING_ITEM_FIRST; index < HEALING_ITEM_COUNT; index++) {
-        if (gHealingItemPids[index] == pid) {
+        if (gHealingItemPids[index] == protoId.pid()) {
             return true;
         }
     }
