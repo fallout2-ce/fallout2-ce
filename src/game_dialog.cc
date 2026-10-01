@@ -4023,11 +4023,11 @@ int _gdPickAIUpdateMsg(Object* critter)
     return 670 + randomBetween(0, 4);
 }
 
-void gameDialogSetPartyMemberCcMsgIds(int pid, int startMsgId, int endMsgId)
+void gameDialogSetPartyMemberCcMsgIds(const ProtoId& protoId, int startMsgId, int endMsgId)
 {
     assert(startMsgId <= endMsgId);
 
-    partyMemberCcMsgIds[pid] = { startMsgId, endMsgId };
+    partyMemberCcMsgIds[protoId.pid()] = { startMsgId, endMsgId };
 }
 
 void gameDialogResetPartyMemberCcMsgIds()
