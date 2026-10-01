@@ -51,6 +51,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/art.h"
     "src/audio.cc"
     "src/audio.h"
+    "src/audio_channels.cc"
+    "src/audio_channels.h"
     "src/automap.cc"
     "src/automap.h"
     "src/autorun.cc"

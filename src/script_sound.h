@@ -10,6 +10,8 @@ enum ScriptSoundMode {
     SCRIPT_SOUND_MODE_SPEECH = 3,
 };
 
+// Sizes the script channel pool, see `script_channels` in fallout2.cfg.
+void scriptSoundInit();
 int scriptSoundPlay(const char* path, int mode);
 void scriptSoundStop(int id);
 void scriptSoundReset();

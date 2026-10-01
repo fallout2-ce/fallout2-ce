@@ -992,6 +992,12 @@ void gameDialogStartLips(const char* audioFileName)
         return;
     }
 
+    // speech=0 in fallout2.cfg turns off every voiced line, lip-synced ones
+    // included. The reply is still shown as text.
+    if (!speechIsEnabled()) {
+        return;
+    }
+
     char name[16];
     if (artCopyFileName(gGameDialogHeadFrmId, name) == -1) {
         return;

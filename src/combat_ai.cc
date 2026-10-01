@@ -270,6 +270,11 @@ static Object** _curr_crit_list;
 // 0x56D624 attack_str
 static char _attack_str[AI_MESSAGE_SIZE];
 
+// Speech file names for [_target_str] and [_attack_str], taken from the audio
+// field of combatai.msg. Empty when the line is not voiced.
+static char _target_audio[AI_MESSAGE_SIZE];
+static char _attack_audio[AI_MESSAGE_SIZE];
+
 // parse hurt_too_much
 static void _parse_hurt_str(char* str, Dam* valuePtr)
 {
@@ -3511,32 +3516,38 @@ int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay
     int start;
     int end;
     char* string;
+    char* audio;
 
     switch (type) {
     case AI_MESSAGE_TYPE_RUN:
         start = ai->run.start;
         end = ai->run.end;
         string = _attack_str;
+        audio = _attack_audio;
         break;
     case AI_MESSAGE_TYPE_MOVE:
         start = ai->move.start;
         end = ai->move.end;
         string = _attack_str;
+        audio = _attack_audio;
         break;
     case AI_MESSAGE_TYPE_ATTACK:
         start = ai->attack.start;
         end = ai->attack.end;
         string = _attack_str;
+        audio = _attack_audio;
         break;
     case AI_MESSAGE_TYPE_MISS:
         start = ai->miss.start;
         end = ai->miss.end;
         string = _target_str;
+        audio = _target_audio;
         break;
     case AI_MESSAGE_TYPE_HIT:
         start = ai->hit[attack->defenderHitLocation].start;
         end = ai->hit[attack->defenderHitLocation].end;
         string = _target_str;
+        audio = _target_audio;
         break;
     default:
         return -1;
@@ -3555,6 +3566,7 @@ int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay
 
     debugPrint("%s said message %d\n", objectGetName(critter), messageListItem.num);
     snprintf(string, AI_MESSAGE_SIZE, "%s", messageListItem.text);
+    snprintf(audio, AI_MESSAGE_SIZE, "%s", messageListItem.audio != nullptr ? messageListItem.audio : "");
 
     // TODO: Get rid of casts.
     return animationRegisterCallback(critter, (void*)(uintptr_t)type, (AnimationCallback*)_ai_print_msg, delay);
@@ -3568,13 +3580,16 @@ static int _ai_print_msg(Object* critter, int type)
     }
 
     char* string;
+    char* audio;
     switch (type) {
     case AI_MESSAGE_TYPE_HIT:
     case AI_MESSAGE_TYPE_MISS:
         string = _target_str;
+        audio = _target_audio;
         break;
     default:
         string = _attack_str;
+        audio = _attack_audio;
         break;
     }
 
@@ -3583,6 +3598,10 @@ static int _ai_print_msg(Object* critter, int type)
     Rect rect;
     if (textObjectAdd(critter, string, ai->font, ai->color, ai->outline_color, &rect) == 0) {
         tileWindowRefreshRect(&rect, critter->elevation);
+
+        if (audio[0] != '\0') {
+            floatSoundPlay(audio);
+        }
     }
 
     return 0;

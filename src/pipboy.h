@@ -18,6 +18,7 @@ void pipboySetRestHealTime(int minutes);
 int pipboySave(File* stream);
 int pipboyLoad(File* stream);
 int pipboyGetWindow();
+bool pipboyIsResting();
 bool pipboyRestOptionMsgsSetBase(int baseMessageId);
 bool pipboyRestOptionSet(int restOption, int value);
 
