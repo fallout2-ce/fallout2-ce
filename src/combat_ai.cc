@@ -1851,7 +1851,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
-        if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
+        if (critterFlagCheck(critter, CRITTER_LONG_LIMBS)) {
             return 2;
         }
 

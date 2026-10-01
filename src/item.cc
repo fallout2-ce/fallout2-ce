@@ -1720,7 +1720,7 @@ int weaponGetRange(Object* critter, HitMode hitMode)
         return range;
     }
 
-    if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
+    if (critterFlagCheck(critter, CRITTER_LONG_LIMBS)) {
         return 2;
     }
 

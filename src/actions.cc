@@ -132,7 +132,7 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
 // 0x410468
 int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation rotation, int delay)
 {
-    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj, CRITTER_NO_KNOCKBACK)) {
         return -1;
     }
 
@@ -249,7 +249,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
 
     int violenceLevel = settings.preferences.violence_level;
 
-    if (critterFlagCheck(defender->pid, CRITTER_SPECIAL_DEATH)) {
+    if (critterFlagCheck(defender, CRITTER_SPECIAL_DEATH)) {
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
     }
 
@@ -341,7 +341,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     FrmId frmId;
     const char* sfx_name;
 
-    if (critterFlagCheck(defender->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(defender, CRITTER_NO_KNOCKBACK)) {
         knockbackDistance = 0;
     }
 
@@ -522,7 +522,7 @@ int _show_death(Object* obj, AnimationType anim)
         }
     }
 
-    if (!critterFlagCheck(obj->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(obj, CRITTER_FLAT)) {
         obj->flags |= OBJECT_NO_BLOCK;
         if (_obj_toggle_flat(obj, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
@@ -533,7 +533,7 @@ int _show_death(Object* obj, AnimationType anim)
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
     }
 
-    if (anim >= ANIM_ELECTRIFIED_TO_NOTHING && anim <= ANIM_EXPLODED_TO_NOTHING && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
+    if (anim >= ANIM_ELECTRIFIED_TO_NOTHING && anim <= ANIM_EXPLODED_TO_NOTHING && !critterFlagCheck(obj, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj, CRITTER_NO_DROP)) {
         itemDropAll(obj, obj->tile);
     }
 
@@ -1304,7 +1304,7 @@ int actionLootCritter(Object* critter, Object* target)
     }
 
     // SFALL: Fix for trying to loot corpses with the "NoSteal" flag.
-    if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    if (critterFlagCheck(target, CRITTER_NO_STEAL)) {
         return -1;
     }
 
@@ -2017,7 +2017,7 @@ int _report_dmg(Attack* attack, Object* _)
 // 0x413660
 int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, DamageType damageType)
 {
-    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj, CRITTER_NO_KNOCKBACK)) {
         knockbackDistancePtr = nullptr;
     }
 
