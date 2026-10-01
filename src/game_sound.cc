@@ -1484,7 +1484,7 @@ char* sfxBuildSceneryName(int actionType, int action, const char* name)
 // 0x4518D
 char* sfxBuildOpenName(Object* object, int action)
 {
-    if (FrmId(object).objectType()  == OBJ_TYPE_SCENERY) {
+    if (FrmId(object).objectType() == OBJ_TYPE_SCENERY) {
         char scenerySoundId;
         Proto* proto;
         if (protoGetProto(object, &proto) != -1) {
