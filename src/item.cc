@@ -2011,7 +2011,7 @@ Object* weaponUnload(Object* weapon)
     }
 
     Object* ammo;
-    if (objectCreateWithPid(&ammo, ammoTypeProtoId.pid()) != 0) {
+    if (objectCreateWithProtoId(&ammo, ammoTypeProtoId) != 0) {
         return nullptr;
     }
 
@@ -3468,7 +3468,7 @@ int itemCapsAdjust(Object* obj, int amount)
     }
 
     Object* item;
-    if (objectCreateWithPid(&item, ProtoId(ItemProtoTypeId::Money).pid()) == 0) {
+    if (objectCreateWithProtoId(&item, ItemProtoTypeId::Money) == 0) {
         _obj_disconnect(item, nullptr);
         if (itemAdd(obj, item, amount) != 0) {
             objectDestroy(item, nullptr);

@@ -1063,7 +1063,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        objectCreateWithFrmIdPid(&object, MiscFrameId::ScrollBlocker, -1);
+        objectCreateWithFrmIdProtoId(&object, MiscFrameId::ScrollBlocker, ProtoId::Empty());
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;
@@ -1308,7 +1308,7 @@ static int replaceDeadCritter(Object* critter)
     }
 
     Object* blood;
-    if (objectCreateWithPid(&blood, ProtoId(MiscProtoTypeId::Blood).pid()) == -1) {
+    if (objectCreateWithProtoId(&blood, MiscProtoTypeId::Blood) == -1) {
         return -1;
     }
 

@@ -1367,7 +1367,7 @@ void edit_mapper()
                             update_high_obj_name(_screen_obj);
 
                             Object* hlObj;
-                            if (objectCreateWithFrmIdPid(&hlObj, InterfaceFrameId::HexMouseCursor, -1) != -1) {
+                            if (objectCreateWithFrmIdProtoId(&hlObj, InterfaceFrameId::HexMouseCursor, ProtoId::Empty()) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
                                 _obj_toggle_flat(hlObj, nullptr);
 

@@ -431,6 +431,7 @@ ObjectType pickToolbar(int topY)
 // place_object_
 void placeObject(int pid, const FrmId& frmId)
 {
+    const ProtoId& protoId = ProtoId(pid);
     int x, y;
     mouseGetPosition(&x, &y);
     int tile = tileFromScreenXY(x, y);
@@ -439,7 +440,7 @@ void placeObject(int pid, const FrmId& frmId)
     }
 
     Object* obj;
-    if (objectCreateWithFrmIdPid(&obj, frmId, pid) == -1) {
+    if (objectCreateWithFrmIdProtoId(&obj, frmId, protoId) == -1) {
         return;
     }
 

@@ -4770,7 +4770,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return 0;
     }
     CritterEquipped stealTargetEquipped {};
@@ -5706,7 +5706,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return;
     }
 

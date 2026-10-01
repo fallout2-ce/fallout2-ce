@@ -874,7 +874,7 @@ static void opCreateObject(Program* program)
 
     Proto* proto;
     if (protoGetProto(protoId, &proto) != -1) {
-        if (objectCreateWithFrmIdPid(&object, FrmId(proto), protoId.pid()) != -1) {
+        if (objectCreateWithFrmIdProtoId(&object, proto, protoId) != -1) {
             if (tile == -1) {
                 tile = 0;
             }

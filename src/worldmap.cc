@@ -4354,7 +4354,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
             }
 
             Object* object;
-            if (objectCreateWithPid(&object, encounterEntry->pid) == -1) {
+            if (objectCreateWithProtoId(&object, ProtoId(encounterEntry->pid)) == -1) {
                 return -1;
             }
 
@@ -4403,11 +4403,12 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                 }
 
                 Object* item;
-                if (objectCreateWithPid(&item, encounterItem->pid) == -1) {
+                const ProtoId protoId = ProtoId(encounterItem->pid);
+                if (objectCreateWithProtoId(&item, protoId) == -1) {
                     return -1;
                 }
 
-                if (ProtoId(encounterItem->pid) == ItemProtoTypeId::Money) {
+                if (protoId == ItemProtoTypeId::Money) {
                     if (perkHasRank(gDude, PERK_FORTUNE_FINDER)) {
                         quantity *= 2;
                     }

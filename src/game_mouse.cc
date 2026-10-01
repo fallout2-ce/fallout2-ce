@@ -2202,11 +2202,11 @@ int gameMouseObjectsInit()
         return -1;
     }
 
-    if (objectCreateWithFrmIdPid(&gGameMouseBouncingCursor, InterfaceFrameId::Blank, -1) != 0) {
+    if (objectCreateWithFrmIdProtoId(&gGameMouseBouncingCursor, InterfaceFrameId::Blank, ProtoId::Empty()) != 0) {
         return -1;
     }
 
-    if (objectCreateWithFrmIdPid(&gGameMouseHexCursor, InterfaceFrameId::HexMouseCursor, -1) != 0) {
+    if (objectCreateWithFrmIdProtoId(&gGameMouseHexCursor, InterfaceFrameId::HexMouseCursor, ProtoId::Empty()) != 0) {
         return -1;
     }
 

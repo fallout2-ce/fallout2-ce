@@ -3594,15 +3594,15 @@ int gameDialogCreateBarterWindow()
     if (talkBtn == -1) return -1;
 
     UniqueObject playerTableObj;
-    if (objectCreateWithFrmIdPid(playerTableObj, FrmId::Empty(), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(playerTableObj, FrmId::Empty(), ProtoId::Empty()) == -1) return -1;
     playerTableObj->flags |= OBJECT_HIDDEN;
 
     UniqueObject bartererTableObj;
-    if (objectCreateWithFrmIdPid(bartererTableObj, FrmId::Empty(), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(bartererTableObj, FrmId::Empty(), ProtoId::Empty()) == -1) return -1;
     bartererTableObj->flags |= OBJECT_HIDDEN;
 
     UniqueObject bartererTempObj;
-    if (objectCreateWithFrmIdPid(bartererTempObj, FrmId(gGameDialogSpeaker), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(bartererTempObj, FrmId(gGameDialogSpeaker), ProtoId::Empty()) == -1) return -1;
     bartererTempObj->flags |= OBJECT_HIDDEN | OBJECT_NO_SAVE;
     bartererTempObj->sid = -1;
 
