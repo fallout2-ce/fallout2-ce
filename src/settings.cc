@@ -444,7 +444,8 @@ void settingsWriteToConfig(bool onlyAdd)
             if (onlyAdd && settingsKeyExists(descriptor.section.c_str(), descriptor.key.c_str())) continue;
             std::visit([&descriptor](const auto& value) {
                 settingsWrite(descriptor.section.c_str(), descriptor.key.c_str(), value);
-            }, *entry.restartValue);
+            },
+                *entry.restartValue);
         } else {
             entry.write(onlyAdd);
         }
