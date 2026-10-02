@@ -183,9 +183,13 @@ template <typename T>
 static void assignSettingValue(T& target, const SettingValue& value)
 {
     if constexpr (std::is_enum_v<T>) {
-        target = static_cast<T>(std::get<int>(value));
+        const auto* typedValue = std::get_if<int>(&value);
+        assert(typedValue != nullptr);
+        target = static_cast<T>(*typedValue);
     } else {
-        target = std::get<T>(value);
+        const auto* typedValue = std::get_if<T>(&value);
+        assert(typedValue != nullptr);
+        target = *typedValue;
     }
 }
 
@@ -442,10 +446,22 @@ void settingsWriteToConfig(bool onlyAdd)
         if (entry.restartValue.has_value()) {
             const auto& descriptor = entry.descriptor;
             if (onlyAdd && settingsKeyExists(descriptor.section.c_str(), descriptor.key.c_str())) continue;
-            std::visit([&descriptor](const auto& value) {
-                settingsWrite(descriptor.section.c_str(), descriptor.key.c_str(), value);
-            },
-                *entry.restartValue);
+            // Non-throwing access also supports iOS deployment targets below 12.
+            // TODO replace with std::visit
+            const auto& value = *entry.restartValue;
+            const char* section = descriptor.section.c_str();
+            const char* key = descriptor.key.c_str();
+            if (const auto* boolean = std::get_if<bool>(&value)) {
+                settingsWrite(section, key, *boolean);
+            } else if (const auto* integer = std::get_if<int>(&value)) {
+                settingsWrite(section, key, *integer);
+            } else if (const auto* real = std::get_if<double>(&value)) {
+                settingsWrite(section, key, *real);
+            } else {
+                const auto* text = std::get_if<std::string>(&value);
+                assert(text != nullptr);
+                settingsWrite(section, key, *text);
+            }
         } else {
             entry.write(onlyAdd);
         }
@@ -526,17 +542,16 @@ bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingVal
         return false;
     }
 
-    if (std::holds_alternative<std::string>(value)) {
-        const auto& text = std::get<std::string>(value);
-        if (text.find_first_of("#;\r\n") != std::string::npos
-            || text.find('\0') != std::string::npos) {
+    if (const auto* text = std::get_if<std::string>(&value)) {
+        if (text->find_first_of("#;\r\n") != std::string::npos
+            || text->find('\0') != std::string::npos) {
             if (error != nullptr) *error = "Text cannot contain #, ;, line breaks, or null characters.";
             return false;
         }
     }
 
     if (!registeredDescriptor.choices.empty() && std::holds_alternative<int>(value)) {
-        int selectedValue = std::get<int>(value);
+        int selectedValue = *std::get_if<int>(&value);
         bool validChoice = std::any_of(registeredDescriptor.choices.begin(), registeredDescriptor.choices.end(), [selectedValue](const SettingChoice& choice) {
             return choice.value == selectedValue;
         });
