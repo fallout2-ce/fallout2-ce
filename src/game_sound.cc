@@ -2174,6 +2174,7 @@ static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool)
             slot.sound = nullptr;
             soundDelete(sound);
         }
+        slot.speaker = nullptr;
     }
 }
 
@@ -2224,6 +2225,7 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
     if (target->sound != nullptr) {
         Sound* evicted = target->sound;
         target->sound = nullptr;
+        target->speaker = nullptr;
         soundDelete(evicted);
     }
 
@@ -2261,7 +2263,9 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
 static void gameSoundChannelSlotCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
-        static_cast<GameSoundChannelSlot*>(userData)->sound = nullptr;
+        GameSoundChannelSlot* slot = static_cast<GameSoundChannelSlot*>(userData);
+        slot->sound = nullptr;
+        slot->speaker = nullptr;
     }
 }
 
