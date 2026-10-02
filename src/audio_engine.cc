@@ -41,39 +41,8 @@ struct AudioEngineSoundBuffer {
         }
     }
 
-    // deny copy
     AudioEngineSoundBuffer(const AudioEngineSoundBuffer&) = delete;
     AudioEngineSoundBuffer& operator=(const AudioEngineSoundBuffer&) = delete;
-
-    // allow move
-    AudioEngineSoundBuffer(AudioEngineSoundBuffer&& other) noexcept
-    {
-        *this = std::move(other);
-    }
-
-    AudioEngineSoundBuffer& operator=(AudioEngineSoundBuffer&& other) noexcept
-    {
-        if (this != &other) {
-            std::lock_guard<std::recursive_mutex> lockOther(other.mutex);
-            std::lock_guard<std::recursive_mutex> lockThis(this->mutex);
-            active = other.active;
-            size = other.size;
-            bitsPerSample = other.bitsPerSample;
-            channels = other.channels;
-            rate = other.rate;
-            data = other.data;
-            volume = other.volume;
-            playing = other.playing;
-            looping = other.looping;
-            pos = other.pos;
-            stream = other.stream;
-
-            other.active = false;
-            other.data = nullptr;
-            other.stream = nullptr;
-        }
-        return *this;
-    }
 };
 
 extern bool gProgramIsActive;
