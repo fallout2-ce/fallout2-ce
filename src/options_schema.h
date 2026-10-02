@@ -10,6 +10,7 @@
 namespace fallout {
 
 // Parses a single schema section (e.g. "preferences.combat_speed") from a Config object into a SettingDescriptor.
+// Leaves outDescriptor unchanged on failure.
 bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingDescriptor* outDescriptor);
 
 // Parses all schema sections matching [section.key] in the given Config.

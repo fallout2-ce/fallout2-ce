@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <sstream>
+#include <utility>
 
 namespace fallout {
 
@@ -107,6 +108,26 @@ namespace {
         return true;
     }
 
+    std::string readOptionalText(Config* config, const char* sectionName, const char* key, const std::string& fallback = {})
+    {
+        char* raw = nullptr;
+        if (!configGetString(config, sectionName, key, &raw) || raw == nullptr || *raw == '\0') {
+            return fallback;
+        }
+        return trim(raw);
+    }
+
+    bool parseInteger(const std::string& raw, int* value)
+    {
+        std::string trimmed = trim(raw);
+        char* end;
+        errno = 0;
+        long number = std::strtol(trimmed.c_str(), &end, 0);
+        if (errno != 0 || end == trimmed.c_str() || *end != '\0' || number < INT_MIN || number > INT_MAX) return false;
+        *value = static_cast<int>(number);
+        return true;
+    }
+
     bool parseSettingValue(const std::string& raw, SettingValueType type, SettingValue* value)
     {
         std::string trimmed = trim(raw);
@@ -124,11 +145,9 @@ namespace {
         case SettingValueType::Integer:
         case SettingValueType::Choice:
         case SettingValueType::KeyBinding: {
-            char* end;
-            errno = 0;
-            long number = std::strtol(trimmed.c_str(), &end, 0);
-            if (errno != 0 || end == trimmed.c_str() || *end != '\0' || number < INT_MIN || number > INT_MAX) return false;
-            *value = static_cast<int>(number);
+            int number;
+            if (!parseInteger(raw, &number)) return false;
+            *value = number;
             return true;
         }
         case SettingValueType::Real: {
@@ -157,9 +176,9 @@ namespace {
             if (colon == std::string::npos) return false;
             std::string valStr = trim(item.substr(0, colon));
             std::string labelStr = trim(item.substr(colon + 1));
-            SettingValue value;
-            if (labelStr.empty() || !parseSettingValue(valStr, SettingValueType::Integer, &value)) return false;
-            choices->push_back({ std::get<int>(value), labelStr });
+            int value;
+            if (labelStr.empty() || !parseInteger(valStr, &value)) return false;
+            choices->push_back({ value, labelStr });
         }
         return !choices->empty();
     }
@@ -181,10 +200,7 @@ namespace {
         if (!configGetString(config, sectionName, key, &raw)) return true;
         if (raw == nullptr) return false;
 
-        SettingValue value;
-        if (!parseSettingValue(raw, SettingValueType::Integer, &value)) return false;
-        *messageId = std::get<int>(value);
-        return true;
+        return parseInteger(raw, messageId);
     }
 
 } // namespace
@@ -195,7 +211,7 @@ bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingD
         return false;
     }
 
-    *outDescriptor = SettingDescriptor();
+    SettingDescriptor descriptor;
 
     std::string secNameStr(sectionName);
     size_t dotPos = secNameStr.find('.');
@@ -203,79 +219,59 @@ bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingD
         return false;
     }
 
-    outDescriptor->id = secNameStr;
-    outDescriptor->section = secNameStr.substr(0, dotPos);
-    outDescriptor->key = secNameStr.substr(dotPos + 1);
+    descriptor.id = secNameStr;
+    descriptor.section = secNameStr.substr(0, dotPos);
+    descriptor.key = secNameStr.substr(dotPos + 1);
 
-    char* fileStr = nullptr;
-    if (configGetString(config, sectionName, "file", &fileStr) && fileStr != nullptr && *fileStr != '\0') {
-        outDescriptor->source = trim(fileStr);
-    } else {
-        outDescriptor->source = "fallout2.cfg";
-    }
+    descriptor.source = readOptionalText(config, sectionName, "file", "fallout2.cfg");
 
     char* typeStr = nullptr;
     if (!configGetString(config, sectionName, "type", &typeStr)
         || typeStr == nullptr
-        || !parseSettingValueType(typeStr, &outDescriptor->valueType)) return false;
+        || !parseSettingValueType(typeStr, &descriptor.valueType)) return false;
 
     char* catStr = nullptr;
     if (!configGetString(config, sectionName, "category", &catStr)
         || catStr == nullptr
-        || !parseSettingCategory(catStr, &outDescriptor->category)) return false;
+        || !parseSettingCategory(catStr, &descriptor.category)) return false;
 
-    char* subsectionStr = nullptr;
-    if (configGetString(config, sectionName, "subsection", &subsectionStr)
-        && subsectionStr != nullptr
-        && *subsectionStr != '\0') {
-        outDescriptor->subsection = trim(subsectionStr);
-    }
+    descriptor.subsection = readOptionalText(config, sectionName, "subsection");
 
     char* choicesStr = nullptr;
     if (configGetString(config, sectionName, "choices", &choicesStr) && choicesStr != nullptr) {
-        if (!parseChoices(choicesStr, &outDescriptor->choices)) return false;
+        if (!parseChoices(choicesStr, &descriptor.choices)) return false;
     }
-    if (outDescriptor->valueType == SettingValueType::Choice && outDescriptor->choices.empty()) return false;
-    if (outDescriptor->valueType != SettingValueType::Choice && !outDescriptor->choices.empty()) return false;
+    if (descriptor.valueType == SettingValueType::Choice && descriptor.choices.empty()) return false;
+    if (descriptor.valueType != SettingValueType::Choice && !descriptor.choices.empty()) return false;
 
     char* defStr = nullptr;
     if (!configGetString(config, sectionName, "default", &defStr)
         || defStr == nullptr
-        || !parseDescriptorValue(defStr, *outDescriptor, &outDescriptor->defaultValue)) return false;
+        || !parseDescriptorValue(defStr, descriptor, &descriptor.defaultValue)) return false;
 
     char* vanStr = nullptr;
     if (configGetString(config, sectionName, "vanilla", &vanStr) && vanStr != nullptr) {
         SettingValue vanillaValue;
-        if (!parseDescriptorValue(vanStr, *outDescriptor, &vanillaValue)) return false;
-        outDescriptor->vanillaValue = std::move(vanillaValue);
+        if (!parseDescriptorValue(vanStr, descriptor, &vanillaValue)) return false;
+        descriptor.vanillaValue = std::move(vanillaValue);
     }
 
-    if (!parseMessageId(config, sectionName, "label_id", &outDescriptor->labelMessageId)) return false;
+    if (!parseMessageId(config, sectionName, "label_id", &descriptor.labelMessageId)) return false;
 
-    char* labelStr = nullptr;
-    if (configGetString(config, sectionName, "label", &labelStr) && labelStr != nullptr && *labelStr != '\0') {
-        outDescriptor->fallbackLabel = trim(labelStr);
-    } else {
-        outDescriptor->fallbackLabel = humanize(outDescriptor->key);
-    }
+    descriptor.fallbackLabel = readOptionalText(config, sectionName, "label", humanize(descriptor.key));
 
-    if (!parseMessageId(config, sectionName, "desc_id", &outDescriptor->descriptionMessageId)) return false;
+    if (!parseMessageId(config, sectionName, "desc_id", &descriptor.descriptionMessageId)) return false;
 
-    char* descStr = nullptr;
-    if (configGetString(config, sectionName, "description", &descStr) && descStr != nullptr && *descStr != '\0') {
-        outDescriptor->fallbackDescription = trim(descStr);
-    }
+    descriptor.fallbackDescription = readOptionalText(config, sectionName, "description");
 
-    char* assetStr = nullptr;
-    if (configGetString(config, sectionName, "asset", &assetStr) && assetStr != nullptr && *assetStr != '\0') {
-        outDescriptor->asset = trim(assetStr);
-    }
+    descriptor.asset = readOptionalText(config, sectionName, "asset");
 
     char* applyStr = nullptr;
     if (configGetString(config, sectionName, "apply", &applyStr) && applyStr != nullptr) {
-        if (!parseSettingApplyPolicy(applyStr, &outDescriptor->applyPolicy)) return false;
+        if (!parseSettingApplyPolicy(applyStr, &descriptor.applyPolicy)) return false;
     }
 
+    *outDescriptor = std::move(descriptor);
     return true;
 }
 
