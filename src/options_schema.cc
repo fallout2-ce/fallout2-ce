@@ -188,7 +188,7 @@ namespace {
         if (!parseSettingValue(raw, descriptor.valueType, value)) return false;
         if (descriptor.valueType != SettingValueType::Choice) return true;
 
-        int choiceValue = std::get<int>(*value);
+        int choiceValue = *std::get_if<int>(value);
         return std::any_of(descriptor.choices.begin(), descriptor.choices.end(), [choiceValue](const SettingChoice& choice) {
             return choice.value == choiceValue;
         });
