@@ -21,6 +21,7 @@ enum class SettingValueType {
     KeyBinding,
 };
 
+// WIP
 enum class SettingCategory {
     Uncategorized,
     System,

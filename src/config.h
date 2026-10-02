@@ -33,6 +33,9 @@ typedef Dictionary ConfigSection;
 
 bool configInit(Config* config);
 void configFree(Config* config);
+// Deep-copies into an initialized, empty destination. On failure, the
+// destination may contain a partial copy and must still be freed.
+bool configCopy(Config* destination, const Config* source);
 // Calls onOverride before replacing each successfully parsed section/key.
 bool configParseCommandLineArguments(Config* config, int argc, char** argv, void (*onOverride)(const char*, const char*) = nullptr);
 // TODO: valuePtr must be const char**

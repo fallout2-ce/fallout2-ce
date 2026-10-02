@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cassert>
 #include <set>
 #include <string>
 #include <vector>
@@ -85,6 +86,32 @@ void configFree(Config* config)
     }
 
     dictionaryFree(config);
+}
+
+bool configCopy(Config* destination, const Config* source)
+{
+    if (destination == nullptr || source == nullptr
+        || !destination->isInitialized() || !source->isInitialized()) {
+        return false;
+    }
+    assert(destination != source);
+    assert(destination->entriesLength == 0);
+
+    for (int sectionIndex = 0; sectionIndex < source->entriesLength; sectionIndex++) {
+        const DictionaryEntry& sectionEntry = source->entries[sectionIndex];
+        const auto* section = static_cast<const ConfigSection*>(sectionEntry.value);
+        if (!configEnsureSectionExists(destination, sectionEntry.key)) {
+            return false;
+        }
+        for (int keyIndex = 0; keyIndex < section->entriesLength; keyIndex++) {
+            const DictionaryEntry& keyEntry = section->entries[keyIndex];
+            const char* value = *static_cast<char* const*>(keyEntry.value);
+            if (!configSetString(destination, sectionEntry.key, keyEntry.key, value)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 // Parses command line argments and adds them into the config.

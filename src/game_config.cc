@@ -190,42 +190,28 @@ bool gameConfigSave()
         return false;
     }
 
-    std::vector<std::optional<std::string>> currentValues;
-    currentValues.reserve(commandLineOverrides.size());
-    for (const auto& override : commandLineOverrides) {
-        char* value = nullptr;
-        if (configGetString(&gGameConfig, override.section.c_str(), override.key.c_str(), &value)) {
-            currentValues.emplace_back(value);
-        } else {
-            currentValues.emplace_back(std::nullopt);
-        }
+    // Strip process overrides from a copy so saving cannot alter active values
+    // or invalidate strings held by config readers.
+    ScopedConfig savedConfig;
+    if (!savedConfig || !configCopy(savedConfig.get(), &gGameConfig)) {
+        return false;
     }
 
-    bool restored = true;
     for (const auto& override : commandLineOverrides) {
         if (override.originalValue.has_value()) {
-            restored &= configSetString(&gGameConfig, override.section.c_str(), override.key.c_str(), override.originalValue->c_str());
+            if (!configSetString(savedConfig.get(), override.section.c_str(), override.key.c_str(), override.originalValue->c_str())) {
+                return false;
+            }
         } else {
-            restored &= configRemoveKey(&gGameConfig, override.section.c_str(), override.key.c_str());
+            if (!configRemoveKey(savedConfig.get(), override.section.c_str(), override.key.c_str())) {
+                return false;
+            }
         }
     }
 
-    bool saved = restored && configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
-
-    bool reapplied = true;
-    for (size_t index = 0; index < commandLineOverrides.size(); index++) {
-        const auto& override = commandLineOverrides[index];
-        if (currentValues[index].has_value()) {
-            reapplied &= configSetString(&gGameConfig, override.section.c_str(), override.key.c_str(), currentValues[index]->c_str());
-        } else {
-            reapplied &= configRemoveKey(&gGameConfig, override.section.c_str(), override.key.c_str());
-        }
+    if (!configWriteEx(savedConfig.get(), gGameConfigFilePath, CONFIG_RETAIN_ALL)) {
+        return false;
     }
-    if (!reapplied) {
-        debugPrint("Unable to restore command-line settings after saving the game config.\n");
-    }
-
-    if (!saved) return false;
 
 #if defined(__EMSCRIPTEN__)
     do_save_idbfs_gameconfig();

@@ -2,9 +2,7 @@
 
 #include "debug.h"
 #include "game_config.h"
-#include "mouse.h"
 #include "platform_compat.h"
-#include "sound.h"
 
 #include <algorithm>
 #include <cassert>
@@ -307,11 +305,11 @@ void initSettingsRegistry(bool isMapper)
 #undef SECT
 
 #define SECT preferences
-    // Match the ranges applied by the legacy preferences screen.
-    SETTING_P(game_difficulty, clamp(GAME_DIFFICULTY_MIN, GAME_DIFFICULTY_MAX));
-    SETTING_P(combat_difficulty, clamp(COMBAT_DIFFICULTY_MIN, COMBAT_DIFFICULTY_MAX));
-    SETTING_P(violence_level, clamp(VIOLENCE_LEVEL_MIN, VIOLENCE_LEVEL_MAX));
-    SETTING_P(target_highlight, clamp(TARGET_HIGHLIGHT_MIN, TARGET_HIGHLIGHT_MAX));
+    // Clamping for these values is handled by the legacy preferences screen.
+    SETTING(game_difficulty);
+    SETTING(combat_difficulty);
+    SETTING(violence_level);
+    SETTING(target_highlight);
     SETTING(item_highlight);
     SETTING(combat_looks);
     SETTING(combat_messages);
@@ -319,12 +317,12 @@ void initSettingsRegistry(bool isMapper)
     SETTING(language_filter);
     SETTING(running);
     SETTING(subtitles);
-    SETTING_P(combat_speed, clamp(0, 50));
+    SETTING(combat_speed);
     SETTING(player_speedup);
-    SETTING_P(text_base_delay, clamp(1.0, 6.0));
-    SETTING_P(text_line_delay, clamp(0.0, 2.0));
-    SETTING_P(brightness, clamp(1.0, 1.17999267578125));
-    SETTING_P(mouse_sensitivity, clamp(MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX));
+    SETTING(text_base_delay);
+    SETTING(text_line_delay);
+    SETTING(brightness);
+    SETTING(mouse_sensitivity);
     SETTING(running_burning_guy);
 #undef SECT
 
@@ -335,10 +333,10 @@ void initSettingsRegistry(bool isMapper)
     SETTING(sounds);
     SETTING(music);
     SETTING(speech);
-    SETTING_P(master_volume, clamp(0, VOLUME_MAX));
-    SETTING_P(music_volume, clamp(0, VOLUME_MAX));
-    SETTING_P(sndfx_volume, clamp(0, VOLUME_MAX));
-    SETTING_P(speech_volume, clamp(0, VOLUME_MAX));
+    SETTING(master_volume);
+    SETTING(music_volume);
+    SETTING(sndfx_volume);
+    SETTING(speech_volume);
     SETTING(cache_size);
     SETTING_P(music_path1, normalizePath);
     SETTING_P(music_path2, normalizePath);
@@ -503,21 +501,42 @@ SettingValue settingsGetConfiguredValue(const SettingDescriptor& descriptor)
 
 bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error)
 {
-    bool typeMatches = (descriptor.valueType == SettingValueType::Boolean && std::holds_alternative<bool>(value))
-        || ((descriptor.valueType == SettingValueType::Integer
-                || descriptor.valueType == SettingValueType::Choice
-                || descriptor.valueType == SettingValueType::KeyBinding)
+    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
+    if (entry == nullptr) {
+        if (error != nullptr) *error = "Setting is not registered.";
+        return false;
+    }
+
+    const SettingDescriptor& registeredDescriptor = entry->descriptor;
+    if (descriptor.valueType != registeredDescriptor.valueType) {
+        if (error != nullptr) *error = "Setting type does not match the registered type.";
+        return false;
+    }
+
+    bool typeMatches = (registeredDescriptor.valueType == SettingValueType::Boolean && std::holds_alternative<bool>(value))
+        || ((registeredDescriptor.valueType == SettingValueType::Integer
+                || registeredDescriptor.valueType == SettingValueType::Choice
+                || registeredDescriptor.valueType == SettingValueType::KeyBinding)
             && std::holds_alternative<int>(value))
-        || (descriptor.valueType == SettingValueType::Real && std::holds_alternative<double>(value))
-        || (descriptor.valueType == SettingValueType::Text && std::holds_alternative<std::string>(value));
+        || (registeredDescriptor.valueType == SettingValueType::Real && std::holds_alternative<double>(value))
+        || (registeredDescriptor.valueType == SettingValueType::Text && std::holds_alternative<std::string>(value));
     if (!typeMatches) {
         if (error != nullptr) *error = "Value has the wrong type.";
         return false;
     }
 
-    if (!descriptor.choices.empty() && std::holds_alternative<int>(value)) {
+    if (std::holds_alternative<std::string>(value)) {
+        const auto& text = std::get<std::string>(value);
+        if (text.find_first_of("#;\r\n") != std::string::npos
+            || text.find('\0') != std::string::npos) {
+            if (error != nullptr) *error = "Text cannot contain #, ;, line breaks, or null characters.";
+            return false;
+        }
+    }
+
+    if (!registeredDescriptor.choices.empty() && std::holds_alternative<int>(value)) {
         int selectedValue = std::get<int>(value);
-        bool validChoice = std::any_of(descriptor.choices.begin(), descriptor.choices.end(), [selectedValue](const SettingChoice& choice) {
+        bool validChoice = std::any_of(registeredDescriptor.choices.begin(), registeredDescriptor.choices.end(), [selectedValue](const SettingChoice& choice) {
             return choice.value == selectedValue;
         });
         if (!validChoice) {
@@ -526,8 +545,7 @@ bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingVal
         }
     }
 
-    const SettingRegistryEntry* entry = settingsFindEntry(descriptor);
-    if (entry != nullptr && !entry->validateValue(value)) {
+    if (!entry->validateValue(value)) {
         if (error != nullptr) *error = "Value is outside the allowed range.";
         return false;
     }
