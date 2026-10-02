@@ -354,6 +354,7 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
 static void _display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool isDragged);
 static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight);
 static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, int mouseEvent);
+static void inventoryUpdateScrollButtons(int upButton, int downButton, int offset, int totalItems, int visibleSlots, int step = 1);
 static void _display_body(const FrmId& frmId, int inventoryWindowType);
 static int inventoryCommonInit();
 static void inventoryCommonFree();
@@ -498,6 +499,11 @@ static int gSecondaryInventoryScrollUpButton = -1;
 
 // 0x5190F0 loot_scroll_dn_bid
 static int gSecondaryInventoryScrollDownButton = -1;
+
+static int playerTableScrollUpButton = -1;
+static int playerTableScrollDownButton = -1;
+static int bartererTableScrollUpButton = -1;
+static int bartererTableScrollDownButton = -1;
 
 // 0x5190F4 ticker
 static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
@@ -1146,6 +1152,27 @@ static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int 
     }
 }
 
+static void inventoryUpdateScrollButtons(int upButton, int downButton, int offset, int totalItems, int visibleSlots, int step)
+{
+    int maxOffset = inventoryComputeAlignedMaxOffset(totalItems, visibleSlots, step);
+
+    if (upButton != -1) {
+        if (offset <= 0) {
+            buttonDisable(upButton);
+        } else {
+            buttonEnable(upButton);
+        }
+    }
+
+    if (downButton != -1) {
+        if (offset >= maxOffset) {
+            buttonDisable(downButton);
+        } else {
+            buttonEnable(downButton);
+        }
+    }
+}
+
 static bool hasPartySlots()
 {
     return inventoryLootLayout.columns == 2
@@ -1769,6 +1796,14 @@ static bool _setup_inventory(int inventoryWindowType)
     gInventorySlotsCount = 6;
     _pud = &(_inven_dude->data.inventory);
     _stack[0] = _inven_dude;
+    gInventoryScrollUpButton = -1;
+    gInventoryScrollDownButton = -1;
+    gSecondaryInventoryScrollUpButton = -1;
+    gSecondaryInventoryScrollDownButton = -1;
+    playerTableScrollUpButton = -1;
+    playerTableScrollDownButton = -1;
+    bartererTableScrollUpButton = -1;
+    bartererTableScrollDownButton = -1;
     bool isNormalWindow = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL;
 
     if (inventoryWindowType <= INVENTORY_WINDOW_TYPE_LOOT) {
@@ -1915,18 +1950,30 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         // Left inventory up button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        gInventoryScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
             109, 56,
             KEY_ARROW_UP, -1,
             InterfaceFrameId::DialogUpButtonUp,
             InterfaceFrameId::DialogUpButtonDown);
+        if (gInventoryScrollUpButton != -1) {
+            buttonSetDisabledFrm(gInventoryScrollUpButton,
+                InterfaceFrameId::DialogUpButtonUp,
+                InterfaceFrameId::DialogUpButtonUp,
+                InterfaceFrameId::DialogUpButtonUp);
+        }
 
         // Right inventory up button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        gSecondaryInventoryScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
             342, 56,
             KEY_CTRL_ARROW_UP, -1,
             InterfaceFrameId::DialogUpButtonUp,
             InterfaceFrameId::DialogUpButtonDown);
+        if (gSecondaryInventoryScrollUpButton != -1) {
+            buttonSetDisabledFrm(gSecondaryInventoryScrollUpButton,
+                InterfaceFrameId::DialogUpButtonUp,
+                InterfaceFrameId::DialogUpButtonUp,
+                InterfaceFrameId::DialogUpButtonUp);
+        }
     } else {
         int scrollUpX = isNormalWindow                          ? inventoryLayout.scrollButtonX
             : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
@@ -1964,18 +2011,30 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         // Left inventory down button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        gInventoryScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
             109, 82,
             KEY_ARROW_DOWN, -1,
             InterfaceFrameId::DialogDownButtonUp,
             InterfaceFrameId::DialogDownButtonDown);
+        if (gInventoryScrollDownButton != -1) {
+            buttonSetDisabledFrm(gInventoryScrollDownButton,
+                InterfaceFrameId::DialogDownButtonUp,
+                InterfaceFrameId::DialogDownButtonUp,
+                InterfaceFrameId::DialogDownButtonUp);
+        }
 
         // Right inventory down button
-        buttonCreateActionWithFrm(gInventoryWindow,
+        gSecondaryInventoryScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
             342, 82,
             KEY_CTRL_ARROW_DOWN, -1,
             InterfaceFrameId::DialogDownButtonUp,
             InterfaceFrameId::DialogDownButtonDown);
+        if (gSecondaryInventoryScrollDownButton != -1) {
+            buttonSetDisabledFrm(gSecondaryInventoryScrollDownButton,
+                InterfaceFrameId::DialogDownButtonUp,
+                InterfaceFrameId::DialogDownButtonUp,
+                InterfaceFrameId::DialogDownButtonUp);
+        }
 
         // Invisible button representing left character.
         buttonCreateAction(gInventoryBarterBackgroundWindow,
@@ -2043,24 +2102,48 @@ static bool _setup_inventory(int inventoryWindowType)
         }
     } else {
         // Left offered inventory up button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        playerTableScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
             128, 113, KEY_PAGE_UP, -1,
             InterfaceFrameId::InventoryButtonOutUp, InterfaceFrameId::InventoryButtonInUp);
+        if (playerTableScrollUpButton != -1) {
+            buttonSetDisabledFrm(playerTableScrollUpButton,
+                InterfaceFrameId::InventoryButtonUpDisabled,
+                InterfaceFrameId::InventoryButtonUpDisabled,
+                InterfaceFrameId::InventoryButtonUpDisabled);
+        }
 
         // Left offered inventory down button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        playerTableScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
             128, 136, KEY_PAGE_DOWN, -1,
             InterfaceFrameId::InventoryButtonOutDown, InterfaceFrameId::InventoryButtonInDown);
+        if (playerTableScrollDownButton != -1) {
+            buttonSetDisabledFrm(playerTableScrollDownButton,
+                InterfaceFrameId::InventoryButtonDownDisabled,
+                InterfaceFrameId::InventoryButtonDownDisabled,
+                InterfaceFrameId::InventoryButtonDownDisabled);
+        }
 
         // Right offered inventory up button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        bartererTableScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
             333, 113, KEY_CTRL_PAGE_UP, -1,
             InterfaceFrameId::InventoryButtonOutUp, InterfaceFrameId::InventoryButtonInUp);
+        if (bartererTableScrollUpButton != -1) {
+            buttonSetDisabledFrm(bartererTableScrollUpButton,
+                InterfaceFrameId::InventoryButtonUpDisabled,
+                InterfaceFrameId::InventoryButtonUpDisabled,
+                InterfaceFrameId::InventoryButtonUpDisabled);
+        }
 
         // Right offered inventory down button.
-        buttonCreateActionWithFrm(gInventoryWindow,
+        bartererTableScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
             333, 136, KEY_CTRL_PAGE_DOWN, -1,
             InterfaceFrameId::InventoryButtonOutDown, InterfaceFrameId::InventoryButtonInDown);
+        if (bartererTableScrollDownButton != -1) {
+            buttonSetDisabledFrm(bartererTableScrollDownButton,
+                InterfaceFrameId::InventoryButtonDownDisabled,
+                InterfaceFrameId::InventoryButtonDownDisabled,
+                InterfaceFrameId::InventoryButtonDownDisabled);
+        }
     }
 
     gInventoryRightHandItem = nullptr;
@@ -2274,26 +2357,9 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         assert(false && "Should be unreachable");
     }
 
-    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
-        || inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON
-        || inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        if (gInventoryScrollUpButton != -1) {
-            if (stackOffset <= 0) {
-                buttonDisable(gInventoryScrollUpButton);
-            } else {
-                buttonEnable(gInventoryScrollUpButton);
-            }
-        }
-
-        if (gInventoryScrollDownButton != -1) {
-            int visibleSlots = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL ? inventoryLayout.visibleSlots : gInventorySlotsCount;
-            if (_pud->length - stackOffset <= visibleSlots) {
-                buttonDisable(gInventoryScrollDownButton);
-            } else {
-                buttonEnable(gInventoryScrollDownButton);
-            }
-        }
-    }
+    int visibleSlots = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL ? inventoryLayout.visibleSlots : gInventorySlotsCount;
+    int step = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL ? inventoryLayout.columns : 1;
+    inventoryUpdateScrollButtons(gInventoryScrollUpButton, gInventoryScrollDownButton, stackOffset, _pud->length, visibleSlots, step);
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
         for (int slotIndex = 0; slotIndex + stackOffset < _pud->length && slotIndex < inventoryLayout.visibleSlots; slotIndex += 1) {
@@ -2423,22 +2489,8 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
         }
     }
 
-    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        if (gSecondaryInventoryScrollUpButton != -1) {
-            if (stackOffset <= 0) {
-                buttonDisable(gSecondaryInventoryScrollUpButton);
-            } else {
-                buttonEnable(gSecondaryInventoryScrollUpButton);
-            }
-        }
-
-        if (gSecondaryInventoryScrollDownButton != -1) {
-            if (inventory->length - stackOffset <= gInventorySlotsCount) {
-                buttonDisable(gSecondaryInventoryScrollDownButton);
-            } else {
-                buttonEnable(gSecondaryInventoryScrollDownButton);
-            }
-        }
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT || inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
+        inventoryUpdateScrollButtons(gSecondaryInventoryScrollUpButton, gSecondaryInventoryScrollDownButton, stackOffset, inventory->length, gInventorySlotsCount);
     }
 
     // CE: Show items weight.
@@ -5593,6 +5645,9 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
         : barterComputeTablesValue(gDude, _target_stack[0]);
 
     if (leftTable != nullptr) {
+        inventoryUpdateScrollButtons(playerTableScrollUpButton, playerTableScrollDownButton,
+            gPlayerTableOffset, leftTable->data.inventory.length, gInventorySlotsCount);
+
         unsigned char* src = windowGetBuffer(win);
         blitBufferToBuffer(src + INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH * INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD + INVENTORY_TRADE_WINDOW_OFFSET, INVENTORY_SLOT_WIDTH, rectHeight + 1, INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH, windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
 
@@ -5630,6 +5685,9 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
     }
 
     if (rightTable != nullptr) {
+        inventoryUpdateScrollButtons(bartererTableScrollUpButton, bartererTableScrollDownButton,
+            gBartererTableOffset, rightTable->data.inventory.length, gInventorySlotsCount);
+
         unsigned char* src = windowGetBuffer(win);
         blitBufferToBuffer(src + INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH * INVENTORY_TRADE_INNER_RIGHT_SCROLLER_Y + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_X_PAD + INVENTORY_TRADE_WINDOW_OFFSET, INVENTORY_SLOT_WIDTH, rectHeight + 1, INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH, windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * INVENTORY_TRADE_INNER_RIGHT_SCROLLER_Y + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_X_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
 
