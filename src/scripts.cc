@@ -1842,7 +1842,7 @@ int scriptsSetDudeScript()
     }
 
     Proto* proto;
-    if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) == -1) {
+    if (protoGetProto(CritterProtoTypeId::Dude, &proto) == -1) {
         debugPrint("Error in scr_set_dude_script: can't find obj_dude proto!");
         return -1;
     }

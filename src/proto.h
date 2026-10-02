@@ -136,7 +136,7 @@ void protoExit();
 int _proto_save_pid(int pid);
 int proto_new(int* pid, ObjectType type);
 void _proto_remove_all();
-int protoGetProto(int pid, Proto** protoPtr);
+int protoGetProto(const ProtoId& protoId, Proto** protoPtr);
 int _ResetPlayer();
 int proto_max_id(ObjectType type);
 

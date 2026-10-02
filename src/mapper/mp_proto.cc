@@ -448,8 +448,9 @@ int proto_critter_flags_modify(int pid)
     int rc;
     int flags = 0;
     int index;
+    const ProtoId protoId = ProtoId(pid);
 
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
@@ -550,9 +551,9 @@ int proto_critter_flags_modify(int pid)
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if ((critFlagList[index] & flags) != 0) {
-            critterFlagSet(pid, critFlagList[index]);
+            critterFlagSet(protoId.pid(), critFlagList[index]);
         } else {
-            critterFlagUnset(pid, critFlagList[index]);
+            critterFlagUnset(protoId.pid(), critFlagList[index]);
         }
     }
 
@@ -679,17 +680,17 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
     for (int row = 0; row < kGridRows; row++) {
         for (int col = 0; col < kGridCols; col++) {
             int idx = scrollOffset + row * kGridCols + col;
-            int pid = idx | (pidType << 24);
+            const ProtoId protoId = ProtoId(idx | (pidType << 24));
             int cellX = kGridX + col * kCellPitchX + 1;
             int cellY = kGridY + row * kCellPitchY + 1;
 
             bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, itemIconsBgColor());
             Proto* proto;
-            if (protoGetProto(pid, &proto) != -1) {
+            if (protoGetProto(protoId, &proto) != -1) {
                 int fid = fidFunc ? fidFunc(proto) : proto->fid;
                 artRender(FrmId(fid), buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
 
-                const char* name = protoGetName(pid);
+                const char* name = protoGetName(protoId.pid());
                 int textY = cellY + kArtH + 5;
                 bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
                 windowDrawText(win, name, 80, cellX, textY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
@@ -762,16 +763,16 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
 
         if (key >= kBaseKey && key < kBaseKey + kCells) {
             int pidIndex = scrollOffset + key - kBaseKey;
-            int pid = pidIndex | (pidType << 24);
+            const ProtoId protoId = ProtoId(pidIndex | (pidType << 24));
 
             Proto* proto;
-            if (protoGetProto(pid, &proto) == -1) continue;
+            if (protoGetProto(protoId, &proto) == -1) continue;
 
             char prompt[128];
-            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(pid));
+            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(protoId.pid()));
             int quantity = 1;
             if (win_get_num_i(&quantity, 1, 32000, false, prompt, 100, 100) != -1) {
-                addFunc(pid, quantity);
+                addFunc(protoId.pid(), quantity);
             }
         } else if (key == KEY_BRACKET_RIGHT) {
             if (scrollOffset + kCells <= maxOffset) {

@@ -187,7 +187,7 @@ int critterLoad(File* stream)
     }
 
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    protoGetProto(gDude, &proto);
 
     return protoCritterDataRead(stream, &(proto->critter.data));
 }
@@ -200,7 +200,7 @@ int critterSave(File* stream)
     }
 
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    protoGetProto(gDude, &proto);
 
     return protoCritterDataWrite(stream, &(proto->critter.data));
 }
@@ -406,7 +406,7 @@ int critterAdjustRadiation(Object* obj, int amount)
     amount = scriptHooks_AdjustRads(obj, amount);
 
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    protoGetProto(gDude, &proto);
 
     if (amount > 0) {
         amount -= critterGetStat(obj, STAT_RADIATION_RESISTANCE) * amount / 100;
@@ -478,7 +478,7 @@ int critterCheckRadiationEvent(Object* obj)
     }
 
     Proto* proto;
-    protoGetProto(obj->pid, &proto);
+    protoGetProto(obj, &proto);
     if ((proto->critter.data.flags & CRITTER_DUDE_RADIATED) == CRITTER_NONE) {
         return 0;
     }
@@ -664,12 +664,13 @@ int radiationEventWrite(File* stream, void* data)
 // 0x42D82C critter_get_base_damage_type
 DamageType critterGetDamageType(Object* obj)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = ProtoId(obj);
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return DAMAGE_TYPE_NORMAL;
     }
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return DAMAGE_TYPE_NORMAL;
     }
 
@@ -739,12 +740,13 @@ KillType critterGetKillType(Object* obj)
         return KILL_TYPE_MAN;
     }
 
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = obj;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return KILL_TYPE_INVALID;
     }
 
     Proto* proto;
-    protoGetProto(obj->pid, &proto);
+    protoGetProto(protoId, &proto);
 
     return proto->critter.data.killType;
 }
@@ -907,7 +909,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
 int critterGetExp(Object* critter)
 {
     Proto* proto;
-    protoGetProto(critter->pid, &proto);
+    protoGetProto(critter, &proto);
     return proto->critter.data.experience;
 }
 
@@ -996,12 +998,13 @@ BodyType critterGetBodyType(Object* critter)
         return BODY_TYPE_BIPED;
     }
 
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return BODY_TYPE_BIPED;
     }
 
     Proto* proto;
-    protoGetProto(critter->pid, &proto);
+    protoGetProto(protoId, &proto);
     return proto->critter.data.bodyType;
 }
 
@@ -1053,7 +1056,7 @@ int gcdLoad(const char* path)
     }
 
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    protoGetProto(gDude, &proto);
 
     if (protoCritterDataRead(stream, &(proto->critter.data)) == -1) {
         fileClose(stream);
@@ -1125,7 +1128,7 @@ int gcdSave(const char* path)
     }
 
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    protoGetProto(gDude, &proto);
 
     if (protoCritterDataWrite(stream, &(proto->critter.data)) == -1) {
         fileClose(stream);
@@ -1187,7 +1190,7 @@ void dudeDisableState(DudeState state)
     }
 
     Proto* proto;
-    if (protoGetProto(gDude->pid, &proto) == -1) {
+    if (protoGetProto(gDude, &proto) == -1) {
         return;
     }
 
@@ -1219,7 +1222,7 @@ void dudeEnableState(DudeState state)
     }
 
     Proto* proto;
-    if (protoGetProto(gDude->pid, &proto) == -1) {
+    if (protoGetProto(gDude, &proto) == -1) {
         return;
     }
 
@@ -1274,7 +1277,7 @@ bool dudeHasState(DudeState state)
     }
 
     Proto* proto;
-    if (protoGetProto(gDude->pid, &proto) == -1) {
+    if (protoGetProto(gDude, &proto) == -1) {
         return false;
     }
 
@@ -1486,16 +1489,18 @@ bool critterIsFleeing(Object* critter)
 // 0x42E6AC critter_flag_check
 bool critterFlagCheck(int pid, CritterFlags flag)
 {
-    if (pid == -1) {
+    const ProtoId protoId = ProtoId(pid);
+
+    if (!protoId.valid()) {
         return false;
     }
 
-    if (objectTypeFromPid(pid) != OBJ_TYPE_CRITTER) {
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return false;
     }
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 
@@ -1505,16 +1510,18 @@ bool critterFlagCheck(int pid, CritterFlags flag)
 // 0x42E6F0 critter_flag_set
 void critterFlagSet(int pid, CritterFlags flag)
 {
-    if (pid == -1) {
+    const ProtoId protoId = ProtoId(pid);
+
+    if (!protoId.valid()) {
         return;
     }
 
-    if (objectTypeFromPid(pid) != OBJ_TYPE_CRITTER) {
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return;
     }
 
@@ -1524,16 +1531,18 @@ void critterFlagSet(int pid, CritterFlags flag)
 // 0x42E71C critter_flag_unset
 void critterFlagUnset(int pid, CritterFlags flag)
 {
-    if (pid == -1) {
+    const ProtoId protoId = ProtoId(pid);
+
+    if (!protoId.valid()) {
         return;
     }
 
-    if (objectTypeFromPid(pid) != OBJ_TYPE_CRITTER) {
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return;
     }
 
