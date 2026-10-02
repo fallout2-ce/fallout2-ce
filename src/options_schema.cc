@@ -164,6 +164,29 @@ namespace {
         return !choices->empty();
     }
 
+    bool parseDescriptorValue(const std::string& raw, const SettingDescriptor& descriptor, SettingValue* value)
+    {
+        if (!parseSettingValue(raw, descriptor.valueType, value)) return false;
+        if (descriptor.valueType != SettingValueType::Choice) return true;
+
+        int choiceValue = std::get<int>(*value);
+        return std::any_of(descriptor.choices.begin(), descriptor.choices.end(), [choiceValue](const SettingChoice& choice) {
+            return choice.value == choiceValue;
+        });
+    }
+
+    bool parseMessageId(Config* config, const char* sectionName, const char* key, int* messageId)
+    {
+        char* raw = nullptr;
+        if (!configGetString(config, sectionName, key, &raw)) return true;
+        if (raw == nullptr) return false;
+
+        SettingValue value;
+        if (!parseSettingValue(raw, SettingValueType::Integer, &value)) return false;
+        *messageId = std::get<int>(value);
+        return true;
+    }
+
 } // namespace
 
 bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingDescriptor* outDescriptor)
@@ -218,26 +241,16 @@ bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingD
     char* defStr = nullptr;
     if (!configGetString(config, sectionName, "default", &defStr)
         || defStr == nullptr
-        || !parseSettingValue(defStr, outDescriptor->valueType, &outDescriptor->defaultValue)) return false;
-    if (outDescriptor->valueType == SettingValueType::Choice) {
-        int defaultValue = std::get<int>(outDescriptor->defaultValue);
-        auto it = std::find_if(outDescriptor->choices.begin(), outDescriptor->choices.end(), [defaultValue](const SettingChoice& choice) {
-            return choice.value == defaultValue;
-        });
-        if (it == outDescriptor->choices.end()) return false;
-    }
+        || !parseDescriptorValue(defStr, *outDescriptor, &outDescriptor->defaultValue)) return false;
 
     char* vanStr = nullptr;
     if (configGetString(config, sectionName, "vanilla", &vanStr) && vanStr != nullptr) {
         SettingValue vanillaValue;
-        if (!parseSettingValue(vanStr, outDescriptor->valueType, &vanillaValue)) return false;
+        if (!parseDescriptorValue(vanStr, *outDescriptor, &vanillaValue)) return false;
         outDescriptor->vanillaValue = std::move(vanillaValue);
     }
 
-    int labelId = -1;
-    if (configGetInt(config, sectionName, "label_id", &labelId)) {
-        outDescriptor->labelMessageId = labelId;
-    }
+    if (!parseMessageId(config, sectionName, "label_id", &outDescriptor->labelMessageId)) return false;
 
     char* labelStr = nullptr;
     if (configGetString(config, sectionName, "label", &labelStr) && labelStr != nullptr && *labelStr != '\0') {
@@ -246,10 +259,7 @@ bool optionsSchemaParseSection(Config* config, const char* sectionName, SettingD
         outDescriptor->fallbackLabel = humanize(outDescriptor->key);
     }
 
-    int descId = -1;
-    if (configGetInt(config, sectionName, "desc_id", &descId)) {
-        outDescriptor->descriptionMessageId = descId;
-    }
+    if (!parseMessageId(config, sectionName, "desc_id", &outDescriptor->descriptionMessageId)) return false;
 
     char* descStr = nullptr;
     if (configGetString(config, sectionName, "description", &descStr) && descStr != nullptr && *descStr != '\0') {
