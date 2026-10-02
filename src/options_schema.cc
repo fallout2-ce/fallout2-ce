@@ -12,132 +12,157 @@ namespace fallout {
 
 namespace {
 
-std::string trim(const std::string& str)
-{
-    auto isNotSpace = [](unsigned char ch) { return !std::isspace(ch); };
-    auto start = std::find_if(str.begin(), str.end(), isNotSpace);
-    if (start == str.end()) return "";
-    auto end = std::find_if(str.rbegin(), str.rend(), isNotSpace).base();
-    return std::string(start, end);
-}
+    std::string trim(const std::string& str)
+    {
+        auto isNotSpace = [](unsigned char ch) { return !std::isspace(ch); };
+        auto start = std::find_if(str.begin(), str.end(), isNotSpace);
+        if (start == str.end()) return "";
+        auto end = std::find_if(str.rbegin(), str.rend(), isNotSpace).base();
+        return std::string(start, end);
+    }
 
-std::string toLower(std::string str)
-{
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char ch) { return std::tolower(ch); });
-    return str;
-}
+    std::string toLower(std::string str)
+    {
+        std::transform(str.begin(), str.end(), str.begin(), [](unsigned char ch) { return std::tolower(ch); });
+        return str;
+    }
 
-std::string humanize(const std::string& key)
-{
-    std::string result;
-    bool capitalizeNext = true;
-    for (char ch : key) {
-        if (ch == '_') {
-            result += ' ';
-            capitalizeNext = true;
-        } else if (capitalizeNext) {
-            result += static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
-            capitalizeNext = false;
-        } else {
-            result += ch;
+    std::string humanize(const std::string& key)
+    {
+        std::string result;
+        bool capitalizeNext = true;
+        for (char ch : key) {
+            if (ch == '_') {
+                result += ' ';
+                capitalizeNext = true;
+            } else if (capitalizeNext) {
+                result += static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+                capitalizeNext = false;
+            } else {
+                result += ch;
+            }
+        }
+        return result;
+    }
+
+    bool parseSettingCategory(const std::string& raw, SettingCategory* category)
+    {
+        std::string lower = toLower(trim(raw));
+        if (lower == "screen" || lower == "display")
+            *category = SettingCategory::Screen;
+        else if (lower == "interface" || lower == "ui")
+            *category = SettingCategory::Interface;
+        else if (lower == "audio" || lower == "sound")
+            *category = SettingCategory::Audio;
+        else if (lower == "gameplay")
+            *category = SettingCategory::Gameplay;
+        else if (lower == "preferences")
+            *category = SettingCategory::Preferences;
+        else if (lower == "qualityoflife" || lower == "quality_of_life" || lower == "qol")
+            *category = SettingCategory::QualityOfLife;
+        else if (lower == "system")
+            *category = SettingCategory::System;
+        else if (lower == "debug")
+            *category = SettingCategory::Debug;
+        else if (lower == "combatai" || lower == "combat_ai" || lower == "combat")
+            *category = SettingCategory::CombatAi;
+        else if (lower == "mapper")
+            *category = SettingCategory::Mapper;
+        else
+            return false;
+        return true;
+    }
+
+    bool parseSettingValueType(const std::string& raw, SettingValueType* valueType)
+    {
+        std::string lower = toLower(trim(raw));
+        if (lower == "bool" || lower == "boolean")
+            *valueType = SettingValueType::Boolean;
+        else if (lower == "int" || lower == "integer")
+            *valueType = SettingValueType::Integer;
+        else if (lower == "real" || lower == "float" || lower == "double")
+            *valueType = SettingValueType::Real;
+        else if (lower == "text" || lower == "string")
+            *valueType = SettingValueType::Text;
+        else if (lower == "choice" || lower == "enum")
+            *valueType = SettingValueType::Choice;
+        else if (lower == "key" || lower == "key_binding" || lower == "keybinding")
+            *valueType = SettingValueType::KeyBinding;
+        else
+            return false;
+        return true;
+    }
+
+    bool parseSettingApplyPolicy(const std::string& raw, SettingApplyPolicy* applyPolicy)
+    {
+        std::string lower = toLower(trim(raw));
+        if (lower == "on_close" || lower == "onclose")
+            *applyPolicy = SettingApplyPolicy::OnClose;
+        else if (lower == "next_game" || lower == "nextgame")
+            *applyPolicy = SettingApplyPolicy::NextGame;
+        else if (lower == "restart")
+            *applyPolicy = SettingApplyPolicy::Restart;
+        else
+            return false;
+        return true;
+    }
+
+    bool parseSettingValue(const std::string& raw, SettingValueType type, SettingValue* value)
+    {
+        std::string trimmed = trim(raw);
+        switch (type) {
+        case SettingValueType::Boolean: {
+            std::string lower = toLower(trimmed);
+            if (lower == "1" || lower == "true" || lower == "yes" || lower == "on")
+                *value = true;
+            else if (lower == "0" || lower == "false" || lower == "no" || lower == "off")
+                *value = false;
+            else
+                return false;
+            return true;
+        }
+        case SettingValueType::Integer:
+        case SettingValueType::Choice:
+        case SettingValueType::KeyBinding: {
+            char* end;
+            errno = 0;
+            long number = std::strtol(trimmed.c_str(), &end, 0);
+            if (errno != 0 || end == trimmed.c_str() || *end != '\0' || number < INT_MIN || number > INT_MAX) return false;
+            *value = static_cast<int>(number);
+            return true;
+        }
+        case SettingValueType::Real: {
+            char* end;
+            errno = 0;
+            double number = std::strtod(trimmed.c_str(), &end);
+            if (errno != 0 || end == trimmed.c_str() || *end != '\0' || !std::isfinite(number)) return false;
+            *value = number;
+            return true;
+        }
+        case SettingValueType::Text:
+        default:
+            *value = trimmed;
+            return true;
         }
     }
-    return result;
-}
 
-bool parseSettingCategory(const std::string& raw, SettingCategory* category)
-{
-    std::string lower = toLower(trim(raw));
-    if (lower == "screen" || lower == "display") *category = SettingCategory::Screen;
-    else if (lower == "interface" || lower == "ui") *category = SettingCategory::Interface;
-    else if (lower == "audio" || lower == "sound") *category = SettingCategory::Audio;
-    else if (lower == "gameplay") *category = SettingCategory::Gameplay;
-    else if (lower == "preferences") *category = SettingCategory::Preferences;
-    else if (lower == "qualityoflife" || lower == "quality_of_life" || lower == "qol") *category = SettingCategory::QualityOfLife;
-    else if (lower == "system") *category = SettingCategory::System;
-    else if (lower == "debug") *category = SettingCategory::Debug;
-    else if (lower == "combatai" || lower == "combat_ai" || lower == "combat") *category = SettingCategory::CombatAi;
-    else if (lower == "mapper") *category = SettingCategory::Mapper;
-    else return false;
-    return true;
-}
-
-bool parseSettingValueType(const std::string& raw, SettingValueType* valueType)
-{
-    std::string lower = toLower(trim(raw));
-    if (lower == "bool" || lower == "boolean") *valueType = SettingValueType::Boolean;
-    else if (lower == "int" || lower == "integer") *valueType = SettingValueType::Integer;
-    else if (lower == "real" || lower == "float" || lower == "double") *valueType = SettingValueType::Real;
-    else if (lower == "text" || lower == "string") *valueType = SettingValueType::Text;
-    else if (lower == "choice" || lower == "enum") *valueType = SettingValueType::Choice;
-    else if (lower == "key" || lower == "key_binding" || lower == "keybinding") *valueType = SettingValueType::KeyBinding;
-    else return false;
-    return true;
-}
-
-bool parseSettingApplyPolicy(const std::string& raw, SettingApplyPolicy* applyPolicy)
-{
-    std::string lower = toLower(trim(raw));
-    if (lower == "on_close" || lower == "onclose") *applyPolicy = SettingApplyPolicy::OnClose;
-    else if (lower == "next_game" || lower == "nextgame") *applyPolicy = SettingApplyPolicy::NextGame;
-    else if (lower == "restart") *applyPolicy = SettingApplyPolicy::Restart;
-    else return false;
-    return true;
-}
-
-bool parseSettingValue(const std::string& raw, SettingValueType type, SettingValue* value)
-{
-    std::string trimmed = trim(raw);
-    switch (type) {
-    case SettingValueType::Boolean: {
-        std::string lower = toLower(trimmed);
-        if (lower == "1" || lower == "true" || lower == "yes" || lower == "on") *value = true;
-        else if (lower == "0" || lower == "false" || lower == "no" || lower == "off") *value = false;
-        else return false;
-        return true;
+    bool parseChoices(const std::string& raw, std::vector<SettingChoice>* choices)
+    {
+        std::stringstream ss(raw);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            item = trim(item);
+            if (item.empty()) continue;
+            size_t colon = item.find(':');
+            if (colon == std::string::npos) return false;
+            std::string valStr = trim(item.substr(0, colon));
+            std::string labelStr = trim(item.substr(colon + 1));
+            SettingValue value;
+            if (labelStr.empty() || !parseSettingValue(valStr, SettingValueType::Integer, &value)) return false;
+            choices->push_back({ std::get<int>(value), labelStr });
+        }
+        return !choices->empty();
     }
-    case SettingValueType::Integer:
-    case SettingValueType::Choice:
-    case SettingValueType::KeyBinding: {
-        char* end;
-        errno = 0;
-        long number = std::strtol(trimmed.c_str(), &end, 0);
-        if (errno != 0 || end == trimmed.c_str() || *end != '\0' || number < INT_MIN || number > INT_MAX) return false;
-        *value = static_cast<int>(number);
-        return true;
-    }
-    case SettingValueType::Real: {
-        char* end;
-        errno = 0;
-        double number = std::strtod(trimmed.c_str(), &end);
-        if (errno != 0 || end == trimmed.c_str() || *end != '\0' || !std::isfinite(number)) return false;
-        *value = number;
-        return true;
-    }
-    case SettingValueType::Text:
-    default:
-        *value = trimmed;
-        return true;
-    }
-}
-
-bool parseChoices(const std::string& raw, std::vector<SettingChoice>* choices)
-{
-    std::stringstream ss(raw);
-    std::string item;
-    while (std::getline(ss, item, ',')) {
-        item = trim(item);
-        if (item.empty()) continue;
-        size_t colon = item.find(':');
-        if (colon == std::string::npos) return false;
-        std::string valStr = trim(item.substr(0, colon));
-        std::string labelStr = trim(item.substr(colon + 1));
-        SettingValue value;
-        if (labelStr.empty() || !parseSettingValue(valStr, SettingValueType::Integer, &value)) return false;
-        choices->push_back({ std::get<int>(value), labelStr });
-    }
-    return !choices->empty();
-}
 
 } // namespace
 
