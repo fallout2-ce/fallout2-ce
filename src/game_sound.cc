@@ -144,6 +144,9 @@ static int gSoundEffectsVolume = VOLUME_MAX;
 struct GameSoundChannelSlot {
     Sound* sound = nullptr;
     unsigned int serial = 0;
+    // Object speaking the line, or nullptr. Only compared, never
+    // dereferenced, so it is safe if the object is gone.
+    Object* speaker = nullptr;
 };
 
 // Fixed-size pool of channels for one [AudioChannelType]. Slots are sized
@@ -207,7 +210,7 @@ static int _gsound_setup_paths();
 static void gameSoundChannelPoolInit(GameSoundChannelPool* pool, AudioChannelType type);
 static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool);
 static void gameSoundChannelPoolSetVolume(GameSoundChannelPool* pool, int volume);
-static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume);
+static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume, Object* speaker);
 static void gameSoundChannelSlotCallback(void* userData, int event);
 
 // Generic decoded backend: supports arbitrary script/speech paths via audio decoders.
@@ -1109,7 +1112,7 @@ void speechResume()
     }
 }
 
-int floatSoundPlay(const char* fileName)
+int floatSoundPlay(const char* fileName, Object* speaker)
 {
     if (!gGameSoundInitialized || !gSpeechEnabled || !settings.sound.float_speech) {
         return -1;
@@ -1136,7 +1139,7 @@ int floatSoundPlay(const char* fileName)
     }
 
     // Same scaling as speech, so they sound equally loud.
-    return gameSoundChannelPoolPlay(&floatChannelPool, path, (int)(gSpeechVolume * 0.69));
+    return gameSoundChannelPoolPlay(&floatChannelPool, path, (int)(gSpeechVolume * 0.69), speaker);
 }
 
 void floatSoundStopAll()
@@ -1166,7 +1169,7 @@ int pipboySoundPlay(const char* fileName)
         return -1;
     }
 
-    return gameSoundChannelPoolPlay(&pipboyChannelPool, path, (int)(gSpeechVolume * 0.69));
+    return gameSoundChannelPoolPlay(&pipboyChannelPool, path, (int)(gSpeechVolume * 0.69), nullptr);
 }
 
 void pipboySoundStop()
@@ -2171,6 +2174,7 @@ static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool)
             slot.sound = nullptr;
             soundDelete(sound);
         }
+        slot.speaker = nullptr;
     }
 }
 
@@ -2185,18 +2189,32 @@ static void gameSoundChannelPoolSetVolume(GameSoundChannelPool* pool, int volume
 
 // Plays [path] on a free channel of [pool]. If every channel is busy, the
 // oldest sound is stopped to make room, since the newest line is usually the
-// one that matters.
-static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume)
+// one that matters. A [speaker] has at most one line playing: a new line
+// from the same speaker replaces the old one, so clicking an NPC over and
+// over does not stack its lines on top of each other.
+static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume, Object* speaker)
 {
     GameSoundChannelSlot* target = nullptr;
-    for (GameSoundChannelSlot& slot : pool->slots) {
-        if (slot.sound == nullptr) {
-            target = &slot;
-            break;
-        }
 
-        if (target == nullptr || slot.serial < target->serial) {
-            target = &slot;
+    if (speaker != nullptr) {
+        for (GameSoundChannelSlot& slot : pool->slots) {
+            if (slot.sound != nullptr && slot.speaker == speaker) {
+                target = &slot;
+                break;
+            }
+        }
+    }
+
+    if (target == nullptr) {
+        for (GameSoundChannelSlot& slot : pool->slots) {
+            if (slot.sound == nullptr) {
+                target = &slot;
+                break;
+            }
+
+            if (target == nullptr || slot.serial < target->serial) {
+                target = &slot;
+            }
         }
     }
 
@@ -2207,6 +2225,7 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
     if (target->sound != nullptr) {
         Sound* evicted = target->sound;
         target->sound = nullptr;
+        target->speaker = nullptr;
         soundDelete(evicted);
     }
 
@@ -2236,6 +2255,7 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
 
     target->sound = sound;
     target->serial = pool->nextSerial++;
+    target->speaker = speaker;
 
     return 0;
 }
@@ -2243,7 +2263,9 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
 static void gameSoundChannelSlotCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
-        static_cast<GameSoundChannelSlot*>(userData)->sound = nullptr;
+        GameSoundChannelSlot* slot = static_cast<GameSoundChannelSlot*>(userData);
+        slot->sound = nullptr;
+        slot->speaker = nullptr;
     }
 }
 

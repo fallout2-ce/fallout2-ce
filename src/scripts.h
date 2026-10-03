@@ -273,7 +273,7 @@ void scriptsExecMapUpdateProc();
 void scriptsExecMapUpdateScripts(int proc);
 void scriptsExecMapExitProc();
 char* _scr_get_msg_str(int messageListId, int messageId);
-char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech);
+char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech, Object* speaker = nullptr);
 int scriptGetLocalVar(int sid, int var, ProgramValue& value);
 int scriptSetLocalVar(int sid, int var, ProgramValue& value);
 bool _scr_end_combat();
