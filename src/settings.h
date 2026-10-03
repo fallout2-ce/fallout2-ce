@@ -63,6 +63,7 @@ struct SettingDescriptor {
     bool applicable = true;
     bool commandLineOverride = false;
     int categoryOrder = 0;
+    std::string subsection;
     int labelMessageId = -1;
     int descriptionMessageId = -1;
     std::string fallbackLabel;
