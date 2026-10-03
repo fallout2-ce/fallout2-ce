@@ -106,7 +106,9 @@ void speechDelete();
 // channel pool at speech volume. Evicts the oldest float when every channel is
 // busy. Falls back to sound\sfx\ when the file is not in the speech folders,
 // like sfall.
-int floatSoundPlay(const char* fileName);
+// [speaker] (optional) keeps one line per object: a new line from the same
+// speaker replaces the one still playing.
+int floatSoundPlay(const char* fileName, Object* speaker = nullptr);
 void floatSoundStopAll();
 
 // Plays a voiced Pip-Boy line (file name in sound\pipboy\ without extension,

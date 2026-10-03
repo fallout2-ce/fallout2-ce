@@ -3027,9 +3027,17 @@ static void opGetMessageString(Program* program)
     int messageIndex = programStackPopInteger(program);
     int messageListIndex = programStackPopInteger(program);
 
+    // The script's owner is taken as the speaker, so a voiced bark from the
+    // same object replaces its previous one instead of stacking on it.
+    Object* speaker = nullptr;
+    Script* script;
+    if (scriptGetScript(scriptGetSid(program), &script) != -1) {
+        speaker = script->owner;
+    }
+
     char* string;
     if (messageIndex >= 0) {
-        string = _scr_get_msg_str_speech(messageListIndex, messageIndex, 1);
+        string = _scr_get_msg_str_speech(messageListIndex, messageIndex, 1, speaker);
         if (string == nullptr) {
             debugPrint("\nError: No message file EXISTS!: index %d, line %d", messageListIndex, messageIndex);
             string = errStr;
@@ -3695,9 +3703,6 @@ static void opAddMultipleObjectsToInventory(Program* program)
 
     if (quantity < 0) {
         quantity = 1;
-    } else if (quantity > 99999) {
-        // SFALL
-        quantity = 99999;
     }
 
     if (itemAdd(object, item, quantity) == 0) {

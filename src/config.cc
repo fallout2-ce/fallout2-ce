@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cassert>
 #include <set>
 #include <string>
 #include <vector>
@@ -87,6 +88,32 @@ void configFree(Config* config)
     dictionaryFree(config);
 }
 
+bool configCopy(Config* destination, const Config* source)
+{
+    if (destination == nullptr || source == nullptr
+        || !destination->isInitialized() || !source->isInitialized()) {
+        return false;
+    }
+    assert(destination != source);
+    assert(destination->entriesLength == 0);
+
+    for (int sectionIndex = 0; sectionIndex < source->entriesLength; sectionIndex++) {
+        const DictionaryEntry& sectionEntry = source->entries[sectionIndex];
+        const auto* section = static_cast<const ConfigSection*>(sectionEntry.value);
+        if (!configEnsureSectionExists(destination, sectionEntry.key)) {
+            return false;
+        }
+        for (int keyIndex = 0; keyIndex < section->entriesLength; keyIndex++) {
+            const DictionaryEntry& keyEntry = section->entries[keyIndex];
+            const char* value = *static_cast<char* const*>(keyEntry.value);
+            if (!configSetString(destination, sectionEntry.key, keyEntry.key, value)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 // Parses command line argments and adds them into the config.
 //
 // The expected format of [argv] elements are "[section]key=value", otherwise
@@ -96,7 +123,7 @@ void configFree(Config* config)
 // I don't know if this is intentional or it's bug.
 //
 // 0x42BE38
-bool configParseCommandLineArguments(Config* config, int argc, char** argv)
+bool configParseCommandLineArguments(Config* config, int argc, char** argv, void (*onOverride)(const char*, const char*))
 {
     if (config == nullptr) {
         return false;
@@ -125,6 +152,9 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
         std::string key;
         std::string value;
         if (configParseKeyValue(pch + 1, key, value)) {
+            if (onOverride != nullptr) {
+                onOverride(sectionKey, key.c_str());
+            }
             if (!configSetString(config, sectionKey, key.c_str(), value.c_str())) {
                 *pch = ']';
                 return false;
@@ -215,6 +245,27 @@ bool configSetString(Config* config, const char* sectionKey, const char* key, co
     }
 
     return true;
+}
+
+bool configRemoveKey(Config* config, const char* sectionKey, const char* key)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr) {
+        return false;
+    }
+
+    int sectionIndex = dictionaryGetIndexByKey(config, sectionKey);
+    if (sectionIndex == -1) {
+        return true;
+    }
+
+    ConfigSection* section = static_cast<ConfigSection*>(config->entries[sectionIndex].value);
+    int keyIndex = dictionaryGetIndexByKey(section, key);
+    if (keyIndex == -1) {
+        return true;
+    }
+
+    internal_free(*static_cast<char**>(section->entries[keyIndex].value));
+    return dictionaryRemoveValue(section, key) == 0;
 }
 
 // 0x42C05C
@@ -632,9 +683,9 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
         return false;
     }
 
-    if (compat_remove(backupPath.c_str()) != 0 && errno != ENOENT) {
-        return false;
-    }
+    // The new config is already installed. Backup cleanup failure does not
+    // make the save fail, since callers cannot roll back an installed file.
+    compat_remove(backupPath.c_str());
     return true;
 }
 
