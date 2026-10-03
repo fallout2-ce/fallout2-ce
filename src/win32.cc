@@ -30,6 +30,9 @@
 #include "platform/ios/paths.h"
 #endif
 
+// explicit `atexit` group
+#include "audio_engine.h"
+
 namespace fallout {
 
 // 0x51E444 GNW95_isActive
@@ -102,7 +105,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    atexit(SDL_Quit);
+    atexit([] {
+        audioEngineExit();
+        SDL_Quit();
+    });
 
     SDL_ShowCursor(SDL_DISABLE);
 
