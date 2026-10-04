@@ -266,7 +266,7 @@ T programStackPopEnum(Program* program);
 inline ProtoId programStackPopProtoId(Program* program)
 {
     const ProtoId protoId = ProtoId(programStackPopInteger(program));
-    if (!protoId.valid()) {
+    if (protoId.hasPid() && !protoId.valid()) {
         programPrintError("invalid proto id %d", protoId.pid());
     }
 
