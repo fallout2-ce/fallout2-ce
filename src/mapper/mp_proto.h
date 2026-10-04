@@ -1,15 +1,17 @@
 #ifndef FALLOUT_MAPPER_MP_PROTO_H_
 #define FALLOUT_MAPPER_MP_PROTO_H_
 
+#include "art_defs.h"
 #include "obj_types.h"
+#include "proto_types.h"
 
 namespace fallout {
 
 class Object;
 
 union Proto;
-typedef int (*protoChooseFidCallback)(Proto* proto);
-typedef int (*protoChooseAddCallback)(int pid, int count);
+typedef FrmId (*protoChooseFidCallback)(Proto* proto);
+typedef int (*protoChooseAddCallback)(const ProtoId& protoId, int count);
 
 extern char* proto_builder_name;
 extern bool can_modify_protos;
