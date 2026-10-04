@@ -229,6 +229,7 @@ inline bool killTypeOverrideIsValid(int killType)
 }
 
 enum class ItemProtoTypeId : int {
+    Reserved = 0,
     PowerArmor = 3,
     SmallEnergyCell = 38,
     MicroFusionCell = 39,
@@ -286,7 +287,8 @@ enum class ItemProtoTypeId : int {
 };
 
 enum class CritterProtoTypeId : int {
-    Dude = 0,
+    Reserved = 0,
+    Dude = Reserved,
     GunGuardFemale = 47,
     Cyberdog = 136,
     Goris = 152,
@@ -298,6 +300,7 @@ enum class CritterProtoTypeId : int {
 };
 
 enum class SceneryProtoTypeId : int {
+    Reserved = 0,
     ExitGridAutomapMarker = 49,
     BrotherhoodDoor = 153,
     BlockingHexAutomap = 344,
@@ -311,14 +314,19 @@ enum class SceneryProtoTypeId : int {
 };
 
 enum class MiscProtoTypeId : int {
+    Reserved = 0,
     Blood = 4,
     Id0x0C = 12,
     FirstExitGrid = 16,
     LastExitGrid = 23
 };
 
-enum class WallProtoTypeId : int {};
-enum class TileProtoTypeId : int {};
+enum class WallProtoTypeId : int {
+    Reserved = 0,
+};
+enum class TileProtoTypeId : int {
+    Reserved = 0,
+};
 
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
@@ -721,11 +729,6 @@ public:
             decltype(MapProtoTypeIdToObjectType<TProtoTypeId>::value)>>
     constexpr ProtoId(TProtoTypeId protoId)
         : ProtoId(MapProtoTypeIdToObjectType<TProtoTypeId>::value, buildPid(MapProtoTypeIdToObjectType<TProtoTypeId>::value, static_cast<int>(protoId)), static_cast<int>(protoId))
-    {
-    }
-
-    constexpr ProtoId(ObjectType objectType, int protoId)
-        : ProtoId(objectType, buildPid(objectType, protoId), protoId)
     {
     }
 

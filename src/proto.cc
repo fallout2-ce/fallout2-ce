@@ -40,7 +40,7 @@ static int protoLoadProtoId(const ProtoId& protoId, Proto** out_proto);
 static int _proto_find_free_subnode(ObjectType type, Proto** out_ptr);
 static void _proto_remove_some_list(ObjectType type);
 static void _proto_remove_list(ObjectType type);
-static int _proto_new_id(ObjectType type);
+static ProtoId _proto_new_id(ObjectType type);
 
 // 0x50CF3C aProto_0
 static char _aProto_0[] = "proto\\";
@@ -1530,6 +1530,15 @@ void protoExit()
 // 0x4A08E0 proto_header_load
 static int _proto_header_load()
 {
+    constexpr ProtoId kProtoIds[OBJ_TYPE_PROTO_COUNT] = {
+        ProtoId(ItemProtoTypeId::Reserved),
+        ProtoId(CritterProtoTypeId::Reserved),
+        ProtoId(SceneryProtoTypeId::Reserved),
+        ProtoId(WallProtoTypeId::Reserved),
+        ProtoId(TileProtoTypeId::Reserved),
+        ProtoId(MiscProtoTypeId::Reserved)
+    };
+
     for (ObjectType index = OBJ_TYPE_FIRST; index < OBJ_TYPE_PROTO_COUNT; index++) {
         ProtoList* ptr = &(_protoLists[index]);
         ptr->head = nullptr;
@@ -1538,7 +1547,7 @@ static int _proto_header_load()
         ptr->max_entries_num = 1;
 
         char path[COMPAT_MAX_PATH];
-        proto_make_path(path, ProtoId(index, ProtoId::kMinProtoId));
+        proto_make_path(path, kProtoIds[index]);
         strcat(path, "\\");
         strcat(path, artGetObjectTypeName(index));
         strcat(path, ".lst");
@@ -2059,7 +2068,7 @@ int proto_new(ProtoId& protoId, ObjectType type)
         return -1;
     }
 
-    protoId = ProtoId(type, _proto_new_id(type));
+    protoId = _proto_new_id(type);
 
     switch (type) {
     case OBJ_TYPE_ITEM:
@@ -2182,12 +2191,27 @@ int protoGetProto(const ProtoId& protoId, Proto** protoPtr)
 }
 
 // 0x4A21DC proto_new_id
-static int _proto_new_id(ObjectType type)
+static ProtoId _proto_new_id(ObjectType type)
 {
     int result = _protoLists[type].max_entries_num;
     _protoLists[type].max_entries_num = result + 1;
 
-    return result;
+    switch (type) {
+    case OBJ_TYPE_ITEM:
+        return static_cast<ItemProtoTypeId>(result);
+    case OBJ_TYPE_CRITTER:
+        return static_cast<CritterProtoTypeId>(result);
+    case OBJ_TYPE_SCENERY:
+        return static_cast<SceneryProtoTypeId>(result);
+    case OBJ_TYPE_WALL:
+        return static_cast<WallProtoTypeId>(result);
+    case OBJ_TYPE_TILE:
+        return static_cast<TileProtoTypeId>(result);
+    case OBJ_TYPE_MISC:
+        return static_cast<MiscProtoTypeId>(result);
+    default:
+        return ProtoId::Empty();
+    }
 }
 
 // 0x4A2214 proto_max_id
