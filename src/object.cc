@@ -3023,11 +3023,10 @@ ObjectFlags _obj_intersects_with(Object* object, int x, int y)
                                 flags |= OBJECT_0X02;
                             }
                         } else {
-                            const ProtoId protoId = object;
-                            ObjectType type = protoId.objectType();
+                            ObjectType type = FrmId(object).objectType();
                             if (type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
                                 Proto* proto;
-                                protoGetProto(protoId, &proto);
+                                protoGetProto(object, &proto);
 
                                 bool v20;
                                 ProtoExtendedFlags extendedFlags = proto->scenery.extendedFlags;

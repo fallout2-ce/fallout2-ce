@@ -805,6 +805,11 @@ private:
 
         return ((objectType << kObjectTypeMaskPosition) & kObjectTypeMask) | (protoId & kProtoIdMask);
     }
+
+    static constexpr bool objectTypeIsValid(int type)
+    {
+        return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_PROTO_COUNT;
+    }
 };
 
 } // namespace fallout
