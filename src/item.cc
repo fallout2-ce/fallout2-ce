@@ -2005,13 +2005,13 @@ Object* weaponUnload(Object* weapon)
     }
 
     // NOTE: Uninline.
-    ProtoId ammoTyperotoId = weaponGetAmmoTypeProtoId(weapon);
-    if (!ammoTyperotoId.valid()) {
+    ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(weapon);
+    if (!ammoTypeProtoId.valid()) {
         return nullptr;
     }
 
     Object* ammo;
-    if (objectCreateWithPid(&ammo, ammoTyperotoId.pid()) != 0) {
+    if (objectCreateWithPid(&ammo, ammoTypeProtoId.pid()) != 0) {
         return nullptr;
     }
 
