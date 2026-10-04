@@ -1,5 +1,7 @@
 #include "options_schema.h"
 
+#include "debug.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -8,8 +10,6 @@
 #include <cstdlib>
 #include <sstream>
 #include <utility>
-
-#include "debug.h"
 
 namespace fallout {
 

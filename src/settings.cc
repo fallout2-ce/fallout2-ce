@@ -658,13 +658,10 @@ void settingsApplySchemaDescriptors(const std::vector<SettingDescriptor>& schema
         descriptor.choices = schemaDesc.choices;
         descriptor.vanillaValue = schemaDesc.vanillaValue;
 
-        auto descIt = std::find_if(settingDescriptors.begin(), settingDescriptors.end(), [&schemaDesc](const SettingDescriptor& desc) {
-            return desc.id == schemaDesc.id;
-        });
-        assert(descIt != settingDescriptors.end());
-        if (descIt != settingDescriptors.end()) {
-            *descIt = descriptor;
-        }
+        size_t index = static_cast<size_t>(it - settingsRegistry.begin());
+        assert(index < settingDescriptors.size());
+        assert(settingDescriptors[index].id == descriptor.id);
+        settingDescriptors[index] = descriptor;
     }
 }
 
