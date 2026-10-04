@@ -489,7 +489,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     if (selection != -1) {
         int quantity = 1;
         win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
-        protoInstAddToInven(pids[selection], quantity);
+        protoInstAddToInven(ProtoId(pids[selection]), quantity);
     }
 
     for (int i = 0; i < count; i++) {

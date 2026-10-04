@@ -1,6 +1,8 @@
 #ifndef FALLOUT_MAPPER_MP_TARGT_H_
 #define FALLOUT_MAPPER_MP_TARGT_H_
 
+#include "proto_types.h"
+
 namespace fallout {
 
 typedef struct TargetSubNode {

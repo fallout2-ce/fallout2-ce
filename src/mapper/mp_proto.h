@@ -1,7 +1,7 @@
 #ifndef FALLOUT_MAPPER_MP_PROTO_H_
 #define FALLOUT_MAPPER_MP_PROTO_H_
 
-#include "art_defs.h"
+#include "art.h"
 #include "obj_types.h"
 #include "proto_types.h"
 
