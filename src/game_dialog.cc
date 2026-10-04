@@ -4038,12 +4038,13 @@ void gameDialogResetPartyMemberCcMsgIds()
 // 0x449330
 int _gdCanBarter()
 {
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId speakerProtoId = gGameDialogSpeaker;
+    if (speakerProtoId.objectType() != OBJ_TYPE_CRITTER) {
         return 1;
     }
 
     Proto* proto;
-    if (protoGetProto(gGameDialogSpeaker->pid, &proto) == -1) {
+    if (protoGetProto(speakerProtoId, &proto) == -1) {
         return 1;
     }
 
@@ -4660,7 +4661,8 @@ void _gdCustomUpdateSetting(int option, int value)
 // 0x44A52C
 void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
 {
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId speakerProtoId = gGameDialogSpeaker;
+    if (speakerProtoId.objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -4670,7 +4672,7 @@ void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
     }
 
     Proto* proto;
-    protoGetProto(gGameDialogSpeaker->pid, &proto);
+    protoGetProto(speakerProtoId, &proto);
     if ((proto->critter.data.flags & CRITTER_BARTER) != CRITTER_NONE) {
         if (gameDialogLipSyncStarted) {
             if (soundIsPlaying(gLipsData.sound)) {

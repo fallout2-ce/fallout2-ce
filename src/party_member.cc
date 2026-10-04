@@ -860,12 +860,13 @@ bool objectIsPartyMember(Object* object)
 
 bool partyMemberPidCanEquipArmor(int pid)
 {
+    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 
-    return proto->critter.data.bodyType == BODY_TYPE_BIPED && ProtoId(pid) != CritterProtoTypeId::Marcus;
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && protoId != CritterProtoTypeId::Marcus;
 }
 
 // Returns number of active critters in the party.
@@ -1572,26 +1573,29 @@ void partyMemberSetEngineLevelUpEnabled(bool enabled)
 // 0x495EA8 partyMemberCopyLevelInfo
 static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 {
-    if (critter == nullptr) {
+    const ProtoId critterProtoId = critter;
+    const ProtoId stagedProtoId = ProtoId(stagePid);
+
+    if (!critterProtoId.valid()) {
         return -1;
     }
 
-    if (stagePid == -1) {
+    if (!stagedProtoId.valid()) {
         return -1;
     }
 
-    if (objectTypeFromPid(stagePid) != OBJ_TYPE_CRITTER) {
+    if (stagedProtoId.objectType() != OBJ_TYPE_CRITTER) {
         debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagePid);
         return -1;
     }
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
+    if (protoGetProto(critterProtoId, &proto) == -1) {
         return -1;
     }
 
     Proto* stageProto;
-    if (protoGetProto(stagePid, &stageProto) == -1) {
+    if (protoGetProto(stagedProtoId, &stageProto) == -1) {
         return -1;
     }
 

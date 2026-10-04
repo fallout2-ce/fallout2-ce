@@ -688,10 +688,17 @@ public:
     static constexpr int kEmptyPid = -1;
     static constexpr int kInvalidProtoId = -1;
     static constexpr int kMinProtoId = 0;
+    static constexpr int kMaxProtoId = 16777215;
 
     constexpr ProtoId()
         : ProtoId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId)
     {
+    }
+
+    static const ProtoId& Empty()
+    {
+        static const ProtoId emptyInstance {};
+        return emptyInstance;
     }
 
     constexpr explicit ProtoId(int pid)
@@ -738,6 +745,8 @@ public:
 
         return static_cast<TProtoTypeId>(kInvalidProtoId);
     }
+
+    constexpr bool valid() const { return hasPid() && hasObjectType() && _protoId >= kMinProtoId && _protoId <= kMaxProtoId; }
 
     constexpr bool operator==(const ProtoId& other) const
     {
@@ -795,6 +804,11 @@ private:
         }
 
         return ((objectType << kObjectTypeMaskPosition) & kObjectTypeMask) | (protoId & kProtoIdMask);
+    }
+
+    static constexpr bool objectTypeIsValid(int type)
+    {
+        return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_PROTO_COUNT;
     }
 };
 
