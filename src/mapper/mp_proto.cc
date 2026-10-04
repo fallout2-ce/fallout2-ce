@@ -664,7 +664,7 @@ static Color itemIconsBgColor()
 };
 
 // proto_choose_multi_pids_update
-static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
+static void protoChooseMultiPidsUpdate(int win, ObjectType pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
 {
     constexpr int kGridCols = 4;
     constexpr int kGridRows = 4;
@@ -680,7 +680,31 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
     for (int row = 0; row < kGridRows; row++) {
         for (int col = 0; col < kGridCols; col++) {
             int idx = scrollOffset + row * kGridCols + col;
-            const ProtoId protoId = ProtoId(idx | (pidType << 24));
+            ProtoId protoId;
+            switch(pidType){
+                case OBJ_TYPE_ITEM:
+                    protoId = static_cast<ItemProtoTypeId>(idx);
+                    break;
+                case OBJ_TYPE_CRITTER:
+                    protoId = static_cast<CritterProtoTypeId>(idx);
+                    break;
+                case OBJ_TYPE_SCENERY:
+                    protoId = static_cast<SceneryProtoTypeId>(idx);
+                    break;
+                case OBJ_TYPE_WALL:
+                    protoId = static_cast<WallProtoTypeId>(idx);
+                    break;
+                case OBJ_TYPE_TILE:
+                    protoId = static_cast<TileProtoTypeId>(idx);
+                    break;
+                case OBJ_TYPE_MISC:
+                    protoId = static_cast<MiscProtoTypeId>(idx);
+                    break;
+                default:
+                    protoId = ProtoId::Empty();
+                    break;
+            }
+
             int cellX = kGridX + col * kCellPitchX + 1;
             int cellY = kGridY + row * kCellPitchY + 1;
 
