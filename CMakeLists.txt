@@ -195,6 +195,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/opcode_context.h"
     "src/options.cc"
     "src/options.h"
+    "src/options_schema.cc"
+    "src/options_schema.h"
     "src/options_settings_model.cc"
     "src/options_settings_model.h"
     "src/palette.cc"
