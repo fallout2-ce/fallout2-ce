@@ -100,6 +100,14 @@ typedef enum PrototypeMessage {
 extern char _cd_path_base[COMPAT_MAX_PATH];
 
 extern MessageList gProtoMessageList;
+
+// Supplemental examine messages from game/proto_examine.msg in ce.dat.
+enum class ProtoExamineMessage {
+    BlindHe = 10000,
+    BlindShe,
+    BlindIt,
+    BlindYou,
+};
 extern char* _proto_none_str;
 extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 

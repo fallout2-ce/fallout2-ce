@@ -31,6 +31,7 @@
 #include "queue.h"
 #include "random.h"
 #include "scripts.h"
+#include "settings.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
@@ -313,6 +314,9 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
     ObjectType type = objectTypeFromPid(target->pid);
     if (type == OBJ_TYPE_CRITTER) {
+        const Dam crippledMask = settings.qol.show_blindness ? DAM_CRIP_LEG_ANY | DAM_CRIP_ARM_ANY : DAM_CRIP;
+        const bool hasCrippledLimbs = (target->data.critter.combat.results & crippledMask) != DAM_NONE;
+        bool hasWeaponDescription = false;
         if (target != gDude && perkGetRank(gDude, PERK_AWARENESS) && !critterIsDead(target)) {
             MessageListItem hpMessageListItem;
 
@@ -336,6 +340,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
             }
 
             if (item2 != nullptr) {
+                hasWeaponDescription = true;
                 MessageListItem weaponMessageListItem;
 
                 if (ammoGetCaliber(item2) != CALIBER_TYPE_NONE) {
@@ -381,7 +386,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
             } else {
                 MessageListItem endingMessageListItem;
 
-                if (critterIsCrippled(target)) {
+                if (hasCrippledLimbs) {
                     endingMessageListItem.num = 544; // ,
                 } else {
                     endingMessageListItem.num = 545; // .
@@ -398,7 +403,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 stringAppend(formattedText, endingMessageListItem.text);
             }
         } else {
-            int crippledMsgIdOffset = critterIsCrippled(target) ? -2 : 0;
+            int crippledMsgIdOffset = hasCrippledLimbs ? -2 : 0;
             int healthLevel;
 
             const int maximumHitPoints = critterGetStat(target, STAT_MAXIMUM_HIT_POINTS);
@@ -448,24 +453,38 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                     exit(1);
                 }
 
-                // He/she looks: %s
+                // He/she/it looks: %s
                 MessageListItem prefixMsg;
-                prefixMsg.num = 522 + critterGetStat(target, STAT_GENDER);
+                prefixMsg.num = critterGetBodyType(target) == BODY_TYPE_BIPED
+                    ? 522 + critterGetStat(target, STAT_GENDER)
+                    : 524;
                 if (!messageListGetItem(&gProtoMessageList, &prefixMsg)) {
                     debugPrint("\nError: Can't find msg num!");
                     exit(1);
                 }
 
                 snprintf(formattedText, sizeof(formattedText), prefixMsg.text, hpMessageListItem.text);
+                if (!hasCrippledLimbs) {
+                    size_t length = strlen(formattedText);
+                    while (length > 0 && formattedText[length - 1] == ' ') {
+                        formattedText[--length] = '\0';
+                    }
+                    MessageListItem endingMsg;
+                    endingMsg.num = 545; // .
+                    if (messageListGetItem(&gProtoMessageList, &endingMsg)) {
+                        stringAppend(formattedText, endingMsg.text);
+                    }
+                }
             }
         }
 
-        if (critterIsCrippled(target)) {
+        if (hasCrippledLimbs) {
             const int maximumHitPoints = critterGetStat(target, STAT_MAXIMUM_HIT_POINTS);
             const int currentHitPoints = critterGetStat(target, STAT_CURRENT_HIT_POINTS);
 
             MessageListItem crippledMsg;
-            crippledMsg.num = maximumHitPoints >= currentHitPoints ? 531 : 530;
+            const bool otherwiseUnhurt = !critterIsDead(target) && currentHitPoints >= maximumHitPoints;
+            crippledMsg.num = otherwiseUnhurt ? 531 : 530;
 
             if (target == gDude) {
                 crippledMsg.num += 2;
@@ -476,10 +495,41 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 exit(1);
             }
 
-            stringAppend(formattedText, crippledMsg.text);
+            const char* suffix = crippledMsg.text;
+            if (hasWeaponDescription) {
+                // Weapon descriptions end a sentence, but the injury text
+                // continues it. Join them with a comma and one space.
+                size_t length = strlen(formattedText);
+                while (length > 0 && formattedText[length - 1] == ' ') {
+                    formattedText[--length] = '\0';
+                }
+                if (length > 0 && formattedText[length - 1] == '.') {
+                    formattedText[--length] = '\0';
+                }
+                stringAppend(formattedText, ", ");
+                while (*suffix == ' ') {
+                    suffix++;
+                }
+            }
+            stringAppend(formattedText, suffix);
         }
 
-        fn(formattedText);
+        std::string examineText = formattedText;
+        if (settings.qol.show_blindness && (target->data.critter.combat.results & DAM_BLIND) != DAM_NONE) {
+            MessageListItem blindMsg;
+            if (target == gDude) {
+                blindMsg.num = static_cast<int>(ProtoExamineMessage::BlindYou);
+            } else if (critterGetBodyType(target) != BODY_TYPE_BIPED) {
+                blindMsg.num = static_cast<int>(ProtoExamineMessage::BlindIt);
+            } else {
+                blindMsg.num = static_cast<int>(ProtoExamineMessage::BlindHe) + critterGetStat(target, STAT_GENDER);
+            }
+            if (messageListGetItem(&gProtoMessageList, &blindMsg)) {
+                examineText += ' ';
+                examineText += blindMsg.text;
+            }
+        }
+        fn(examineText.c_str());
     } else if (type == OBJ_TYPE_SCENERY) {
         if (ProtoId(target) == SceneryProtoTypeId::Car) {
             MessageListItem carMessageListItem;
