@@ -2879,7 +2879,7 @@ static int _GameMap2Slot(File* stream)
     }
 
     for (int index = 1; index < gPartyMemberDescriptionsLength; index += 1) {
-        ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
         if (!protoId.valid()) {
             continue;
         }
