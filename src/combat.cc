@@ -4331,7 +4331,7 @@ static int attackComputeCriticalHit(Attack* attack)
 static Dam _attackFindInvalidFlags(Object* critter, Object* item)
 {
     Dam flags = DAM_NONE;
-    const ProtoId& critterProtoId = critter;    
+    const ProtoId& critterProtoId = critter;
     if (critterProtoId.objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(critterProtoId, CRITTER_NO_DROP)) {
         flags |= DAM_DROP;
     }
@@ -4814,7 +4814,7 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
     if (knockbackDistancePtr != nullptr
         && (critter->flags & OBJECT_MULTIHEX) == OBJECT_NONE
         && (damageType == DAMAGE_TYPE_EXPLOSION || attack->weapon == nullptr || weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode) == ATTACK_TYPE_MELEE)
-        && critterProtoId.objectType()== OBJ_TYPE_CRITTER
+        && critterProtoId.objectType() == OBJ_TYPE_CRITTER
         && !critterFlagCheck(critterProtoId, CRITTER_NO_KNOCKBACK)) {
         bool shouldKnockback = true;
         bool hasStonewall = false;

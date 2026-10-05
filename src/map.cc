@@ -1217,7 +1217,7 @@ static int _map_age_dead_critters()
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
         const ProtoId protoId = obj;
-        if (protoId.objectType()== OBJ_TYPE_CRITTER
+        if (protoId.objectType() == OBJ_TYPE_CRITTER
             && obj != gDude
             && !objectIsPartyMember(obj)
             && !critterIsDead(obj)) {
