@@ -3712,15 +3712,15 @@ static void inventoryRenderSummary()
         offset += pitch * fontGetLineHeight();
 
         if (ammoGetCapacity(item) > 0) {
-            int ammoTypePid = weaponGetAmmoTypePid(item);
+            const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item));
 
             formattedText[0] = '\0';
 
             messageListItem.num = 17; // Ammo:
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                if (ammoTypePid != -1) {
+                if (ammoTypeProtoId.valid()) {
                     if (ammoGetQuantity(item) != 0) {
-                        const char* ammoName = protoGetName(ammoTypePid);
+                        const char* ammoName = protoGetName(ammoTypeProtoId);
                         int capacity = ammoGetCapacity(item);
                         int quantity = ammoGetQuantity(item);
                         snprintf(formattedText, sizeof(formattedText), "%s %d/%d %s", messageListItem.text, quantity, capacity, ammoName);
@@ -4459,7 +4459,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 actionMenuItemsLength = 3;
                 actionMenuItems = _act_no_use;
             } else {
-                if (_obj_action_can_use(item) || _proto_action_can_use_on(item->pid)) {
+                if (_obj_action_can_use(item) || _proto_action_can_use_on(item)) {
                     actionMenuItemsLength = 4;
                     actionMenuItems = _act_use;
                 } else {

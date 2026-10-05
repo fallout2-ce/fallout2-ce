@@ -1230,7 +1230,7 @@ int actionPickUp(Object* critter, Object* item)
     Proto* itemProto;
     protoGetProto(item, &itemProto);
 
-    if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item->pid)) {
+    if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item)) {
         animationRegisterAnimate(critter, ANIM_MAGIC_HANDS_GROUND, 0);
 
         const FrmId frmId = FrmId(critter, ANIM_MAGIC_HANDS_GROUND, critter->rotation + 1);

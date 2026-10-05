@@ -998,9 +998,8 @@ static void op_set_script(Program* program)
 static void op_get_proto_data(Program* program)
 {
     int rawOffset = programStackPopInteger(program);
-    int pid = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) != 0) {
         programPrintError("get_proto_data: bad proto %d", protoId.pid());
@@ -1033,9 +1032,8 @@ static void op_set_proto_data(Program* program)
 {
     int value = programStackPopInteger(program);
     int rawOffset = programStackPopInteger(program);
-    int pid = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
-    const ProtoId protoId = ProtoId(pid);
     Proto* proto;
     if (protoGetProto(protoId, &proto) != 0) {
         programPrintError("set_proto_data: bad proto %d", protoId.pid());
@@ -1142,18 +1140,16 @@ static void op_get_weapon_ammo_pid(Program* program)
 // set_weapon_ammo_pid
 static void op_set_weapon_ammo_pid(Program* program)
 {
-    int ammoTypePid = programStackPopInteger(program);
+    const ProtoId ammoTypeProtoId = programStackPopProtoId(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                obj->data.item.weapon.ammoTypePid = ammoTypePid;
-                break;
-            default:
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            obj->data.item.weapon.ammoTypePid = ammoTypeProtoId.pid();
+            break;
+        default:
+            break;
         }
     }
 }

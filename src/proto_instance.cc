@@ -353,8 +353,8 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 snprintf(format, sizeof(format), "%s%s", hpMessageListItem.text, weaponMessageListItem.text);
 
                 if (ammoGetCaliber(item2) != CALIBER_TYPE_NONE) {
-                    const int ammoTypePid = weaponGetAmmoTypePid(item2);
-                    const char* ammoName = protoGetName(ammoTypePid);
+                    const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item2));
+                    const char* ammoName = protoGetName(ammoTypeProtoId);
                     const int ammoCapacity = ammoGetCapacity(item2);
                     const int ammoQuantity = ammoGetQuantity(item2);
                     const char* weaponName = objectGetName(item2);
@@ -515,8 +515,8 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                     exit(1);
                 }
 
-                int ammoTypePid = weaponGetAmmoTypePid(target);
-                const char* ammoName = protoGetName(ammoTypePid);
+                const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(target));
+                const char* ammoName = protoGetName(ammoTypeProtoId);
                 int ammoCapacity = ammoGetCapacity(target);
                 int ammoQuantity = ammoGetQuantity(target);
                 snprintf(formattedText, sizeof(formattedText), weaponMessageListItem.text, ammoQuantity, ammoCapacity, ammoName);

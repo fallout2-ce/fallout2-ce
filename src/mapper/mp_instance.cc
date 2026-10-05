@@ -481,7 +481,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
         if (protoId.objectType() != OBJ_TYPE_ITEM) continue;
 
         names[count] = static_cast<char*>(internal_malloc(64));
-        snprintf(names[count], 64, "%s", protoGetName(protoId.pid()));
+        snprintf(names[count], 64, "%s", protoGetName(protoId));
         pids[count] = protoId.pid();
         count++;
     }

@@ -152,7 +152,7 @@ int proto_choose_container_flags(Proto* proto)
         "Cannot Pick Up",
         0);
 
-    if (_proto_action_can_pickup(proto->pid)) {
+    if (_proto_action_can_pickup(proto)) {
         windowDrawText(win,
             yesno[YES],
             50,
@@ -204,7 +204,7 @@ int proto_choose_container_flags(Proto* proto)
         } else if (input == '2') {
             proto->item.extendedFlags ^= PROTO_EXT_FLAG_CAN_PICK_UP;
 
-            if (_proto_action_can_pickup(proto->pid)) {
+            if (_proto_action_can_pickup(proto)) {
                 windowDrawText(win,
                     yesno[YES],
                     50,
@@ -350,6 +350,7 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
 // 0x492C20
 int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex)
 {
+    const ProtoId protoId = ProtoId(pid);
     int button_x;
     int value_offset_x;
 
@@ -375,9 +376,9 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
         title,
         0);
 
-    if (pid != -1) {
+    if (protoId.valid()) {
         windowDrawText(subwin,
-            protoGetName(pid),
+            protoGetName(protoId),
             49,
             button_x + value_offset_x,
             *y + 4,
@@ -690,7 +691,7 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
                 int fid = fidFunc ? fidFunc(proto) : proto->fid;
                 artRender(FrmId(fid), buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
 
-                const char* name = protoGetName(protoId.pid());
+                const char* name = protoGetName(protoId);
                 int textY = cellY + kArtH + 5;
                 bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
                 windowDrawText(win, name, 80, cellX, textY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
@@ -769,7 +770,7 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
             if (protoGetProto(protoId, &proto) == -1) continue;
 
             char prompt[128];
-            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(protoId.pid()));
+            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(protoId));
             int quantity = 1;
             if (win_get_num_i(&quantity, 1, 32000, false, prompt, 100, 100) != -1) {
                 addFunc(protoId.pid(), quantity);

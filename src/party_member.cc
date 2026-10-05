@@ -1263,9 +1263,9 @@ static int partyFixMultipleMembers()
 void _partyMemberSaveProtos()
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        int pid = gPartyMemberPids[index];
-        if (pid != -1) {
-            _proto_save_pid(pid);
+        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        if (protoId.valid()) {
+            protoSaveProtoId(protoId);
         }
     }
 }
