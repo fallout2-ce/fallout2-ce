@@ -1810,7 +1810,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
     bool isCritter = false;
     int critterType = 0;
-    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
         isCritter = true;
         critterType = critterGetKillType(object);
     }

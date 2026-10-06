@@ -1303,7 +1303,7 @@ static int _map_age_dead_critters()
 
 static int replaceDeadCritter(Object* critter)
 {
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
@@ -1425,11 +1425,7 @@ int mapHandleTransition()
 static void _map_fix_critter_combat_data()
 {
     for (Object* object = objectFindFirst(); object != nullptr; object = objectFindNext()) {
-        if (object->pid == -1) {
-            continue;
-        }
-
-        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
+        if (ProtoId(object).objectType() != OBJ_TYPE_CRITTER) {
             continue;
         }
 

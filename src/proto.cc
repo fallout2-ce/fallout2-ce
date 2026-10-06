@@ -573,7 +573,7 @@ int objectDataRead(Object* obj, File* stream)
         return -1;
     }
 
-    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) {
         if (fileReadInt32(stream, &(obj->data.critter.reaction)) == -1) return -1;
         if (objectCritterCombatDataRead(&(obj->data.critter.combat), stream) == -1) return -1;
         if (fileReadInt32(stream, &(obj->data.critter.hp)) == -1) return -1;
@@ -674,7 +674,8 @@ int objectDataWrite(Object* obj, File* stream)
     // CE: Original code writes inventory items pointer, which is meaningless.
     if (fileWriteInt32(stream, 0) == -1) return -1;
 
-    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = obj;
+    if (protoId.objectType() == OBJ_TYPE_CRITTER) {
         if (fileWriteInt32(stream, data->flags) == -1) return -1;
         if (objectCritterCombatDataWrite(&(obj->data.critter.combat), stream) == -1) return -1;
         if (fileWriteInt32(stream, data->critter.hp) == -1) return -1;
@@ -683,7 +684,6 @@ int objectDataWrite(Object* obj, File* stream)
     } else {
         if (fileWriteInt32(stream, data->flags) == -1) return -1;
 
-        const ProtoId protoId = obj;
         switch (protoId.objectType()) {
         case OBJ_TYPE_ITEM:
             if (protoGetProto(protoId, &proto) == -1) return -1;
@@ -842,7 +842,7 @@ int _proto_update_init(Object* obj)
 
     memset(&(obj->data), 0, sizeof(ObjectData));
 
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return _proto_update_gen(obj);
     }
 
@@ -1106,7 +1106,7 @@ bool proto_is_subtype(Proto* proto, int subtype)
         return true;
     }
 
-    switch (objectTypeFromPid(proto->pid)) {
+    switch (ProtoId(proto).objectType()) {
     case OBJ_TYPE_ITEM:
         return proto->item.type == subtype;
     case OBJ_TYPE_SCENERY:
@@ -1696,7 +1696,7 @@ static int protoRead(Proto* proto, File* stream)
     if (fileReadInt32(stream, &(proto->messageId)) == -1) return -1;
     if (fileReadInt32(stream, &(proto->fid)) == -1) return -1;
 
-    switch (objectTypeFromPid(proto->pid)) {
+    switch (ProtoId(proto).objectType()) {
     case OBJ_TYPE_ITEM:
         if (fileReadInt32(stream, &(proto->item.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->item.lightIntensity)) == -1) return -1;
@@ -1881,7 +1881,7 @@ static int protoWrite(Proto* proto, File* stream)
     if (fileWriteInt32(stream, proto->messageId) == -1) return -1;
     if (fileWriteInt32(stream, proto->fid) == -1) return -1;
 
-    switch (objectTypeFromPid(proto->pid)) {
+    switch (ProtoId(proto).objectType()) {
     case OBJ_TYPE_ITEM:
         if (fileWriteInt32(stream, proto->item.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->item.lightIntensity) == -1) return -1;

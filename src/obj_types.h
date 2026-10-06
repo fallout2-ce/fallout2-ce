@@ -82,12 +82,6 @@ constexpr inline bool objectTypeIsValid(int type)
     return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_COUNT;
 }
 
-constexpr inline ObjectType objectTypeFromPid(int pid)
-{
-    int objectType = pid >> 24;
-    return static_cast<ObjectType>(objectType);
-}
-
 #define SID_TYPE(value) (value) >> 24
 
 enum OutlineType : int {

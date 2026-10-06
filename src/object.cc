@@ -467,14 +467,15 @@ int objectRead(Object* obj, File* stream)
             }
         }
     } else {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM && !(gMapHeader.flags & MAP_HEADER_SAVED)) {
-            _object_fix_weapon_ammo(obj);
-        }
+        if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+            if (!(gMapHeader.flags & MAP_HEADER_SAVED)) {
+                _object_fix_weapon_ammo(obj);
+            }
 
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM
-            && itemGetType(obj) == ITEM_TYPE_WEAPON
-            && obj->data.item.weapon.ammoQuantity < 0) {
-            obj->data.item.weapon.ammoQuantity = 0;
+            if (itemGetType(obj) == ITEM_TYPE_WEAPON
+                && obj->data.item.weapon.ammoQuantity < 0) {
+                obj->data.item.weapon.ammoQuantity = 0;
+            }
         }
     }
 
@@ -590,7 +591,7 @@ static int objectLoadAllInternal(File* stream)
 
             _obj_insert(objectListNode);
 
-            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) && objectTypeFromPid(objectListNode->obj->pid) == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
+            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) && ProtoId(objectListNode->obj).objectType() == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
                 objectListNode->obj->flags &= ~OBJECT_NO_REMOVE;
             }
 
@@ -670,7 +671,7 @@ static void _object_fix_weapon_ammo(Object* obj)
             obj->data.item.weapon.ammoQuantity = proto->item.data.weapon.ammoCapacity;
         }
     } else {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_MISC) {
+        if (ProtoId(obj).objectType() == OBJ_TYPE_MISC) {
             // FIXME: looks like this code in unreachable
             charges = obj->data.item.misc.charges;
             if (charges == 0xCCCCCCCC) {
@@ -752,7 +753,7 @@ int objectSaveAll(File* stream)
 
                 CritterCombatData* combatData = nullptr;
                 Object* whoHitMe = nullptr;
-                if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+                if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
                     combatData = &(object->data.critter.combat);
                     whoHitMe = objectPrepareWhoHitMeForSave(combatData);
                 }
@@ -761,7 +762,7 @@ int objectSaveAll(File* stream)
                     return -1;
                 }
 
-                if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+                if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
                     combatData->whoHitMe = whoHitMe;
                 }
 
@@ -1543,7 +1544,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             }
         }
     } else {
-        if (elevation != _obj_last_elev && objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
+        if (elevation != _obj_last_elev && ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) {
             _combat_delete_critter(obj);
         }
     }
@@ -3579,7 +3580,7 @@ static int _obj_save_obj(File* stream, Object* object)
 
     CritterCombatData* combatData = nullptr;
     Object* whoHitMe = nullptr;
-    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
         combatData = &(object->data.critter.combat);
         whoHitMe = objectPrepareWhoHitMeForSave(combatData);
     }
@@ -3588,7 +3589,7 @@ static int _obj_save_obj(File* stream, Object* object)
         return -1;
     }
 
-    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
         combatData->whoHitMe = whoHitMe;
     }
 
@@ -5292,7 +5293,7 @@ Object* objectTypedFindById(int id, ObjectType type)
 {
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (obj->id == id && objectTypeFromPid(obj->pid) == type) {
+        if (obj->id == id && ProtoId(obj).objectType() == type) {
             return obj;
         }
         obj = objectFindNext();
