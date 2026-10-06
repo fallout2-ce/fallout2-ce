@@ -944,7 +944,7 @@ int objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const P
     }
 
     if (frmId.valid()) {
-        assert(frmId.hasFid() && "objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId) called with path based FrmId which is not supported!");
+        assert(frmId.hasFid() && "objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId) called with path based FrmId which is not supported!");
     }
 
     objectListNode->obj->fid = frmId.fid();
