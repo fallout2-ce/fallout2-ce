@@ -812,7 +812,7 @@ Object* partyMemberFindByProtoId(const ProtoId& protoId)
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if (ProtoId(object->pid) == protoId) {
+        if (ProtoId(object) == protoId) {
             return object;
         }
     }
