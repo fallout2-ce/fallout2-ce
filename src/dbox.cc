@@ -585,12 +585,9 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 // 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    int oldFont = fontGetCurrent();
+    ScopedFont mainFont(103);
 
-    bool isScrollable = false;
-    if (fileListLength > FILE_DIALOG_LINE_COUNT) {
-        isScrollable = true;
-    }
+    bool isScrollable = (fileListLength > FILE_DIALOG_LINE_COUNT);
 
     int selectedFileIndex = 0;
     int pageOffset = 0;
@@ -616,29 +613,19 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        return -1;
-    }
+    UniqueWindow window(windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    if (window.get() == -1) return -1;
 
-    unsigned char* windowBuffer = windowGetBuffer(win);
+    unsigned char* windowBuffer = windowGetBuffer(window.get());
     memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(backgroundWidth) * backgroundHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
-
-    if (!messageListInit(&messageList)) {
-        windowDestroy(win);
-        return -1;
-    }
+    if (!messageListInit(&messageList)) return -1;
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-    if (!messageListLoad(&messageList, path)) {
-        windowDestroy(win);
-        return -1;
-    }
+    if (!messageListLoad(&messageList, path)) return -1;
 
     fontSetCurrent(103);
 
@@ -650,7 +637,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + LOAD_FILE_DIALOG_CANCEL_LABEL_Y * backgroundWidth + LOAD_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
-    int doneBtn = buttonCreate(win,
+    int doneBtn = buttonCreate(window.get(),
         LOAD_FILE_DIALOG_DONE_BUTTON_X,
         LOAD_FILE_DIALOG_DONE_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
@@ -667,7 +654,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int cancelBtn = buttonCreate(win,
+    int cancelBtn = buttonCreate(window.get(),
         LOAD_FILE_DIALOG_CANCEL_BUTTON_X,
         LOAD_FILE_DIALOG_CANCEL_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
@@ -684,7 +671,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int scrollUpBtn = buttonCreate(win,
+    int scrollUpBtn = buttonCreate(window.get(),
         FILE_DIALOG_SCROLL_BUTTON_X,
         FILE_DIALOG_SCROLL_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
@@ -701,7 +688,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int scrollDownButton = buttonCreate(win,
+    int scrollDownButton = buttonCreate(window.get(),
         FILE_DIALOG_SCROLL_BUTTON_X,
         FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
@@ -718,20 +705,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    buttonCreate(
-        win,
-        FILE_DIALOG_FILE_LIST_X,
-        FILE_DIALOG_FILE_LIST_Y,
-        FILE_DIALOG_FILE_LIST_WIDTH,
-        FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1,
-        -1,
-        -1,
-        502,
-        nullptr,
-        nullptr,
-        nullptr,
-        0);
+    buttonCreate(window.get(),
+        FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_Y, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT,
+        -1, -1, -1, 502,
+        nullptr, nullptr, nullptr, 0);
 
     if (title != nullptr) {
         fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
@@ -740,7 +717,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     fontSetCurrent(101);
 
     fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-    windowRefresh(win);
+    windowRefresh(window.get());
 
     int doubleClickSelectedFileIndex = -2;
     int doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
@@ -899,7 +876,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     }
 
                     fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    windowRefresh(win);
+                    windowRefresh(window.get());
                 }
 
                 unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
@@ -919,7 +896,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 renderPresent();
             }
         } else {
-            windowRefresh(win);
+            windowRefresh(window.get());
 
             doubleClickTimer--;
             if (doubleClickTimer == 0) {
@@ -938,10 +915,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         sharedFpsLimiter.throttle();
     }
 
-    windowDestroy(win);
-
     messageListFree(&messageList);
-    fontSetCurrent(oldFont);
 
     return rc;
 }
@@ -949,12 +923,9 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 // 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    int oldFont = fontGetCurrent();
+    ScopedFont mainFont(103);
 
-    bool isScrollable = false;
-    if (fileListLength > FILE_DIALOG_LINE_COUNT) {
-        isScrollable = true;
-    }
+    bool isScrollable = (fileListLength > FILE_DIALOG_LINE_COUNT);
 
     int selectedFileIndex = 0;
     int pageOffset = 0;
@@ -980,29 +951,19 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        return -1;
-    }
+    UniqueWindow window(windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    if (window.get() == -1) return -1;
 
-    unsigned char* windowBuffer = windowGetBuffer(win);
+    unsigned char* windowBuffer = windowGetBuffer(window.get());
     memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(backgroundWidth) * backgroundHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
-
-    if (!messageListInit(&messageList)) {
-        windowDestroy(win);
-        return -1;
-    }
+    if (!messageListInit(&messageList)) return -1;
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-    if (!messageListLoad(&messageList, path)) {
-        windowDestroy(win);
-        return -1;
-    }
+    if (!messageListLoad(&messageList, path)) return -1;
 
     fontSetCurrent(103);
 
@@ -1014,7 +975,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + backgroundWidth * SAVE_FILE_DIALOG_CANCEL_LABEL_Y + SAVE_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
-    int doneBtn = buttonCreate(win,
+    int doneBtn = buttonCreate(window.get(),
         SAVE_FILE_DIALOG_DONE_BUTTON_X,
         SAVE_FILE_DIALOG_DONE_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
@@ -1031,7 +992,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int cancelBtn = buttonCreate(win,
+    int cancelBtn = buttonCreate(window.get(),
         SAVE_FILE_DIALOG_CANCEL_BUTTON_X,
         SAVE_FILE_DIALOG_CANCEL_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
@@ -1048,7 +1009,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int scrollUpBtn = buttonCreate(win,
+    int scrollUpBtn = buttonCreate(window.get(),
         FILE_DIALOG_SCROLL_BUTTON_X,
         FILE_DIALOG_SCROLL_BUTTON_Y,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
@@ -1065,7 +1026,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int scrollDownButton = buttonCreate(win,
+    int scrollDownButton = buttonCreate(window.get(),
         FILE_DIALOG_SCROLL_BUTTON_X,
         FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
@@ -1082,20 +1043,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    buttonCreate(
-        win,
-        FILE_DIALOG_FILE_LIST_X,
-        FILE_DIALOG_FILE_LIST_Y,
-        FILE_DIALOG_FILE_LIST_WIDTH,
-        FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1,
-        -1,
-        -1,
-        502,
-        nullptr,
-        nullptr,
-        nullptr,
-        0);
+    buttonCreate(window.get(),
+        FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_Y, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT,
+        -1, -1, -1, 502,
+        nullptr, nullptr, nullptr, 0);
 
     if (title != nullptr) {
         fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
@@ -1131,7 +1082,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, Color(100));
     fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
 
-    windowRefresh(win);
+    windowRefresh(window.get());
 
     beginTextInput();
 
@@ -1166,7 +1117,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             fileNameCopy[fileNameCopyLength] = '\0';
             fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
             fileNameCopyLength--;
-            windowRefresh(win);
+            windowRefresh(window.get());
         } else if (keyCode < KEY_FIRST_INPUT_CHARACTER || keyCode > KEY_LAST_INPUT_CHARACTER || fileNameCopyLength >= 8) {
             if (keyCode == 502 && fileListLength != 0) {
                 int mouseX;
@@ -1285,7 +1236,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
             fileNameCopyLength++;
 
-            windowRefresh(win);
+            windowRefresh(window.get());
         }
 
         if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
@@ -1332,7 +1283,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     }
 
                     fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    windowRefresh(win);
+                    windowRefresh(window.get());
                 }
 
                 // NOTE: Original code is slightly different. For unknown reason
@@ -1378,7 +1329,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
             }
 
-            windowRefresh(win);
+            windowRefresh(window.get());
 
             doubleClickTimer--;
             if (doubleClickTimer == 0) {
@@ -1412,9 +1363,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         }
     }
 
-    windowDestroy(win);
     messageListFree(&messageList);
-    fontSetCurrent(oldFont);
 
     return rc;
 }
