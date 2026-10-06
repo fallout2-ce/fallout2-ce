@@ -448,18 +448,18 @@ static int protoInstAddToInven(const ProtoId& protoId, int count)
 }
 
 // proto_choose_pid_inven_fid
-static FrmId protoInstChoosePidInvenFid(Proto* proto)
+static FrmId protoInstChoosePidInvenFrmId(Proto* proto)
 {
     if (ProtoId(proto).objectType() != OBJ_TYPE_ITEM) return FrmId::Empty();
     const FrmId inventoryFrmId = FrmId(proto->item.inventoryFid);
-    return inventoryFrmId.valid() ? inventoryFrmId : FrmId::Empty();
+    return inventoryFrmId.valid() ? inventoryFrmId : proto;
 }
 
 // proto_inst_add_to_inven - grid-based proto picker (original implementation)
 static void protoInstChooseItemsForInvenGrid(Object* obj)
 {
     proto_inst_who_obj = obj;
-    protoChooseMultiPids(OBJ_TYPE_ITEM, protoInstChoosePidInvenFid, protoInstAddToInven);
+    protoChooseMultiPids(OBJ_TYPE_ITEM, protoInstChoosePidInvenFrmId, protoInstAddToInven);
     proto_inst_who_obj = nullptr;
 }
 
