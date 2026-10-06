@@ -25,44 +25,44 @@
 
 namespace fallout {
 
-#define FILE_DIALOG_LINE_COUNT 12
+namespace dbox {
+    struct Point {
+        int x, y;
+    };
 
-#define FILE_DIALOG_DOUBLE_CLICK_DELAY 32
+    namespace input {
+    }
 
-#define LOAD_FILE_DIALOG_DONE_BUTTON_X 58
-#define LOAD_FILE_DIALOG_DONE_BUTTON_Y 187
+    namespace file {
+        constexpr int lineCount = 12;
+        constexpr int doubleClickDelay = 32;
 
-#define LOAD_FILE_DIALOG_DONE_LABEL_X 79
-#define LOAD_FILE_DIALOG_DONE_LABEL_Y 187
+        constexpr Point title { 49, 16 };
+        constexpr Point scrollButton { 36, 44 };
 
-#define LOAD_FILE_DIALOG_CANCEL_BUTTON_X 163
-#define LOAD_FILE_DIALOG_CANCEL_BUTTON_Y 187
+        struct ListRect {
+            int x, y, width, height;
+        };
+        constexpr ListRect list { 55, 49, 190, 124 };
 
-#define LOAD_FILE_DIALOG_CANCEL_LABEL_X 182
-#define LOAD_FILE_DIALOG_CANCEL_LABEL_Y 187
+        namespace load {
+            constexpr Point doneButton { 58, 187 };
+            constexpr Point doneLabel { 79, 187 };
+            constexpr Point cancelButton { 163, 187 };
+            constexpr Point cancelLabel { 182, 187 };
+        } // namespace load
 
-#define SAVE_FILE_DIALOG_DONE_BUTTON_X 58
-#define SAVE_FILE_DIALOG_DONE_BUTTON_Y 214
+        namespace save {
+            constexpr Point doneButton { 58, 214 };
+            constexpr Point doneLabel { 79, 213 };
+            constexpr Point cancelButton { 163, 214 };
+            constexpr Point cancelLabel { 182, 213 };
+        } // namespace save
+    } // namespace file
 
-#define SAVE_FILE_DIALOG_DONE_LABEL_X 79
-#define SAVE_FILE_DIALOG_DONE_LABEL_Y 213
-
-#define SAVE_FILE_DIALOG_CANCEL_BUTTON_X 163
-#define SAVE_FILE_DIALOG_CANCEL_BUTTON_Y 214
-
-#define SAVE_FILE_DIALOG_CANCEL_LABEL_X 182
-#define SAVE_FILE_DIALOG_CANCEL_LABEL_Y 213
-
-#define FILE_DIALOG_TITLE_X 49
-#define FILE_DIALOG_TITLE_Y 16
-
-#define FILE_DIALOG_SCROLL_BUTTON_X 36
-#define FILE_DIALOG_SCROLL_BUTTON_Y 44
-
-#define FILE_DIALOG_FILE_LIST_X 55
-#define FILE_DIALOG_FILE_LIST_Y 49
-#define FILE_DIALOG_FILE_LIST_WIDTH 190
-#define FILE_DIALOG_FILE_LIST_HEIGHT 124
+    namespace alert {
+    }
+}
 
 typedef enum DialogType {
     DIALOG_TYPE_MEDIUM,
@@ -273,12 +273,10 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     int windowWidth = bgFrm.getWidth();
     int windowHeight = bgFrm.getHeight();
 
-    UniqueWindow win(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
-    if (win.get() == -1) {
-        return nullptr;
-    }
+    UniqueWindow window(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
+    if (window.get() == -1) return nullptr;
 
-    unsigned char* windowBuf = windowGetBuffer(win.get());
+    unsigned char* windowBuf = windowGetBuffer(window.get());
 
     memcpy(windowBuf, bgFrm.getData(), static_cast<size_t>(windowWidth) * windowHeight);
 
@@ -290,15 +288,15 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
         fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
     }
 
-    UniqueButton doneBtn(buttonCreate(win.get(), 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT));
-    if (doneBtn.get() != -1) {
-        buttonSetCallbacks(doneBtn.get(), _gsound_red_butt_press, _gsound_red_butt_release);
+    int doneBtn = buttonCreate(window.get(), 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+    if (doneBtn != -1) {
+        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    windowRefresh(win.get());
+    windowRefresh(window.get());
 
     std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
-    int status = _get_input_str(win.get(), 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
+    int status = _get_input_str(window.get(), 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     if (status == 0 && !editableText.empty()) {
         result = std::move(editableText);
@@ -358,10 +356,10 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
 
-    UniqueWindow win(windowCreate(x, y, backgroundFrmImage.getWidth(), backgroundFrmImage.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
-    if (win.get() == -1) return -1;
+    UniqueWindow window(windowCreate(x, y, backgroundFrmImage.getWidth(), backgroundFrmImage.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    if (window.get() == -1) return -1;
 
-    unsigned char* windowBuf = windowGetBuffer(win.get());
+    unsigned char* windowBuf = windowGetBuffer(window.get());
     size_t bufferSize = static_cast<size_t>(backgroundFrmImage.getWidth()) * backgroundFrmImage.getHeight();
     memcpy(windowBuf, backgroundFrmImage.getData(), bufferSize);
 
@@ -409,7 +407,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            int btn = buttonCreate(win.get(),
+            int btn = buttonCreate(window.get(),
                 doneBoxX + 13, doneY + 4,
                 buttonPressedFrmImage.getWidth(), buttonPressedFrmImage.getHeight(),
                 -1, -1, -1, 500, // first button ID
@@ -446,7 +444,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            int btn = buttonCreate(win.get(),
+            int btn = buttonCreate(window.get(),
                 buttonXOffset, doneY + 4,
                 buttonPressedFrmImage.getWidth(), buttonPressedFrmImage.getHeight(),
                 -1, -1, -1, 501, // Second button ID
@@ -542,7 +540,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         }
     }
 
-    windowRefresh(win.get());
+    windowRefresh(window.get());
 
     int rc = -1;
     while (rc == -1) {
@@ -585,13 +583,15 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 // 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
+    using namespace dbox;
+
     ScopedFont mainFont(103);
 
-    bool isScrollable = (fileListLength > FILE_DIALOG_LINE_COUNT);
+    bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0;
     int pageOffset = 0;
-    int maxPageOffset = fileListLength - (FILE_DIALOG_LINE_COUNT + 1);
+    int maxPageOffset = fileListLength - (file::lineCount + 1);
     if (maxPageOffset < 0) {
         maxPageOffset = fileListLength - 1;
         if (maxPageOffset < 0) {
@@ -631,21 +631,17 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     // DONE
     const char* done = getmsg(&messageList, &messageListItem, 100);
-    fontDrawText(windowBuffer + LOAD_FILE_DIALOG_DONE_LABEL_Y * backgroundWidth + LOAD_FILE_DIALOG_DONE_LABEL_X, done, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+    fontDrawText(windowBuffer + file::load::doneLabel.y * backgroundWidth + file::load::doneLabel.x, done, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
     // CANCEL
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
-    fontDrawText(windowBuffer + LOAD_FILE_DIALOG_CANCEL_LABEL_Y * backgroundWidth + LOAD_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+    fontDrawText(windowBuffer + file::load::doneLabel.y * backgroundWidth + file::load::doneLabel.x, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
     int doneBtn = buttonCreate(window.get(),
-        LOAD_FILE_DIALOG_DONE_BUTTON_X,
-        LOAD_FILE_DIALOG_DONE_BUTTON_Y,
+        file::load::doneButton.x, file::load::doneButton.y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
+        -1, -1, -1, 500,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
         nullptr,
@@ -655,14 +651,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     int cancelBtn = buttonCreate(window.get(),
-        LOAD_FILE_DIALOG_CANCEL_BUTTON_X,
-        LOAD_FILE_DIALOG_CANCEL_BUTTON_Y,
+        file::load::doneButton.x, file::load::doneButton.y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        501,
+        -1, -1, -1, 501,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
         nullptr,
@@ -672,14 +664,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     int scrollUpBtn = buttonCreate(window.get(),
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y,
+        file::scrollButton.x, file::scrollButton.y,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1,
-        505,
-        506,
-        505,
+        -1, 505, 506, 505,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
         nullptr,
@@ -689,14 +677,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     int scrollDownButton = buttonCreate(window.get(),
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
+        file::scrollButton.x, file::scrollButton.y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1,
-        503,
-        504,
-        503,
+        -1, 503, 504, 503,
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
         nullptr,
@@ -705,13 +689,11 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    buttonCreate(window.get(),
-        FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_Y, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1, -1, -1, 502,
-        nullptr, nullptr, nullptr, 0);
+    buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
+        -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
 
     if (title != nullptr) {
-        fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+        fontDrawText(windowBuffer + backgroundWidth * file::title.x + file::title.y, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
     }
 
     fontSetCurrent(101);
@@ -720,7 +702,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     windowRefresh(window.get());
 
     int doubleClickSelectedFileIndex = -2;
-    int doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+    int doubleClickTimer = file::doubleClickDelay;
 
     int rc = -1;
     while (rc == -1) {
@@ -748,14 +730,14 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
 
-            int selectedLine = (mouseY - y - FILE_DIALOG_FILE_LIST_Y) / fontGetLineHeight();
+            int selectedLine = (mouseY - y - file::list.y) / fontGetLineHeight();
             if (selectedLine - 1 < 0) {
                 selectedLine = 0;
             }
 
             if (isScrollable || selectedLine < fileListLength) {
-                if (selectedLine >= FILE_DIALOG_LINE_COUNT) {
-                    selectedLine = FILE_DIALOG_LINE_COUNT - 1;
+                if (selectedLine >= file::lineCount) {
+                    selectedLine = file::lineCount - 1;
                 }
             } else {
                 selectedLine = fileListLength - 1;
@@ -798,8 +780,8 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
                         // FIXME: Should be >= FILE_DIALOG_LINE_COUNT (as in
                         // save dialog). Otherwise out of bounds index is
                         // considered selected.
-                        if (selectedFileIndex > FILE_DIALOG_LINE_COUNT) {
-                            selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
+                        if (selectedFileIndex > file::lineCount) {
+                            selectedFileIndex = file::lineCount - 1;
                         }
                         pageOffset = maxPageOffset;
                     }
@@ -820,7 +802,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 break;
             case KEY_END:
                 if (isScrollable) {
-                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
+                    selectedFileIndex = file::lineCount - 1;
                     pageOffset = maxPageOffset;
                 } else {
                     selectedFileIndex = maxPageOffset;
@@ -862,8 +844,8 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
                             pageOffset++;
                             if (pageOffset > maxPageOffset) {
                                 selectedFileIndex++;
-                                if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
+                                if (selectedFileIndex >= file::lineCount) {
+                                    selectedFileIndex = file::lineCount - 1;
                                 }
                                 pageOffset = maxPageOffset;
                             }
@@ -900,7 +882,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
             doubleClickTimer--;
             if (doubleClickTimer == 0) {
-                doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+                doubleClickTimer = file::doubleClickDelay;
                 doubleClickSelectedFileIndex = -2;
             }
 
@@ -923,13 +905,14 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 // 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
+    using namespace dbox;
     ScopedFont mainFont(103);
 
-    bool isScrollable = (fileListLength > FILE_DIALOG_LINE_COUNT);
+    bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0;
     int pageOffset = 0;
-    int maxPageOffset = fileListLength - (FILE_DIALOG_LINE_COUNT + 1);
+    int maxPageOffset = fileListLength - (file::lineCount + 1);
     if (maxPageOffset < 0) {
         maxPageOffset = fileListLength - 1;
         if (maxPageOffset < 0) {
@@ -969,21 +952,16 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     // DONE
     const char* done = getmsg(&messageList, &messageListItem, 100);
-    fontDrawText(windowBuffer + backgroundWidth * SAVE_FILE_DIALOG_DONE_LABEL_Y + SAVE_FILE_DIALOG_DONE_LABEL_X, done, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+    fontDrawText(windowBuffer + backgroundWidth * file::save::doneLabel.y + file::save::doneLabel.x, done, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
     // CANCEL
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
-    fontDrawText(windowBuffer + backgroundWidth * SAVE_FILE_DIALOG_CANCEL_LABEL_Y + SAVE_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+    fontDrawText(windowBuffer + backgroundWidth * file::save::cancelLabel.y + file::save::cancelLabel.x, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
-    int doneBtn = buttonCreate(window.get(),
-        SAVE_FILE_DIALOG_DONE_BUTTON_X,
-        SAVE_FILE_DIALOG_DONE_BUTTON_Y,
+    int doneBtn = buttonCreate(window.get(), file::save::doneButton.x, file::save::doneButton.y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
+        -1, -1, -1, 500,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
         nullptr,
@@ -992,15 +970,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int cancelBtn = buttonCreate(window.get(),
-        SAVE_FILE_DIALOG_CANCEL_BUTTON_X,
-        SAVE_FILE_DIALOG_CANCEL_BUTTON_Y,
+    int cancelBtn = buttonCreate(window.get(), file::save::cancelButton.x, file::save::cancelButton.y,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        501,
+        -1, -1, -1, 501,
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
         nullptr,
@@ -1009,15 +982,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    int scrollUpBtn = buttonCreate(window.get(),
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y,
+    int scrollUpBtn = buttonCreate(window.get(), file::scrollButton.x, file::scrollButton.y,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1,
-        505,
-        506,
-        505,
+        -1, 505, 506, 505,
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
         nullptr,
@@ -1027,14 +995,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     int scrollDownButton = buttonCreate(window.get(),
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
+        file::scrollButton.x, file::scrollButton.y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1,
-        503,
-        504,
-        503,
+        -1, 503, 504, 503,
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
         nullptr,
@@ -1043,13 +1007,11 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    buttonCreate(window.get(),
-        FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_Y, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1, -1, -1, 502,
-        nullptr, nullptr, nullptr, 0);
+    buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
+        -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
 
     if (title != nullptr) {
-        fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
+        fontDrawText(windowBuffer + backgroundWidth * file::title.y + file::title.x, title, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
     }
 
     fontSetCurrent(101);
@@ -1090,7 +1052,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     bool blink = false;
 
     int doubleClickSelectedFileIndex = -2;
-    int doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+    int doubleClickTimer = file::doubleClickDelay;
 
     int rc = -1;
     while (rc == -1) {
@@ -1124,14 +1086,14 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 int mouseY;
                 mouseGetPosition(&mouseX, &mouseY);
 
-                int selectedLine = (mouseY - y - FILE_DIALOG_FILE_LIST_Y) / fontGetLineHeight();
+                int selectedLine = (mouseY - y - file::list.x) / fontGetLineHeight();
                 if (selectedLine - 1 < 0) {
                     selectedLine = 0;
                 }
 
                 if (isScrollable || selectedLine < fileListLength) {
-                    if (selectedLine >= FILE_DIALOG_LINE_COUNT) {
-                        selectedLine = FILE_DIALOG_LINE_COUNT - 1;
+                    if (selectedLine >= file::lineCount) {
+                        selectedLine = file::lineCount - 1;
                     }
                 } else {
                     selectedLine = fileListLength - 1;
@@ -1194,8 +1156,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                         pageOffset++;
                         if (pageOffset >= maxPageOffset) {
                             selectedFileIndex++;
-                            if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
+                            if (selectedFileIndex >= file::lineCount) {
+                                selectedFileIndex = file::lineCount - 1;
                             }
                             pageOffset = maxPageOffset;
                         }
@@ -1269,8 +1231,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                             pageOffset++;
                             if (pageOffset > maxPageOffset) {
                                 selectedFileIndex++;
-                                if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
+                                if (selectedFileIndex >= file::lineCount) {
+                                    selectedFileIndex = file::lineCount - 1;
                                 }
                                 pageOffset = maxPageOffset;
                             }
@@ -1333,7 +1295,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
             doubleClickTimer--;
             if (doubleClickTimer == 0) {
-                doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+                doubleClickTimer = file::doubleClickDelay;
                 doubleClickSelectedFileIndex = -2;
             }
 
@@ -1371,17 +1333,19 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 // 0x41FBDC PrntFlist
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch)
 {
+    using namespace dbox;
+
     int lineHeight = fontGetLineHeight();
-    int y = FILE_DIALOG_FILE_LIST_Y;
-    bufferFill(buffer + y * pitch + FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT, pitch, static_cast<Color>(100));
+    int y = file::list.y;
+    bufferFill(buffer + y * pitch + file::list.x, file::list.width, file::list.height, pitch, static_cast<Color>(100));
     if (fileListLength != 0) {
-        if (fileListLength - pageOffset > FILE_DIALOG_LINE_COUNT) {
-            fileListLength = FILE_DIALOG_LINE_COUNT;
+        if (fileListLength - pageOffset > file::lineCount) {
+            fileListLength = file::lineCount;
         }
 
         for (int index = 0; index < fileListLength; index++) {
             Color color = index == selectedIndex ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
-            fontDrawText(buffer + pitch * y + FILE_DIALOG_FILE_LIST_X, fileList[pageOffset + index], FILE_DIALOG_FILE_LIST_WIDTH, pitch, color);
+            fontDrawText(buffer + pitch * y + file::list.x, fileList[pageOffset + index], file::list.width, pitch, color);
             y += lineHeight;
         }
     }
