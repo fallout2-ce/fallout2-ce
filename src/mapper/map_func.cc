@@ -208,13 +208,28 @@ void erase_rect(Rect* rect)
 }
 
 // 0x484400
-int toolbar_proto(ObjectType type, int id)
+ProtoId toolbar_proto(ObjectType type, int id)
 {
     if (id < proto_max_id(type)) {
-        return (type << 24) | id;
-    } else {
-        return -1;
+        switch (type) {
+        case OBJ_TYPE_ITEM:
+            return static_cast<ItemProtoTypeId>(id);
+        case OBJ_TYPE_CRITTER:
+            return static_cast<CritterProtoTypeId>(id);
+        case OBJ_TYPE_SCENERY:
+            return static_cast<SceneryProtoTypeId>(id);
+        case OBJ_TYPE_WALL:
+            return static_cast<WallProtoTypeId>(id);
+        case OBJ_TYPE_TILE:
+            return static_cast<TileProtoTypeId>(id);
+        case OBJ_TYPE_MISC:
+            return static_cast<MiscProtoTypeId>(id);
+        default:
+            return ProtoId::Empty();
+        }
     }
+    
+    return ProtoId::Empty();
 }
 
 // 0x485D44
@@ -429,9 +444,8 @@ ObjectType pickToolbar(int topY)
 }
 
 // place_object_
-void placeObject(int pid, const FrmId& frmId)
+void placeObject(const ProtoId& protoId, const FrmId& frmId)
 {
-    const ProtoId& protoId = ProtoId(pid);
     int x, y;
     mouseGetPosition(&x, &y);
     int tile = tileFromScreenXY(x, y);
@@ -450,7 +464,7 @@ void placeObject(int pid, const FrmId& frmId)
 }
 
 // place_tile_
-void placeTile(int pid, const FrmId& frmId)
+void placeTile(const ProtoId& protoId, const FrmId& frmId)
 {
     int x, y;
     mouseGetPosition(&x, &y);

@@ -631,7 +631,7 @@ int proto_build_all_type_binary(ObjectType type)
     return 0;
 }
 
-int protoEdit(int protoId)
+int protoEdit(const ProtoId& protoId)
 {
     // TODO: implement proto editor dialog — load proto, show editor UI
     (void)protoId;
