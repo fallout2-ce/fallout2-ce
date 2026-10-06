@@ -228,7 +228,7 @@ ProtoId toolbar_proto(ObjectType type, int id)
             return ProtoId::Empty();
         }
     }
-    
+
     return ProtoId::Empty();
 }
 
