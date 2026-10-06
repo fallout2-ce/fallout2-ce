@@ -681,28 +681,28 @@ static void protoChooseMultiPidsUpdate(int win, ObjectType pidType, int scrollOf
         for (int col = 0; col < kGridCols; col++) {
             int idx = scrollOffset + row * kGridCols + col;
             ProtoId protoId;
-            switch(pidType){
-                case OBJ_TYPE_ITEM:
-                    protoId = static_cast<ItemProtoTypeId>(idx);
-                    break;
-                case OBJ_TYPE_CRITTER:
-                    protoId = static_cast<CritterProtoTypeId>(idx);
-                    break;
-                case OBJ_TYPE_SCENERY:
-                    protoId = static_cast<SceneryProtoTypeId>(idx);
-                    break;
-                case OBJ_TYPE_WALL:
-                    protoId = static_cast<WallProtoTypeId>(idx);
-                    break;
-                case OBJ_TYPE_TILE:
-                    protoId = static_cast<TileProtoTypeId>(idx);
-                    break;
-                case OBJ_TYPE_MISC:
-                    protoId = static_cast<MiscProtoTypeId>(idx);
-                    break;
-                default:
-                    protoId = ProtoId::Empty();
-                    break;
+            switch (pidType) {
+            case OBJ_TYPE_ITEM:
+                protoId = static_cast<ItemProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_CRITTER:
+                protoId = static_cast<CritterProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_SCENERY:
+                protoId = static_cast<SceneryProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_WALL:
+                protoId = static_cast<WallProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_TILE:
+                protoId = static_cast<TileProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_MISC:
+                protoId = static_cast<MiscProtoTypeId>(idx);
+                break;
+            default:
+                protoId = ProtoId::Empty();
+                break;
             }
 
             int cellX = kGridX + col * kCellPitchX + 1;
