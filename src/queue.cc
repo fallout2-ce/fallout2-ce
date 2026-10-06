@@ -492,7 +492,7 @@ static int explosionProcess(Object* explosive, bool animate)
     int minDamage;
 
     // SFALL
-    explosiveGetDamage(explosive->pid, &minDamage, &maxDamage);
+    explosiveGetDamage(explosive, &minDamage, &maxDamage);
 
     // FIXME: I guess this is a little bit wrong, dude can never be null, I
     // guess it needs to check if owner is dude.

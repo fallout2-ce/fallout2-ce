@@ -1023,8 +1023,7 @@ static int _ai_check_drugs(Object* critter)
                 break;
             }
 
-            int drugPid = drug->pid;
-            if (itemIsHealing(drugPid)) {
+            if (itemIsHealing(drug)) {
                 if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                     if (drugItemTakeDrug(critter, drug) == -1) {
                         itemAdd(critter, drug, 1);
@@ -1080,10 +1079,11 @@ static int _ai_check_drugs(Object* critter)
                         break;
                     }
 
-                    if (!itemIsHealing(drug->pid)) {
+                    const ProtoId drugProtoId = drug;
+                    if (!itemIsHealing(drugProtoId)) {
                         bool isPrimary = false;
                         for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
-                            if (ai->chem_primary_desire[index] == drug->pid) {
+                            if (ai->chem_primary_desire[index] == drugProtoId.pid()) {
                                 isPrimary = true;
                                 break;
                             }
@@ -1851,7 +1851,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
-        if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
+        if (critterFlagCheck(critter, CRITTER_LONG_LIMBS)) {
             return 2;
         }
 
@@ -2287,7 +2287,7 @@ static bool aiCanUseItem(Object* critter, Object* item)
     }
 
     // SFALL: Check healing items.
-    if (!itemIsHealing(item->pid)) {
+    if (!itemIsHealing(item)) {
         return false;
     }
 

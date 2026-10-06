@@ -426,12 +426,13 @@ const char* proto_wall_light_str(int flags)
 // 0x4960B8
 void proto_critter_flags_redraw(int win, int pid)
 {
+    const ProtoId protoId = ProtoId(pid);
     int index;
     Color color;
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
-        if (critterFlagCheck(pid, critFlagList[index])) {
+        if (critterFlagCheck(protoId, critFlagList[index])) {
             color = COLOR_GREEN;
         } else {
             color = COLOR_DARK_GREY_2;
@@ -552,9 +553,9 @@ int proto_critter_flags_modify(int pid)
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if ((critFlagList[index] & flags) != 0) {
-            critterFlagSet(protoId.pid(), critFlagList[index]);
+            critterFlagSet(protoId, critFlagList[index]);
         } else {
-            critterFlagUnset(protoId.pid(), critFlagList[index]);
+            critterFlagUnset(protoId, critFlagList[index]);
         }
     }
 

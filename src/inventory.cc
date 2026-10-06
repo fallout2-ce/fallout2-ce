@@ -3712,7 +3712,7 @@ static void inventoryRenderSummary()
         offset += pitch * fontGetLineHeight();
 
         if (ammoGetCapacity(item) > 0) {
-            const ProtoId ammoTypeProtoId = ProtoId(weaponGetAmmoTypePid(item));
+            const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(item);
 
             formattedText[0] = '\0';
 
@@ -4610,7 +4610,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                     }
                 }
             }
-        } else if (explosiveIsActiveExplosive(item->pid)) {
+        } else if (explosiveIsActiveExplosive(item)) {
             if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
                 _dropped_explosive = 1;
                 objectDrop(owner, item);
@@ -4732,15 +4732,16 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    if (FrmId(target).objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    const FrmId targetFrmId = target;
+    if (targetFrmId.objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
     }
 
-    if (FrmId(target).objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
+    if (targetFrmId.objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
         if (target->frame == 0) {
             CacheEntry* handle;
-            Art* frm = artLock(FrmId(target), &handle);
+            Art* frm = artLock(targetFrmId, &handle);
             if (frm != nullptr) {
                 int frameCount = artGetFrameCount(frm);
                 artUnlock(handle);
