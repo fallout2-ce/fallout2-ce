@@ -30,8 +30,63 @@ namespace dbox {
         int x, y;
     };
 
-    namespace input {
+    inline int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
+    {
+        int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
+            -1, -1, -1, buttonId, upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+
+        if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+        return btn;
     }
+
+    namespace input {
+        typedef enum InputDialogFrm {
+            INPUT_DIALOG_FRM_BACKGROUND,
+            INPUT_DIALOG_FRM_NAME_BOX,
+            INPUT_DIALOG_FRM_DONE_BOX,
+            INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
+            INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
+            INPUT_DIALOG_FRM_COUNT
+        } InputDialogFrm;
+
+        constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
+            InterfaceFrameId::CharacterWindow,
+            InterfaceFrameId::CharacterEditorNameBox,
+            InterfaceFrameId::DoneBox,
+            InterfaceFrameId::LittleRedButtonUp,
+            InterfaceFrameId::LittleRedButtonDown
+        };
+
+        constexpr Point nameBoxPos { 13, 13 };
+        constexpr Point doneBoxPos { 13, 40 };
+        constexpr Point doneLabelPos { 50, 44 };
+        constexpr Point doneButtonPos { 26, 44 };
+
+        struct DialogFrms {
+            FrmImage background, nameBox, doneBox, buttonUp, buttonDown;
+        };
+
+        inline bool loadImages(DialogFrms& images)
+        {
+            return images.background.lock(kInputDialogFrmIds[0])
+                && images.nameBox.lock(kInputDialogFrmIds[1])
+                && images.doneBox.lock(kInputDialogFrmIds[2])
+                && images.buttonUp.lock(kInputDialogFrmIds[3])
+                && images.buttonDown.lock(kInputDialogFrmIds[4]);
+        }
+
+        inline void drawNameBox(unsigned char* windowBuf, int windowWidth, const FrmImage& frm)
+        {
+            size_t offset = static_cast<size_t>(windowWidth) * nameBoxPos.y + nameBoxPos.x;
+            blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), windowBuf + offset, windowWidth);
+        }
+
+        inline void drawDoneBox(unsigned char* windowBuf, int windowWidth, const FrmImage& frm)
+        {
+            size_t offset = static_cast<size_t>(windowWidth) * doneBoxPos.y + doneBoxPos.x;
+            blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), windowBuf + offset, windowWidth);
+        }
+    } // namespace input
 
     namespace file {
         constexpr int lineCount = 12;
@@ -58,11 +113,22 @@ namespace dbox {
             constexpr Point cancelButton { 163, 214 };
             constexpr Point cancelLabel { 182, 213 };
         } // namespace save
+
+        inline int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
+            const FrmImage& upFrm, const FrmImage& downFrm)
+        {
+            int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
+                shortKey, arrowKey, hoverKey, buttonId,
+                upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+
+            if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+            return btn;
+        }
     } // namespace file
 
     namespace alert {
     }
-}
+} // namespace dbox
 
 typedef enum DialogType {
     DIALOG_TYPE_MEDIUM,
@@ -80,15 +146,6 @@ typedef enum FileDialogFrm {
     FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED,
     FILE_DIALOG_FRM_COUNT,
 } FileDialogFrm;
-
-typedef enum InputDialogFrm {
-    INPUT_DIALOG_FRM_BACKGROUND,
-    INPUT_DIALOG_FRM_NAME_BOX,
-    INPUT_DIALOG_FRM_DONE_BOX,
-    INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
-    INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
-    INPUT_DIALOG_FRM_COUNT
-} InputDialogFrm;
 
 typedef enum FileDialogScrollDirection {
     FILE_DIALOG_SCROLL_DIRECTION_NONE,
@@ -154,14 +211,6 @@ static constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     InterfaceFrameId::CharacterEditorDownArrowOn,
     InterfaceFrameId::CharacterEditorUpArrowOff,
     InterfaceFrameId::CharacterEditorUpArrowOn,
-};
-
-static constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
-    InterfaceFrameId::CharacterWindow,
-    InterfaceFrameId::CharacterEditorNameBox,
-    InterfaceFrameId::DoneBox,
-    InterfaceFrameId::LittleRedButtonUp,
-    InterfaceFrameId::LittleRedButtonDown
 };
 
 // CE: extracted from character_editor.cc
@@ -253,45 +302,33 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
 const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, int flags)
 {
-    static std::string result;
-    FrmImage frms[INPUT_DIALOG_FRM_COUNT];
+    using namespace fallout::dbox;
 
     ScopedFont mainFontGuard(101); // default font for input box
+    static std::string result;
 
-    for (int i = 0; i < INPUT_DIALOG_FRM_COUNT; ++i) {
-        if (!frms[i].lock(kInputDialogFrmIds[i])) {
-            return nullptr;
-        }
-    }
+    input::DialogFrms frms;
+    if (!input::loadImages(frms)) return nullptr;
 
-    const auto& bgFrm = frms[INPUT_DIALOG_FRM_BACKGROUND];
-    const auto& nameBoxFrm = frms[INPUT_DIALOG_FRM_NAME_BOX];
-    const auto& doneBoxFrm = frms[INPUT_DIALOG_FRM_DONE_BOX];
-    const auto& btnUpFrm = frms[INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP];
-    const auto& btnDownFrm = frms[INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN];
-
-    int windowWidth = bgFrm.getWidth();
-    int windowHeight = bgFrm.getHeight();
+    int windowWidth = frms.background.getWidth();
+    int windowHeight = frms.background.getHeight();
 
     UniqueWindow window(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
     if (window.get() == -1) return nullptr;
 
     unsigned char* windowBuf = windowGetBuffer(window.get());
+    memcpy(windowBuf, frms.background.getData(), static_cast<size_t>(windowWidth) * windowHeight);
 
-    memcpy(windowBuf, bgFrm.getData(), static_cast<size_t>(windowWidth) * windowHeight);
-
-    blitBufferToBufferTrans(nameBoxFrm.getData(), nameBoxFrm.getWidth(), nameBoxFrm.getHeight(), nameBoxFrm.getWidth(), windowBuf + static_cast<size_t>(windowWidth) * 13 + 13, windowWidth);
-    blitBufferToBufferTrans(doneBoxFrm.getData(), doneBoxFrm.getWidth(), doneBoxFrm.getHeight(), doneBoxFrm.getWidth(), windowBuf + windowWidth * 40 + 13, windowWidth);
-
+    input::drawNameBox(windowBuf, windowWidth, frms.nameBox);
+    input::drawDoneBox(windowBuf, windowWidth, frms.doneBox);
+    
     {
         ScopedFont buttonFontGuard(103); // "Done" button font
-        fontDrawText(windowBuf + windowWidth * 44 + 50, doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        fontDrawText(windowBuf + windowWidth * input::doneLabelPos.y + input::doneLabelPos.x,
+            doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
     }
 
-    int doneBtn = buttonCreate(window.get(), 26, 44, btnUpFrm.getWidth(), btnUpFrm.getHeight(), -1, -1, -1, 500, btnUpFrm.getData(), btnDownFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, 500, frms.buttonUp, frms.buttonDown);
 
     windowRefresh(window.get());
 
@@ -583,8 +620,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 // 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    using namespace dbox;
-
+    using namespace fallout::dbox;
     ScopedFont mainFont(103);
 
     bool isScrollable = (fileListLength > file::lineCount);
@@ -637,57 +673,21 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + file::load::doneLabel.y * backgroundWidth + file::load::doneLabel.x, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
-    int doneBtn = buttonCreate(window.get(),
-        file::load::doneButton.x, file::load::doneButton.y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1, -1, -1, 500,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    const auto& btnNormal = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL];
+    const auto& btnPress  = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED];
 
-    int cancelBtn = buttonCreate(window.get(),
-        file::load::doneButton.x, file::load::doneButton.y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1, -1, -1, 501,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (cancelBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    int doneBtn = dbox::createRedButton(window.get(), file::load::doneButton, 500, btnNormal, btnPress);
+    int cancelBtn = dbox::createRedButton(window.get(), file::load::cancelButton, 501, btnNormal, btnPress);
 
-    int scrollUpBtn = buttonCreate(window.get(),
-        file::scrollButton.x, file::scrollButton.y,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1, 505, 506, 505,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    const auto& upNormal = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL];
+    const auto& upPressed = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED];
+    const auto& downNormal = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL];
+    const auto& downPressed = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED];
 
-    int scrollDownButton = buttonCreate(window.get(),
-        file::scrollButton.x, file::scrollButton.y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1, 503, 504, 503,
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollDownButton != -1) {
-        buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton, 505, -1, 505, 506, upNormal, upPressed);
+
+    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + upPressed.getHeight() };
+    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos, 503, -1, 503, 504, downNormal, downPressed);
 
     buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
         -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
@@ -905,7 +905,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 // 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    using namespace dbox;
+    using namespace fallout::dbox;
     ScopedFont mainFont(103);
 
     bool isScrollable = (fileListLength > file::lineCount);
@@ -958,54 +958,21 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + backgroundWidth * file::save::cancelLabel.y + file::save::cancelLabel.x, cancel, backgroundWidth, backgroundWidth, COLOR_DARK_YELLOW);
 
-    int doneBtn = buttonCreate(window.get(), file::save::doneButton.x, file::save::doneButton.y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1, -1, -1, 500,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    const auto& btnNormal = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL];
+    const auto& btnPress  = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED];
 
-    int cancelBtn = buttonCreate(window.get(), file::save::cancelButton.x, file::save::cancelButton.y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1, -1, -1, 501,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (cancelBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    int doneBtn = dbox::createRedButton(window.get(), file::save::doneButton, 500, btnNormal, btnPress);
+    int cancelBtn = dbox::createRedButton(window.get(), file::save::cancelButton, 501, btnNormal, btnPress);
 
-    int scrollUpBtn = buttonCreate(window.get(), file::scrollButton.x, file::scrollButton.y,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1, 505, 506, 505,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    const auto& upNormal = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL];
+    const auto& upPressed = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED];
+    const auto& downNormal = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL];
+    const auto& downPressed = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED];
 
-    int scrollDownButton = buttonCreate(window.get(),
-        file::scrollButton.x, file::scrollButton.y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1, 503, 504, 503,
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollDownButton != -1) {
-        buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
+    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton, 505, -1, 505, 506, upNormal, upPressed);
+
+    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + upPressed.getHeight() };
+    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos, 503, -1, 503, 504, downNormal, downPressed);
 
     buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
         -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
@@ -1333,7 +1300,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 // 0x41FBDC PrntFlist
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch)
 {
-    using namespace dbox;
+    using namespace fallout::dbox;
 
     int lineHeight = fontGetLineHeight();
     int y = file::list.y;
