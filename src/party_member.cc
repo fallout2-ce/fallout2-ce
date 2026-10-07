@@ -359,7 +359,7 @@ int partyMemberAdd(Object* object)
     partyMember->script = nullptr;
     partyMember->vars = nullptr;
 
-    object->id = (object->pid & 0xFFFFFF) + 18000;
+    object->id = (object->pid & ProtoId::kMaxProtoId) + 18000;
     object->flags |= (OBJECT_NO_REMOVE | OBJECT_NO_SAVE);
 
     gPartyMembersLength++;
@@ -369,7 +369,7 @@ int partyMemberAdd(Object* object)
         script->flags |= (SCRIPT_FLAG_NO_SAVE | SCRIPT_FLAG_NO_REMOVE);
         script->ownerId = object->id;
 
-        object->sid = ((object->pid & 0xFFFFFF) + 18000) | (object->sid & 0xFF000000);
+        object->sid = ((object->pid & ProtoId::kMaxProtoId) + 18000) | (object->sid & 0xFF000000);
         script->sid = object->sid;
     }
 
@@ -654,7 +654,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 
     memcpy(script, a1->script, sizeof(*script));
 
-    int sid = (scriptType << 24) | ((a1->object->pid & 0xFFFFFF) + 18000);
+    int sid = (scriptType << 24) | ((a1->object->pid & ProtoId::kMaxProtoId) + 18000);
     a1->object->sid = sid;
     script->sid = sid;
 

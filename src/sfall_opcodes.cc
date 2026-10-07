@@ -1264,7 +1264,7 @@ static void op_refresh_pc_art(Program* program)
     _proto_dude_update_gender();
 
     const FrmId frmId = inventoryComputeCritterFrmId(gDude,
-        gDude->pid,
+        gDude,
         critterGetItem2(gDude),
         critterGetItem1(gDude),
         critterGetArmor(gDude),

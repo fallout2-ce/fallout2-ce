@@ -662,7 +662,7 @@ static void _object_fix_weapon_ammo(Object* obj)
     int charges;
     if (itemGetType(obj) == ITEM_TYPE_WEAPON) {
         int ammoTypePid = obj->data.item.weapon.ammoTypePid;
-        if (ammoTypePid == 0xCCCCCCCC || ammoTypePid == -1) {
+        if (ammoTypePid == 0xCCCCCCCC || ammoTypePid == ProtoId::kEmptyPid) {
             obj->data.item.weapon.ammoTypePid = proto->item.data.weapon.ammoTypePid;
         }
 
@@ -3805,7 +3805,7 @@ static int objectAllocate(Object** objectPtr)
     object->tile = -1;
     object->cid = -1;
     object->outline = OUTLINE_TYPE_NONE;
-    object->pid = -1;
+    object->pid = ProtoId::kEmptyPid;
     object->sid = -1;
     object->owner = nullptr;
     object->scriptIndex = -1;

@@ -2417,7 +2417,7 @@ static int wmParseEncBaseSubTypeStr(EncounterEntry* encounterEntry, char** strin
 
     strParseIntWithKey(&string, "pid", &(encounterEntry->pid), ":");
     if (encounterEntry->pid == 0) {
-        encounterEntry->pid = -1;
+        encounterEntry->pid = ProtoId::kEmptyPid;
     }
 
     strParseIntWithKey(&string, "distance", &(encounterEntry->distance), ":");
@@ -2459,7 +2459,7 @@ static int wmEncBaseSubTypeSlotInit(EncounterEntry* encounterEntry)
     encounterEntry->field_28 = -1;
     encounterEntry->ratioMode = ENCOUNTER_RATIO_MODE_SINGLE;
     encounterEntry->ratio = 100;
-    encounterEntry->pid = -1;
+    encounterEntry->pid = ProtoId::kEmptyPid;
     encounterEntry->flags = ENCOUNTER_SUBINFO_NONE;
     encounterEntry->distance = 0;
     encounterEntry->tile = -1;
@@ -4318,7 +4318,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
     for (int index = 0; index < encounter->entriesLength; index++) {
         EncounterEntry* encounterEntry = &(encounter->entries[index]);
 
-        if (encounterEntry->pid == -1) {
+        if (ProtoId(encounterEntry->pid) == ProtoId::Empty()) {
             continue;
         }
 
@@ -4349,7 +4349,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                 continue;
             }
 
-            if (encounterEntry->pid == -1) {
+            if (ProtoId(encounterEntry->pid) == ProtoId::Empty()) {
                 continue;
             }
 

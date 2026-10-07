@@ -1330,7 +1330,7 @@ void mapper_copy_map_elev()
                 || obj == gGameMouseHexCursor
                 || obj == gDude
                 || (obj->flags & OBJECT_NO_REMOVE) != OBJECT_NONE
-                || obj->pid == -1)) {
+                || ProtoId(obj) == ProtoId::Empty())) {
             obj = objectFindNextAtElevation();
         }
         if (obj == nullptr) break;

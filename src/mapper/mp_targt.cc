@@ -251,7 +251,7 @@ int target_find_free_subnode(TargetSubNode** subnode_ptr)
 
     *subnode_ptr = &(node->subnode);
 
-    node->subnode.pid = -1;
+    node->subnode.pid = ProtoId::kEmptyPid;
     node->subnode.next = NULL;
     node->next = targetlist.tail;
 

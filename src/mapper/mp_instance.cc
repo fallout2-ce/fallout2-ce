@@ -468,7 +468,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
 
     constexpr int kMaxItems = 200;
     char** names = static_cast<char**>(internal_malloc(sizeof(char*) * kMaxItems));
-    int* pids = static_cast<int*>(internal_malloc(sizeof(int) * kMaxItems));
+    ProtoId* protoIds = static_cast<ProtoId*>(internal_malloc(sizeof(ProtoId) * kMaxItems));
     int count = 0;
 
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
@@ -479,7 +479,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
 
         names[count] = static_cast<char*>(internal_malloc(64));
         snprintf(names[count], 64, "%s", protoGetName(protoId));
-        pids[count] = protoId.pid();
+        protoIds[count] = protoId; 
         count++;
     }
 
@@ -487,14 +487,14 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     if (selection != -1) {
         int quantity = 1;
         win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
-        protoInstAddToInven(ProtoId(pids[selection]), quantity);
+        protoInstAddToInven(protoIds[selection], quantity);
     }
 
     for (int i = 0; i < count; i++) {
         internal_free(names[i]);
     }
     internal_free(names);
-    internal_free(pids);
+    internal_free(protoIds);
     proto_inst_who_obj = nullptr;
 }
 

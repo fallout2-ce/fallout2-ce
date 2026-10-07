@@ -466,7 +466,7 @@ static Object* _inven_dude = nullptr;
 // Probably fid of armor to display in inventory dialog.
 //
 // 0x51905C inven_pid
-static int _inven_pid = -1;
+static ProtoId inventoryProtoId = ProtoId::Empty();
 
 // 0x519060 inven_is_initialized
 static bool _inven_is_initialized = false;
@@ -1512,7 +1512,7 @@ static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int sc
 void inventoryResetDude()
 {
     _inven_dude = gDude;
-    _inven_pid = ProtoId(CritterProtoTypeId::Dude).pid();
+    inventoryProtoId = CritterProtoTypeId::Dude;
 }
 
 int inventoryGetInvenApCost()
@@ -1542,11 +1542,11 @@ void inventoryResetInvenApCost()
 void inventorySetDude(Object* obj, const ProtoId& protoId)
 {
     _inven_dude = obj;
-    _inven_pid = protoId.pid();
+    inventoryProtoId = protoId;
 }
 
 // TODO(CE): move to more generic location
-FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
+FrmId inventoryComputeCritterFrmId(Object* critter, const ProtoId& baseProtoId, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
 {
     if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return FrmId(critter);
@@ -1555,7 +1555,7 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
     Proto* proto = nullptr;
 
     CritterFrameId inventoryFrameId = _art_vault_guy_num;
-    if (protoGetProto(ProtoId(basePid), &proto) != -1) {
+    if (protoGetProto(baseProtoId, &proto) != -1) {
         inventoryFrameId = FrmId(proto).frameId<CritterFrameId>();
     }
 
@@ -3138,7 +3138,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 static void _adjust_fid()
 {
     const FrmId frmId = inventoryComputeCritterFrmId(_inven_dude,
-        _inven_pid,
+        inventoryProtoId,
         gInventoryRightHandItem,
         gInventoryLeftHandItem,
         gInventoryArmor,
