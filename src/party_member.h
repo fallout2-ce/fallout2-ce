@@ -7,13 +7,14 @@
 #include "config.h"
 #include "db.h"
 #include "obj_types.h"
+#include "proto_types.h"
 #include "scripts.h"
 #include "skill_defs.h"
 
 namespace fallout {
 
 extern int gPartyMemberDescriptionsLength;
-extern std::vector<int> gPartyMemberPids;
+extern std::vector<ProtoId> gPartyMemberProtoIds;
 
 int partyMemberParseConfig(Config* config, bool reindex = false);
 int partyMembersInit();
