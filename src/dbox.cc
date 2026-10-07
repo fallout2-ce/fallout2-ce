@@ -193,11 +193,8 @@ namespace {
             {
                 if (!loadImages(frms, frmIds)) return false;
 
-                int bgWidth = frms.background.getWidth();
-                int bgHeight = frms.background.getHeight();
-
-                x += (screenGetWidth() - 640) / 2;
-                y += (screenGetHeight() - 480) / 2;
+                int bgWidth = frms.background.getWidth(), bgHeight = frms.background.getHeight();
+                x += (screenGetWidth() - 640) / 2, y += (screenGetHeight() - 480) / 2;
 
                 ctx.window.reset(windowCreate(x, y, bgWidth, bgHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
                 if (ctx.window.get() == -1) return false;
@@ -240,15 +237,43 @@ namespace {
         } // namespace file
 
         namespace alert {
-        }
+            typedef enum DialogType {
+                DIALOG_TYPE_MEDIUM,
+                DIALOG_TYPE_LARGE,
+                DIALOG_TYPE_COUNT,
+            } DialogType;
+
+            // 0x5108C8 dbox
+            static constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+                InterfaceFrameId::MediumDialog,
+                InterfaceFrameId::LargeDialog,
+            };
+
+            struct DialogConfig {
+                InterfaceFrmId backgroundFrameId;
+                int x, y, doneX, doneY, lines;
+            };
+
+            constexpr DialogConfig kDialogConfigs[DIALOG_TYPE_COUNT] = {
+                { InterfaceFrameId::MediumDialog, 29, 23, 51, 81, 5 },
+                { InterfaceFrameId::LargeDialog, 29, 27, 37, 98, 6 }
+            };
+
+            struct DialogFrms {
+                FrmImage done;
+                FrmImage buttonUp;
+                FrmImage buttonDown;
+            };
+
+            bool loadImages(DialogFrms& images)
+            {
+                return images.done.lock(InterfaceFrameId::DoneBox)
+                    && images.buttonUp.lock(InterfaceFrameId::LittleRedButtonUp)
+                    && images.buttonDown.lock(InterfaceFrameId::LittleRedButtonDown);
+            };
+        } // namespace alert
     } // namespace dbox
 } // namespace
-
-typedef enum DialogType {
-    DIALOG_TYPE_MEDIUM,
-    DIALOG_TYPE_LARGE,
-    DIALOG_TYPE_COUNT,
-} DialogType;
 
 typedef enum FileDialogScrollDirection {
     FILE_DIALOG_SCROLL_DIRECTION_NONE,
@@ -257,42 +282,6 @@ typedef enum FileDialogScrollDirection {
 } FileDialogScrollDirection;
 
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
-
-// 0x5108C8 dbox
-static constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    InterfaceFrameId::MediumDialog,
-    InterfaceFrameId::LargeDialog,
-};
-
-// 0x5108D0 ytable
-static const int _ytable[DIALOG_TYPE_COUNT] = {
-    23,
-    27,
-};
-
-// 0x5108D8 xtable
-static const int _xtable[DIALOG_TYPE_COUNT] = {
-    29,
-    29,
-};
-
-// 0x5108E0 doneY
-static const int _doneY[DIALOG_TYPE_COUNT] = {
-    81,
-    98,
-};
-
-// 0x5108E8 doneX
-static const int _doneX[DIALOG_TYPE_COUNT] = {
-    51,
-    37,
-};
-
-// 0x5108F0 dblines
-static const int _dblines[DIALOG_TYPE_COUNT] = {
-    5,
-    6,
-};
 
 // CE: extracted from character_editor.cc
 // TODO: see if it could be used for `showSaveFileDialog`
@@ -432,6 +421,8 @@ const char* showInputDialog(const char* currentInput, int x, int y, const char* 
 // 0x41CF20 dialog_out
 int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, ColorWithFlags titleColor, const char* secondaryButtonText, ColorWithFlags bodyColor, int flags)
 {
+    using namespace fallout::dbox;
+
     MessageList messageList;
     MessageListItem messageListItem;
 
@@ -455,45 +446,39 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     int dialogType;
 
     if ((flags & DIALOG_BOX_LARGE) != 0 || hasTwoButtons) {
-        dialogType = DIALOG_TYPE_LARGE;
+        dialogType = alert::DIALOG_TYPE_LARGE;
     } else if ((flags & DIALOG_BOX_MEDIUM) != 0) {
-        dialogType = DIALOG_TYPE_MEDIUM;
+        dialogType = alert::DIALOG_TYPE_MEDIUM;
     } else {
         if (hasTitle) linesCount++;
 
-        dialogType = (maximumLineWidth > 168 || linesCount > 5) ? DIALOG_TYPE_LARGE : DIALOG_TYPE_MEDIUM;
+        dialogType = (maximumLineWidth > 168 || linesCount > 5) ? alert::DIALOG_TYPE_LARGE : alert::DIALOG_TYPE_MEDIUM;
     }
 
-    FrmImage backgroundFrmImage;
-    const FrmId backgroundFid = kDialogBoxBackgroundFrmIds[dialogType];
-    if (!backgroundFrmImage.lock(backgroundFid)) {
-        return -1;
-    }
+    alert::DialogConfig config = alert::kDialogConfigs[dialogType];
+
+    FrmImage bg;
+    if (!bg.lock(alert::kDialogBoxBackgroundFrmIds[dialogType])) return -1;
 
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
 
-    UniqueWindow window(windowCreate(x, y, backgroundFrmImage.getWidth(), backgroundFrmImage.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    UniqueWindow window(windowCreate(x, y, bg.getWidth(), bg.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
     if (window.get() == -1) return -1;
 
     unsigned char* windowBuf = windowGetBuffer(window.get());
-    size_t bufferSize = static_cast<size_t>(backgroundFrmImage.getWidth()) * backgroundFrmImage.getHeight();
-    memcpy(windowBuf, backgroundFrmImage.getData(), bufferSize);
+    size_t bufferSize = static_cast<size_t>(bg.getWidth()) * bg.getHeight();
+    memcpy(windowBuf, bg.getData(), bufferSize);
 
-    FrmImage doneBoxFrmImage;
-    FrmImage buttonNormalFrmImage;
-    FrmImage buttonPressedFrmImage;
+    alert::DialogFrms frms;
 
     // Resources init
     const bool hasPrimaryButton = (flags & DIALOG_BOX_NO_BUTTONS) == 0;
-    const bool hasSecondaryButton = hasTwoButtons && dialogType == DIALOG_TYPE_LARGE;
+    const bool hasSecondaryButton = hasTwoButtons && dialogType == alert::DIALOG_TYPE_LARGE;
 
     if (hasPrimaryButton || hasSecondaryButton) {
-        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)
-            || !buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)
-            || !buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)
-            || !messageListInit(&messageList)) return -1;
+        if (!alert::loadImages(frms) || !messageListInit(&messageList)) return -1;
 
         std::string path = std::string(asc_5186C8) + "DBOX.MSG";
         if (!messageListLoad(&messageList, path.c_str())) {
@@ -502,8 +487,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         }
     }
 
-    const int bgWidth = backgroundFrmImage.getWidth();
-    const int doneY = _doneY[dialogType];
+    const int bgWidth = bg.getWidth();
 
     // Buttons
     {
@@ -511,30 +495,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
         // First button
         if (hasPrimaryButton) {
-            const int doneBoxX = hasTwoButtons ? _doneX[dialogType] : (bgWidth - doneBoxFrmImage.getWidth()) / 2;
+            const int doneBoxX = hasTwoButtons ? config.doneX : (bgWidth - frms.done.getWidth()) / 2;
 
-            blitBufferToBuffer(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(), doneBoxFrmImage.getHeight(), doneBoxFrmImage.getWidth(),
-                windowBuf + bgWidth * doneY + doneBoxX,
-                bgWidth);
+            blitBufferToBuffer(frms.done.getData(), frms.done.getWidth(), frms.done.getHeight(), frms.done.getWidth(),
+                windowBuf + bgWidth * config.doneY + doneBoxX, bgWidth);
 
             messageListItem.num = ((flags & DIALOG_BOX_YES_NO) == 0) ? 100 : 101; // 100 - DONE, 101 - YES
             if (messageListGetItem(&messageList, &messageListItem)) {
-                fontDrawText(windowBuf + bgWidth * (doneY + 3) + doneBoxX + 35,
-                    messageListItem.text,
-                    bgWidth, bgWidth, COLOR_DARK_YELLOW);
+                fontDrawText(windowBuf + bgWidth * (config.doneY + 3) + doneBoxX + 35,
+                    messageListItem.text, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            int btn = buttonCreate(window.get(),
-                doneBoxX + 13, doneY + 4,
-                buttonPressedFrmImage.getWidth(), buttonPressedFrmImage.getHeight(),
-                -1, -1, -1, 500, // first button ID
-                buttonNormalFrmImage.getData(), buttonPressedFrmImage.getData(),
-                nullptr, BUTTON_FLAG_TRANSPARENT);
-
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
+            dbox::Point btnPos = { doneBoxX + 13, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, 500, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -545,33 +518,20 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
             }
 
-            const int doneX = _doneX[dialogType];
+            const int blitXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 24) : config.doneX;
+            const int textXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 59) : (config.doneX + 35);
+            const int buttonXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 37) : (config.doneX + 13);
 
-            const int blitXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 24) : doneX;
-            const int textXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 59) : (doneX + 35);
-            const int buttonXOffset = hasPrimaryButton ? (doneX + doneBoxFrmImage.getWidth() + 37) : (doneX + 13);
-
-            blitBufferToBufferTrans(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(), doneBoxFrmImage.getHeight(), doneBoxFrmImage.getWidth(),
-                windowBuf + bgWidth * doneY + blitXOffset,
-                bgWidth);
+            blitBufferToBufferTrans(frms.done.getData(), frms.done.getWidth(), frms.done.getHeight(), frms.done.getWidth(),
+                windowBuf + bgWidth * config.doneY + blitXOffset, bgWidth);
 
             if (secondaryButtonText != nullptr) {
-                fontDrawText(windowBuf + bgWidth * (doneY + 3) + textXOffset,
-                    secondaryButtonText,
-                    bgWidth, bgWidth, COLOR_DARK_YELLOW);
+                fontDrawText(windowBuf + bgWidth * (config.doneY + 3) + textXOffset,
+                    secondaryButtonText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            int btn = buttonCreate(window.get(),
-                buttonXOffset, doneY + 4,
-                buttonPressedFrmImage.getWidth(), buttonPressedFrmImage.getHeight(),
-                -1, -1, -1, 501, // Second button ID
-                buttonNormalFrmImage.getData(), buttonPressedFrmImage.getData(),
-                nullptr, BUTTON_FLAG_TRANSPARENT);
-
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
+            dbox::Point btnPos = { buttonXOffset, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, 501, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -579,16 +539,16 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
     ScopedFont mainFontGuard(101);
 
-    int nextY = _ytable[dialogType];
-    int maxY = _ytable[dialogType] + _dblines[dialogType] * fontGetLineHeight();
-    int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
+    int nextY = config.y;
+    int maxY = config.y + config.lines * fontGetLineHeight();
+    int maxWidth = bg.getWidth() - config.x * 2;
 
     auto drawLine = [&](const char* text, int currentY, ColorWithFlags textColor) {
-        int bgWidth = backgroundFrmImage.getWidth();
+        int bgWidth = bg.getWidth();
         int xOffset = 0;
 
         if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-            xOffset = _xtable[dialogType];
+            xOffset = config.x;
         } else {
             xOffset = (bgWidth - fontGetStringWidth(text)) / 2;
         }
@@ -603,7 +563,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         for (int index = 0; index < bodyLength; index++) {
             if (body[index] == nullptr) continue;
 
-            const int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
+            const int maxWidth = bg.getWidth() - config.x * 2;
 
             short beginnings[WORD_WRAP_MAX_COUNT];
             short subLineCount = 0;
@@ -613,11 +573,11 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
         }
 
-        if (numberOfLines > _dblines[dialogType]) {
-            numberOfLines = _dblines[dialogType];
+        if (numberOfLines > config.lines) {
+            numberOfLines = config.lines;
         }
 
-        nextY += (_dblines[dialogType] - numberOfLines) * fontGetLineHeight() / 2;
+        nextY += (config.lines - numberOfLines) * fontGetLineHeight() / 2;
     }
 
     if (hasTitle && title != nullptr) {
