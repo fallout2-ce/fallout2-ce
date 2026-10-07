@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <string_view>
 
 #include <algorithm>
 
@@ -233,7 +234,6 @@ namespace {
 
                 return true;
             }
-
         } // namespace file
 
         namespace alert {
@@ -244,7 +244,7 @@ namespace {
             } DialogType;
 
             // 0x5108C8 dbox
-            static constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+            constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
                 InterfaceFrameId::MediumDialog,
                 InterfaceFrameId::LargeDialog,
             };
@@ -270,7 +270,7 @@ namespace {
                 return images.done.lock(InterfaceFrameId::DoneBox)
                     && images.buttonUp.lock(InterfaceFrameId::LittleRedButtonUp)
                     && images.buttonDown.lock(InterfaceFrameId::LittleRedButtonDown);
-            };
+            }
         } // namespace alert
     } // namespace dbox
 } // namespace
