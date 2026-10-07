@@ -189,7 +189,7 @@ namespace {
             };
 
             bool initInterface(Context& ctx, DialogFrms& frms, const InterfaceFrmId* frmIds, const ModeConfig& cfg,
-                    const char* title, int& x, int& y)
+                const char* title, int& x, int& y)
             {
                 if (!loadImages(frms, frmIds)) return false;
 
@@ -402,7 +402,7 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
 
     input::drawBox(windowBuf, windowWidth, input::nameBoxPos, frms.nameBox);
     input::drawBox(windowBuf, windowWidth, input::doneBoxPos, frms.doneBox);
-    
+
     {
         ScopedFont buttonFontGuard(103); // "Done" button font
         fontDrawText(windowBuf + windowWidth * input::doneLabelPos.y + input::doneLabelPos.x,
