@@ -1839,6 +1839,13 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
     int openPathNodeListLength = 1;
     PathNode temp;
 
+    constexpr std::array<ProtoId, 4> kRadioactiveGooProtoIds = {
+        SceneryProtoTypeId::FirstRadioactiveGoo,
+        SceneryProtoTypeId::SecondRadioactiveGoo,
+        SceneryProtoTypeId::ThirdRadioactiveGoo,
+        SceneryProtoTypeId::LastRadioactiveGoo,
+    };
+
     while (1) {
         int v63 = -1;
 
@@ -1944,7 +1951,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (isCritter) {
                 Object* o = objectFindFirstAtLocation(object->elevation, v27->tile);
                 while (o != nullptr) {
-                    if (o->pid >= ProtoId(SceneryProtoTypeId::FirstRadioactiveGoo).pid() && o->pid <= ProtoId(SceneryProtoTypeId::LastRadioactiveGoo).pid()) {
+                    if (std::find(kRadioactiveGooProtoIds.begin(), kRadioactiveGooProtoIds.end(), o) != kRadioactiveGooProtoIds.end()) {
                         break;
                     }
                     o = objectFindNextAtLocation();
