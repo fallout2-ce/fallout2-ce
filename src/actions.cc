@@ -816,7 +816,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     _obj_connect(weapon, attack->attacker->tile, attack->attacker->elevation, nullptr);
                 } else {
-                    objectCreateWithFrmIdPid(&projectile, FrmId(projectileProto), -1);
+                    objectCreateWithFrmIdProtoId(&projectile, FrmId(projectileProto), ProtoId::Empty());
                 }
 
                 objectHide(projectile, nullptr);
@@ -902,7 +902,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                         explosionGetPattern(&startRotation, &endRotation);
 
                         for (Rotation rotation = startRotation; rotation < endRotation; rotation++) {
-                            if (objectCreateWithFrmIdPid(&(adjacentObjects[rotation]), explosionFrmId, -1) != -1) {
+                            if (objectCreateWithFrmIdProtoId(&(adjacentObjects[rotation]), explosionFrmId, ProtoId::Empty()) != -1) {
                                 objectHide(adjacentObjects[rotation], nullptr);
 
                                 int adjacentTile = tileGetTileInDirection(explosionCenterTile, rotation, 1);
@@ -1640,7 +1640,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     }
 
     Object* explosion;
-    if (objectCreateWithFrmIdPid(&explosion, MiscFrameId::RocketExplosion, -1) == -1) {
+    if (objectCreateWithFrmIdProtoId(&explosion, MiscFrameId::RocketExplosion, ProtoId::Empty()) == -1) {
         internal_free(attack);
         return -1;
     }
@@ -1652,7 +1652,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
     Object* adjacentExplosions[ROTATION_COUNT];
     for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
-        if (objectCreateWithFrmIdPid(&(adjacentExplosions[rotation]), MiscFrameId::RocketExplosion, -1) == -1) {
+        if (objectCreateWithFrmIdProtoId(&(adjacentExplosions[rotation]), MiscFrameId::RocketExplosion, ProtoId::Empty()) == -1) {
             while (--rotation >= ROTATION_FIRST) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);
             }
@@ -1942,7 +1942,7 @@ void actionDamage(int tile, int elevation, int minDamage, int maxDamage, DamageT
     }
 
     Object* attacker;
-    if (objectCreateWithFrmIdPid(&attacker, SceneryFrameId::ForceField3, -1) == -1) {
+    if (objectCreateWithFrmIdProtoId(&attacker, SceneryFrameId::ForceField3, ProtoId::Empty()) == -1) {
         internal_free(attack);
         return;
     }

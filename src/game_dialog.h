@@ -44,7 +44,7 @@ void gameDialogEndBarter();
 bool gameDialogIsBarterWindowExpanded();
 int gameDialogGetWindow();
 int gameDialogGetBackgroundWindow();
-void gameDialogSetPartyMemberCcMsgIds(int pid, int startMsgId, int endMsgId);
+void gameDialogSetPartyMemberCcMsgIds(const ProtoId& protoId, int startMsgId, int endMsgId);
 void gameDialogResetPartyMemberCcMsgIds();
 
 } // namespace fallout

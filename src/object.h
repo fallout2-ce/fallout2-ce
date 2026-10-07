@@ -32,8 +32,8 @@ int objectLoadAll(File* stream);
 int objectSaveAll(File* stream);
 void _obj_render_pre_roof(Rect* rect, int elevation);
 void _obj_render_post_roof(Rect* rect, int elevation);
-int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid);
-int objectCreateWithPid(Object** objectPtr, int pid);
+int objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId);
+int objectCreateWithProtoId(Object** objectPtr, const ProtoId& protoId);
 int _obj_copy(Object** a1, Object* a2);
 int _obj_connect(Object* obj, int tile_index, int elev, Rect* rect);
 int _obj_disconnect(Object* obj, Rect* rect);
@@ -136,7 +136,7 @@ private:
     Object* _ptr = nullptr;
 };
 
-int objectCreateWithFrmIdPid(UniqueObject& obj, const FrmId& frmId, int pid);
+int objectCreateWithFrmIdProtoId(UniqueObject& obj, const FrmId& frmId, const ProtoId& protoId);
 
 } // namespace fallout
 

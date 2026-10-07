@@ -354,7 +354,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFrmIdPid(&gDude, dudeFrmId, ProtoId(CritterProtoTypeId::Dude).pid());
+    objectCreateWithFrmIdProtoId(&gDude, dudeFrmId, CritterProtoTypeId::Dude);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -367,7 +367,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    objectCreateWithFrmIdPid(&gEgg, eggFrmId, -1);
+    objectCreateWithFrmIdProtoId(&gEgg, eggFrmId, ProtoId::Empty());
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -928,9 +928,8 @@ void _obj_render_post_roof(Rect* rect, int elevation)
 }
 
 // 0x489A84 obj_new
-int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
+int objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId)
 {
-    const ProtoId protoId = ProtoId(pid);
     ObjectListNode* objectListNode;
 
     // NOTE: Uninline;
@@ -945,7 +944,7 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
     }
 
     if (frmId.valid()) {
-        assert(frmId.hasFid() && "objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid) called with path based FrmId which is not supported!");
+        assert(frmId.hasFid() && "objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId) called with path based FrmId which is not supported!");
     }
 
     objectListNode->obj->fid = frmId.fid();
@@ -1024,18 +1023,17 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
 }
 
 // 0x489C9C obj_pid_new
-int objectCreateWithPid(Object** objectPtr, int pid)
+int objectCreateWithProtoId(Object** objectPtr, const ProtoId& protoId)
 {
     Proto* proto;
 
     *objectPtr = nullptr;
 
-    const ProtoId protoId = ProtoId(pid);
     if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
-    return objectCreateWithFrmIdPid(objectPtr, FrmId(proto), protoId.pid());
+    return objectCreateWithFrmIdProtoId(objectPtr, proto, protoId);
 }
 
 // 0x489CCC obj_copy
@@ -5354,10 +5352,10 @@ void UniqueObject::reset(Object* p)
     _ptr = p;
 }
 
-int objectCreateWithFrmIdPid(UniqueObject& obj, const FrmId& frmId, int pid)
+int objectCreateWithFrmIdProtoId(UniqueObject& obj, const FrmId& frmId, const ProtoId& protoId)
 {
     Object* raw;
-    int rc = objectCreateWithFrmIdPid(&raw, frmId, pid);
+    int rc = objectCreateWithFrmIdProtoId(&raw, frmId, protoId);
     if (rc != -1) obj.reset(raw);
     return rc;
 }

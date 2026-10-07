@@ -874,7 +874,7 @@ static void opCreateObject(Program* program)
 
     Proto* proto;
     if (protoGetProto(protoId, &proto) != -1) {
-        if (objectCreateWithFrmIdPid(&object, FrmId(proto), protoId.pid()) != -1) {
+        if (objectCreateWithFrmIdProtoId(&object, proto, protoId) != -1) {
             if (tile == -1) {
                 tile = 0;
             }
@@ -1032,7 +1032,7 @@ static void opObjectIsCarryingObjectWithPid(Program* program)
 
     int result = 0;
     if (obj != nullptr) {
-        result = objectGetCarriedQuantityByPid(obj, protoId.pid());
+        result = objectGetCarriedQuantityByProtoId(obj, protoId);
     } else {
         scriptPredefinedError(program, "obj_is_carrying_obj_pid", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
@@ -3494,7 +3494,7 @@ static void opObjectCarryingObjectByPid(Program* program)
 
     Object* result = nullptr;
     if (object != nullptr) {
-        result = objectGetCarriedObjectByPid(object, protoId.pid());
+        result = objectGetCarriedObjectByProtoId(object, protoId);
     } else {
         scriptPredefinedError(program, "obj_carrying_pid_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
@@ -4742,9 +4742,9 @@ static void opGetFidAnim(Program* program)
 // 0x45C66C op_party_member_obj
 static void opGetPartyMember(Program* program)
 {
-    int data = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
-    Object* object = partyMemberFindByPid(data);
+    Object* object = partyMemberFindByProtoId(protoId);
     programStackPushPointer(program, object);
 }
 

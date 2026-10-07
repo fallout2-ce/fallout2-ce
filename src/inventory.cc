@@ -1417,7 +1417,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
             displayMonitorAddMessage("I can't use that."); // TODO: translate
             return false;
         }
-    } else if (partySlot == InvenSlot::Armor && !partyMemberPidCanEquipArmor(partyBaseTarget->pid)) {
+    } else if (partySlot == InvenSlot::Armor && !partyMemberProtoIdCanEquipArmor(partyBaseTarget)) {
         displayMonitorAddMessage("I can't use that."); // TODO: translate
         return false;
     }
@@ -1539,10 +1539,10 @@ void inventoryResetInvenApCost()
 }
 
 // inven_set_dude
-void inventorySetDude(Object* obj, int pid)
+void inventorySetDude(Object* obj, const ProtoId& protoId)
 {
     _inven_dude = obj;
-    _inven_pid = pid;
+    _inven_pid = protoId.pid();
 }
 
 // TODO(CE): move to more generic location
@@ -3418,17 +3418,17 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
 }
 
 // 0x471CA0
-Object* objectGetCarriedObjectByPid(Object* obj, int pid)
+Object* objectGetCarriedObjectByProtoId(Object* obj, const ProtoId& protoId)
 {
     Inventory* inventory = &(obj->data.inventory);
 
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
-        if (inventoryItem->item->pid == pid) {
+        if (ProtoId(inventoryItem->item) == protoId) {
             return inventoryItem->item;
         }
 
-        Object* found = objectGetCarriedObjectByPid(inventoryItem->item, pid);
+        Object* found = objectGetCarriedObjectByProtoId(inventoryItem->item, protoId);
         if (found != nullptr) {
             return found;
         }
@@ -3438,18 +3438,18 @@ Object* objectGetCarriedObjectByPid(Object* obj, int pid)
 }
 
 // 0x471CDC
-int objectGetCarriedQuantityByPid(Object* object, int pid)
+int objectGetCarriedQuantityByProtoId(Object* object, const ProtoId& protoId)
 {
     int quantity = 0;
 
     Inventory* inventory = &(object->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
-        if (inventoryItem->item->pid == pid) {
+        if (ProtoId(inventoryItem->item) == protoId) {
             quantity += inventoryItem->quantity;
         }
 
-        quantity += objectGetCarriedQuantityByPid(inventoryItem->item, pid);
+        quantity += objectGetCarriedQuantityByProtoId(inventoryItem->item, protoId);
     }
 
     return quantity;
@@ -4770,7 +4770,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return 0;
     }
     CritterEquipped stealTargetEquipped {};
@@ -5706,7 +5706,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return;
     }
 

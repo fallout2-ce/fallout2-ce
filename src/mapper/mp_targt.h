@@ -1,6 +1,8 @@
 #ifndef FALLOUT_MAPPER_MP_TARGT_H_
 #define FALLOUT_MAPPER_MP_TARGT_H_
 
+#include "proto_types.h"
+
 namespace fallout {
 
 typedef struct TargetSubNode {
@@ -48,20 +50,20 @@ typedef struct TargetSubNode {
 
 void target_override_protection();
 bool target_overriden();
-void target_make_path(char* path, int pid);
+void target_make_path(char* path, const ProtoId& protoId);
 int target_init();
 int target_exit();
 int target_header_save();
 int target_header_load();
-int target_save(int pid);
-int target_load(int pid, TargetSubNode** subnode_ptr);
+int target_save(const ProtoId& protoId);
+int target_load(const ProtoId& protoId, TargetSubNode** subnode_ptr);
 int target_find_free_subnode(TargetSubNode** subnode_ptr);
-int target_new(int pid, int* tid_ptr);
-int target_remove(int pid);
-int target_remove_tid(int pid, int tid);
+int target_new(const ProtoId& protoId, int* tid_ptr);
+int target_remove(const ProtoId& protoId);
+int target_remove_tid(const ProtoId& protoId, int tid);
 int target_remove_all();
-int target_ptr(int pid, TargetSubNode** subnode_ptr);
-int target_tid_ptr(int pid, int tid, TargetSubNode** subnode_ptr);
+int target_ptr(const ProtoId& protoId, TargetSubNode** subnode_ptr);
+int target_tid_ptr(const ProtoId& protoId, int tid, TargetSubNode** subnode_ptr);
 int pick_rot();
 int target_pick_global_var(int* value_ptr);
 int target_pick_map_var(int* value_ptr);
