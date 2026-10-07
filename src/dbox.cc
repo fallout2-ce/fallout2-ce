@@ -25,127 +25,167 @@
 
 namespace fallout {
 
-namespace dbox {
-    struct Point {
-        int x, y;
-    };
-
-    inline int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
-    {
-        int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
-            -1, -1, -1, buttonId, upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
-
-        if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        return btn;
-    }
-
-    namespace input {
-        typedef enum InputDialogFrm {
-            INPUT_DIALOG_FRM_BACKGROUND,
-            INPUT_DIALOG_FRM_NAME_BOX,
-            INPUT_DIALOG_FRM_DONE_BOX,
-            INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
-            INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
-            INPUT_DIALOG_FRM_COUNT
-        } InputDialogFrm;
-
-        constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
-            InterfaceFrameId::CharacterWindow,
-            InterfaceFrameId::CharacterEditorNameBox,
-            InterfaceFrameId::DoneBox,
-            InterfaceFrameId::LittleRedButtonUp,
-            InterfaceFrameId::LittleRedButtonDown
+namespace {
+    namespace dbox {
+        struct Point {
+            int x, y;
         };
 
-        constexpr Point nameBoxPos { 13, 13 };
-        constexpr Point doneBoxPos { 13, 40 };
-        constexpr Point doneLabelPos { 50, 44 };
-        constexpr Point doneButtonPos { 26, 44 };
-
-        struct DialogFrms {
-            FrmImage background, nameBox, doneBox, buttonUp, buttonDown;
-        };
-
-        inline bool loadImages(DialogFrms& images)
-        {
-            return images.background.lock(kInputDialogFrmIds[0])
-                && images.nameBox.lock(kInputDialogFrmIds[1])
-                && images.doneBox.lock(kInputDialogFrmIds[2])
-                && images.buttonUp.lock(kInputDialogFrmIds[3])
-                && images.buttonDown.lock(kInputDialogFrmIds[4]);
-        }
-
-        inline void drawNameBox(unsigned char* windowBuf, int windowWidth, const FrmImage& frm)
-        {
-            size_t offset = static_cast<size_t>(windowWidth) * nameBoxPos.y + nameBoxPos.x;
-            blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), windowBuf + offset, windowWidth);
-        }
-
-        inline void drawDoneBox(unsigned char* windowBuf, int windowWidth, const FrmImage& frm)
-        {
-            size_t offset = static_cast<size_t>(windowWidth) * doneBoxPos.y + doneBoxPos.x;
-            blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), windowBuf + offset, windowWidth);
-        }
-    } // namespace input
-
-    namespace file {
-        constexpr int lineCount = 12;
-        constexpr int doubleClickDelay = 32;
-
-        constexpr Point title { 49, 16 };
-        constexpr Point scrollButton { 36, 44 };
-
-        struct ListRect {
-            int x, y, width, height;
-        };
-        constexpr ListRect list { 55, 49, 190, 124 };
-
-        namespace load {
-            constexpr Point doneButton { 58, 187 };
-            constexpr Point doneLabel { 79, 187 };
-            constexpr Point cancelButton { 163, 187 };
-            constexpr Point cancelLabel { 182, 187 };
-        } // namespace load
-
-        namespace save {
-            constexpr Point doneButton { 58, 214 };
-            constexpr Point doneLabel { 79, 213 };
-            constexpr Point cancelButton { 163, 214 };
-            constexpr Point cancelLabel { 182, 213 };
-        } // namespace save
-
-        inline int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
-            const FrmImage& upFrm, const FrmImage& downFrm)
+        int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
         {
             int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
-                shortKey, arrowKey, hoverKey, buttonId,
-                upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+                -1, -1, -1, buttonId, upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
 
             if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             return btn;
         }
-    } // namespace file
 
-    namespace alert {
-    }
-} // namespace dbox
+        namespace input {
+            typedef enum InputDialogFrm {
+                INPUT_DIALOG_FRM_BACKGROUND,
+                INPUT_DIALOG_FRM_NAME_BOX,
+                INPUT_DIALOG_FRM_DONE_BOX,
+                INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
+                INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
+                INPUT_DIALOG_FRM_COUNT
+            } InputDialogFrm;
+
+            constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
+                InterfaceFrameId::CharacterWindow,
+                InterfaceFrameId::CharacterEditorNameBox,
+                InterfaceFrameId::DoneBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown
+            };
+
+            constexpr Point nameBoxPos { 13, 13 };
+            constexpr Point doneBoxPos { 13, 40 };
+            constexpr Point doneLabelPos { 50, 44 };
+            constexpr Point doneButtonPos { 26, 44 };
+
+            struct DialogFrms {
+                FrmImage background, nameBox, doneBox, buttonUp, buttonDown;
+            };
+
+            bool loadImages(DialogFrms& images)
+            {
+                return images.background.lock(kInputDialogFrmIds[0])
+                    && images.nameBox.lock(kInputDialogFrmIds[1])
+                    && images.doneBox.lock(kInputDialogFrmIds[2])
+                    && images.buttonUp.lock(kInputDialogFrmIds[3])
+                    && images.buttonDown.lock(kInputDialogFrmIds[4]);
+            }
+
+            void drawBox(unsigned char* buffer, int width, Point position, const FrmImage& frm)
+            {
+                size_t offset = static_cast<size_t>(width) * position.y + position.x;
+                blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), buffer + offset, width);
+            }
+        } // namespace input
+
+        namespace file {
+            typedef enum FileDialogFrm {
+                FILE_DIALOG_FRM_BACKGROUND,
+                FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL,
+                FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED,
+                FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL,
+                FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED,
+                FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL,
+                FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED,
+                FILE_DIALOG_FRM_COUNT,
+            } FileDialogFrm;
+
+            // 0x510900 flgids
+            constexpr InterfaceFrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+                InterfaceFrameId::LoadBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            };
+
+            // 0x51091C flgids2
+            constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+                InterfaceFrameId::SaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            };
+
+            struct DialogFrms {
+                FrmImage background;
+                FrmImage buttonNormal;
+                FrmImage buttonPressed;
+                FrmImage scrollDownNormal;
+                FrmImage scrollDownPressed;
+                FrmImage scrollUpNormal;
+                FrmImage scrollUpPressed;
+            };
+
+            inline bool loadImages(DialogFrms& images, const InterfaceFrmId* frmIds)
+            {
+                auto* frms = reinterpret_cast<FrmImage*>(&images);
+
+                for (int i = 0; i < FILE_DIALOG_FRM_COUNT; ++i) {
+                    if (!frms[i].lock(frmIds[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            constexpr int lineCount = 12;
+            constexpr int doubleClickDelay = 32;
+
+            constexpr Point title { 49, 16 };
+            constexpr Point scrollButton { 36, 44 };
+
+            struct ListRect {
+                int x, y, width, height;
+            };
+            constexpr ListRect list { 55, 49, 190, 124 };
+
+            namespace load {
+                constexpr Point doneButton { 58, 187 };
+                constexpr Point doneLabel { 79, 187 };
+                constexpr Point cancelButton { 163, 187 };
+                constexpr Point cancelLabel { 182, 187 };
+            } // namespace load
+
+            namespace save {
+                constexpr Point doneButton { 58, 214 };
+                constexpr Point doneLabel { 79, 213 };
+                constexpr Point cancelButton { 163, 214 };
+                constexpr Point cancelLabel { 182, 213 };
+            } // namespace save
+
+            int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
+                const FrmImage& upFrm, const FrmImage& downFrm)
+            {
+                int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
+                    shortKey, arrowKey, hoverKey, buttonId,
+                    upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+
+                if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+                return btn;
+            }
+        } // namespace file
+
+        namespace alert {
+        }
+    } // namespace dbox
+} // namespace
 
 typedef enum DialogType {
     DIALOG_TYPE_MEDIUM,
     DIALOG_TYPE_LARGE,
     DIALOG_TYPE_COUNT,
 } DialogType;
-
-typedef enum FileDialogFrm {
-    FILE_DIALOG_FRM_BACKGROUND,
-    FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL,
-    FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED,
-    FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL,
-    FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED,
-    FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL,
-    FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED,
-    FILE_DIALOG_FRM_COUNT,
-} FileDialogFrm;
 
 typedef enum FileDialogScrollDirection {
     FILE_DIALOG_SCROLL_DIRECTION_NONE,
@@ -189,28 +229,6 @@ static const int _doneX[DIALOG_TYPE_COUNT] = {
 static const int _dblines[DIALOG_TYPE_COUNT] = {
     5,
     6,
-};
-
-// 0x510900 flgids
-static constexpr InterfaceFrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    InterfaceFrameId::LoadBox,
-    InterfaceFrameId::LittleRedButtonUp,
-    InterfaceFrameId::LittleRedButtonDown,
-    InterfaceFrameId::CharacterEditorDownArrowOff,
-    InterfaceFrameId::CharacterEditorDownArrowOn,
-    InterfaceFrameId::CharacterEditorUpArrowOff,
-    InterfaceFrameId::CharacterEditorUpArrowOn,
-};
-
-// 0x51091C flgids2
-static constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    InterfaceFrameId::SaveBox,
-    InterfaceFrameId::LittleRedButtonUp,
-    InterfaceFrameId::LittleRedButtonDown,
-    InterfaceFrameId::CharacterEditorDownArrowOff,
-    InterfaceFrameId::CharacterEditorDownArrowOn,
-    InterfaceFrameId::CharacterEditorUpArrowOff,
-    InterfaceFrameId::CharacterEditorUpArrowOn,
 };
 
 // CE: extracted from character_editor.cc
@@ -319,8 +337,8 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
     unsigned char* windowBuf = windowGetBuffer(window.get());
     memcpy(windowBuf, frms.background.getData(), static_cast<size_t>(windowWidth) * windowHeight);
 
-    input::drawNameBox(windowBuf, windowWidth, frms.nameBox);
-    input::drawDoneBox(windowBuf, windowWidth, frms.doneBox);
+    input::drawBox(windowBuf, windowWidth, input::nameBoxPos, frms.nameBox);
+    input::drawBox(windowBuf, windowWidth, input::doneBoxPos, frms.doneBox);
     
     {
         ScopedFont buttonFontGuard(103); // "Done" button font
@@ -635,16 +653,13 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         }
     }
 
-    FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
-
-    for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        if (!frmImages[index].lock(kLoadFileDialogFrmIds[index])) {
-            return -1;
-        }
+    file::DialogFrms frms;
+    if (!dbox::file::loadImages(frms, file::kLoadFileDialogFrmIds)) {
+        return -1;
     }
 
-    int bgWidth = frmImages[FILE_DIALOG_FRM_BACKGROUND].getWidth();
-    int bgHeight = frmImages[FILE_DIALOG_FRM_BACKGROUND].getHeight();
+    int bgWidth = frms.background.getWidth();
+    int bgHeight = frms.background.getHeight();
 
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
@@ -653,7 +668,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     if (window.get() == -1) return -1;
 
     unsigned char* windowBuffer = windowGetBuffer(window.get());
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(bgWidth) * bgHeight);
+    memcpy(windowBuffer, frms.background.getData(), static_cast<size_t>(bgWidth) * bgHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
@@ -673,21 +688,15 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + file::load::cancelLabel.y * bgWidth + file::load::cancelLabel.x, cancel, bgWidth, bgWidth, COLOR_DARK_YELLOW);
 
-    const auto& btnNormal = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL];
-    const auto& btnPress = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED];
+    int doneBtn = dbox::createRedButton(window.get(), file::load::doneButton, 500, frms.buttonNormal, frms.buttonPressed);
+    int cancelBtn = dbox::createRedButton(window.get(), file::load::cancelButton, 501, frms.buttonNormal, frms.buttonPressed);
 
-    int doneBtn = dbox::createRedButton(window.get(), file::load::doneButton, 500, btnNormal, btnPress);
-    int cancelBtn = dbox::createRedButton(window.get(), file::load::cancelButton, 501, btnNormal, btnPress);
+    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton,
+            505, -1, 505, 506, frms.scrollUpNormal, frms.scrollUpPressed);
 
-    const auto& upNormal = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL];
-    const auto& upPressed = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED];
-    const auto& downNormal = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL];
-    const auto& downPressed = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED];
-
-    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton, 505, -1, 505, 506, upNormal, upPressed);
-
-    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + upPressed.getHeight() };
-    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos, 503, -1, 503, 504, downNormal, downPressed);
+    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + frms.scrollUpPressed.getHeight() };
+    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos,
+            503, -1, 503, 504, frms.scrollDownNormal, frms.scrollDownPressed);
 
     buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
         -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
@@ -920,16 +929,13 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         }
     }
 
-    FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
-
-    for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        if (!frmImages[index].lock(kSaveFileDialogFrmIds[index])) {
-            return -1;
-        }
+    file::DialogFrms frms;
+    if (!dbox::file::loadImages(frms, file::kSaveFileDialogFrmIds)) {
+        return -1;
     }
 
-    int bgWidth = frmImages[FILE_DIALOG_FRM_BACKGROUND].getWidth();
-    int bgHeight = frmImages[FILE_DIALOG_FRM_BACKGROUND].getHeight();
+    int bgWidth = frms.background.getWidth();
+    int bgHeight = frms.background.getHeight();
 
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
@@ -938,7 +944,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     if (window.get() == -1) return -1;
 
     unsigned char* windowBuffer = windowGetBuffer(window.get());
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(bgWidth) * bgHeight);
+    memcpy(windowBuffer, frms.background.getData(), static_cast<size_t>(bgWidth) * bgHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
@@ -958,21 +964,15 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const char* cancel = getmsg(&messageList, &messageListItem, 103);
     fontDrawText(windowBuffer + bgWidth * file::save::cancelLabel.y + file::save::cancelLabel.x, cancel, bgWidth, bgWidth, COLOR_DARK_YELLOW);
 
-    const auto& btnNormal = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL];
-    const auto& btnPress  = frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED];
+    int doneBtn = dbox::createRedButton(window.get(), file::save::doneButton, 500, frms.buttonNormal, frms.buttonPressed);
+    int cancelBtn = dbox::createRedButton(window.get(), file::save::cancelButton, 501, frms.buttonNormal, frms.buttonPressed);
 
-    int doneBtn = dbox::createRedButton(window.get(), file::save::doneButton, 500, btnNormal, btnPress);
-    int cancelBtn = dbox::createRedButton(window.get(), file::save::cancelButton, 501, btnNormal, btnPress);
+    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton,
+            505, -1, 505, 506, frms.scrollUpNormal, frms.scrollUpPressed);
 
-    const auto& upNormal = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL];
-    const auto& upPressed = frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED];
-    const auto& downNormal = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL];
-    const auto& downPressed = frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED];
-
-    int scrollUpBtn = file::createScrollButton(window.get(), file::scrollButton, 505, -1, 505, 506, upNormal, upPressed);
-
-    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + upPressed.getHeight() };
-    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos, 503, -1, 503, 504, downNormal, downPressed);
+    dbox::Point scrollDownPos { file::scrollButton.x, file::scrollButton.y + frms.scrollUpPressed.getHeight() };
+    int scrollDownBtn = file::createScrollButton(window.get(), scrollDownPos,
+            503, -1, 503, 504, frms.scrollDownNormal, frms.scrollDownPressed);
 
     buttonCreate(window.get(), file::list.x, file::list.y, file::list.width, file::list.height,
         -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
