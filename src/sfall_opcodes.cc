@@ -463,14 +463,15 @@ static void op_set_critter_skill_points(Program* program)
         return;
     }
 
-    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         programPrintError("set_critter_skill_points: obj is not a critter");
         return;
     }
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
-        programPrintError("set_critter_skill_points: failed to get proto for pid %d", critter->pid);
+    if (protoGetProto(protoId, &proto) == -1) {
+        programPrintError("set_critter_skill_points: failed to get proto for pid %d", protoId.pid());
         return;
     }
 
@@ -488,15 +489,16 @@ static void op_get_critter_skill_points(Program* program)
         return;
     }
 
-    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         programPrintError("get_critter_skill_points: obj is not a critter");
         programStackPushInteger(program, 0);
         return;
     }
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
-        programPrintError("get_critter_skill_points: failed to get proto for pid %d", critter->pid);
+    if (protoGetProto(protoId, &proto) == -1) {
+        programPrintError("get_critter_skill_points: failed to get proto for pid %d", protoId.pid());
         programStackPushInteger(program, 0);
         return;
     }
@@ -996,11 +998,11 @@ static void op_set_script(Program* program)
 static void op_get_proto_data(Program* program)
 {
     int rawOffset = programStackPopInteger(program);
-    int pid = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) != 0) {
-        programPrintError("get_proto_data: bad proto %d", pid);
+    if (protoGetProto(protoId, &proto) != 0) {
+        programPrintError("get_proto_data: bad proto %d", protoId.pid());
         programStackPushInteger(program, -1);
         return;
     }
@@ -1014,7 +1016,7 @@ static void op_get_proto_data(Program* program)
     }
 
     size_t offset = static_cast<size_t>(rawOffset);
-    size_t size = proto_size(objectTypeFromPid(pid));
+    size_t size = proto_size(protoId.objectType());
     if (offset > size || size - offset < sizeof(int)) {
         programPrintError("get_proto_data: bad offset %zu", offset);
         programStackPushInteger(program, -1);
@@ -1030,11 +1032,11 @@ static void op_set_proto_data(Program* program)
 {
     int value = programStackPopInteger(program);
     int rawOffset = programStackPopInteger(program);
-    int pid = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) != 0) {
-        programPrintError("set_proto_data: bad proto %d", pid);
+    if (protoGetProto(protoId, &proto) != 0) {
+        programPrintError("set_proto_data: bad proto %d", protoId.pid());
         return;
     }
 
@@ -1046,7 +1048,7 @@ static void op_set_proto_data(Program* program)
     }
 
     size_t offset = static_cast<size_t>(rawOffset);
-    size_t size = proto_size(objectTypeFromPid(pid));
+    size_t size = proto_size(protoId.objectType());
     if (offset > size || size - offset < sizeof(int)) {
         programPrintError("set_proto_data: bad offset %zu", offset);
         return;
@@ -1109,23 +1111,21 @@ static void op_get_weapon_ammo_pid(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int pid = -1;
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                pid = weaponGetAmmoTypePid(obj);
-                break;
-            case ITEM_TYPE_MISC:
-                pid = miscItemGetPowerTypePid(obj);
-                break;
-            default:
-                break;
-            }
+    ProtoId protoId = ProtoId::Empty();
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            protoId = weaponGetAmmoTypeProtoId(obj);
+            break;
+        case ITEM_TYPE_MISC:
+            protoId = miscItemGetPowerTypeProtoId(obj);
+            break;
+        default:
+            break;
         }
     }
 
-    programStackPushInteger(program, pid);
+    programStackPushInteger(program, protoId.pid());
 }
 
 // There are two problems with this function.
@@ -1138,18 +1138,16 @@ static void op_get_weapon_ammo_pid(Program* program)
 // set_weapon_ammo_pid
 static void op_set_weapon_ammo_pid(Program* program)
 {
-    int ammoTypePid = programStackPopInteger(program);
+    const ProtoId ammoTypeProtoId = programStackPopProtoId(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                obj->data.item.weapon.ammoTypePid = ammoTypePid;
-                break;
-            default:
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            obj->data.item.weapon.ammoTypePid = ammoTypeProtoId.pid();
+            break;
+        default:
+            break;
         }
     }
 }
@@ -1341,14 +1339,14 @@ static void op_get_attack_type(Program* program)
 
 static void op_force_aimed_shots(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    forceAimedShots(pid);
+    const ProtoId protoId = programStackPopProtoId(program);
+    forceAimedShots(protoId);
 }
 
 static void op_disable_aimed_shots(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    disableAimedShots(pid);
+    const ProtoId protoId = programStackPopProtoId(program);
+    disableAimedShots(protoId);
 }
 
 static void op_play_sfall_sound(Program* program)
@@ -1546,7 +1544,7 @@ static void op_explosions_metarule(Program* program)
         if (1) {
             int minDamage;
             int maxDamage;
-            explosiveGetDamage(param1, &minDamage, &maxDamage);
+            explosiveGetDamage(ProtoId(param1), &minDamage, &maxDamage);
 
             ArrayId arrayId = CreateTempArray(2, 0);
             SetArray(arrayId, ProgramValue { 0 }, ProgramValue { minDamage }, false, program);
@@ -1556,10 +1554,10 @@ static void op_explosions_metarule(Program* program)
         }
         break;
     case EXPL_SET_DYNAMITE_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoId(ItemProtoTypeId::Dynamite).pid(), param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::Dynamite, param1, param2);
         break;
     case EXPL_SET_PLASTIC_EXPLOSION_DAMAGE:
-        explosiveSetDamage(ProtoId(ItemProtoTypeId::PlasticExplosives).pid(), param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::PlasticExplosives, param1, param2);
         break;
     case EXPL_SET_EXPLOSION_MAX_TARGET:
         explosionSetMaxTargets(param1);

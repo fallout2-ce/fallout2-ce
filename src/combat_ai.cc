@@ -553,10 +553,10 @@ int aiExit()
 int aiLoad(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        int pid = gPartyMemberPids[index];
-        if (pid != -1 && objectTypeFromPid(pid) == OBJ_TYPE_CRITTER) {
+        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
-            if (protoGetProto(pid, &proto) == -1) {
+            if (protoGetProto(protoId, &proto) == -1) {
                 return -1;
             }
 
@@ -574,10 +574,10 @@ int aiLoad(File* stream)
 int aiSave(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        int pid = gPartyMemberPids[index];
-        if (pid != -1 && objectTypeFromPid(pid) == OBJ_TYPE_CRITTER) {
+        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
-            if (protoGetProto(pid, &proto) == -1) {
+            if (protoGetProto(protoId, &proto) == -1) {
                 return -1;
             }
 
@@ -1023,8 +1023,7 @@ static int _ai_check_drugs(Object* critter)
                 break;
             }
 
-            int drugPid = drug->pid;
-            if (itemIsHealing(drugPid)) {
+            if (itemIsHealing(drug)) {
                 if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                     if (drugItemTakeDrug(critter, drug) == -1) {
                         itemAdd(critter, drug, 1);
@@ -1080,10 +1079,11 @@ static int _ai_check_drugs(Object* critter)
                         break;
                     }
 
-                    if (!itemIsHealing(drug->pid)) {
+                    const ProtoId drugProtoId = drug;
+                    if (!itemIsHealing(drugProtoId)) {
                         bool isPrimary = false;
                         for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
-                            if (ai->chem_primary_desire[index] == drug->pid) {
+                            if (ai->chem_primary_desire[index] == drugProtoId.pid()) {
                                 isPrimary = true;
                                 break;
                             }
@@ -1851,7 +1851,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
-        if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
+        if (critterFlagCheck(critter, CRITTER_LONG_LIMBS)) {
             return 2;
         }
 
@@ -1859,7 +1859,7 @@ static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode h
     }
 
     Proto* proto;
-    protoGetProto(weapon->pid, &proto);
+    protoGetProto(weapon, &proto);
 
     int range;
     if (hitMode == HIT_MODE_LEFT_WEAPON_PRIMARY || hitMode == HIT_MODE_RIGHT_WEAPON_PRIMARY) {
@@ -2287,7 +2287,7 @@ static bool aiCanUseItem(Object* critter, Object* item)
     }
 
     // SFALL: Check healing items.
-    if (!itemIsHealing(item->pid)) {
+    if (!itemIsHealing(item)) {
         return false;
     }
 
@@ -3467,7 +3467,8 @@ int critterSetTeam(Object* obj, int team)
 // 0x42B5D4
 int critterSetAiPacket(Object* object, int aiPacket)
 {
-    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = object;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
@@ -3475,7 +3476,7 @@ int critterSetAiPacket(Object* object, int aiPacket)
 
     if (_isPotentialPartyMember(object)) {
         Proto* proto;
-        if (protoGetProto(object->pid, &proto) == -1) {
+        if (protoGetProto(protoId, &proto) == -1) {
             return -1;
         }
 

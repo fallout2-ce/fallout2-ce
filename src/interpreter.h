@@ -263,6 +263,16 @@ void* programStackPopPointer(Program* program);
 template <typename T>
 T programStackPopEnum(Program* program);
 
+inline ProtoId programStackPopProtoId(Program* program)
+{
+    const ProtoId protoId = ProtoId(programStackPopInteger(program));
+    if (protoId.hasPid() && !protoId.valid()) {
+        programPrintError("invalid proto id %d", protoId.pid());
+    }
+
+    return protoId;
+}
+
 template <>
 inline HitMode programStackPopEnum(Program* program)
 {

@@ -772,7 +772,7 @@ void gameMouseRefresh()
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_TALK;
                                 }
                             } else {
-                                if (critterFlagCheck(pointedObject->pid, CRITTER_NO_STEAL)) {
+                                if (critterFlagCheck(pointedObject, CRITTER_NO_STEAL)) {
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                                 } else {
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
@@ -1179,7 +1179,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         }
                     } else {
-                        if (!critterFlagCheck(targetObj->pid, CRITTER_NO_STEAL)) {
+                        if (!critterFlagCheck(targetObj, CRITTER_NO_STEAL)) {
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         }
                     }
@@ -2202,11 +2202,11 @@ int gameMouseObjectsInit()
         return -1;
     }
 
-    if (objectCreateWithFrmIdPid(&gGameMouseBouncingCursor, InterfaceFrameId::Blank, -1) != 0) {
+    if (objectCreateWithFrmIdProtoId(&gGameMouseBouncingCursor, InterfaceFrameId::Blank, ProtoId::Empty()) != 0) {
         return -1;
     }
 
-    if (objectCreateWithFrmIdPid(&gGameMouseHexCursor, InterfaceFrameId::HexMouseCursor, -1) != 0) {
+    if (objectCreateWithFrmIdProtoId(&gGameMouseHexCursor, InterfaceFrameId::HexMouseCursor, ProtoId::Empty()) != 0) {
         return -1;
     }
 
@@ -2680,16 +2680,13 @@ void _gmouse_remove_item_outline(Object* object)
 // 0x44E580 gmObjIsValidTarget
 int objectIsDoor(Object* object)
 {
-    if (object == nullptr) {
-        return false;
-    }
-
-    if (objectTypeFromPid(object->pid) != OBJ_TYPE_SCENERY) {
+    const ProtoId protoId = object;
+    if (protoId.objectType() != OBJ_TYPE_SCENERY) {
         return false;
     }
 
     Proto* proto;
-    if (protoGetProto(object->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 

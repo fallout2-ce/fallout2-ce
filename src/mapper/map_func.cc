@@ -208,13 +208,28 @@ void erase_rect(Rect* rect)
 }
 
 // 0x484400
-int toolbar_proto(ObjectType type, int id)
+ProtoId toolbar_proto(ObjectType type, int id)
 {
     if (id < proto_max_id(type)) {
-        return (type << 24) | id;
-    } else {
-        return -1;
+        switch (type) {
+        case OBJ_TYPE_ITEM:
+            return static_cast<ItemProtoTypeId>(id);
+        case OBJ_TYPE_CRITTER:
+            return static_cast<CritterProtoTypeId>(id);
+        case OBJ_TYPE_SCENERY:
+            return static_cast<SceneryProtoTypeId>(id);
+        case OBJ_TYPE_WALL:
+            return static_cast<WallProtoTypeId>(id);
+        case OBJ_TYPE_TILE:
+            return static_cast<TileProtoTypeId>(id);
+        case OBJ_TYPE_MISC:
+            return static_cast<MiscProtoTypeId>(id);
+        default:
+            return ProtoId::Empty();
+        }
     }
+
+    return ProtoId::Empty();
 }
 
 // 0x485D44
@@ -252,7 +267,7 @@ void map_toggle_block_obj_viewing(int mode)
             } else {
                 if (blockedFidCache[index] == 0) {
                     Proto* proto;
-                    if (protoGetProto(obj->pid, &proto) == 0) {
+                    if (protoGetProto(obj, &proto) == 0) {
                         blockedFidCache[index] = proto->fid;
                     }
                 }
@@ -429,7 +444,7 @@ ObjectType pickToolbar(int topY)
 }
 
 // place_object_
-void placeObject(int pid, const FrmId& frmId)
+void placeObject(const ProtoId& protoId, const FrmId& frmId)
 {
     int x, y;
     mouseGetPosition(&x, &y);
@@ -439,7 +454,7 @@ void placeObject(int pid, const FrmId& frmId)
     }
 
     Object* obj;
-    if (objectCreateWithFrmIdPid(&obj, frmId, pid) == -1) {
+    if (objectCreateWithFrmIdProtoId(&obj, frmId, protoId) == -1) {
         return;
     }
 
@@ -449,7 +464,7 @@ void placeObject(int pid, const FrmId& frmId)
 }
 
 // place_tile_
-void placeTile(int pid, const FrmId& frmId)
+void placeTile(const ProtoId& protoId, const FrmId& frmId)
 {
     int x, y;
     mouseGetPosition(&x, &y);
@@ -654,11 +669,12 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     bool useArtNotProtos = settings.mapper.use_art_not_protos;
 
     Proto* proto = nullptr;
+    const ProtoId protoId = srcObj;
     bool gatePassed = useArtNotProtos
         || existing == nullptr
         || srcObj == nullptr
-        || objectTypeFromPid(srcObj->pid) == OBJ_TYPE_TILE
-        || protoGetProto(srcObj->pid, &proto) == -1
+        || protoId.objectType() == OBJ_TYPE_TILE
+        || protoGetProto(protoId, &proto) == -1
         || (proto != nullptr && (proto->flags & 0x10) != 0);
 
     if (!gatePassed) {

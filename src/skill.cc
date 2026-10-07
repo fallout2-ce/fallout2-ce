@@ -475,13 +475,14 @@ int skillGetValue(Object* critter, Skill skill)
         return -5;
     }
 
-    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
-        debugPrint("\nError: Failed to get a proto in skillGetValue for critter %d with a pid %d!", critter->id, critter->pid);
+    if (protoGetProto(protoId, &proto) == -1) {
+        debugPrint("\nError: Failed to get a proto in skillGetValue for critter %d with a pid %d!", critter->id, protoId.pid());
         return -5;
     }
 
@@ -575,7 +576,7 @@ int skillAdd(Object* obj, Skill skill)
     }
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(obj, &proto) == -1) {
         return -5;
     }
 
@@ -615,7 +616,7 @@ int skillAddForce(Object* obj, Skill skill)
     }
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(obj, &proto) == -1) {
         return -5;
     }
 
@@ -677,7 +678,7 @@ int skillSub(Object* critter, Skill skill)
     int unspentSp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
+    if (protoGetProto(critter, &proto) == -1) {
         return -5;
     }
 
@@ -727,7 +728,7 @@ int skillSubForce(Object* obj, Skill skill)
         return -5;
     }
 
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(obj, &proto) == -1) {
         return -5;
     }
 

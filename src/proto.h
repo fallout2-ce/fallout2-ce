@@ -103,46 +103,46 @@ extern MessageList gProtoMessageList;
 extern char* _proto_none_str;
 extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 
-void proto_make_path(char* path, int pid);
-int _proto_list_str(int pid, char* proto_path);
+void proto_make_path(char* path, const ProtoId& protoId);
+int _proto_list_str(const ProtoId& protoId, char* proto_path);
 size_t proto_size(ObjectType type);
-bool _proto_action_can_use(int pid);
-bool _proto_action_can_use_on(int pid);
-bool _proto_action_can_talk_to(int pid);
-int _proto_action_can_pickup(int pid);
-char* protoGetMessage(int pid, int message);
-char* protoGetName(int pid);
-char* protoGetDescription(int pid);
-int proto_item_init(Proto* proto, int pid);
+bool _proto_action_can_use(const ProtoId& protoId);
+bool _proto_action_can_use_on(const ProtoId& protoId);
+bool _proto_action_can_talk_to(const ProtoId& protoId);
+int _proto_action_can_pickup(const ProtoId& protoId);
+char* protoGetMessage(const ProtoId& protoId, int message);
+char* protoGetName(const ProtoId& protoId);
+char* protoGetDescription(const ProtoId& protoId);
+int proto_item_init(Proto* proto, const ProtoId& protoId);
 int proto_item_subdata_init(Proto* proto, ItemType type);
-int proto_critter_init(Proto* proto, int pid);
+int proto_critter_init(Proto* proto, const ProtoId& protoId);
 void objectDataReset(Object* obj);
 int objectDataRead(Object* obj, File* stream);
 int objectDataWrite(Object* obj, File* stream);
 int _proto_update_init(Object* obj);
 int _proto_dude_update_gender();
 int _proto_dude_init(const char* path);
-int proto_scenery_init(Proto* proto, int pid);
+int proto_scenery_init(Proto* proto, const ProtoId& protoId);
 int proto_scenery_subdata_init(Proto* proto, SceneryType type);
-int proto_wall_init(Proto* proto, int pid);
-int proto_tile_init(Proto* proto, int pid);
-int proto_misc_init(Proto* proto, int pid);
-int proto_copy_proto(int srcPid, int dstPid);
+int proto_wall_init(Proto* proto, const ProtoId& protoId);
+int proto_tile_init(Proto* proto, const ProtoId& protoId);
+int proto_misc_init(Proto* proto, const ProtoId& protoId);
+int proto_copy_proto(const ProtoId& srcProtoId, const ProtoId& dstProtoId);
 bool proto_is_subtype(Proto* proto, int subtype);
-int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value);
+int protoGetDataMember(const ProtoId& protoId, int member, ProtoDataMemberValue* value);
 int protoInit();
 void protoReset();
 void protoExit();
-int _proto_save_pid(int pid);
-int proto_new(int* pid, ObjectType type);
+int protoSaveProtoId(const ProtoId& protoId);
+int proto_new(ProtoId& protoId, ObjectType type);
 void _proto_remove_all();
-int protoGetProto(int pid, Proto** protoPtr);
+int protoGetProto(const ProtoId& protoId, Proto** protoPtr);
 int _ResetPlayer();
 int proto_max_id(ObjectType type);
 
-constexpr inline bool isExitGridPid(int pid)
+constexpr inline bool isExitGridProtoId(const ProtoId& protoId)
 {
-    return pid >= ProtoId(MiscProtoTypeId::FirstExitGrid).pid() && pid <= ProtoId(MiscProtoTypeId::LastExitGrid).pid();
+    return protoId.pid() >= ProtoId(MiscProtoTypeId::FirstExitGrid).pid() && protoId.pid() <= ProtoId(MiscProtoTypeId::LastExitGrid).pid();
 }
 
 } // namespace fallout

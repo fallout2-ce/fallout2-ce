@@ -27,7 +27,7 @@ enum Hand : int {
 typedef void InventoryPrintItemDescriptionHandler(const char* string);
 
 void inventoryResetDude();
-void inventorySetDude(Object* obj, int pid);
+void inventorySetDude(Object* obj, const ProtoId& protoId);
 void inventoryOpen();
 int inventoryGetInvenApCost();
 void inventorySetInvenApCost(int cost);
@@ -47,8 +47,8 @@ struct CritterEquipped {
 };
 CritterEquipped critterStripEquipped(Object* critter);
 void critterRestoreEquipped(Object* critter, CritterEquipped& equipped);
-Object* objectGetCarriedObjectByPid(Object* obj, int pid);
-int objectGetCarriedQuantityByPid(Object* obj, int pid);
+Object* objectGetCarriedObjectByProtoId(Object* obj, const ProtoId& protoId);
+int objectGetCarriedQuantityByProtoId(Object* obj, const ProtoId& protoId);
 Object* inventoryFindByType(Object* obj, ItemType itemType, int* indexPtr);
 Object* inventoryFindById(Object* obj, int id);
 Object* inventoryItemByIndex(Object* obj, int index);

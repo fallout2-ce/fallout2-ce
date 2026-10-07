@@ -1771,7 +1771,7 @@ static bool canUseDoor(Object* critter, Object* door)
     }
 
     Proto* proto;
-    if (protoGetProto(door->pid, &proto) == -1) {
+    if (protoGetProto(door, &proto) == -1) {
         return false;
     }
 

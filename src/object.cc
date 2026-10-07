@@ -354,7 +354,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    objectCreateWithFrmIdPid(&gDude, dudeFrmId, ProtoId(CritterProtoTypeId::Dude).pid());
+    objectCreateWithFrmIdProtoId(&gDude, dudeFrmId, CritterProtoTypeId::Dude);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -367,7 +367,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    objectCreateWithFrmIdPid(&gEgg, eggFrmId, -1);
+    objectCreateWithFrmIdProtoId(&gEgg, eggFrmId, ProtoId::Empty());
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -456,7 +456,7 @@ int objectRead(Object* obj, File* stream)
         return -1;
     }
 
-    if (isExitGridPid(obj->pid)) {
+    if (isExitGridProtoId(obj)) {
         if (obj->data.misc.map <= 0) {
             constexpr int kExit2Grid1FrameId = MiscFrmId(MiscFrameId::Exit2Grid1).frameId();
             constexpr int kExit3Grid8FrameId = MiscFrmId(MiscFrameId::Exit3Grid8).frameId();
@@ -647,12 +647,13 @@ static int objectLoadAllInternal(File* stream)
 // 0x48911C object_fix_weapon_ammo
 static void _object_fix_weapon_ammo(Object* obj)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_ITEM) {
+    const ProtoId protoId = obj;
+    if (protoId.objectType() != OBJ_TYPE_ITEM) {
         return;
     }
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         debugPrint("\nError: obj_load: proto_ptr failed on pid");
         exit(1);
     }
@@ -676,7 +677,7 @@ static void _object_fix_weapon_ammo(Object* obj)
                 charges = proto->item.data.misc.charges;
                 obj->data.item.misc.charges = charges;
                 if (charges == 0xCCCCCCCC) {
-                    debugPrint("\nError: Misc Item Prototype %s: charges incorrect!", protoGetName(obj->pid));
+                    debugPrint("\nError: Misc Item Prototype %s: charges incorrect!", protoGetName(obj));
                     obj->data.item.misc.charges = 0;
                 }
             } else {
@@ -927,7 +928,7 @@ void _obj_render_post_roof(Rect* rect, int elevation)
 }
 
 // 0x489A84 obj_new
-int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
+int objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId)
 {
     ObjectListNode* objectListNode;
 
@@ -943,7 +944,7 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
     }
 
     if (frmId.valid()) {
-        assert(frmId.hasFid() && "objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid) called with path based FrmId which is not supported!");
+        assert(frmId.hasFid() && "objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId) called with path based FrmId which is not supported!");
     }
 
     objectListNode->obj->fid = frmId.fid();
@@ -953,10 +954,10 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
         *objectPtr = objectListNode->obj;
     }
 
-    objectListNode->obj->pid = pid;
+    objectListNode->obj->pid = protoId.pid();
     objectListNode->obj->id = scriptsNewObjectId();
 
-    if (pid == -1 || objectTypeFromPid(pid) == OBJ_TYPE_TILE) {
+    if (!protoId.valid() || protoId.objectType() == OBJ_TYPE_TILE) {
         Inventory* inventory = &(objectListNode->obj->data.inventory);
         inventory->length = 0;
         inventory->items = nullptr;
@@ -966,7 +967,7 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
     _proto_update_init(objectListNode->obj);
 
     Proto* proto = nullptr;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return 0;
     }
 
@@ -1022,17 +1023,17 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
 }
 
 // 0x489C9C obj_pid_new
-int objectCreateWithPid(Object** objectPtr, int pid)
+int objectCreateWithProtoId(Object** objectPtr, const ProtoId& protoId)
 {
     Proto* proto;
 
     *objectPtr = nullptr;
 
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
-    return objectCreateWithFrmIdPid(objectPtr, FrmId(proto), pid);
+    return objectCreateWithFrmIdProtoId(objectPtr, proto, protoId);
 }
 
 // 0x489CCC obj_copy
@@ -1463,7 +1464,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 
             if (elevation == elev) {
                 if (FrmId(obj).objectType() == OBJ_TYPE_MISC) {
-                    if (isExitGridPid(obj->pid)) {
+                    if (isExitGridProtoId(obj)) {
                         if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
                             objectListNode = objectListNode->next;
                             continue;
@@ -2093,8 +2094,8 @@ bool _obj_action_can_use(Object* obj)
 {
     const ProtoId protoId = ProtoId(obj);
     // SFALL
-    if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId.pid())) {
-        return _proto_action_can_use(protoId.pid());
+    if (protoId != ItemProtoTypeId::LitFlare && !explosiveIsActiveExplosive(protoId)) {
+        return _proto_action_can_use(protoId);
     } else {
         return false;
     }
@@ -2103,18 +2104,20 @@ bool _obj_action_can_use(Object* obj)
 // 0x48B278 obj_action_can_talk_to
 bool _obj_action_can_talk_to(Object* obj)
 {
-    return _proto_action_can_talk_to(obj->pid) && (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) && critterIsActive(obj);
+    const ProtoId protoId = obj;
+    return _proto_action_can_talk_to(protoId) && (protoId.objectType() == OBJ_TYPE_CRITTER) && critterIsActive(obj);
 }
 
 // 0x48B2A8 obj_portal_is_walk_thru
 bool _obj_portal_is_walk_thru(Object* obj)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_SCENERY) {
+    const ProtoId protoId = obj;
+    if (protoId.objectType() != OBJ_TYPE_SCENERY) {
         return false;
     }
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 
@@ -3022,7 +3025,7 @@ ObjectFlags _obj_intersects_with(Object* object, int x, int y)
                             ObjectType type = FrmId(object).objectType();
                             if (type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
                                 Proto* proto;
-                                protoGetProto(object->pid, &proto);
+                                protoGetProto(object, &proto);
 
                                 bool v20;
                                 ProtoExtendedFlags extendedFlags = proto->scenery.extendedFlags;
@@ -3198,7 +3201,7 @@ char* objectGetName(Object* obj)
     case OBJ_TYPE_CRITTER:
         return critterGetName(obj);
     default:
-        return protoGetName(obj->pid);
+        return protoGetName(obj);
     }
 }
 
@@ -3209,7 +3212,7 @@ char* objectGetDescription(Object* obj)
         return itemGetDescription(obj);
     }
 
-    return protoGetDescription(obj->pid);
+    return protoGetDescription(obj);
 }
 
 // Warm objects cache?
@@ -4639,7 +4642,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
                                     if (FrmId(objectListNode->obj).objectType() == OBJ_TYPE_WALL) {
                                         if ((objectListNode->obj->flags & OBJECT_FLAT) == OBJECT_NONE) {
                                             Proto* proto;
-                                            protoGetProto(objectListNode->obj->pid, &proto);
+                                            protoGetProto(objectListNode->obj, &proto);
                                             if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != PROTO_EXT_FLAG_NONE || (proto->wall.extendedFlags & PROTO_EXT_FLAG_EAST_CORNER) != PROTO_EXT_FLAG_NONE) {
                                                 if (rotation != ROTATION_W
                                                     && rotation != ROTATION_NW
@@ -5051,7 +5054,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     if (type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
         if ((gDude->flags & OBJECT_HIDDEN) == OBJECT_NONE && (object->flags & OBJECT_FLAG_0xFC000) == OBJECT_NONE) {
             Proto* proto;
-            protoGetProto(object->pid, &proto);
+            protoGetProto(object, &proto);
 
             bool v17;
             ProtoExtendedFlags extendedFlags = proto->critter.extendedFlags;
@@ -5305,7 +5308,7 @@ bool isExitGridAt(int tile, int elevation)
         Object* obj = objectListNode->obj;
         if (obj->elevation == elevation) {
             if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
-                if (isExitGridPid(obj->pid)) {
+                if (isExitGridProtoId(obj)) {
                     return true;
                 }
             }
@@ -5349,10 +5352,10 @@ void UniqueObject::reset(Object* p)
     _ptr = p;
 }
 
-int objectCreateWithFrmIdPid(UniqueObject& obj, const FrmId& frmId, int pid)
+int objectCreateWithFrmIdProtoId(UniqueObject& obj, const FrmId& frmId, const ProtoId& protoId)
 {
     Object* raw;
-    int rc = objectCreateWithFrmIdPid(&raw, frmId, pid);
+    int rc = objectCreateWithFrmIdProtoId(&raw, frmId, protoId);
     if (rc != -1) obj.reset(raw);
     return rc;
 }

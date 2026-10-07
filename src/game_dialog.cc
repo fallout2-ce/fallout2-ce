@@ -3594,15 +3594,15 @@ int gameDialogCreateBarterWindow()
     if (talkBtn == -1) return -1;
 
     UniqueObject playerTableObj;
-    if (objectCreateWithFrmIdPid(playerTableObj, FrmId::Empty(), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(playerTableObj, FrmId::Empty(), ProtoId::Empty()) == -1) return -1;
     playerTableObj->flags |= OBJECT_HIDDEN;
 
     UniqueObject bartererTableObj;
-    if (objectCreateWithFrmIdPid(bartererTableObj, FrmId::Empty(), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(bartererTableObj, FrmId::Empty(), ProtoId::Empty()) == -1) return -1;
     bartererTableObj->flags |= OBJECT_HIDDEN;
 
     UniqueObject bartererTempObj;
-    if (objectCreateWithFrmIdPid(bartererTempObj, FrmId(gGameDialogSpeaker), -1) == -1) return -1;
+    if (objectCreateWithFrmIdProtoId(bartererTempObj, FrmId(gGameDialogSpeaker), ProtoId::Empty()) == -1) return -1;
     bartererTempObj->flags |= OBJECT_HIDDEN | OBJECT_NO_SAVE;
     bartererTempObj->sid = -1;
 
@@ -4023,11 +4023,11 @@ int _gdPickAIUpdateMsg(Object* critter)
     return 670 + randomBetween(0, 4);
 }
 
-void gameDialogSetPartyMemberCcMsgIds(int pid, int startMsgId, int endMsgId)
+void gameDialogSetPartyMemberCcMsgIds(const ProtoId& protoId, int startMsgId, int endMsgId)
 {
     assert(startMsgId <= endMsgId);
 
-    partyMemberCcMsgIds[pid] = { startMsgId, endMsgId };
+    partyMemberCcMsgIds[protoId.pid()] = { startMsgId, endMsgId };
 }
 
 void gameDialogResetPartyMemberCcMsgIds()
@@ -4038,12 +4038,13 @@ void gameDialogResetPartyMemberCcMsgIds()
 // 0x449330
 int _gdCanBarter()
 {
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId speakerProtoId = gGameDialogSpeaker;
+    if (speakerProtoId.objectType() != OBJ_TYPE_CRITTER) {
         return 1;
     }
 
     Proto* proto;
-    if (protoGetProto(gGameDialogSpeaker->pid, &proto) == -1) {
+    if (protoGetProto(speakerProtoId, &proto) == -1) {
         return 1;
     }
 
@@ -4120,7 +4121,7 @@ void partyMemberControlWindowHandleEvents()
                 dialogMode = GAME_DIALOG_MODE_TALK;
                 return;
             } else if (keyCode == KEY_LOWERCASE_A) {
-                if (partyMemberPidCanEquipArmor(gGameDialogSpeaker->pid)) {
+                if (partyMemberProtoIdCanEquipArmor(gGameDialogSpeaker)) {
                     Object* armor = _ai_search_inven_armor(gGameDialogSpeaker);
                     if (armor != nullptr) {
                         inventoryEquip(gGameDialogSpeaker, armor, HAND_LEFT);
@@ -4660,7 +4661,8 @@ void _gdCustomUpdateSetting(int option, int value)
 // 0x44A52C
 void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
 {
-    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    const ProtoId speakerProtoId = gGameDialogSpeaker;
+    if (speakerProtoId.objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -4670,7 +4672,7 @@ void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
     }
 
     Proto* proto;
-    protoGetProto(gGameDialogSpeaker->pid, &proto);
+    protoGetProto(speakerProtoId, &proto);
     if ((proto->critter.data.flags & CRITTER_BARTER) != CRITTER_NONE) {
         if (gameDialogLipSyncStarted) {
             if (soundIsPlaying(gLipsData.sound)) {

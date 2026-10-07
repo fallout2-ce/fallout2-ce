@@ -77,7 +77,7 @@ static void mapper_load_toolbar(ObjectType type, int* out_offset);
 static void mapper_save_toolbar();
 static void redraw_toolname();
 static void clear_toolname();
-static void update_toolname(int* pid, ObjectType type, int id);
+static void update_toolname(ProtoId& protoId, ObjectType type, int id);
 static void update_high_obj_name(Object* obj);
 static void mapper_destroy_highlight_obj(Object** a1, Object** a2);
 static void mapper_refresh_rotation();
@@ -1201,7 +1201,7 @@ void edit_mapper()
 {
     ObjectType currentType = OBJ_TYPE_TILE;
     int scrollOffset = 0;
-    int selectedPid = -1;
+    ProtoId selectedProtoId = ProtoId::Empty();
     int markExitGridMode = 0;
     Object* hl_obj1 = nullptr;
     Object* hl_obj2 = nullptr;
@@ -1302,11 +1302,11 @@ void edit_mapper()
                         windowGetWidth(gIsoWindow) - 1,
                         windowGetHeight(gIsoWindow) - 1 - kToolbarReservedHeight)) {
                     if (tool_active != -1) {
-                        if (selectedPid != -1) {
-                            if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor));
+                        if (selectedProtoId.valid()) {
+                            if (selectedProtoId.objectType() == OBJ_TYPE_TILE) {
+                                placeTile(selectedProtoId, gGameMouseBouncingCursor);
                             } else {
-                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor));
+                                placeObject(selectedProtoId, gGameMouseBouncingCursor);
                             }
                         }
                     } else if (_screen_obj != nullptr) {
@@ -1344,11 +1344,11 @@ void edit_mapper()
                     if (markExitGridMode) {
                         mapper_mark_exit_grid();
                     } else if (tool_active != -1) {
-                        if (selectedPid != -1) {
-                            if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor));
+                        if (selectedProtoId.valid()) {
+                            if (selectedProtoId.objectType() == OBJ_TYPE_TILE) {
+                                placeTile(selectedProtoId, gGameMouseBouncingCursor);
                             } else {
-                                placeObject(selectedPid, FrmId(gGameMouseBouncingCursor));
+                                placeObject(selectedProtoId, gGameMouseBouncingCursor);
                             }
                         }
                     } else {
@@ -1367,7 +1367,7 @@ void edit_mapper()
                             update_high_obj_name(_screen_obj);
 
                             Object* hlObj;
-                            if (objectCreateWithFrmIdPid(&hlObj, InterfaceFrameId::HexMouseCursor, -1) != -1) {
+                            if (objectCreateWithFrmIdProtoId(&hlObj, InterfaceFrameId::HexMouseCursor, ProtoId::Empty()) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
                                 _obj_toggle_flat(hlObj, nullptr);
 
@@ -1394,7 +1394,7 @@ void edit_mapper()
                 // clear toolbar selection
                 if (tool_active != -1) {
                     tool_active = -1;
-                    selectedPid = -1;
+                    selectedProtoId = ProtoId::Empty();
                     draw_mode = false;
                     toolbar_info[currentType].offset = scrollOffset;
                     mapper_destroy_highlight_obj(&hl_obj1, nullptr);
@@ -1443,7 +1443,7 @@ void edit_mapper()
                 if (!map_entered) {
                     if (!settings.mapper.use_art_not_protos) {
                         int slotIndex = keyCode - leftBase;
-                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                        update_toolname(selectedProtoId, currentType, scrollOffset + slotIndex);
                     }
                 }
                 continue;
@@ -1459,16 +1459,16 @@ void edit_mapper()
 
                 if (!settings.mapper.use_art_not_protos) {
                     int slotIndex = keyCode - rightBase;
-                    int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
-                    if (pid != -1) {
-                        selectedPid = pid;
+                    const ProtoId protoId = toolbar_proto(currentType, scrollOffset + slotIndex);
+                    if (protoId.valid()) {
+                        selectedProtoId = protoId;
                         tool_active = slotIndex;
                         draw_mode = true;
                         _edit_area = 1;
 
                         // Set mouse cursor to proto's art FID
                         Proto* proto;
-                        if (protoGetProto(pid, &proto) != -1) {
+                        if (protoGetProto(protoId, &proto) != -1) {
                             const FrmId artFrmId = FrmId(proto);
                             if (artFrmId.exist()) {
                                 gGameMouseBouncingCursor->fid = artFrmId.fid();
@@ -1484,7 +1484,7 @@ void edit_mapper()
                             _screen_obj = nullptr;
                         }
 
-                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                        update_toolname(selectedProtoId, currentType, scrollOffset + slotIndex);
 
                         // Refresh toolbar art row
                         Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
@@ -1874,9 +1874,9 @@ void edit_mapper()
         case kBtnProtoEditor:
             // Uppercase 'E' — proto editor on current toolbar selection
             if (!map_entered && !settings.mapper.use_art_not_protos && !draw_mode && tool_active != -1) {
-                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
-                if (pid != -1) {
-                    protoEdit(pid);
+                const ProtoId protoId = toolbar_proto(currentType, scrollOffset + tool_active);
+                if (protoId.valid()) {
+                    protoEdit(protoId);
                 }
             }
             break;
@@ -2019,11 +2019,11 @@ void edit_mapper()
         // --- ':' — Edit proto from toolbar slot ---
         case kBtnProtoNewEdit:
             if (!map_entered && !settings.mapper.use_art_not_protos && tool_active != -1) {
-                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
-                if (pid == -1) {
-                    proto_new(&pid, currentType);
+                ProtoId protoId = toolbar_proto(currentType, scrollOffset + tool_active);
+                if (!protoId.valid()) {
+                    proto_new(protoId, currentType);
                 }
-                protoEdit(pid);
+                protoEdit(protoId);
             }
             break;
 
@@ -2339,24 +2339,24 @@ void clear_toolname()
 }
 
 // 0x48B328
-void update_toolname(int* pid, ObjectType type, int id)
+void update_toolname(ProtoId& protoId, ObjectType type, int id)
 {
     Proto* proto;
 
-    *pid = toolbar_proto(type, id);
+    protoId = toolbar_proto(type, id);
 
-    if (protoGetProto(*pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return;
     }
 
     windowDrawText(tool_win,
-        protoGetName(proto->pid),
+        protoGetName(proto),
         kToolNameWidth,
         kToolNameX,
         kToolNameY1,
         static_cast<ColorWithFlags>(260));
 
-    switch (objectTypeFromPid(proto->pid)) {
+    switch (protoId.objectType()) {
     case OBJ_TYPE_ITEM:
         windowDrawText(tool_win,
             gItemTypeNames[proto->item.type],
@@ -2422,8 +2422,8 @@ void update_high_obj_name(Object* obj)
 {
     Proto* proto;
 
-    if (protoGetProto(obj->pid, &proto) != -1) {
-        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
+    if (protoGetProto(obj, &proto) != -1) {
+        windowDrawText(tool_win, protoGetName(obj), kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
         windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, static_cast<ColorWithFlags>(260));
         windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, static_cast<ColorWithFlags>(260));
         redraw_toolname();
@@ -2528,8 +2528,8 @@ void update_art(ObjectType type, int offset)
             frmId = FrmId(type, i);
         } else {
             Proto* proto;
-            int pid = toolbar_proto(type, i);
-            if (protoGetProto(pid, &proto) == -1) continue;
+            const ProtoId protoId = toolbar_proto(type, i);
+            if (protoGetProto(protoId, &proto) == -1) continue;
             frmId = FrmId(proto);
         }
         artRender(frmId, p, art_scale_width, art_scale_height, screen_width);
@@ -2561,18 +2561,43 @@ void update_art(ObjectType type, int offset)
 // mapper_pick_object
 static int mapperPickObject(Object* obj, int* outOffset)
 {
-    if (obj == nullptr) {
+    const ProtoId objProtoId = obj;
+    if (!objProtoId.valid()) {
         return -1;
     }
 
-    ObjectType type = objectTypeFromPid(obj->pid);
+    ObjectType type = objProtoId.objectType();
     int maxId = proto_max_id(type);
     constexpr int kScrollOffset = 10;
 
     for (int idx = 1; idx < maxId; idx++) {
-        int pid = (type << 24) | idx;
+        ProtoId protoId;
+        switch (type) {
+        case OBJ_TYPE_ITEM:
+            protoId = static_cast<ItemProtoTypeId>(idx);
+            break;
+        case OBJ_TYPE_CRITTER:
+            protoId = static_cast<CritterProtoTypeId>(idx);
+            break;
+        case OBJ_TYPE_SCENERY:
+            protoId = static_cast<SceneryProtoTypeId>(idx);
+            break;
+        case OBJ_TYPE_WALL:
+            protoId = static_cast<WallProtoTypeId>(idx);
+            break;
+        case OBJ_TYPE_TILE:
+            protoId = static_cast<TileProtoTypeId>(idx);
+            break;
+        case OBJ_TYPE_MISC:
+            protoId = static_cast<MiscProtoTypeId>(idx);
+            break;
+        default:
+            protoId = ProtoId::Empty();
+            break;
+        }
+
         Proto* proto;
-        if (protoGetProto(pid, &proto) == -1) {
+        if (protoGetProto(protoId, &proto) == -1) {
             return -1;
         }
         if (proto->pid == obj->pid) {
@@ -2611,9 +2636,9 @@ static int mapperPickTile(int* outOffset)
     const TileFrmId tileFrmId = tileFrameId;
 
     for (int idx = 0; idx < maxId; idx++) {
-        int pid = (OBJ_TYPE_TILE << 24) | idx;
+        const ProtoId protoId = static_cast<TileProtoTypeId>(idx);
         Proto* proto;
-        if (protoGetProto(pid, &proto) == -1) {
+        if (protoGetProto(protoId, &proto) == -1) {
             return -1;
         }
         if (proto->fid == tileFrmId.fid()) {
@@ -2696,7 +2721,7 @@ int mapper_mark_exit_grid()
 
             obj = objectFindFirstAtElevation(gElevation);
             while (obj != nullptr) {
-                if (isExitGridPid(obj->pid)) {
+                if (isExitGridProtoId(obj)) {
                     obj->data.misc.map = mapInfo.map;
                     obj->data.misc.tile = mapInfo.tile;
                     obj->data.misc.elevation = mapInfo.elevation;
@@ -2875,7 +2900,7 @@ static void mapper_mark_all_exit_grids()
 
     obj = objectFindFirstAtElevation(gElevation);
     while (obj != nullptr) {
-        if (isExitGridPid(obj->pid)) {
+        if (isExitGridProtoId(obj)) {
             obj->data.misc.map = mapInfo.map;
             obj->data.misc.tile = mapInfo.tile;
             obj->data.misc.elevation = mapInfo.elevation;

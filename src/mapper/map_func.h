@@ -14,7 +14,7 @@ void pick_region(Rect* rect);
 void sort_rect(Rect* a, Rect* b);
 void draw_rect(Rect* rect, unsigned char color);
 void erase_rect(Rect* rect);
-int toolbar_proto(ObjectType type, int id);
+ProtoId toolbar_proto(ObjectType type, int id);
 bool map_toggle_block_obj_viewing_on();
 
 void map_load_dialog();
@@ -32,8 +32,8 @@ void mapper_copy_map_elev();
 void mapper_flush_cache();
 int pickHex();
 ObjectType pickToolbar(int topY);
-void placeObject(int pid, const FrmId& frmId);
-void placeTile(int pid, const FrmId& frmId);
+void placeObject(const ProtoId& protoId, const FrmId& frmId);
+void placeTile(const ProtoId& protoId, const FrmId& frmId);
 // Pass the current toolbar type to filter the region copy by type, or -1 to copy all object
 // types in the picked region (mirrors the original mapper's `copy_object(arg1)` arg).
 void copyObject(int filterType);

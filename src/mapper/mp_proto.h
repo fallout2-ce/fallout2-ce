@@ -1,15 +1,17 @@
 #ifndef FALLOUT_MAPPER_MP_PROTO_H_
 #define FALLOUT_MAPPER_MP_PROTO_H_
 
+#include "art.h"
 #include "obj_types.h"
+#include "proto_types.h"
 
 namespace fallout {
 
 class Object;
 
 union Proto;
-typedef int (*protoChooseFidCallback)(Proto* proto);
-typedef int (*protoChooseAddCallback)(int pid, int count);
+typedef FrmId (*protoChooseFidCallback)(Proto* proto);
+typedef int (*protoChooseAddCallback)(const ProtoId& protoId, int count);
 
 extern char* proto_builder_name;
 extern bool can_modify_protos;
@@ -23,7 +25,7 @@ void rebuild_spray_tools();
 void rebuild_binary();
 void art_to_protos();
 void swap_protos();
-int protoEdit(int protoId);
+int protoEdit(const ProtoId& protoId);
 int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc);
 // protoInstEdit moved to mp_instance.h
 

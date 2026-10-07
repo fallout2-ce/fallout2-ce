@@ -77,7 +77,7 @@ static int _partyMemberItemSave(Object* object);
 static int _partyMemberItemRecover(PartyMemberListItem* a1);
 static int _partyMemberClearItemList();
 static int partyFixMultipleMembers();
-static int _partyMemberCopyLevelInfo(Object* object, int a2);
+static int _partyMemberCopyLevelInfo(Object* object, const ProtoId& stagedProtoId);
 
 // 0x519D9C partyMemberMaxCount
 int gPartyMemberDescriptionsLength = 0;
@@ -808,11 +808,11 @@ int _partyMemberRestingHeal(int hours)
 }
 
 // 0x494F24 partyMemberFindObjFromPid
-Object* partyMemberFindByPid(int pid)
+Object* partyMemberFindByProtoId(const ProtoId& protoId)
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if (object->pid == pid) {
+        if (ProtoId(object) == protoId) {
             return object;
         }
     }
@@ -858,14 +858,14 @@ bool objectIsPartyMember(Object* object)
     return isPartyMember;
 }
 
-bool partyMemberPidCanEquipArmor(int pid)
+bool partyMemberProtoIdCanEquipArmor(const ProtoId& protoId)
 {
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return false;
     }
 
-    return proto->critter.data.bodyType == BODY_TYPE_BIPED && ProtoId(pid) != CritterProtoTypeId::Marcus;
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && protoId != CritterProtoTypeId::Marcus;
 }
 
 // Returns number of active critters in the party.
@@ -1202,7 +1202,7 @@ static int partyFixMultipleMembers()
                 remove = true;
             } else {
                 // NOTE: Uninline.
-                Object* partyMember = partyMemberFindByPid(obj->pid);
+                Object* partyMember = partyMemberFindByProtoId(obj);
                 if (partyMember != nullptr && partyMember != obj) {
                     if (partyMember->sid == obj->sid) {
                         obj->sid = -1;
@@ -1213,7 +1213,7 @@ static int partyFixMultipleMembers()
 
             if (remove) {
                 // NOTE: Uninline.
-                if (obj != partyMemberFindByPid(obj->pid)) {
+                if (obj != partyMemberFindByProtoId(obj)) {
                     debugPrint("\nDestroying evil critter doppleganger!");
 
                     if (obj->sid != -1) {
@@ -1262,9 +1262,9 @@ static int partyFixMultipleMembers()
 void _partyMemberSaveProtos()
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        int pid = gPartyMemberPids[index];
-        if (pid != -1) {
-            _proto_save_pid(pid);
+        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        if (protoId.valid()) {
+            protoSaveProtoId(protoId);
         }
     }
 }
@@ -1526,10 +1526,10 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        int stagePid = memberDescription->level_pids[levelUpInfo->level];
+        const ProtoId stageProtoId = ProtoId(memberDescription->level_pids[levelUpInfo->level]);
         int nextLevel = levelUpInfo->level + 1;
 
-        if (_partyMemberCopyLevelInfo(obj, stagePid) == -1) {
+        if (_partyMemberCopyLevelInfo(obj, stageProtoId) == -1) {
             return -1;
         }
 
@@ -1570,28 +1570,30 @@ void partyMemberSetEngineLevelUpEnabled(bool enabled)
 }
 
 // 0x495EA8 partyMemberCopyLevelInfo
-static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
+static int _partyMemberCopyLevelInfo(Object* critter, const ProtoId& stagedProtoId)
 {
-    if (critter == nullptr) {
+    const ProtoId critterProtoId = critter;
+
+    if (!critterProtoId.valid()) {
         return -1;
     }
 
-    if (stagePid == -1) {
+    if (!stagedProtoId.valid()) {
         return -1;
     }
 
-    if (objectTypeFromPid(stagePid) != OBJ_TYPE_CRITTER) {
-        debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagePid);
+    if (stagedProtoId.objectType() != OBJ_TYPE_CRITTER) {
+        debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagedProtoId.pid());
         return -1;
     }
 
     Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
+    if (protoGetProto(critterProtoId, &proto) == -1) {
         return -1;
     }
 
     Proto* stageProto;
-    if (protoGetProto(stagePid, &stageProto) == -1) {
+    if (protoGetProto(stagedProtoId, &stageProto) == -1) {
         return -1;
     }
 

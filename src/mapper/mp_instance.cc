@@ -95,8 +95,9 @@ void protoInstEdit(Object* obj)
 // proto_inst_setup_edit_
 static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, int* pObjProtoOff, int* pBufOff, const char* title)
 {
+    const ProtoId protoId = obj;
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
@@ -111,7 +112,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, in
     if (win == -1) return -1;
 
     *pWinId = win;
-    *pObjType = objectTypeFromPid(obj->pid);
+    *pObjType = protoId.objectType();
     *pObjProtoOff = 0;
 
     windowDrawBorder(win);
@@ -425,15 +426,15 @@ static int protoInstItemEdit(Object* obj)
 }
 
 // proto_inst_add_to_inven
-static int protoInstAddToInven(int pid, int count)
+static int protoInstAddToInven(const ProtoId& protoId, int count)
 {
     if (proto_inst_who_obj == nullptr) return -1;
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) == -1) return 0;
+    if (protoGetProto(protoId, &proto) == -1) return 0;
 
     Object* newObj;
-    if (objectCreateWithFrmIdPid(&newObj, FrmId(proto), pid) == -1) return 0;
+    if (objectCreateWithFrmIdProtoId(&newObj, proto, protoId) == -1) return 0;
 
     objectSetLocation(newObj, 0, 0, nullptr);
 
@@ -447,18 +448,18 @@ static int protoInstAddToInven(int pid, int count)
 }
 
 // proto_choose_pid_inven_fid
-static int protoInstChoosePidInvenFid(Proto* proto)
+static FrmId protoInstChoosePidInvenFrmId(Proto* proto)
 {
-    if (objectTypeFromPid(proto->pid) != OBJ_TYPE_ITEM) return -1;
-    if (proto->item.inventoryFid == -1) return proto->fid;
-    return proto->item.inventoryFid;
+    if (ProtoId(proto).objectType() != OBJ_TYPE_ITEM) return FrmId::Empty();
+    const FrmId inventoryFrmId = FrmId(proto->item.inventoryFid);
+    return inventoryFrmId.valid() ? inventoryFrmId : proto;
 }
 
 // proto_inst_add_to_inven - grid-based proto picker (original implementation)
 static void protoInstChooseItemsForInvenGrid(Object* obj)
 {
     proto_inst_who_obj = obj;
-    protoChooseMultiPids(OBJ_TYPE_ITEM, protoInstChoosePidInvenFid, protoInstAddToInven);
+    protoChooseMultiPids(OBJ_TYPE_ITEM, protoInstChoosePidInvenFrmId, protoInstAddToInven);
     proto_inst_who_obj = nullptr;
 }
 
@@ -473,13 +474,14 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     int count = 0;
 
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
+        const ProtoId protoId = ProtoId(pid);
         Proto* proto;
-        if (protoGetProto(pid, &proto) == -1) break;
-        if (objectTypeFromPid(pid) != OBJ_TYPE_ITEM) continue;
+        if (protoGetProto(protoId, &proto) == -1) break;
+        if (protoId.objectType() != OBJ_TYPE_ITEM) continue;
 
         names[count] = static_cast<char*>(internal_malloc(64));
-        snprintf(names[count], 64, "%s", protoGetName(pid));
-        pids[count] = pid;
+        snprintf(names[count], 64, "%s", protoGetName(protoId));
+        pids[count] = protoId.pid();
         count++;
     }
 
@@ -487,7 +489,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     if (selection != -1) {
         int quantity = 1;
         win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
-        protoInstAddToInven(pids[selection], quantity);
+        protoInstAddToInven(ProtoId(pids[selection]), quantity);
     }
 
     for (int i = 0; i < count; i++) {
@@ -586,7 +588,7 @@ static int protoInstCritterEdit(Object* obj)
             } else if (key == kInstKeyViewInven) {
                 windowDestroy(winId);
 
-                inventorySetDude(obj, obj->pid);
+                inventorySetDude(obj, obj);
                 inventoryOpen();
                 inventoryResetDude();
 
@@ -717,7 +719,7 @@ static int protoInstSceneryEdit(Object* obj)
     int bufOff;
 
     Proto* proto;
-    if (protoGetProto(obj->pid, &proto) == -1) {
+    if (protoGetProto(obj, &proto) == -1) {
         return -1;
     }
 

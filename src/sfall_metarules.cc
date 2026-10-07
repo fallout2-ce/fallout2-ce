@@ -1938,7 +1938,7 @@ void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx)
         return;
     }
 
-    gameDialogSetPartyMemberCcMsgIds(pid, startMsgId, endMsgId);
+    gameDialogSetPartyMemberCcMsgIds(ProtoId(pid), startMsgId, endMsgId);
 }
 
 void mf_set_window_flag(OpcodeContext& ctx)

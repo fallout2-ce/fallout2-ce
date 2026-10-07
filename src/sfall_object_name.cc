@@ -30,7 +30,7 @@ char* sfallObjectNameGet(Object* object)
     }
 
     if (it->second.empty()) {
-        return protoGetName(object->pid);
+        return protoGetName(object);
     }
 
     return const_cast<char*>(it->second.c_str());

@@ -30,8 +30,8 @@ static int proto_choose_container_flags(Proto* proto);
 static int proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex);
 static int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex);
 static int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex);
-static void proto_critter_flags_redraw(int win, int pid);
-static int proto_critter_flags_modify(int pid);
+static void proto_critter_flags_redraw(int win, const ProtoId& protoId);
+static int proto_critter_flags_modify(const ProtoId& protoId);
 static int mp_pick_kill_type();
 
 static char kYes[] = "YES";
@@ -152,7 +152,7 @@ int proto_choose_container_flags(Proto* proto)
         "Cannot Pick Up",
         0);
 
-    if (_proto_action_can_pickup(proto->pid)) {
+    if (_proto_action_can_pickup(proto)) {
         windowDrawText(win,
             yesno[YES],
             50,
@@ -204,7 +204,7 @@ int proto_choose_container_flags(Proto* proto)
         } else if (input == '2') {
             proto->item.extendedFlags ^= PROTO_EXT_FLAG_CAN_PICK_UP;
 
-            if (_proto_action_can_pickup(proto->pid)) {
+            if (_proto_action_can_pickup(proto)) {
                 windowDrawText(win,
                     yesno[YES],
                     50,
@@ -350,6 +350,7 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
 // 0x492C20
 int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex)
 {
+    const ProtoId protoId = ProtoId(pid);
     int button_x;
     int value_offset_x;
 
@@ -375,9 +376,9 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
         title,
         0);
 
-    if (pid != -1) {
+    if (protoId.valid()) {
         windowDrawText(subwin,
-            protoGetName(pid),
+            protoGetName(protoId),
             49,
             button_x + value_offset_x,
             *y + 4,
@@ -423,14 +424,14 @@ const char* proto_wall_light_str(int flags)
 }
 
 // 0x4960B8
-void proto_critter_flags_redraw(int win, int pid)
+void proto_critter_flags_redraw(int win, const ProtoId& protoId)
 {
     int index;
     Color color;
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
-        if (critterFlagCheck(pid, critFlagList[index])) {
+        if (critterFlagCheck(protoId, critFlagList[index])) {
             color = COLOR_GREEN;
         } else {
             color = COLOR_DARK_GREY_2;
@@ -442,14 +443,14 @@ void proto_critter_flags_redraw(int win, int pid)
 }
 
 // 0x496120
-int proto_critter_flags_modify(int pid)
+int proto_critter_flags_modify(const ProtoId& protoId)
 {
     Proto* proto;
     int rc;
     int flags = 0;
     int index;
 
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
@@ -550,9 +551,9 @@ int proto_critter_flags_modify(int pid)
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if ((critFlagList[index] & flags) != 0) {
-            critterFlagSet(pid, critFlagList[index]);
+            critterFlagSet(protoId, critFlagList[index]);
         } else {
-            critterFlagUnset(pid, critFlagList[index]);
+            critterFlagUnset(protoId, critFlagList[index]);
         }
     }
 
@@ -630,7 +631,7 @@ int proto_build_all_type_binary(ObjectType type)
     return 0;
 }
 
-int protoEdit(int protoId)
+int protoEdit(const ProtoId& protoId)
 {
     // TODO: implement proto editor dialog — load proto, show editor UI
     (void)protoId;
@@ -663,7 +664,7 @@ static Color itemIconsBgColor()
 };
 
 // proto_choose_multi_pids_update
-static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
+static void protoChooseMultiPidsUpdate(int win, ObjectType pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
 {
     constexpr int kGridCols = 4;
     constexpr int kGridRows = 4;
@@ -679,17 +680,41 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
     for (int row = 0; row < kGridRows; row++) {
         for (int col = 0; col < kGridCols; col++) {
             int idx = scrollOffset + row * kGridCols + col;
-            int pid = idx | (pidType << 24);
+            ProtoId protoId;
+            switch (pidType) {
+            case OBJ_TYPE_ITEM:
+                protoId = static_cast<ItemProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_CRITTER:
+                protoId = static_cast<CritterProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_SCENERY:
+                protoId = static_cast<SceneryProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_WALL:
+                protoId = static_cast<WallProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_TILE:
+                protoId = static_cast<TileProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_MISC:
+                protoId = static_cast<MiscProtoTypeId>(idx);
+                break;
+            default:
+                protoId = ProtoId::Empty();
+                break;
+            }
+
             int cellX = kGridX + col * kCellPitchX + 1;
             int cellY = kGridY + row * kCellPitchY + 1;
 
             bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, itemIconsBgColor());
             Proto* proto;
-            if (protoGetProto(pid, &proto) != -1) {
-                int fid = fidFunc ? fidFunc(proto) : proto->fid;
-                artRender(FrmId(fid), buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
+            if (protoGetProto(protoId, &proto) != -1) {
+                const FrmId frmId = fidFunc ? fidFunc(proto) : FrmId(proto->fid);
+                artRender(frmId, buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
 
-                const char* name = protoGetName(pid);
+                const char* name = protoGetName(protoId);
                 int textY = cellY + kArtH + 5;
                 bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
                 windowDrawText(win, name, 80, cellX, textY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
@@ -762,16 +787,16 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
 
         if (key >= kBaseKey && key < kBaseKey + kCells) {
             int pidIndex = scrollOffset + key - kBaseKey;
-            int pid = pidIndex | (pidType << 24);
+            const ProtoId protoId = ProtoId(pidIndex | (pidType << 24));
 
             Proto* proto;
-            if (protoGetProto(pid, &proto) == -1) continue;
+            if (protoGetProto(protoId, &proto) == -1) continue;
 
             char prompt[128];
-            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(pid));
+            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(protoId));
             int quantity = 1;
             if (win_get_num_i(&quantity, 1, 32000, false, prompt, 100, 100) != -1) {
-                addFunc(pid, quantity);
+                addFunc(protoId, quantity);
             }
         } else if (key == KEY_BRACKET_RIGHT) {
             if (scrollOffset + kCells <= maxOffset) {

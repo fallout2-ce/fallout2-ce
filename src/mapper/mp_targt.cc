@@ -60,7 +60,7 @@ bool target_overriden()
 }
 
 // 0x49B34C
-void target_make_path(char* path, int pid)
+void target_make_path(char* path, const ProtoId& protoId)
 {
     if (_cd_path_base[0] != '\0' && _cd_path_base[1] == ':') {
         strncpy(path, _cd_path_base, 2);
@@ -69,8 +69,8 @@ void target_make_path(char* path, int pid)
         strcpy(path, target_path_base);
     }
 
-    if (pid != -1) {
-        strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
+    if (protoId.valid()) {
+        strcat(path, artGetObjectTypeName(protoId.objectType()));
     }
 }
 
@@ -102,7 +102,7 @@ int target_header_save()
     char path[COMPAT_MAX_PATH];
     FILE* stream;
 
-    target_make_path(path, -1);
+    target_make_path(path, ProtoId::Empty());
     strcat(path, TARGET_DAT);
 
     stream = fopen(path, "wb");
@@ -125,7 +125,7 @@ int target_header_load()
     char path[COMPAT_MAX_PATH];
     FILE* stream;
 
-    target_make_path(path, -1);
+    target_make_path(path, ProtoId::Empty());
     strcat(path, TARGET_DAT);
 
     stream = fopen(path, "rb");
@@ -146,7 +146,7 @@ int target_header_load()
 }
 
 // 0x49B58C
-int target_save(int pid)
+int target_save(const ProtoId& protoId)
 {
     char path[COMPAT_MAX_PATH];
     size_t len;
@@ -154,15 +154,15 @@ int target_save(int pid)
     FILE* stream;
     TargetSubNode* subnode;
 
-    if (target_ptr(pid, &subnode) == -1) {
+    if (target_ptr(protoId, &subnode) == -1) {
         return -1;
     }
 
-    target_make_path(path, pid);
+    target_make_path(path, protoId);
 
     len = strlen(path);
     path[len] = '\\';
-    _proto_list_str(pid, path + len + 1);
+    _proto_list_str(protoId, path + len + 1);
 
     extension = strchr(path + len + 1, '.');
     if (extension != NULL) {
@@ -187,7 +187,7 @@ int target_save(int pid)
 }
 
 // 0x49B6BC
-int target_load(int pid, TargetSubNode** subnode_ptr)
+int target_load(const ProtoId& protoId, TargetSubNode** subnode_ptr)
 {
     char path[COMPAT_MAX_PATH];
     size_t len;
@@ -195,11 +195,11 @@ int target_load(int pid, TargetSubNode** subnode_ptr)
     FILE* stream;
     TargetSubNode* subnode;
 
-    target_make_path(path, pid);
+    target_make_path(path, protoId);
 
     len = strlen(path);
     path[len] = '\\';
-    _proto_list_str(pid, path + len + 1);
+    _proto_list_str(protoId, path + len + 1);
 
     extension = strchr(path + len + 1, '.');
     if (extension != NULL) {
@@ -262,12 +262,12 @@ int target_find_free_subnode(TargetSubNode** subnode_ptr)
 }
 
 // 0x49BA10
-int target_new(int pid, int* tid_ptr)
+int target_new(const ProtoId& protoId, int* tid_ptr)
 {
     TargetSubNode* subnode;
     TargetSubNode* new_subnode;
 
-    if (target_ptr(pid, &subnode) == -1) {
+    if (target_ptr(protoId, &subnode) == -1) {
         if (target_find_free_subnode(&subnode) == -1) {
             return -1;
         }
@@ -286,7 +286,7 @@ int target_new(int pid, int* tid_ptr)
 
     subnode->next = new_subnode;
 
-    new_subnode->pid = pid;
+    new_subnode->pid = protoId.pid();
     new_subnode->tid = targetlist.next_tid;
 
     *tid_ptr = targetlist.next_tid;
@@ -298,7 +298,7 @@ int target_new(int pid, int* tid_ptr)
 }
 
 // 0x49BBD4
-int target_remove(int pid)
+int target_remove(const ProtoId& protoId)
 {
     TargetNode* node;
     TargetSubNode* subnode;
@@ -306,7 +306,7 @@ int target_remove(int pid)
 
     node = targetlist.tail;
     while (node != NULL) {
-        if (node->subnode.pid == pid) {
+        if (ProtoId(node->subnode.pid) == protoId) {
             break;
         }
         node = node->next;
@@ -334,7 +334,7 @@ int target_remove(int pid)
 }
 
 // 0x49BC3C
-int target_remove_tid(int pid, int tid)
+int target_remove_tid(const ProtoId& protoId, int tid)
 {
     TargetNode* node;
     TargetSubNode* subnode;
@@ -342,7 +342,7 @@ int target_remove_tid(int pid, int tid)
 
     node = targetlist.tail;
     while (node != NULL) {
-        if (node->subnode.pid == pid) {
+        if (ProtoId(node->subnode.pid) == protoId) {
             break;
         }
         node = node->next;
@@ -358,7 +358,7 @@ int target_remove_tid(int pid, int tid)
             memcpy(&(node->subnode), subnode_next, sizeof(TargetSubNode));
             internal_free(subnode_next);
         } else {
-            target_remove(pid);
+            target_remove(protoId);
         }
 
         // FIXME: Should probably return 0 here.
@@ -408,24 +408,24 @@ int target_remove_all()
 }
 
 // 0x49BD00
-int target_ptr(int pid, TargetSubNode** subnode_ptr)
+int target_ptr(const ProtoId& protoId, TargetSubNode** subnode_ptr)
 {
     TargetNode* node = targetlist.tail;
     while (node != NULL) {
-        if (node->subnode.pid == pid) {
+        if (ProtoId(node->subnode.pid) == protoId) {
             *subnode_ptr = &(node->subnode);
             return 0;
         }
     }
 
-    return target_load(pid, subnode_ptr);
+    return target_load(protoId, subnode_ptr);
 }
 
 // 0x49BD38
-int target_tid_ptr(int pid, int tid, TargetSubNode** subnode_ptr)
+int target_tid_ptr(const ProtoId& protoId, int tid, TargetSubNode** subnode_ptr)
 {
     TargetSubNode* subnode;
-    if (target_ptr(pid, &subnode) == -1) {
+    if (target_ptr(protoId, &subnode) == -1) {
         return -1;
     }
 

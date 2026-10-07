@@ -229,6 +229,7 @@ inline bool killTypeOverrideIsValid(int killType)
 }
 
 enum class ItemProtoTypeId : int {
+    Reserved = 0,
     PowerArmor = 3,
     SmallEnergyCell = 38,
     MicroFusionCell = 39,
@@ -286,7 +287,8 @@ enum class ItemProtoTypeId : int {
 };
 
 enum class CritterProtoTypeId : int {
-    Dude = 0,
+    Reserved = 0,
+    Dude = Reserved,
     GunGuardFemale = 47,
     Cyberdog = 136,
     Goris = 152,
@@ -298,6 +300,7 @@ enum class CritterProtoTypeId : int {
 };
 
 enum class SceneryProtoTypeId : int {
+    Reserved = 0,
     ExitGridAutomapMarker = 49,
     BrotherhoodDoor = 153,
     BlockingHexAutomap = 344,
@@ -311,14 +314,19 @@ enum class SceneryProtoTypeId : int {
 };
 
 enum class MiscProtoTypeId : int {
+    Reserved = 0,
     Blood = 4,
     Id0x0C = 12,
     FirstExitGrid = 16,
     LastExitGrid = 23
 };
 
-enum class WallProtoTypeId : int {};
-enum class TileProtoTypeId : int {};
+enum class WallProtoTypeId : int {
+    Reserved = 0,
+};
+enum class TileProtoTypeId : int {
+    Reserved = 0,
+};
 
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
@@ -688,10 +696,17 @@ public:
     static constexpr int kEmptyPid = -1;
     static constexpr int kInvalidProtoId = -1;
     static constexpr int kMinProtoId = 0;
+    static constexpr int kMaxProtoId = 16777215;
 
     constexpr ProtoId()
         : ProtoId(OBJ_TYPE_INVALID, kEmptyPid, kInvalidProtoId)
     {
+    }
+
+    static const ProtoId& Empty()
+    {
+        static const ProtoId emptyInstance {};
+        return emptyInstance;
     }
 
     constexpr explicit ProtoId(int pid)
@@ -739,6 +754,8 @@ public:
         return static_cast<TProtoTypeId>(kInvalidProtoId);
     }
 
+    constexpr bool valid() const { return hasPid() && hasObjectType() && _protoId >= kMinProtoId && _protoId <= kMaxProtoId; }
+
     constexpr bool operator==(const ProtoId& other) const
     {
         return _pid == other._pid && _objectType == other._objectType;
@@ -772,7 +789,7 @@ protected:
     static constexpr int kObjectTypeMaskPosition = 24;
 
     constexpr ProtoId(ObjectType objectType, int pid, int protoId)
-        : _objectType(objectType)
+        : _objectType(objectTypeIsValid(objectType) ? objectType : OBJ_TYPE_INVALID)
         , _pid(pid)
         , _protoId(protoId < kMinProtoId ? kInvalidProtoId : protoIdFromPid(protoId))
     {
@@ -795,6 +812,11 @@ private:
         }
 
         return ((objectType << kObjectTypeMaskPosition) & kObjectTypeMask) | (protoId & kProtoIdMask);
+    }
+
+    static constexpr bool objectTypeIsValid(int type)
+    {
+        return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_PROTO_COUNT;
     }
 };
 

@@ -132,7 +132,7 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
 // 0x410468
 int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation rotation, int delay)
 {
-    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj, CRITTER_NO_KNOCKBACK)) {
         return -1;
     }
 
@@ -249,7 +249,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
 
     int violenceLevel = settings.preferences.violence_level;
 
-    if (critterFlagCheck(defender->pid, CRITTER_SPECIAL_DEATH)) {
+    if (critterFlagCheck(defender, CRITTER_SPECIAL_DEATH)) {
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
     }
 
@@ -341,7 +341,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     FrmId frmId;
     const char* sfx_name;
 
-    if (critterFlagCheck(defender->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(defender, CRITTER_NO_KNOCKBACK)) {
         knockbackDistance = 0;
     }
 
@@ -522,7 +522,7 @@ int _show_death(Object* obj, AnimationType anim)
         }
     }
 
-    if (!critterFlagCheck(obj->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(obj, CRITTER_FLAT)) {
         obj->flags |= OBJECT_NO_BLOCK;
         if (_obj_toggle_flat(obj, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
@@ -533,7 +533,7 @@ int _show_death(Object* obj, AnimationType anim)
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
     }
 
-    if (anim >= ANIM_ELECTRIFIED_TO_NOTHING && anim <= ANIM_EXPLODED_TO_NOTHING && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
+    if (anim >= ANIM_ELECTRIFIED_TO_NOTHING && anim <= ANIM_EXPLODED_TO_NOTHING && !critterFlagCheck(obj, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj, CRITTER_NO_DROP)) {
         itemDropAll(obj, obj->tile);
     }
 
@@ -744,7 +744,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
     Proto* weaponProto;
     Object* weapon = attack->weapon;
-    protoGetProto(weapon->pid, &weaponProto);
+    protoGetProto(weapon, &weaponProto);
 
     const FrmId frmId = FrmId(attack->attacker, anim, attack->attacker->rotation + 1);
     CacheEntry* artHandle;
@@ -786,9 +786,9 @@ int _action_ranged(Attack* attack, AnimationType anim)
         if ((attack->attackerFlags & DAM_HIT) != DAM_NONE || (attack->attackerFlags & DAM_CRITICAL) == DAM_NONE) {
             bool l56 = false;
 
-            int projectilePid = weaponGetProjectilePid(weapon);
+            const ProtoId projectileProtoId = weaponGetProjectileProtoId(weapon);
             Proto* projectileProto;
-            if (protoGetProto(projectilePid, &projectileProto) != -1 && projectileProto->fid != -1) {
+            if (protoGetProto(projectileProtoId, &projectileProto) != -1 && FrmId(projectileProto).valid()) {
                 if (anim == ANIM_THROW_ANIM) {
                     projectile = weapon;
                     weaponFrmId = FrmId(weapon);
@@ -800,7 +800,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
-                    objectSetFrmId(projectile, FrmId(projectileProto), nullptr);
+                    objectSetFrmId(projectile, projectileProto, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
 
                     if (attack->attacker == gDude) {
@@ -816,7 +816,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     _obj_connect(weapon, attack->attacker->tile, attack->attacker->elevation, nullptr);
                 } else {
-                    objectCreateWithFrmIdPid(&projectile, FrmId(projectileProto), -1);
+                    objectCreateWithFrmIdProtoId(&projectile, FrmId(projectileProto), ProtoId::Empty());
                 }
 
                 objectHide(projectile, nullptr);
@@ -902,7 +902,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                         explosionGetPattern(&startRotation, &endRotation);
 
                         for (Rotation rotation = startRotation; rotation < endRotation; rotation++) {
-                            if (objectCreateWithFrmIdPid(&(adjacentObjects[rotation]), explosionFrmId, -1) != -1) {
+                            if (objectCreateWithFrmIdProtoId(&(adjacentObjects[rotation]), explosionFrmId, ProtoId::Empty()) != -1) {
                                 objectHide(adjacentObjects[rotation], nullptr);
 
                                 int adjacentTile = tileGetTileInDirection(explosionCenterTile, rotation, 1);
@@ -1111,7 +1111,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
     ObjectType type = FrmId(targetObj).objectType();
     int sceneryType = -1;
     if (type == OBJ_TYPE_SCENERY) {
-        if (protoGetProto(targetObj->pid, &proto) == -1) {
+        if (protoGetProto(targetObj, &proto) == -1) {
             return -1;
         }
 
@@ -1228,9 +1228,9 @@ int actionPickUp(Object* critter, Object* item)
     animationRegisterCallback(critter, item, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
 
     Proto* itemProto;
-    protoGetProto(item->pid, &itemProto);
+    protoGetProto(item, &itemProto);
 
-    if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item->pid)) {
+    if (itemProto->item.type != ITEM_TYPE_CONTAINER || _proto_action_can_pickup(item)) {
         animationRegisterAnimate(critter, ANIM_MAGIC_HANDS_GROUND, 0);
 
         const FrmId frmId = FrmId(critter, ANIM_MAGIC_HANDS_GROUND, critter->rotation + 1);
@@ -1304,7 +1304,7 @@ int actionLootCritter(Object* critter, Object* target)
     }
 
     // SFALL: Fix for trying to loot corpses with the "NoSteal" flag.
-    if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    if (critterFlagCheck(target, CRITTER_NO_STEAL)) {
         return -1;
     }
 
@@ -1640,7 +1640,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     }
 
     Object* explosion;
-    if (objectCreateWithFrmIdPid(&explosion, MiscFrameId::RocketExplosion, -1) == -1) {
+    if (objectCreateWithFrmIdProtoId(&explosion, MiscFrameId::RocketExplosion, ProtoId::Empty()) == -1) {
         internal_free(attack);
         return -1;
     }
@@ -1652,7 +1652,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
     Object* adjacentExplosions[ROTATION_COUNT];
     for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
-        if (objectCreateWithFrmIdPid(&(adjacentExplosions[rotation]), MiscFrameId::RocketExplosion, -1) == -1) {
+        if (objectCreateWithFrmIdProtoId(&(adjacentExplosions[rotation]), MiscFrameId::RocketExplosion, ProtoId::Empty()) == -1) {
             while (--rotation >= ROTATION_FIRST) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);
             }
@@ -1942,7 +1942,7 @@ void actionDamage(int tile, int elevation, int minDamage, int maxDamage, DamageT
     }
 
     Object* attacker;
-    if (objectCreateWithFrmIdPid(&attacker, SceneryFrameId::ForceField3, -1) == -1) {
+    if (objectCreateWithFrmIdProtoId(&attacker, SceneryFrameId::ForceField3, ProtoId::Empty()) == -1) {
         internal_free(attack);
         return;
     }
@@ -2017,7 +2017,7 @@ int _report_dmg(Attack* attack, Object* _)
 // 0x413660
 int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, DamageType damageType)
 {
-    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj, CRITTER_NO_KNOCKBACK)) {
         knockbackDistancePtr = nullptr;
     }
 

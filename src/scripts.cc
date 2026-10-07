@@ -688,7 +688,7 @@ Object* scriptGetSelf(Program* program)
     }
 
     Object* object;
-    objectCreateWithFrmIdPid(&object, InterfaceFrameId::ExitGridMarker, -1);
+    objectCreateWithFrmIdProtoId(&object, InterfaceFrameId::ExitGridMarker, ProtoId::Empty());
     objectHide(object, nullptr);
     _obj_toggle_flat(object, nullptr);
     object->sid = sid;
@@ -1842,7 +1842,7 @@ int scriptsSetDudeScript()
     }
 
     Proto* proto;
-    if (protoGetProto(ProtoId(CritterProtoTypeId::Dude).pid(), &proto) == -1) {
+    if (protoGetProto(CritterProtoTypeId::Dude, &proto) == -1) {
         debugPrint("Error in scr_set_dude_script: can't find obj_dude proto!");
         return -1;
     }

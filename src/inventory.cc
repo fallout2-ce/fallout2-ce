@@ -1417,7 +1417,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
             displayMonitorAddMessage("I can't use that."); // TODO: translate
             return false;
         }
-    } else if (partySlot == InvenSlot::Armor && !partyMemberPidCanEquipArmor(partyBaseTarget->pid)) {
+    } else if (partySlot == InvenSlot::Armor && !partyMemberProtoIdCanEquipArmor(partyBaseTarget)) {
         displayMonitorAddMessage("I can't use that."); // TODO: translate
         return false;
     }
@@ -1539,10 +1539,10 @@ void inventoryResetInvenApCost()
 }
 
 // inven_set_dude
-void inventorySetDude(Object* obj, int pid)
+void inventorySetDude(Object* obj, const ProtoId& protoId)
 {
     _inven_dude = obj;
-    _inven_pid = pid;
+    _inven_pid = protoId.pid();
 }
 
 // TODO(CE): move to more generic location
@@ -1555,12 +1555,12 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
     Proto* proto = nullptr;
 
     CritterFrameId inventoryFrameId = _art_vault_guy_num;
-    if (protoGetProto(basePid, &proto) != -1) {
+    if (protoGetProto(ProtoId(basePid), &proto) != -1) {
         inventoryFrameId = FrmId(proto).frameId<CritterFrameId>();
     }
 
     if (armor != nullptr) {
-        if (protoGetProto(armor->pid, &proto) != -1 && proto != nullptr) {
+        if (protoGetProto(armor, &proto) != -1 && proto != nullptr) {
             if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
                 inventoryFrameId = FrmId(proto->item.data.armor.femaleFid).frameId<CritterFrameId>();
             } else {
@@ -1576,7 +1576,7 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
     WeaponAnimation animationCode = WeaponAnimation::None;
     Object* itemInHand = activeHand == HAND_RIGHT ? rightHandItem : leftHandItem;
     if (itemInHand != nullptr) {
-        if (protoGetProto(itemInHand->pid, &proto) != -1
+        if (protoGetProto(itemInHand, &proto) != -1
             && proto != nullptr
             && proto->item.type == ITEM_TYPE_WEAPON) {
             animationCode = proto->item.data.weapon.animationCode;
@@ -3404,7 +3404,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
     Object* itemInHand = interfaceGetCurrentHand() == HAND_RIGHT ? gInventoryRightHandItem : gInventoryLeftHandItem;
     if (itemInHand != nullptr) {
         Proto* proto = nullptr;
-        if (protoGetProto(itemInHand->pid, &proto) != -1
+        if (protoGetProto(itemInHand, &proto) != -1
             && proto != nullptr
             && proto->item.type == ITEM_TYPE_WEAPON) {
             animationCode = proto->item.data.weapon.animationCode;
@@ -3418,17 +3418,17 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
 }
 
 // 0x471CA0
-Object* objectGetCarriedObjectByPid(Object* obj, int pid)
+Object* objectGetCarriedObjectByProtoId(Object* obj, const ProtoId& protoId)
 {
     Inventory* inventory = &(obj->data.inventory);
 
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
-        if (inventoryItem->item->pid == pid) {
+        if (ProtoId(inventoryItem->item) == protoId) {
             return inventoryItem->item;
         }
 
-        Object* found = objectGetCarriedObjectByPid(inventoryItem->item, pid);
+        Object* found = objectGetCarriedObjectByProtoId(inventoryItem->item, protoId);
         if (found != nullptr) {
             return found;
         }
@@ -3438,18 +3438,18 @@ Object* objectGetCarriedObjectByPid(Object* obj, int pid)
 }
 
 // 0x471CDC
-int objectGetCarriedQuantityByPid(Object* object, int pid)
+int objectGetCarriedQuantityByProtoId(Object* object, const ProtoId& protoId)
 {
     int quantity = 0;
 
     Inventory* inventory = &(object->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
-        if (inventoryItem->item->pid == pid) {
+        if (ProtoId(inventoryItem->item) == protoId) {
             quantity += inventoryItem->quantity;
         }
 
-        quantity += objectGetCarriedQuantityByPid(inventoryItem->item, pid);
+        quantity += objectGetCarriedQuantityByProtoId(inventoryItem->item, protoId);
     }
 
     return quantity;
@@ -3712,15 +3712,15 @@ static void inventoryRenderSummary()
         offset += pitch * fontGetLineHeight();
 
         if (ammoGetCapacity(item) > 0) {
-            int ammoTypePid = weaponGetAmmoTypePid(item);
+            const ProtoId ammoTypeProtoId = weaponGetAmmoTypeProtoId(item);
 
             formattedText[0] = '\0';
 
             messageListItem.num = 17; // Ammo:
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                if (ammoTypePid != -1) {
+                if (ammoTypeProtoId.valid()) {
                     if (ammoGetQuantity(item) != 0) {
-                        const char* ammoName = protoGetName(ammoTypePid);
+                        const char* ammoName = protoGetName(ammoTypeProtoId);
                         int capacity = ammoGetCapacity(item);
                         int quantity = ammoGetQuantity(item);
                         snprintf(formattedText, sizeof(formattedText), "%s %d/%d %s", messageListItem.text, quantity, capacity, ammoName);
@@ -3934,7 +3934,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                     lightDistance = 4;
                 } else {
                     Proto* proto;
-                    if (protoGetProto(critter->pid, &proto) == -1) {
+                    if (protoGetProto(critter, &proto) == -1) {
                         return -1;
                     }
 
@@ -4459,7 +4459,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 actionMenuItemsLength = 3;
                 actionMenuItems = _act_no_use;
             } else {
-                if (_obj_action_can_use(item) || _proto_action_can_use_on(item->pid)) {
+                if (_obj_action_can_use(item) || _proto_action_can_use_on(item)) {
                     actionMenuItemsLength = 4;
                     actionMenuItems = _act_use;
                 } else {
@@ -4610,7 +4610,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                     }
                 }
             }
-        } else if (explosiveIsActiveExplosive(item->pid)) {
+        } else if (explosiveIsActiveExplosive(item)) {
             if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
                 _dropped_explosive = 1;
                 objectDrop(owner, item);
@@ -4732,15 +4732,16 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    if (FrmId(target).objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    const FrmId targetFrmId = target;
+    if (targetFrmId.objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
     }
 
-    if (FrmId(target).objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
+    if (targetFrmId.objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
         if (target->frame == 0) {
             CacheEntry* handle;
-            Art* frm = artLock(FrmId(target), &handle);
+            Art* frm = artLock(targetFrmId, &handle);
             if (frm != nullptr) {
                 int frameCount = artGetFrameCount(frm);
                 artUnlock(handle);
@@ -4769,7 +4770,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return 0;
     }
     CritterEquipped stealTargetEquipped {};
@@ -5705,7 +5706,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     Object* hiddenBox = nullptr;
-    if (objectCreateWithFrmIdPid(&hiddenBox, FrmId::Empty(), ProtoId(ItemProtoTypeId::JesseContainer).pid()) == -1) {
+    if (objectCreateWithFrmIdProtoId(&hiddenBox, FrmId::Empty(), ItemProtoTypeId::JesseContainer) == -1) {
         return;
     }
 
