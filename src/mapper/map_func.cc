@@ -959,7 +959,7 @@ void eraseObject()
                          obj != nullptr;
                          obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
-                        if (ProtoId(obj).objectType() == OBJ_TYPE_INTERFACE) continue;
+                        if (!ProtoId(obj).valid()) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
                         if (obj == gGameMouseBouncingCursor) continue;
                         if (obj == gGameMouseHexCursor) continue;
