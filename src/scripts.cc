@@ -95,7 +95,7 @@ static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream);
 static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
-static int scriptGetNewId(int scriptType);
+static int scriptGetNewId(ScriptType scriptType);
 static int scriptsRemoveLocalVars(Script* script);
 static int scriptsGetMessageList(int messageListId, MessageList** outMessageList);
 
@@ -653,7 +653,7 @@ void scriptsSyncObjectId(Object* object)
 // 0x4A390C src_find_sid_from_program
 int scriptGetSid(Program* program)
 {
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         ScriptListExtent* extent = gScriptLists[type].head;
         while (extent != nullptr) {
             for (int index = 0; index < extent->length; index++) {
@@ -683,7 +683,7 @@ Object* scriptGetSelf(Program* program)
         return script->owner;
     }
 
-    if (SID_TYPE(sid) != SCRIPT_TYPE_SPATIAL) {
+    if (scriptTypeFromSid(sid) != SCRIPT_TYPE_SPATIAL) {
         return nullptr;
     }
 
@@ -2174,7 +2174,7 @@ static int _scr_header_load()
 
     fileClose(stream);
 
-    for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
+    for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
         scriptList->head = nullptr;
         scriptList->tail = nullptr;
@@ -2191,13 +2191,15 @@ static int scriptWrite(Script* scr, File* stream)
     if (fileWriteInt32(stream, scr->sid) == -1) return -1;
     if (fileWriteInt32(stream, scr->field_4) == -1) return -1;
 
-    switch (SID_TYPE(scr->sid)) {
+    switch (scriptTypeFromSid(scr->sid)) {
     case SCRIPT_TYPE_SPATIAL:
         if (fileWriteInt32(stream, scr->sp.built_tile) == -1) return -1;
         if (fileWriteInt32(stream, scr->sp.radius) == -1) return -1;
         break;
     case SCRIPT_TYPE_TIMED:
         if (fileWriteInt32(stream, scr->tm.time) == -1) return -1;
+        break;
+    default:
         break;
     }
 
@@ -2245,7 +2247,7 @@ static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
 // 0x4A5768
 int scriptSaveAll(File* stream)
 {
-    for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
+    for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
 
         int scriptCount = scriptList->length * SCRIPT_LIST_EXTENT_SIZE;
@@ -2345,13 +2347,15 @@ static int scriptRead(Script* scr, File* stream)
     if (fileReadInt32(stream, &(scr->sid)) == -1) return -1;
     if (fileReadInt32(stream, &(scr->field_4)) == -1) return -1;
 
-    switch (SID_TYPE(scr->sid)) {
+    switch (scriptTypeFromSid(scr->sid)) {
     case SCRIPT_TYPE_SPATIAL:
         if (fileReadInt32(stream, &(scr->sp.built_tile)) == -1) return -1;
         if (fileReadInt32(stream, &(scr->sp.radius)) == -1) return -1;
         break;
     case SCRIPT_TYPE_TIMED:
         if (fileReadInt32(stream, &(scr->tm.time)) == -1) return -1;
+        break;
+    default:
         break;
     }
 
@@ -2432,7 +2436,7 @@ static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
 
 static void scriptListsFreeAll()
 {
-    for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
+    for (ScriptType index = SCRIPT_TYPE_FIRST; index < SCRIPT_TYPE_COUNT; index++) {
         ScriptList* scriptList = &(gScriptLists[index]);
         ScriptListExtent* current = scriptList->head;
 
@@ -2459,7 +2463,7 @@ int scriptLoadAll(File* stream)
 {
     scriptListsFreeAll();
 
-    for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
+    for (ScriptType index = SCRIPT_TYPE_FIRST; index < SCRIPT_TYPE_COUNT; index++) {
         ScriptList* scriptList = &(gScriptLists[index]);
 
         int scriptsCount = 0;
@@ -2535,7 +2539,7 @@ int scriptGetScript(int sid, Script** scriptPtr)
         return -1;
     }
 
-    ScriptList* scriptList = &(gScriptLists[SID_TYPE(sid)]);
+    ScriptList* scriptList = &(gScriptLists[scriptTypeFromSid(sid)]);
     ScriptListExtent* scriptListExtent = scriptList->head;
 
     while (scriptListExtent != nullptr) {
@@ -2553,7 +2557,7 @@ int scriptGetScript(int sid, Script** scriptPtr)
 }
 
 // 0x4A5ED8
-static int scriptGetNewId(int scriptType)
+static int scriptGetNewId(ScriptType scriptType)
 {
     int scriptId = gScriptLists[scriptType].nextScriptId++;
     int sidPrefix = scriptType << 24;
@@ -2570,7 +2574,7 @@ static int scriptGetNewId(int scriptType)
 }
 
 // 0x4A5F28
-int scriptAdd(int* sidPtr, int scriptType)
+int scriptAdd(int* sidPtr, ScriptType scriptType)
 {
     ScriptList* scriptList = &(gScriptLists[scriptType]);
     ScriptListExtent* scriptListExtent = scriptList->tail;
@@ -2689,7 +2693,7 @@ int scriptGetSpatialRadius(Object* obj)
     }
 
     Script* script;
-    if (scriptGetScript(obj->sid, &script) == -1 || SID_TYPE(script->sid) != SCRIPT_TYPE_SPATIAL) {
+    if (scriptGetScript(obj->sid, &script) == -1 || scriptTypeFromSid(script->sid) != SCRIPT_TYPE_SPATIAL) {
         return 0;
     }
 
@@ -2719,7 +2723,7 @@ static int scriptsRemoveLocalVars(Script* script)
                     debugPrint("\nError in mem_realloc in scr_remove_local_vars!\n");
                 }
 
-                for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
+                for (ScriptType index = SCRIPT_TYPE_FIRST; index < SCRIPT_TYPE_COUNT; index++) {
                     ScriptList* scriptList = &(gScriptLists[index]);
                     ScriptListExtent* extent = scriptList->head;
                     while (extent != nullptr) {
@@ -2747,7 +2751,7 @@ int scriptRemove(int sid)
         return -1;
     }
 
-    ScriptList* scriptList = &(gScriptLists[SID_TYPE(sid)]);
+    ScriptList* scriptList = &(gScriptLists[scriptTypeFromSid(sid)]);
 
     ScriptListExtent* scriptListExtent = scriptList->head;
     int index;
@@ -2844,7 +2848,7 @@ int _scr_remove_all()
     queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
     _scr_message_free();
 
-    for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
+    for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
 
         ScriptListExtent* scriptListExtent = scriptList->head;
@@ -2890,7 +2894,7 @@ int _scr_remove_all_force()
 
     scriptSelfOverrides.clear();
 
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         ScriptList* scriptList = &(gScriptLists[type]);
         ScriptListExtent* extent = scriptList->head;
         while (extent != nullptr) {
@@ -3049,7 +3053,7 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 int scriptsExecStartProc()
 {
     std::vector<int> sidList;
-    for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
+    for (ScriptType scriptListIndex = SCRIPT_TYPE_FIRST; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
         ScriptList* scriptList = &(gScriptLists[scriptListIndex]);
         ScriptListExtent* extent = scriptList->head;
         while (extent != nullptr) {
@@ -3102,7 +3106,7 @@ void scriptsExecMapUpdateScripts(int proc)
     }
 
     int sidListCapacity = 0;
-    for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
+    for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
         ScriptListExtent* scriptListExtent = scriptList->head;
         while (scriptListExtent != nullptr) {
@@ -3122,7 +3126,7 @@ void scriptsExecMapUpdateScripts(int proc)
     }
 
     int sidListLength = 0;
-    for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
+    for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
         ScriptListExtent* scriptListExtent = scriptList->head;
         while (scriptListExtent != nullptr) {
@@ -3268,7 +3272,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
 // 0x4A6D64
 int scriptGetLocalVar(int sid, int variable, ProgramValue& value)
 {
-    if (SID_TYPE(sid) == SCRIPT_TYPE_SYSTEM) {
+    if (scriptTypeFromSid(sid) == SCRIPT_TYPE_SYSTEM) {
         debugPrint("\nError! System scripts/Map scripts not allowed local_vars! ");
 
         gDebugScriptFileName[0] = '\0';

@@ -733,7 +733,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
         if (sid != -1) {
             Script* script = nullptr;
             if (scriptGetScript(sid, &script) != -1) {
-                if (SID_TYPE(sid) == 1 /* spatial */) {
+                if (scriptTypeFromSid(sid) == SCRIPT_TYPE_SPATIAL) {
                     script->sp.built_tile = (gElevation << 29) | dstTile;
                 }
                 script->owner = copy;

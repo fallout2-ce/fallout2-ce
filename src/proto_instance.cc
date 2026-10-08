@@ -120,7 +120,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    int scriptType = SID_TYPE(sid);
+    ScriptType scriptType = scriptTypeFromSid(sid);
     if (scriptAdd(sidPtr, scriptType) == -1) {
         return -1;
     }
@@ -154,7 +154,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
 }
 
 // 0x49AAC0 obj_new_sid_inst
-int objectSetScript(Object* obj, int scriptType, int scriptIndex)
+int objectSetScript(Object* obj, ScriptType scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
         return -1;

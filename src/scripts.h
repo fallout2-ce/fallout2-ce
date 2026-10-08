@@ -68,14 +68,26 @@ inline ScriptRequests& operator|=(ScriptRequests& lhs, ScriptRequests rhs)
     return lhs;
 }
 
-typedef enum ScriptType {
+enum ScriptType : int {
     SCRIPT_TYPE_SYSTEM, // s_system
     SCRIPT_TYPE_SPATIAL, // s_spatial
     SCRIPT_TYPE_TIMED, // s_time
     SCRIPT_TYPE_ITEM, // s_item
     SCRIPT_TYPE_CRITTER, // s_critter
     SCRIPT_TYPE_COUNT,
-} ScriptType;
+    SCRIPT_TYPE_FIRST = SCRIPT_TYPE_SYSTEM
+};
+
+inline ScriptType operator++(ScriptType& e, int)
+{
+    ScriptType result = e;
+    e = static_cast<ScriptType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline constexpr ScriptType scriptTypeFromSid(int sid) {
+    return static_cast<ScriptType>(sid >> 24);
+}
 
 typedef enum ScriptProc {
     SCRIPT_PROC_NO_PROC = 0,
@@ -281,7 +293,7 @@ int scriptsSkipGameGlobalVars(File* stream);
 int scriptSaveAll(File* stream);
 int scriptLoadAll(File* stream);
 int scriptGetScript(int sid, Script** script);
-int scriptAdd(int* sidPtr, int scriptType);
+int scriptAdd(int* sidPtr, ScriptType scriptType);
 Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius);
 int scriptGetSpatialRadius(Object* obj);
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);

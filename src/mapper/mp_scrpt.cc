@@ -408,7 +408,7 @@ void scr_debug_print_scripts()
     constexpr int kMaxScriptId = 32000;
 
     // Phase 1: Scripts WITH owners on current elevation — label on owner
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;
             Script* scr;
@@ -422,7 +422,7 @@ void scr_debug_print_scripts()
 
     // Phase 2: Scripts WITHOUT owners — find marker object at script's built_tile
     constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;
             Script* scr;

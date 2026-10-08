@@ -890,7 +890,7 @@ static void opCreateObject(Program* program)
     }
 
     if (sid != -1) {
-        int scriptType = 0;
+        ScriptType scriptType = SCRIPT_TYPE_SYSTEM;
         switch (ProtoId(object).objectType()) {
         case OBJ_TYPE_CRITTER:
             scriptType = SCRIPT_TYPE_CRITTER;
