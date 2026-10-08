@@ -172,7 +172,7 @@ static int scr_find_index(const char* name, int count)
     return -1;
 }
 
-int scr_choose(int scriptType)
+int scr_choose(ScriptType scriptType)
 {
     constexpr ColorWithFlags kDialogColor = static_cast<ColorWithFlags>(0x10104);
     static const char* kScriptTypeNames[] = { "s_system", "s_spatial", "s_time", "s_item", "s_critter" };
@@ -182,11 +182,11 @@ int scr_choose(int scriptType)
         return -1;
     }
 
-    int type = scriptType;
-    if (type == -1) {
-        type = _win_list_select("Script Type", kScriptTypeNames, 5, nullptr, 100, 100, kDialogColor);
-        if (type == -1) {
-            type = 0;
+    ScriptType type = scriptType;
+    if (type == SCRIPT_TYPE_INVALID) {
+        type = static_cast<ScriptType>(_win_list_select("Script Type", kScriptTypeNames, 5, nullptr, 100, 100, kDialogColor));
+        if (type == SCRIPT_TYPE_INVALID) {
+            type = SCRIPT_TYPE_SYSTEM;
         }
     }
 
@@ -292,7 +292,7 @@ int scr_choose(int scriptType)
 
 int map_scr_add_spatial(int tile, int elevation)
 {
-    int scriptId = scr_choose(1);
+    int scriptId = scr_choose(SCRIPT_TYPE_SPATIAL);
     if (scriptId < 0) {
         return -1;
     }

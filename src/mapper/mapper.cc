@@ -1746,7 +1746,7 @@ void edit_mapper()
             break;
         case kBtnSetMapScript: {
             if (map_entered) break;
-            int id = scr_choose(0);
+            int id = scr_choose(SCRIPT_TYPE_SYSTEM);
             if (id == -2) {
                 map_set_script(-1);
             } else if (id >= 0) {

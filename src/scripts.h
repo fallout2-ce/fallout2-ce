@@ -69,6 +69,7 @@ inline ScriptRequests& operator|=(ScriptRequests& lhs, ScriptRequests rhs)
 }
 
 enum ScriptType : int {
+    SCRIPT_TYPE_INVALID = -1,
     SCRIPT_TYPE_SYSTEM, // s_system
     SCRIPT_TYPE_SPATIAL, // s_spatial
     SCRIPT_TYPE_TIMED, // s_time
