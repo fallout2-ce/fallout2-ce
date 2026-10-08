@@ -3276,7 +3276,7 @@ int scriptGetLocalVar(int sid, int variable, ProgramValue& value)
         debugPrint("\nError! System scripts/Map scripts not allowed local_vars! ");
 
         gDebugScriptFileName[0] = '\0';
-        scriptsGetFileName(sid & 0xFFFFFF, gDebugScriptFileName, sizeof(gDebugScriptFileName));
+        scriptsGetFileName(scriptIdFromSid(sid), gDebugScriptFileName, sizeof(gDebugScriptFileName));
 
         debugPrint(":%s\n", gDebugScriptFileName);
 

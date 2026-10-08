@@ -90,6 +90,10 @@ inline constexpr ScriptType scriptTypeFromSid(int sid) {
     return static_cast<ScriptType>(sid >> 24);
 }
 
+inline constexpr int scriptIdFromSid(int sid) {
+    return sid & 0xFFFFFF;
+}
+
 enum ScriptProc : int {
     SCRIPT_PROC_NO_PROC = 0,
     SCRIPT_PROC_START = 1,

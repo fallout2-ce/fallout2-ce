@@ -367,7 +367,7 @@ static void selectNewScript(Object* obj, ScriptType scriptType, int winId, int s
         }
     }
     if (sid >= 0) {
-        objectSetScript(obj, scriptTypeFromSid(sid), sid & 0xFFFFFF);
+        objectSetScript(obj, scriptTypeFromSid(sid), scriptIdFromSid(sid));
     }
 
     char scriptName[64];

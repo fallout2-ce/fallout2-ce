@@ -130,7 +130,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    script->index = sid & 0xFFFFFF;
+    script->index = scriptIdFromSid(sid);
 
     if (objectType == OBJ_TYPE_CRITTER) {
         object->scriptIndex = script->index;
@@ -148,7 +148,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     script->ownerId = object->id;
     script->owner = object;
 
-    _scr_find_str_run_info(sid & 0xFFFFFF, &(script->field_50), *sidPtr);
+    _scr_find_str_run_info(scriptIdFromSid(sid), &(script->field_50), *sidPtr);
 
     return 0;
 }

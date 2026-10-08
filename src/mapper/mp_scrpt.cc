@@ -292,8 +292,8 @@ int scr_choose(ScriptType scriptType)
 
 int map_scr_add_spatial(int tile, int elevation)
 {
-    int scriptId = scr_choose(SCRIPT_TYPE_SPATIAL);
-    if (scriptId < 0) {
+    int chosenSid = scr_choose(SCRIPT_TYPE_SPATIAL);
+    if (chosenSid < 0) {
         return -1;
     }
 
@@ -323,9 +323,9 @@ int map_scr_add_spatial(int tile, int elevation)
     }
 
     scr->sp.built_tile = builtTileCreate(tile, elevation);
-    scr->index = scriptId & 0xFFFFFF;
+    scr->index = scriptIdFromSid(chosenSid);
     scr->sp.radius = radius;
-    _scr_find_str_run_info(scriptId & 0xFFFFFF, nullptr, sid);
+    _scr_find_str_run_info(scriptIdFromSid(chosenSid), nullptr, sid);
 
     return 0;
 }
