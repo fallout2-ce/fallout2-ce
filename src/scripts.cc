@@ -1030,7 +1030,7 @@ static void _script_chk_critters()
         }
 
         if (gCritterProcessingIndex < scriptsCount) {
-            int proc = isInCombat() ? SCRIPT_PROC_COMBAT : SCRIPT_PROC_CRITTER;
+            ScriptProc proc = isInCombat() ? SCRIPT_PROC_COMBAT : SCRIPT_PROC_CRITTER;
             int extentIndex = gCritterProcessingIndex / SCRIPT_LIST_EXTENT_SIZE;
             int scriptIndex = gCritterProcessingIndex % SCRIPT_LIST_EXTENT_SIZE;
 
@@ -1573,9 +1573,9 @@ void _script_make_path(char* path)
 }
 
 // 0x4A4810 exec_script_proc
-int scriptExecProc(int sid, int proc)
+int scriptExecProc(int sid, ScriptProc proc)
 {
-    assert(proc >= 0 && proc < SCRIPT_PROC_COUNT);
+    assert(proc >= SCRIPT_PROC_FIRST && proc < SCRIPT_PROC_COUNT);
 
     if (!gScriptsEnabled) {
         return -1;
@@ -1703,7 +1703,7 @@ int scriptExecProc(int sid, int proc)
 // 0x4A49D0
 static int scriptLocateProcs(Script* script)
 {
-    for (int proc = 0; proc < SCRIPT_PROC_COUNT; proc++) {
+    for (ScriptProc proc = SCRIPT_PROC_FIRST; proc < SCRIPT_PROC_COUNT; proc++) {
         int index = programFindProcedure(script->program, gScriptProcNames[proc]);
         if (index == -1) {
             index = SCRIPT_PROC_NO_PROC;
@@ -1715,7 +1715,7 @@ static int scriptLocateProcs(Script* script)
 }
 
 // 0x4A4A08
-bool scriptHasProc(int sid, int proc)
+bool scriptHasProc(int sid, ScriptProc proc)
 {
     Script* scr;
 
@@ -2379,7 +2379,7 @@ static int scriptRead(Script* scr, File* stream)
     scr->source = nullptr;
     scr->target = nullptr;
 
-    for (int index = 0; index < SCRIPT_PROC_COUNT; index++) {
+    for (ScriptProc index = SCRIPT_PROC_FIRST; index < SCRIPT_PROC_COUNT; index++) {
         scr->procs[index] = 0;
     }
 
@@ -2634,7 +2634,7 @@ int scriptAdd(int* sidPtr, ScriptType scriptType)
     scr->howMuch = 0;
     scr->field_50 = 0;
 
-    for (int index = 0; index < SCRIPT_PROC_COUNT; index++) {
+    for (ScriptProc index = SCRIPT_PROC_FIRST; index < SCRIPT_PROC_COUNT; index++) {
         scr->procs[index] = SCRIPT_PROC_NO_PROC;
     }
 
@@ -3091,7 +3091,7 @@ void scriptsExecMapUpdateProc()
 
 // scr_exec_map_update_scripts
 // 0x4A67EC
-void scriptsExecMapUpdateScripts(int proc)
+void scriptsExecMapUpdateScripts(ScriptProc proc)
 {
     // SFALL: Run global scripts.
     sfall_gl_scr_exec_map_update_scripts(proc);

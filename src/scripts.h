@@ -89,7 +89,7 @@ inline constexpr ScriptType scriptTypeFromSid(int sid) {
     return static_cast<ScriptType>(sid >> 24);
 }
 
-typedef enum ScriptProc {
+enum ScriptProc : int {
     SCRIPT_PROC_NO_PROC = 0,
     SCRIPT_PROC_START = 1,
     SCRIPT_PROC_SPATIAL = 2,
@@ -119,7 +119,15 @@ typedef enum ScriptProc {
     SCRIPT_PROC_COMBAT_IS_STARTING = 26,
     SCRIPT_PROC_COMBAT_IS_OVER = 27,
     SCRIPT_PROC_COUNT,
-} ScriptProc;
+    SCRIPT_PROC_FIRST = SCRIPT_PROC_NO_PROC
+};
+
+inline ScriptProc operator++(ScriptProc& e, int)
+{
+    ScriptProc result = e;
+    e = static_cast<ScriptProc>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum class DetachedScriptOwnerKind {
     GlobalScript,
@@ -271,8 +279,8 @@ void scriptsRequestEndgame();
 int scriptsRequestLooting(Object* looter, Object* container);
 int scriptsRequestStealing(Object* thief, Object* target);
 void _script_make_path(char* path);
-int scriptExecProc(int sid, int proc);
-bool scriptHasProc(int sid, int proc);
+int scriptExecProc(int sid, ScriptProc proc);
+bool scriptHasProc(int sid, ScriptProc proc);
 int _scr_find_str_run_info(int scriptIndex, int* unused, int sid);
 int scriptsSetDudeScript();
 int scriptsClearDudeScript();
@@ -310,7 +318,7 @@ bool scriptsExecSpatialProc(Object* obj, int tile, int elevation);
 int scriptsExecStartProc();
 void scriptsExecMapEnterProc();
 void scriptsExecMapUpdateProc();
-void scriptsExecMapUpdateScripts(int proc);
+void scriptsExecMapUpdateScripts(ScriptProc proc);
 void scriptsExecMapExitProc();
 char* _scr_get_msg_str(int messageListId, int messageId);
 char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech, Object* speaker = nullptr);

@@ -124,7 +124,7 @@ void sfall_gl_scr_exec_start_proc()
             GlobalScript scr;
             scr.program = program;
 
-            for (int action = 0; action < SCRIPT_PROC_COUNT; action++) {
+            for (ScriptProc action = SCRIPT_PROC_FIRST; action < SCRIPT_PROC_COUNT; action++) {
                 scr.procs[action] = programFindProcedure(program, gScriptProcNames[action]);
             }
 
