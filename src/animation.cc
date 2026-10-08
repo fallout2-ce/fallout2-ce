@@ -1951,7 +1951,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (isCritter) {
                 Object* o = objectFindFirstAtLocation(object->elevation, v27->tile);
                 while (o != nullptr) {
-                    if (std::find(kRadioactiveGooProtoIds.begin(), kRadioactiveGooProtoIds.end(), o) != kRadioactiveGooProtoIds.end()) {
+                    if (std::find(kRadioactiveGooProtoIds.begin(), kRadioactiveGooProtoIds.end(), ProtoId(o)) != kRadioactiveGooProtoIds.end()) {
                         break;
                     }
                     o = objectFindNextAtLocation();

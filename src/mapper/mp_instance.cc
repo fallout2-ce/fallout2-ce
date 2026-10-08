@@ -1,5 +1,6 @@
 #include "mapper/mp_instance.h"
 
+#include <array>
 #include <stdio.h>
 #include <string.h>
 
@@ -467,8 +468,8 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     proto_inst_who_obj = obj;
 
     constexpr int kMaxItems = 200;
-    char** names = static_cast<char**>(internal_malloc(sizeof(char*) * kMaxItems));
-    ProtoId* protoIds = static_cast<ProtoId*>(internal_malloc(sizeof(ProtoId) * kMaxItems));
+    std::array<char*, kMaxItems> names;
+    std::array<ProtoId, kMaxItems> protoIds;
     int count = 0;
 
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
@@ -483,7 +484,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
         count++;
     }
 
-    int selection = _win_list_select("Pick item to add", names, count, nullptr, 80, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
+    int selection = _win_list_select("Pick item to add", names.data(), count, nullptr, 80, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (selection != -1) {
         int quantity = 1;
         win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
@@ -493,8 +494,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     for (int i = 0; i < count; i++) {
         internal_free(names[i]);
     }
-    internal_free(names);
-    internal_free(protoIds);
+
     proto_inst_who_obj = nullptr;
 }
 
