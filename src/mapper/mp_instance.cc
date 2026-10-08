@@ -66,9 +66,7 @@ static int regModInstFlags(Object* obj);
 // proto_inst_edit_
 void protoInstEdit(Object* obj)
 {
-    if (obj == nullptr) return;
-
-    switch (objectTypeFromPid(obj->pid)) {
+    switch (ProtoId(obj).objectType()) {
     case OBJ_TYPE_ITEM:
         protoInstItemEdit(obj);
         break;
@@ -324,7 +322,7 @@ static int regModInstFlags(Object* obj)
 {
     ObjectFlags flags = obj->flags;
     ObjectFlags oldFlat = flags & OBJECT_FLAT;
-    ObjectType objectType = objectTypeFromPid(obj->pid);
+    ObjectType objectType = ProtoId(obj).objectType();
 
     if (regModFlagsDialog(&flags, objectType)) {
         bool flatChanged = ((oldFlat != OBJECT_NONE) != ((flags & OBJECT_FLAT) != OBJECT_NONE));

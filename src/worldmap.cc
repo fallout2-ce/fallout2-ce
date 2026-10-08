@@ -2376,7 +2376,7 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
 
             for (int index = 0; index < encounter->entriesLength; index++) {
                 EncounterEntry* encounterEntry = &(encounter->entries[index]);
-                if (objectTypeFromPid(encounterEntry->pid) == OBJ_TYPE_CRITTER) {
+                if (ProtoId(encounterEntry->pid).objectType() == OBJ_TYPE_CRITTER) {
                     encounterEntry->team = team;
                 }
             }
@@ -4359,13 +4359,13 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
             }
 
             if (*critterPtr == nullptr) {
-                if (objectTypeFromPid(encounterEntry->pid) == OBJ_TYPE_CRITTER) {
+                if (ProtoId(encounterEntry->pid).objectType() == OBJ_TYPE_CRITTER) {
                     *critterPtr = object;
                 }
             }
 
             if (encounterEntry->team != -1) {
-                if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+                if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
                     object->data.critter.combat.team = encounterEntry->team;
                 }
             }

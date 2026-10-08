@@ -1913,7 +1913,7 @@ void edit_mapper()
                 } else if (_screen_obj != nullptr) {
                     int protoOffset;
                     if (mapperPickObject(_screen_obj, &protoOffset) != -1) {
-                        ObjectType objType = objectTypeFromPid(_screen_obj->pid);
+                        ObjectType objType = ProtoId(_screen_obj).objectType();
                         currentType = objType;
                         scrollOffset = protoOffset;
                         toolbarSetObjectType(currentType, currentType, scrollOffset, &hl_obj1);
@@ -1997,7 +1997,7 @@ void edit_mapper()
 
         // --- 'k' — Kill critter ---
         case kBtnKill:
-            if (!map_entered && _screen_obj != nullptr && objectTypeFromPid(_screen_obj->pid) == OBJ_TYPE_CRITTER) {
+            if (!map_entered && ProtoId(_screen_obj).objectType() == OBJ_TYPE_CRITTER) {
                 critterKill(_screen_obj, ANIM_FALL_FRONT_BLOOD_SF, true);
             }
             break;

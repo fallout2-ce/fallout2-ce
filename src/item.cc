@@ -3073,11 +3073,7 @@ int drugEffectEventProcess(Object* obj, void* data)
 {
     DrugEffectEvent* drugEffectEvent = (DrugEffectEvent*)data;
 
-    if (obj == nullptr) {
-        return 0;
-    }
-
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
 
@@ -3306,7 +3302,7 @@ static void performWithdrawalStart(Object* obj, Perk perk, const ProtoId& protoI
 // 0x47A558
 static void performWithdrawalEnd(Object* obj, Perk perk)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_end: Was called on non-critter!");
         return;
     }

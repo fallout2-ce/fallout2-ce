@@ -185,7 +185,7 @@ int objectSetScript(Object* obj, int scriptType, int scriptIndex)
 
     _scr_find_str_run_info(scriptIndex & 0xFFFFFF, &(script->field_50), sid);
 
-    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) {
         obj->scriptIndex = script->index;
     }
 
@@ -298,7 +298,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 }
                 fn(messageListItem.text);
             } else {
-                if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER || !critterIsDead(target)) {
+                if (ProtoId(target).objectType() != OBJ_TYPE_CRITTER || !critterIsDead(target)) {
                     fn(description);
                 }
             }
@@ -311,7 +311,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
     char formattedText[260];
 
-    ObjectType type = objectTypeFromPid(target->pid);
+    ObjectType type = ProtoId(target).objectType();
     if (type == OBJ_TYPE_CRITTER) {
         if (target != gDude && perkGetRank(gDude, PERK_AWARENESS) && !critterIsDead(target)) {
             MessageListItem hpMessageListItem;
@@ -1230,7 +1230,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     UseItemResultCode rc;
     switch (itemGetType(item)) {
     case ITEM_TYPE_DRUG:
-        if (objectTypeFromPid(targetObj->pid) != OBJ_TYPE_CRITTER) {
+        if (ProtoId(targetObj).objectType() != OBJ_TYPE_CRITTER) {
             if (user == gDude) {
                 // That does nothing
                 messageListItem.num = 582;
@@ -2022,7 +2022,7 @@ bool objectIsLocked(Object* obj)
     }
 
     ObjectData* data = &(obj->data);
-    switch (objectTypeFromPid(obj->pid)) {
+    switch (ProtoId(obj).objectType()) {
     case OBJ_TYPE_ITEM:
         return data->flags & CONTAINER_FLAG_LOCKED;
     case OBJ_TYPE_SCENERY:
@@ -2035,11 +2035,7 @@ bool objectIsLocked(Object* obj)
 // 0x49D20C
 int objectLock(Object* object)
 {
-    if (object == nullptr) {
-        return -1;
-    }
-
-    switch (objectTypeFromPid(object->pid)) {
+    switch (ProtoId(object).objectType()) {
     case OBJ_TYPE_ITEM:
         object->data.flags |= CONTAINER_FLAG_LOCKED;
         break;
@@ -2056,11 +2052,7 @@ int objectLock(Object* object)
 // 0x49D250
 int objectUnlock(Object* object)
 {
-    if (object == nullptr) {
-        return -1;
-    }
-
-    switch (objectTypeFromPid(object->pid)) {
+    switch (ProtoId(object).objectType()) {
     case OBJ_TYPE_ITEM:
         object->data.flags &= ~CONTAINER_FLAG_LOCKED;
         return 0;
@@ -2192,7 +2184,7 @@ static bool objectIsJammed(Object* obj)
         return false;
     }
 
-    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_SCENERY) {
+    if (ProtoId(obj).objectType() == OBJ_TYPE_SCENERY) {
         if ((obj->data.scenery.door.openFlags & DOOR_FLAG_JAMMED) != 0) {
             return true;
         }
@@ -2214,7 +2206,7 @@ int objectJamLock(Object* obj)
     }
 
     ObjectData* data = &(obj->data);
-    switch (objectTypeFromPid(obj->pid)) {
+    switch (ProtoId(obj).objectType()) {
     case OBJ_TYPE_ITEM:
         data->flags |= CONTAINER_FLAG_JAMMED;
         break;
@@ -2236,7 +2228,7 @@ int objectUnjamLock(Object* obj)
     }
 
     ObjectData* data = &(obj->data);
-    switch (objectTypeFromPid(obj->pid)) {
+    switch (ProtoId(obj).objectType()) {
     case OBJ_TYPE_ITEM:
         data->flags &= ~CONTAINER_FLAG_JAMMED;
         break;
