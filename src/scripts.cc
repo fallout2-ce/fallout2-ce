@@ -241,7 +241,7 @@ constexpr int OBJECT_ID_PARTY_MEMBER_END = OBJECT_ID_PLAYER + 0x01000000;
 constexpr int OBJECT_ID_UNIQUE_END = 0x7FFFFFFF;
 
 // 0x664954 scriptState
-static unsigned int gScriptsRequests;
+static ScriptRequests gScriptsRequests;
 
 // 0x664958 gcsd_requests
 static CombatStartData gScriptsRequestedCSD;
@@ -1230,7 +1230,7 @@ int scriptEventProcess(Object* obj, void* data)
 // 0x4A3F80
 static int scriptsClearPendingRequests()
 {
-    gScriptsRequests = 0;
+    gScriptsRequests = SCRIPT_REQUEST_NONE;
     return 0;
 }
 
@@ -1239,8 +1239,8 @@ static int scriptsClearPendingRequests()
 // 0x4A3F90
 int _scripts_clear_combat_requests(Script* script)
 {
-    if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT) != 0 && gScriptsRequestedCSD.attacker == script->owner) {
-        gScriptsRequests &= ~(SCRIPT_REQUEST_0x0400 | SCRIPT_REQUEST_COMBAT);
+    if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT) != SCRIPT_REQUEST_NONE && gScriptsRequestedCSD.attacker == script->owner) {
+        gScriptsRequests &= ~(SCRIPT_REQUEST_COMBAT_LOCKED | SCRIPT_REQUEST_COMBAT);
     }
     return 0;
 }
@@ -1318,18 +1318,18 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 // 0x4A3FB4
 int scriptsHandleRequests()
 {
-    if (gScriptsRequests == 0) {
+    if (gScriptsRequests == SCRIPT_REQUEST_NONE) {
         return 0;
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT) != SCRIPT_REQUEST_NONE) {
         if (!_action_explode_running()) {
             // entering combat
-            gScriptsRequests &= ~(SCRIPT_REQUEST_0x0400 | SCRIPT_REQUEST_COMBAT);
+            gScriptsRequests &= ~(SCRIPT_REQUEST_COMBAT_LOCKED | SCRIPT_REQUEST_COMBAT);
             memcpy(&gScriptsCSD, &gScriptsRequestedCSD, sizeof(gScriptsCSD));
 
-            if ((gScriptsRequests & SCRIPT_REQUEST_0x40) != 0) {
-                gScriptsRequests &= ~SCRIPT_REQUEST_0x40;
+            if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT_NO_DATA) != SCRIPT_REQUEST_NONE) {
+                gScriptsRequests &= ~SCRIPT_REQUEST_COMBAT_NO_DATA;
                 _combat(nullptr);
             } else {
                 _combat(&gScriptsCSD);
@@ -1338,27 +1338,27 @@ int scriptsHandleRequests()
         }
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_TOWN_MAP) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_TOWN_MAP) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_TOWN_MAP;
         wmTownMap();
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_WORLD_MAP) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_WORLD_MAP) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_WORLD_MAP;
         wmWorldMap();
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_ELEVATOR) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_ELEVATOR) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_ELEVATOR;
         scriptsHandleElevatorRequest(true);
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_EXPLOSION) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_EXPLOSION) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_EXPLOSION;
         actionExplode(gScriptsRequestedExplosionTile, gScriptsRequestedExplosionElevation, gScriptsRequestedExplosionMinDamage, gScriptsRequestedExplosionMaxDamage, nullptr, 1);
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_DIALOG) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_DIALOG) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_DIALOG;
         gameDialogEnter(gScriptsRequestedDialogWith, 0);
     }
@@ -1369,12 +1369,12 @@ int scriptsHandleRequests()
         }
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_LOOTING) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_LOOTING) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_LOOTING;
         inventoryOpenLooting(gScriptsRequestedLootingBy, gScriptsRequestedLootingFrom);
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_STEALING) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_STEALING) != SCRIPT_REQUEST_NONE) {
         gScriptsRequests &= ~SCRIPT_REQUEST_STEALING;
         inventoryOpenStealing(gScriptsRequestedStealingBy, gScriptsRequestedStealingFrom);
     }
@@ -1386,7 +1386,7 @@ int scriptsHandleRequests()
 
 bool scriptsHandlePendingEndgameSlideshow()
 {
-    if ((gScriptsRequests & SCRIPT_REQUEST_ENDGAME) == 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_ENDGAME) == SCRIPT_REQUEST_NONE) {
         return false;
     }
 
@@ -1398,12 +1398,12 @@ bool scriptsHandlePendingEndgameSlideshow()
 // 0x4A43A0
 int _scripts_check_state_in_combat()
 {
-    if ((gScriptsRequests & SCRIPT_REQUEST_ELEVATOR) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_ELEVATOR) != SCRIPT_REQUEST_NONE) {
         // do not close elevator doors before map transition
         scriptsHandleElevatorRequest(false);
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_LOOTING) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_LOOTING) != SCRIPT_REQUEST_NONE) {
         inventoryOpenLooting(gScriptsRequestedLootingBy, gScriptsRequestedLootingFrom);
     }
 
@@ -1416,14 +1416,14 @@ int _scripts_check_state_in_combat()
 // 0x4A457C
 int scriptsRequestCombat(CombatStartData* combat)
 {
-    if ((gScriptsRequests & SCRIPT_REQUEST_0x0400) != 0) {
+    if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT_LOCKED) != SCRIPT_REQUEST_NONE) {
         return -1;
     }
 
     if (combat) {
         memcpy(&gScriptsRequestedCSD, combat, sizeof(gScriptsRequestedCSD));
     } else {
-        gScriptsRequests |= SCRIPT_REQUEST_0x40;
+        gScriptsRequests |= SCRIPT_REQUEST_COMBAT_NO_DATA;
     }
 
     gScriptsRequests |= SCRIPT_REQUEST_COMBAT;
@@ -1439,10 +1439,10 @@ void _scripts_request_combat_locked(CombatStartData* combat)
     if (combat != nullptr) {
         memcpy(&gScriptsRequestedCSD, combat, sizeof(gScriptsRequestedCSD));
     } else {
-        gScriptsRequests |= SCRIPT_REQUEST_0x40;
+        gScriptsRequests |= SCRIPT_REQUEST_COMBAT_NO_DATA;
     }
 
-    gScriptsRequests |= (SCRIPT_REQUEST_0x0400 | SCRIPT_REQUEST_COMBAT);
+    gScriptsRequests |= (SCRIPT_REQUEST_COMBAT_LOCKED | SCRIPT_REQUEST_COMBAT);
 }
 
 // 0x4A461C

@@ -26,19 +26,47 @@ namespace fallout {
 
 constexpr int OBJECT_ID_UNIQUE_START = 0x0FFFFFFF;
 
-typedef enum ScriptRequests {
+enum ScriptRequests : unsigned int {
+    SCRIPT_REQUEST_NONE = 0x00,
     SCRIPT_REQUEST_COMBAT = 0x01,
     SCRIPT_REQUEST_TOWN_MAP = 0x02,
     SCRIPT_REQUEST_WORLD_MAP = 0x04,
     SCRIPT_REQUEST_ELEVATOR = 0x08,
     SCRIPT_REQUEST_EXPLOSION = 0x10,
     SCRIPT_REQUEST_DIALOG = 0x20,
-    SCRIPT_REQUEST_0x40 = 0x40,
+    SCRIPT_REQUEST_COMBAT_NO_DATA = 0x40,
     SCRIPT_REQUEST_ENDGAME = 0x80,
     SCRIPT_REQUEST_LOOTING = 0x100,
     SCRIPT_REQUEST_STEALING = 0x200,
-    SCRIPT_REQUEST_0x0400 = 0x400,
-} ScriptRequests;
+    SCRIPT_REQUEST_COMBAT_LOCKED = 0x400,
+};
+
+constexpr inline ScriptRequests operator&(ScriptRequests lhs, ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptRequests operator|(ScriptRequests lhs, ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptRequests operator~(ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(~static_cast<unsigned int>(rhs));
+}
+
+inline ScriptRequests& operator&=(ScriptRequests& lhs, ScriptRequests rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ScriptRequests& operator|=(ScriptRequests& lhs, ScriptRequests rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum ScriptType {
     SCRIPT_TYPE_SYSTEM, // s_system
