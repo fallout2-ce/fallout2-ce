@@ -85,19 +85,10 @@ namespace {
         } // namespace input
 
         namespace file {
-            typedef enum FileDialogFrm {
-                FILE_DIALOG_FRM_BACKGROUND,
-                FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL,
-                FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED,
-                FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL,
-                FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED,
-                FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL,
-                FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED,
-                FILE_DIALOG_FRM_COUNT,
-            } FileDialogFrm;
+            constexpr size_t dialogFrmCount = 7;
 
             // 0x510900 flgids
-            constexpr InterfaceFrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+            constexpr InterfaceFrmId kLoadFileDialogFrmIds[dialogFrmCount] = {
                 InterfaceFrameId::LoadBox,
                 InterfaceFrameId::LittleRedButtonUp,
                 InterfaceFrameId::LittleRedButtonDown,
@@ -108,7 +99,7 @@ namespace {
             };
 
             // 0x51091C flgids2
-            constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+            constexpr InterfaceFrmId kSaveFileDialogFrmIds[dialogFrmCount] = {
                 InterfaceFrameId::SaveBox,
                 InterfaceFrameId::LittleRedButtonUp,
                 InterfaceFrameId::LittleRedButtonDown,
@@ -130,13 +121,22 @@ namespace {
 
             bool loadImages(DialogFrms& images, const InterfaceFrmId* frmIds)
             {
-                auto* frms = reinterpret_cast<FrmImage*>(&images);
+                FrmImage* frms[dialogFrmCount] = {
+                    &images.background,
+                    &images.buttonNormal,
+                    &images.buttonPressed,
+                    &images.scrollDownNormal,
+                    &images.scrollDownPressed,
+                    &images.scrollUpNormal,
+                    &images.scrollUpPressed
+                };
 
-                for (int i = 0; i < FILE_DIALOG_FRM_COUNT; ++i) {
-                    if (!frms[i].lock(frmIds[i])) {
+                for (size_t index = 0; index < dialogFrmCount; ++index) {
+                    if (!frms[index]->lock(frmIds[index])) {
                         return false;
                     }
                 }
+
                 return true;
             }
 
@@ -996,7 +996,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 int mouseY;
                 mouseGetPosition(&mouseX, &mouseY);
 
-                int selectedLine = (mouseY - y - file::list.x) / fontGetLineHeight();
+                int selectedLine = (mouseY - y - file::list.y) / fontGetLineHeight();
                 if (selectedLine - 1 < 0) {
                     selectedLine = 0;
                 }
