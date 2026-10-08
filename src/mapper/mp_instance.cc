@@ -479,7 +479,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
 
         names[count] = static_cast<char*>(internal_malloc(64));
         snprintf(names[count], 64, "%s", protoGetName(protoId));
-        protoIds[count] = protoId; 
+        protoIds[count] = protoId;
         count++;
     }
 
