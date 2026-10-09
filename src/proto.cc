@@ -374,7 +374,7 @@ int proto_item_init(Proto* proto, const ProtoId& protoId)
 {
     int protoNum = protoId.protoId();
 
-    proto->item.pid = -1;
+    proto->item.pid = ProtoId::kEmptyPid;
     proto->item.messageId = 100 * protoNum;
     proto->item.fid = ItemFrmId(static_cast<ItemFrameId>(protoNum - 1)).fid();
     if (!FrmId(proto->item.fid).exist()) {
@@ -445,7 +445,7 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         proto->item.data.weapon.damageType = DAMAGE_TYPE_NORMAL;
         proto->item.data.weapon.maxRange1 = 0;
         proto->item.data.weapon.maxRange2 = 0;
-        proto->item.data.weapon.projectilePid = -1;
+        proto->item.data.weapon.projectilePid = ProtoId::kEmptyPid;
         proto->item.data.weapon.minStrength = 0;
         proto->item.data.weapon.actionPointCost1 = 0;
         proto->item.data.weapon.actionPointCost2 = 0;
@@ -453,7 +453,7 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         proto->item.data.weapon.perk = PERK_INVALID;
         proto->item.data.weapon.rounds = 0;
         proto->item.data.weapon.caliber = CALIBER_TYPE_NONE;
-        proto->item.data.weapon.ammoTypePid = -1;
+        proto->item.data.weapon.ammoTypePid = ProtoId::kEmptyPid;
         proto->item.data.weapon.ammoCapacity = 0;
         proto->item.data.weapon.soundCode = 0;
         break;
@@ -466,7 +466,7 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         proto->item.data.ammo.damageDivisor = 1;
         break;
     case ITEM_TYPE_MISC:
-        proto->item.data.misc.powerTypePid = -1;
+        proto->item.data.misc.powerTypePid = ProtoId::kEmptyPid;
         proto->item.data.misc.powerType = 20;
         break;
     case ITEM_TYPE_KEY:
@@ -489,7 +489,7 @@ int proto_critter_init(Proto* proto, const ProtoId& protoId)
 
     int num = protoId.protoId();
 
-    proto->pid = -1;
+    proto->pid = ProtoId::kEmptyPid;
     proto->messageId = 100 * num;
     proto->fid = CritterFrmId(static_cast<CritterFrameId>(num - 1), ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
     proto->critter.lightDistance = 0;
@@ -964,7 +964,7 @@ int proto_scenery_init(Proto* proto, const ProtoId& protoId)
 {
     int num = protoId.protoId();
 
-    proto->scenery.pid = -1;
+    proto->scenery.pid = ProtoId::kEmptyPid;
     proto->scenery.messageId = 100 * num;
     proto->scenery.fid = SceneryFrmId(static_cast<SceneryFrameId>(num - 1)).fid();
     if (!FrmId(proto->scenery.fid).exist()) {
@@ -1021,7 +1021,7 @@ int proto_wall_init(Proto* proto, const ProtoId& protoId)
 {
     int num = protoId.protoId();
 
-    proto->wall.pid = -1;
+    proto->wall.pid = ProtoId::kEmptyPid;
     proto->wall.messageId = 100 * num;
     proto->wall.fid = WallFrmId(static_cast<WallFrameId>(num - 1)).fid();
     if (!FrmId(proto->wall.fid).exist()) {
@@ -1042,7 +1042,7 @@ int proto_tile_init(Proto* proto, const ProtoId& protoId)
 {
     int num = protoId.protoId();
 
-    proto->tile.pid = -1;
+    proto->tile.pid = ProtoId::kEmptyPid;
     proto->tile.messageId = 100 * num;
     proto->tile.fid = TileFrmId(static_cast<TileFrameId>(num - 1)).fid();
     if (!FrmId(proto->tile.fid).exist()) {
@@ -1061,7 +1061,7 @@ int proto_misc_init(Proto* proto, const ProtoId& protoId)
 {
     int num = protoId.protoId();
 
-    proto->misc.pid = -1;
+    proto->misc.pid = ProtoId::kEmptyPid;
     proto->misc.messageId = 100 * num;
     proto->misc.fid = MiscFrmId(static_cast<MiscFrameId>(num - 1)).fid();
     if (!FrmId(proto->misc.fid).exist()) {
@@ -2173,7 +2173,7 @@ int protoGetProto(const ProtoId& protoId, Proto** protoPtr)
     while (protoListExtent != nullptr) {
         for (int index = 0; index < protoListExtent->length; index++) {
             Proto* proto = (Proto*)protoListExtent->proto[index];
-            if (protoId.pid() == proto->pid) {
+            if (protoId == ProtoId(proto)) {
                 *protoPtr = proto;
                 return 0;
             }

@@ -83,7 +83,7 @@ static int _partyMemberCopyLevelInfo(Object* object, const ProtoId& stagedProtoI
 int gPartyMemberDescriptionsLength = 0;
 
 // 0x519DA0 partyMemberPidList
-std::vector<int> gPartyMemberPids;
+std::vector<ProtoId> gPartyMemberProtoIds;
 
 static PartyMemberListItem* _itemSaveListHead = nullptr;
 
@@ -132,7 +132,7 @@ int partyMembersParseConfig(Config* config, bool reindex)
             break;
         }
 
-        gPartyMemberPids.push_back(partyMemberPid);
+        gPartyMemberProtoIds.push_back(ProtoId(partyMemberPid));
 
         PartyMemberDescription desc;
         partyMemberDescriptionInit(&desc);
@@ -271,7 +271,7 @@ void partyMembersExit()
 {
     gPartyMemberDescriptionsLength = 0;
 
-    gPartyMemberPids.clear();
+    gPartyMemberProtoIds.clear();
     gPartyMembers.clear();
     gPartyMemberDescriptions.clear();
     _partyMemberLevelUpInfoList.clear();
@@ -281,7 +281,7 @@ void partyMembersExit()
 static int partyMemberGetDescription(Object* object, PartyMemberDescription** partyMemberDescriptionPtr)
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        if (gPartyMemberPids[index] == object->pid) {
+        if (gPartyMemberProtoIds[index] == ProtoId(object)) {
             *partyMemberDescriptionPtr = &(gPartyMemberDescriptions[index]);
             return 0;
         }
@@ -359,7 +359,7 @@ int partyMemberAdd(Object* object)
     partyMember->script = nullptr;
     partyMember->vars = nullptr;
 
-    object->id = (object->pid & 0xFFFFFF) + 18000;
+    object->id = (object->pid & ProtoId::kMaxProtoId) + 18000;
     object->flags |= (OBJECT_NO_REMOVE | OBJECT_NO_SAVE);
 
     gPartyMembersLength++;
@@ -369,7 +369,7 @@ int partyMemberAdd(Object* object)
         script->flags |= (SCRIPT_FLAG_NO_SAVE | SCRIPT_FLAG_NO_REMOVE);
         script->ownerId = object->id;
 
-        object->sid = ((object->pid & 0xFFFFFF) + 18000) | (object->sid & 0xFF000000);
+        object->sid = ((object->pid & ProtoId::kMaxProtoId) + 18000) | (object->sid & 0xFF000000);
         script->sid = object->sid;
     }
 
@@ -654,7 +654,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 
     memcpy(script, a1->script, sizeof(*script));
 
-    int sid = (scriptType << 24) | ((a1->object->pid & 0xFFFFFF) + 18000);
+    int sid = (scriptType << 24) | ((a1->object->pid & ProtoId::kMaxProtoId) + 18000);
     a1->object->sid = sid;
     script->sid = sid;
 
@@ -825,7 +825,7 @@ bool _isPotentialPartyMember(Object* object)
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
-        if (partyMember->object->pid == gPartyMemberPids[index]) {
+        if (ProtoId(partyMember->object) == gPartyMemberProtoIds[index]) {
             return true;
         }
     }
@@ -1184,7 +1184,7 @@ static int partyFixMultipleMembers()
 
         bool isPartyMember = false;
         for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-            if (obj->pid == gPartyMemberPids[index]) {
+            if (ProtoId(obj) == gPartyMemberProtoIds[index]) {
                 isPartyMember = true;
                 break;
             }
@@ -1258,7 +1258,7 @@ static int partyFixMultipleMembers()
 void _partyMemberSaveProtos()
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid()) {
             protoSaveProtoId(protoId);
         }
@@ -1406,7 +1406,7 @@ int partyMemberGetCurrentLevel(Object* object)
     }
 
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        if (gPartyMemberPids[index] == object->pid) {
+        if (gPartyMemberProtoIds[index] == ProtoId(object)) {
             return _partyMemberLevelUpInfoList[index].level;
         }
     }
@@ -1454,7 +1454,7 @@ int _partyMemberIncLevels()
         }
 
         for (j = 1; j < gPartyMemberDescriptionsLength; j++) {
-            if (gPartyMemberPids[j] == obj->pid) {
+            if (gPartyMemberProtoIds[j] == ProtoId(obj)) {
                 memberIndex = j;
             }
         }

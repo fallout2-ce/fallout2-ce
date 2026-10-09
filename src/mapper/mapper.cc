@@ -2600,7 +2600,7 @@ static int mapperPickObject(Object* obj, int* outOffset)
         if (protoGetProto(protoId, &proto) == -1) {
             return -1;
         }
-        if (proto->pid == obj->pid) {
+        if (ProtoId(proto) == ProtoId(obj)) {
             *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }

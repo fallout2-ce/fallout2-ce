@@ -553,7 +553,7 @@ int aiExit()
 int aiLoad(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
             if (protoGetProto(protoId, &proto) == -1) {
@@ -574,7 +574,7 @@ int aiLoad(File* stream)
 int aiSave(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
             if (protoGetProto(protoId, &proto) == -1) {

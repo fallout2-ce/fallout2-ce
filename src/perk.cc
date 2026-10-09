@@ -489,7 +489,7 @@ static PerkRankData* perkGetRankData(Object* critter)
     }
 
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
-        if (critter->pid == gPartyMemberPids[index]) {
+        if (ProtoId(critter) == gPartyMemberProtoIds[index]) {
             return gPartyMemberPerkRanks + index;
         }
     }
