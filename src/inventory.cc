@@ -3927,22 +3927,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
             if (ProtoId(equippedItem) == ItemProtoTypeId::LitFlare) {
-                int lightIntensity;
-                int lightDistance;
-                if (critter == gDude) {
-                    lightIntensity = LIGHT_INTENSITY_MAX;
-                    lightDistance = 4;
-                } else {
-                    Proto* proto;
-                    if (protoGetProto(critter, &proto) == -1) {
-                        return -1;
-                    }
-
-                    lightDistance = proto->lightDistance;
-                    lightIntensity = proto->lightIntensity;
-                }
-
-                objectSetLight(critter, lightDistance, lightIntensity, &rect);
+                critterRestoreLightWithoutFlare(critter);
             }
         }
 
@@ -4008,6 +3993,40 @@ int inventoryUnequip(Object* critter_obj, Hand hand)
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
+// CE: Restore a critter's own light unless a lit flare is still in either hand.
+void critterRestoreLightWithoutFlare(Object* critter)
+{
+    Object* leftHandItem = critterGetItem1(critter);
+    if (leftHandItem != nullptr && ProtoId(leftHandItem) == ItemProtoTypeId::LitFlare) {
+        return;
+    }
+
+    Object* rightHandItem = critterGetItem2(critter);
+    if (rightHandItem != nullptr && ProtoId(rightHandItem) == ItemProtoTypeId::LitFlare) {
+        return;
+    }
+
+    int lightDistance;
+    int lightIntensity;
+    if (critter == gDude) {
+        lightDistance = 4;
+        lightIntensity = LIGHT_INTENSITY_MAX;
+    } else {
+        Proto* proto;
+        if (protoGetProto(critter, &proto) == -1) {
+            return;
+        }
+
+        lightDistance = proto->lightDistance;
+        lightIntensity = proto->lightIntensity;
+    }
+
+    Rect rect;
+    if (objectSetLight(critter, lightDistance, lightIntensity, &rect) == 0) {
+        tileWindowRefreshRect(&rect, critter->elevation);
+    }
+}
+
 // 0x472A64
 int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 {
@@ -4036,6 +4055,11 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
     if (item) {
         item->flags &= ~OBJECT_IN_ANY_HAND;
+
+        // CE: Restore light when unwielding a lit flare.
+        if (ProtoId(item) == ItemProtoTypeId::LitFlare) {
+            critterRestoreLightWithoutFlare(critter);
+        }
     }
 
     if (activeHand == hand && (FrmId(critter).weaponAnimation() != WeaponAnimation::None)) {
@@ -6692,6 +6716,11 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
             if (itemAdd(critter, item, 1) != 0) {
                 // item will be in an invalid state, but this can only happen on malloc failure
                 return -1;
+            }
+
+            // CE: This branch bypasses inventoryUnequipFunc(), so restore light here too.
+            if (ProtoId(item) == ItemProtoTypeId::LitFlare) {
+                critterRestoreLightWithoutFlare(critter);
             }
 
             update = true;
