@@ -8,12 +8,41 @@
 
 namespace fallout {
 
-// Script has been loaded.
-#define SCRIPT_FLAG_LOADED (0x01)
-#define SCRIPT_FLAG_NO_SPATIAL (0x02)
-#define SCRIPT_FLAG_EXECUTED (0x04)
-#define SCRIPT_FLAG_NO_SAVE (0x08)
-#define SCRIPT_FLAG_NO_REMOVE (0x10)
+enum ScriptFlags : unsigned int {
+    SCRIPT_FLAG_NONE = 0x00,
+    SCRIPT_FLAG_LOADED = 0x01,
+    SCRIPT_FLAG_NO_SPATIAL = 0x02,
+    SCRIPT_FLAG_EXECUTED = 0x04,
+    SCRIPT_FLAG_NO_SAVE = 0x08,
+    SCRIPT_FLAG_NO_REMOVE = 0x10,
+};
+
+constexpr inline ScriptFlags operator&(ScriptFlags lhs, ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptFlags operator|(ScriptFlags lhs, ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptFlags operator~(ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline ScriptFlags& operator&=(ScriptFlags& lhs, ScriptFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ScriptFlags& operator|=(ScriptFlags& lhs, ScriptFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 // 60 * 60 * 10
 #define GAME_TIME_TICKS_PER_HOUR 36000
@@ -171,7 +200,7 @@ typedef struct Script {
     };
 
     // scr_flags
-    int flags;
+    ScriptFlags flags;
 
     // scr_script_idx
     int index;

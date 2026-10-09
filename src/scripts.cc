@@ -1589,7 +1589,7 @@ int scriptExecProc(int sid, ScriptProc proc)
     script->scriptOverrides = 0;
 
     bool programLoaded = false;
-    if ((script->flags & SCRIPT_FLAG_LOADED) == 0) {
+    if ((script->flags & SCRIPT_FLAG_LOADED) == SCRIPT_FLAG_NONE) {
         clock();
 
         char name[16];
@@ -2203,7 +2203,7 @@ static int scriptWrite(Script* scr, File* stream)
         break;
     }
 
-    if (fileWriteInt32(stream, scr->flags) == -1) return -1;
+    if (fileWriteUInt32Enum<ScriptFlags>(stream, scr->flags) == -1) return -1;
     if (fileWriteInt32(stream, scr->index) == -1) return -1;
     // NOTE: Original code writes `scr->program` pointer which is meaningless.
     if (fileWriteInt32(stream, 0) == -1) return -1;
@@ -2262,7 +2262,7 @@ int scriptSaveAll(File* stream)
                 Script* script = &(scriptExtent->scripts[index]);
 
                 lastScriptExtent = scriptList->tail;
-                if ((script->flags & SCRIPT_FLAG_NO_SAVE) != 0) {
+                if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
                     scriptCount--;
 
                     int backwardsIndex = lastScriptExtent->length - 1;
@@ -2272,7 +2272,7 @@ int scriptSaveAll(File* stream)
 
                     while (lastScriptExtent != scriptExtent || backwardsIndex > index) {
                         Script* backwardsScript = &(lastScriptExtent->scripts[backwardsIndex]);
-                        if ((backwardsScript->flags & SCRIPT_FLAG_NO_SAVE) == 0) {
+                        if ((backwardsScript->flags & SCRIPT_FLAG_NO_SAVE) == SCRIPT_FLAG_NONE) {
                             break;
                         }
 
@@ -2319,7 +2319,7 @@ int scriptSaveAll(File* stream)
                 int index;
                 for (index = 0; index < lastScriptExtent->length; index++) {
                     Script* script = &(lastScriptExtent->scripts[index]);
-                    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != 0) {
+                    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
                         break;
                     }
                 }
@@ -2359,7 +2359,7 @@ static int scriptRead(Script* scr, File* stream)
         break;
     }
 
-    if (fileReadInt32(stream, &(scr->flags)) == -1) return -1;
+    if (fileReadUInt32Enum<ScriptFlags>(stream, &(scr->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(scr->index)) == -1) return -1;
     if (fileReadInt32(stream, &(prg)) == -1) return -1;
     if (fileReadInt32(stream, &(scr->ownerId)) == -1) return -1;
@@ -2617,7 +2617,7 @@ int scriptAdd(int* sidPtr, ScriptType scriptType)
     scr->sid = sid;
     scr->sp.built_tile = -1;
     scr->sp.radius = -1;
-    scr->flags = 0;
+    scr->flags = SCRIPT_FLAG_NONE;
     scr->index = -1;
     scr->program = nullptr;
     scr->localVarsOffset = -1;
