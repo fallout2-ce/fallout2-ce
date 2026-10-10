@@ -487,7 +487,7 @@ static int explosionExit(Object* obj, void* data)
 static int explosionProcess(Object* explosive, bool animate)
 {
     int tile;
-    int elevation;
+    MapElevation elevation;
 
     Object* owner = objectGetOwner(explosive);
     if (owner) {

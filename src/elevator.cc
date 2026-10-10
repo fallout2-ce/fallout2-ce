@@ -50,7 +50,7 @@ typedef struct ElevatorBackground {
 
 typedef struct ElevatorDescription {
     Map map;
-    int elevation;
+    MapElevation elevation;
     int tile;
 } ElevatorDescription;
 
@@ -340,7 +340,7 @@ static FrmImage _elevatorPanelFrmImage;
 // Presents elevator dialog for player to pick a desired level.
 //
 // 0x43EF5C elevator_select
-int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tilePtr)
+int elevatorSelectLevel(int elevator, Map* mapPtr, MapElevation* elevationPtr, int* tilePtr)
 {
     if (elevator < 0 || elevator >= ELEVATORS_MAX) {
         return -1;
@@ -397,7 +397,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         *elevationPtr -= 3;
     }
 
-    int clampedElevation = std::clamp(*elevationPtr, 0, gElevatorLevels[elevator] - 1);
+    MapElevation clampedElevation = std::clamp(*elevationPtr, ELEVATION_FIRST, gElevatorLevels[elevator] - 1);
     if (clampedElevation != *elevationPtr) {
         *elevationPtr = clampedElevation;
     }
@@ -718,7 +718,7 @@ void elevatorsInit()
             configGetEnum<Map>(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].map));
 
             snprintf(key, sizeof(key), "Elevation%d", level + 1);
-            configGetInt(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].elevation));
+            configGetEnum<MapElevation>(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].elevation));
 
             snprintf(key, sizeof(key), "Tile%d", level + 1);
             configGetInt(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].tile));

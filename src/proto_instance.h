@@ -42,8 +42,8 @@ int objectClose(Object* obj);
 int objectJamLock(Object* obj);
 int objectUnjamLock(Object* obj);
 int objectUnjamAll();
-int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius);
-int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation);
+int objectAttemptPlacement(Object* obj, int tile, MapElevation elevation, int radius);
+int objectAttemptPlacementPartyMember(Object* obj, int tile, MapElevation elevation);
 
 } // namespace fallout
 

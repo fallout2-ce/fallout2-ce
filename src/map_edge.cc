@@ -151,7 +151,7 @@ static void calcEdgeData(EdgeZone* zone)
 // Multi-edge zone selection: pick the zone whose scrollBorderRect contains the pixel position.
 // Matches GetCenterTile logic: advance while target is outside current zone, use last if
 // none contains it.
-static EdgeZone* findZoneByPixel(int px, int py, int elevation)
+static EdgeZone* findZoneByPixel(int px, int py, MapElevation elevation)
 {
     std::vector<EdgeZone>& zones = edgeData[elevation].zones;
     if (zones.empty()) {
@@ -222,9 +222,9 @@ static bool mapEdgeLoadFromStream(File* stream)
 
     edgeVersion2 = (version == 2);
 
-    int levelIndicator = 0;
+    MapElevation levelIndicator = ELEVATION_FIRST;
 
-    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+    for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
         EdgeElevationData& data = edgeData[elev];
         data.squareRect = { SQUARE_GRID_WIDTH - 1, 0, 0, SQUARE_GRID_HEIGHT - 1 };
         data.clipSides = {};
@@ -246,7 +246,7 @@ static bool mapEdgeLoadFromStream(File* stream)
         while (true) {
             int tileRect[4];
             if (fileReadInt32List(stream, tileRect, 4) == -1) {
-                return elev == ELEVATION_COUNT - 1;
+                return elev == ELEVATION_THIRD;
             }
 
             // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
@@ -255,8 +255,8 @@ static bool mapEdgeLoadFromStream(File* stream)
             calcEdgeData(&zone);
             data.zones.push_back(zone);
 
-            if (fileReadInt32(stream, &levelIndicator) == -1) {
-                return elev == ELEVATION_COUNT - 1;
+            if (fileReadInt32Enum<MapElevation>(stream, &levelIndicator) == -1) {
+                return elev == ELEVATION_THIRD;
             }
 
             if (levelIndicator != elev) {
@@ -295,9 +295,9 @@ void mapEdgeLoad(const char* mapName)
 
 // Index of the next elevation (>= from) that has zones, or ELEVATION_COUNT if none.
 // Used as the level indicator that advances the loader past empty elevations.
-static int nextElevationWithZones(int from)
+static MapElevation nextElevationWithZones(MapElevation from)
 {
-    for (int elev = from; elev < ELEVATION_COUNT; elev++) {
+    for (MapElevation elev = from; elev < ELEVATION_COUNT; elev++) {
         if (!edgeData[elev].zones.empty()) {
             return elev;
         }
@@ -312,7 +312,7 @@ static bool writeEdgStream(File* stream)
     if (fileWriteInt32(stream, edgeVersion2 ? 2 : 1) == -1) return false;
     if (fileWriteInt32(stream, 0) == -1) return false; // reserved
 
-    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+    for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
         const EdgeElevationData& data = edgeData[elev];
 
         if (edgeVersion2) {
@@ -329,8 +329,8 @@ static bool writeEdgStream(File* stream)
 
             // Level indicator: same elevation while more zones follow, otherwise the
             // index of the next elevation that has zones (so the loader advances to it).
-            int levelIndicator = (i + 1 < zoneCount) ? elev : nextElevationWithZones(elev + 1);
-            if (fileWriteInt32(stream, levelIndicator) == -1) return false;
+            MapElevation levelIndicator = (i + 1 < zoneCount) ? elev : nextElevationWithZones(elev + 1);
+            if (fileWriteInt32Enum<MapElevation>(stream, levelIndicator) == -1) return false;
         }
     }
 
@@ -362,7 +362,7 @@ void mapEdgeSave(const char* mapName)
     debugPrint("mapEdgeSave: %s %s\n", ok ? "wrote" : "error writing", edgPath);
 }
 
-EdgeElevationData& mapEdgeGetElevationData(int elevation)
+EdgeElevationData& mapEdgeGetElevationData(MapElevation elevation)
 {
     return edgeData[elevation];
 }
@@ -415,7 +415,7 @@ bool mapEdgeZoneIsSelected()
 // Shared helper: set currentTileXAlignment/Height if the pixel is on a scrollBorderRect edge.
 static void updateTileAlignment(const EdgeZone* zone, int px, int py);
 
-int mapEdgeSelectZoneAndClamp(int tile, int elevation)
+int mapEdgeSelectZoneAndClamp(int tile, MapElevation elevation)
 {
     int px, py;
     tileToPixelOffset(tile, px, py);
@@ -495,18 +495,18 @@ int mapEdgeGetTileXAlignment() { return currentTileXAlignment; }
 
 int mapEdgeGetTileYAlignment() { return currentTileYAlignment; }
 
-bool mapEdgeHasSquareRect(int elevation)
+bool mapEdgeHasSquareRect(MapElevation elevation)
 {
     const EdgeElevationData& data = edgeData[elevation];
     return edgeVersion2 && !data.zones.empty() && data.squareRect.left >= 0;
 }
 
-void mapEdgeGetSquareRect(int elevation, Rect* outRect)
+void mapEdgeGetSquareRect(MapElevation elevation, Rect* outRect)
 {
     *outRect = edgeData[elevation].squareRect;
 }
 
-EdgeZone::ClipSides mapEdgeGetClipSides(int elevation)
+EdgeZone::ClipSides mapEdgeGetClipSides(MapElevation elevation)
 {
     return edgeData[elevation].clipSides;
 }
@@ -520,7 +520,7 @@ void mapEdgeRecalc()
     }
 }
 
-bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
+bool mapEdgeComputeVisibleArea(MapElevation elevation, Rect* outRect)
 {
     if (!mapEdgeIsEnabled()) return false;
 

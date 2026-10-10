@@ -2,6 +2,7 @@
 #define TILE_H
 
 #include "geometry.h"
+#include "map_defs.h"
 #include "map.h"
 #include "obj_types.h"
 
@@ -13,13 +14,13 @@ namespace fallout {
 #define TILE_MAX_DISTANCE 9999
 
 typedef void(TileWindowRefreshProc)(Rect* rect);
-typedef void(TileWindowRefreshElevationProc)(Rect* rect, int elevation);
+typedef void(TileWindowRefreshElevationProc)(Rect* rect, MapElevation elevation);
 
 // Optional overlay drawn over the mapper iso view each refresh (e.g. the edge editor).
 // clip is the region being refreshed. Set to nullptr to disable.
-typedef void(TileMapperOverlayProc)(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
+typedef void(TileMapperOverlayProc)(unsigned char* buffer, int pitch, MapElevation elevation, const Rect* clip);
 void tileSetMapperOverlayProc(TileMapperOverlayProc* proc);
-void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
+void tileMapperOverlayRender(unsigned char* buffer, int pitch, MapElevation elevation, const Rect* clip);
 
 extern const int _off_tile[ROTATION_COUNT];
 extern const int dword_51D984[ROTATION_COUNT];
@@ -38,7 +39,7 @@ void tileReset();
 void tileExit();
 void tileDisable();
 void tileEnable();
-void tileWindowRefreshRect(Rect* rect, int elevation);
+void tileWindowRefreshRect(Rect* rect, MapElevation elevation);
 void tileWindowRefresh();
 int tileSetCenter(int tile, int flags);
 void tile_toggle_roof(bool refresh);
@@ -59,17 +60,17 @@ bool tileScrollBlockingIsEnabled();
 void tileScrollLimitingEnable();
 void tileScrollLimitingDisable();
 bool tileScrollLimitingIsEnabled();
-int squareTileToScreenXY(int squareTile, int* coordX, int* coordY, int elevation);
-int squareTileToRoofScreenXY(int squareTile, int* screenX, int* screenY, int elevation);
-int squareTileFromScreenXY(int screenX, int screenY, int elevation);
-void squareTileScreenToCoord(int screenX, int screenY, int elevation, int* coordX, int* coordY);
-void squareTileScreenToCoordRoof(int screenX, int screenY, int elevation, int* coordX, int* coordY);
-void tileRenderRoofsInRect(Rect* rect, int elevation);
-void tile_fill_roof(int x, int y, int elevation, bool on);
-void tileRenderFloorsInRect(Rect* rect, int elevation);
-void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop);
-bool _square_roof_intersect(int x, int y, int elevation);
-void _grid_render(Rect* rect, int elevation);
+int squareTileToScreenXY(int squareTile, int* coordX, int* coordY, MapElevation elevation);
+int squareTileToRoofScreenXY(int squareTile, int* screenX, int* screenY, MapElevation elevation);
+int squareTileFromScreenXY(int screenX, int screenY, MapElevation elevation);
+void squareTileScreenToCoord(int screenX, int screenY, MapElevation elevation, int* coordX, int* coordY);
+void squareTileScreenToCoordRoof(int screenX, int screenY, MapElevation elevation, int* coordX, int* coordY);
+void tileRenderRoofsInRect(Rect* rect, MapElevation elevation);
+void tile_fill_roof(int x, int y, MapElevation elevation, bool on);
+void tileRenderFloorsInRect(Rect* rect, MapElevation elevation);
+void tileRenderEdgeBlackSquares(Rect* rect, MapElevation elevation, bool drawOnTop);
+bool _square_roof_intersect(int x, int y, MapElevation elevation);
+void _grid_render(Rect* rect, MapElevation elevation);
 int _tile_scroll_to(int tile, int flags);
 
 static bool tileIsValid(int tile)

@@ -26,8 +26,6 @@ inline MapHeaderFlags& operator|=(MapHeaderFlags& lhs, MapHeaderFlags rhs)
     return lhs = static_cast<MapHeaderFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-#define ELEVATION_COUNT (3)
-
 #define SQUARE_GRID_WIDTH (100)
 #define SQUARE_GRID_HEIGHT (100)
 #define SQUARE_GRID_SIZE (SQUARE_GRID_WIDTH * SQUARE_GRID_HEIGHT)
@@ -36,9 +34,24 @@ inline MapHeaderFlags& operator|=(MapHeaderFlags& lhs, MapHeaderFlags rhs)
 #define HEX_GRID_HEIGHT (200)
 #define HEX_GRID_SIZE (HEX_GRID_WIDTH * HEX_GRID_HEIGHT)
 
+enum MapElevation : int {
+    ELEVATION_INVALID = -1,
+    ELEVATION_FIRST = 0,
+    ELEVATION_SECOND = 1,
+    ELEVATION_THIRD = 2,
+    ELEVATION_COUNT = 3,
+};
+
+inline MapElevation operator++(MapElevation& e, int)
+{
+    MapElevation result = e;
+    e = static_cast<MapElevation>(static_cast<int>(e) + 1);
+    return result;
+}
+
 static inline bool elevationIsValid(int elevation)
 {
-    return elevation >= 0 && elevation < ELEVATION_COUNT;
+    return elevation >= ELEVATION_FIRST && elevation < ELEVATION_COUNT;
 }
 
 static inline bool squareGridTileIsValid(int tile)

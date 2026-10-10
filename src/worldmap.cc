@@ -279,7 +279,7 @@ typedef struct EntranceInfo {
     int x;
     int y;
     Map map;
-    int elevation;
+    MapElevation elevation;
     int tile;
     Rotation rotation;
 } EntranceInfo;
@@ -560,7 +560,7 @@ static int wmMapSlotInit(MapInfo* map);
 static int wmMapInit();
 static int wmRStartSlotInit(MapStartPointInfo* rsp);
 static int wmMatchEntranceFromMap(City areaIdx, Map mapIdx, int* entranceIdxPtr);
-static int wmMatchEntranceElevFromMap(City areaIdx, Map mapIdx, int elevation, int* entranceIdxPtr);
+static int wmMatchEntranceElevFromMap(City areaIdx, Map mapIdx, MapElevation elevation, int* entranceIdxPtr);
 static int wmMatchAreaFromMap(Map mapIdx, City* areaIdxPtr);
 static int wmWorldMapFunc(int a1);
 static int wmInterfaceCenterOnParty();
@@ -624,7 +624,7 @@ static int wmTabsCompareNames(const void* a1, const void* a2);
 static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestinationsLengthPtr);
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow);
 static void wmInterfaceDialSyncTime(bool shouldRefreshWindow);
-static int wmAreaFindFirstValidMap(Map* mapIdxPtr, int* elevationPtr, int* tilePtr, Rotation* rotationPtr);
+static int wmAreaFindFirstValidMap(Map* mapIdxPtr, MapElevation* elevationPtr, int* tilePtr, Rotation* rotationPtr);
 static void wmRunLocalMapEnterHook(Map* mapIdxPtr);
 static void wmBlinkRndEncounterIcon(bool special);
 
@@ -1409,7 +1409,7 @@ int wmParseAreasConfig(Config* cfg, bool reindex)
                 return -1;
             }
 
-            if (strParseInt(&str, &(entrance->elevation)) == -1) {
+            if (strParseEnum<MapElevation>(&str, &(entrance->elevation)) == -1) {
                 return -1;
             }
 
@@ -3142,7 +3142,7 @@ static int wmEntranceSlotInit(EntranceInfo* entrance)
     entrance->x = 0;
     entrance->y = 0;
     entrance->map = MAP_INVALID;
-    entrance->elevation = 0;
+    entrance->elevation = ELEVATION_FIRST;
     entrance->tile = 0;
     entrance->rotation = ROTATION_NE;
 
@@ -3347,14 +3347,14 @@ static int wmMatchEntranceFromMap(City areaIdx, Map mapIdx, int* entranceIdxPtr)
 }
 
 // 0x4BFBE8 wmMatchEntranceElevFromMap
-static int wmMatchEntranceElevFromMap(City areaIdx, Map mapIdx, int elevation, int* entranceIdxPtr)
+static int wmMatchEntranceElevFromMap(City areaIdx, Map mapIdx, MapElevation elevation, int* entranceIdxPtr)
 {
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
 
     for (int entranceIdx = 0; entranceIdx < city->entrancesLength; entranceIdx++) {
         EntranceInfo* entrance = &(city->entrances[entranceIdx]);
         if (entrance->map == mapIdx) {
-            if (elevation == -1 || entrance->elevation == -1 || elevation == entrance->elevation) {
+            if (elevation == ELEVATION_INVALID || entrance->elevation == ELEVATION_INVALID || elevation == entrance->elevation) {
                 *entranceIdxPtr = entranceIdx;
                 return 0;
             }
@@ -3387,7 +3387,7 @@ static int wmMatchAreaFromMap(Map mapIdx, City* areaIdxPtr)
 // Mark map entrance.
 //
 // 0x4BFD50 wmMapMarkMapEntranceState
-int wmMapMarkMapEntranceState(Map mapIdx, int elevation, int state)
+int wmMapMarkMapEntranceState(Map mapIdx, MapElevation elevation, int state)
 {
     if (!mapIsValid(mapIdx)) {
         return -1;
@@ -3614,7 +3614,7 @@ static int wmWorldMapFunc(int a1)
                                 break;
                             }
                         } else {
-                            int elevation;
+                            MapElevation elevation;
                             int tile;
                             Rotation rotation;
                             if (wmAreaFindFirstValidMap(&map, &elevation, &tile, &rotation) == -1) {
@@ -7386,15 +7386,15 @@ static void wmRunLocalMapEnterHook(Map* mapIdxPtr)
     Map originalMap = *mapIdxPtr;
     scriptHooks_Encounter(EncounterHookEventType::LocalMapEnter, mapIdxPtr, false, -1, -1);
     if (*mapIdxPtr != originalMap) {
-        mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
+        mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
     }
 }
 
 // 0x4C5804 wmAreaFindFirstValidMap
-static int wmAreaFindFirstValidMap(Map* mapIdxPtr, int* elevationPtr, int* tilePtr, Rotation* rotationPtr)
+static int wmAreaFindFirstValidMap(Map* mapIdxPtr, MapElevation* elevationPtr, int* tilePtr, Rotation* rotationPtr)
 {
     *mapIdxPtr = MAP_INVALID;
-    *elevationPtr = -1;
+    *elevationPtr = ELEVATION_INVALID;
     *tilePtr = -1;
     *rotationPtr = ROTATION_INVALID;
 

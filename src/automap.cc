@@ -42,18 +42,18 @@ namespace fallout {
 #define AUTOMAP_ENTRY_DATA_SIZE (10000)
 #define AUTOMAP_ENTRY_BUFFER_SIZE (11024)
 
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags);
+static void automapRenderInMapWindow(int window, MapElevation elevation, unsigned char* backgroundData, AutomapFlags flags);
 static int automapSaveEntry(File* stream);
-static int automapLoadEntry(Map map, int elevation);
+static int automapLoadEntry(Map map, MapElevation elevation);
 static int automapSaveHeader(File* stream);
 static int automapLoadHeader(File* stream);
-static void _decode_map_data(int elevation);
+static void _decode_map_data(MapElevation elevation);
 static int automapCreate();
 static int _copy_file_data(File* stream1, File* stream2, int length);
 
 static int gAutomapWindow = -1;
 
-static bool automapEntryIsValid(int map, int elevation)
+static bool automapEntryIsValid(int map, MapElevation elevation)
 {
     return map >= MAP_FIRST && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
 }
@@ -395,7 +395,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
         _win_set_button_rest_state(switchBtn, 1, 0);
     }
 
-    int elevation = gElevation;
+    MapElevation elevation = gElevation;
 
     gAutomapFlags &= AUTOMAP_WTH_HIGH_DETAILS;
 
@@ -519,7 +519,7 @@ int automapGetWindow()
 // Renders automap in Map window.
 //
 // 0x41BD1C draw_top_down_map
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags)
+static void automapRenderInMapWindow(int window, MapElevation elevation, unsigned char* backgroundData, AutomapFlags flags)
 {
     Color color;
     if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
@@ -644,7 +644,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 // Renders automap in Pipboy window.
 //
 // 0x41C004 draw_top_down_map_pipboy
-int automapRenderInPipboyWindow(int window, Map map, int elevation)
+int automapRenderInPipboyWindow(int window, Map map, MapElevation elevation)
 {
     Buffer2D windowBuffer = windowGetBuffer2D(window);
 
@@ -709,7 +709,7 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
 int automapSaveCurrent()
 {
     Map map = mapGetCurrentMap();
-    int elevation = gElevation;
+    MapElevation elevation = gElevation;
     if (!automapEntryIsValid(map, elevation)) {
         return 0;
     }
@@ -841,7 +841,7 @@ int automapSaveCurrent()
 
         int diff = gAutomapEntry.dataSize - nextEntryDataSize;
         for (Map map = MAP_FIRST; map < AUTOMAP_MAP_COUNT; map++) {
-            for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+            for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
                 if (gAutomapHeader.offsets[map][elevation] > entryOffset) {
                     gAutomapHeader.offsets[map][elevation] += diff;
                 }
@@ -955,7 +955,7 @@ err:
 }
 
 // 0x41C8CC AM_ReadEntry
-static int automapLoadEntry(Map map, int elevation)
+static int automapLoadEntry(Map map, MapElevation elevation)
 {
     gAutomapEntry.compressedData = nullptr;
     if (!automapEntryIsValid(map, elevation)) {
@@ -1132,7 +1132,7 @@ static int automapLoadHeader(File* stream)
 }
 
 // 0x41CBA4 decode_map_data
-static void _decode_map_data(int elevation)
+static void _decode_map_data(MapElevation elevation)
 {
     memset(gAutomapEntry.data, 0, AUTOMAP_ENTRY_DATA_SIZE);
 

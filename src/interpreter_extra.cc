@@ -498,7 +498,7 @@ static void opPlaySfx(Program* program)
 static void opSetMapStart(Program* program)
 {
     Rotation rotation = programStackPopEnum<Rotation>(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
 
@@ -523,7 +523,7 @@ static void opOverrideMapStart(Program* program)
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     Rotation rotation = programStackPopEnum<Rotation>(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
 
@@ -797,7 +797,7 @@ static void opRollDice(Program* program)
 // 0x454E28 op_move_to
 static void opMoveTo(Program* program)
 {
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
@@ -857,7 +857,7 @@ static void opMoveTo(Program* program)
 static void opCreateObject(Program* program)
 {
     int sid = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
     const ProtoId protoId = programStackPopProtoId(program);
 
@@ -1054,7 +1054,7 @@ static void opObjectIsCarryingObjectWithPid(Program* program)
 static void opTileContainsObjectWithPid(Program* program)
 {
     const ProtoId protoId = programStackPopProtoId(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
 
     int result = 0;
@@ -2030,7 +2030,7 @@ static void opMetarule3(Program* program)
     case METARULE3_TILE_GET_NEXT_CRITTER:
         if (1) {
             int tile = param1.integerValue;
-            int elevation = param2.integerValue;
+            MapElevation elevation = param2.integerValue;
             Object* previousCritter = static_cast<Object*>(param3.pointerValue);
 
             bool critterFound = previousCritter == nullptr;
@@ -2218,7 +2218,7 @@ static void opSetExitGrids(Program* program)
     int destinationTile = programStackPopInteger(program);
     int destinationElevation = programStackPopInteger(program);
     Map destinationMap = programStackPopEnum<Map>(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
 
     Object* object = objectFindFirstAtElevation(elevation);
     while (object != nullptr) {
@@ -2321,7 +2321,7 @@ static void opGetObjectElevation(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int elevation = 0;
+    MapElevation elevation = ELEVATION_FIRST;
     if (object != nullptr) {
         elevation = object->elevation;
     } else {
@@ -2849,7 +2849,7 @@ static void opRadiationDecrease(Program* program)
 // 0x4588B4 op_critter_attempt_placement
 static void opCritterAttemptPlacement(Program* program)
 {
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
@@ -3775,7 +3775,7 @@ static void opGetDay(Program* program)
 static void opExplosion(Program* program)
 {
     int maxDamage = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
 
     if (tile == -1) {
@@ -4901,7 +4901,7 @@ static void opCritterStopAttacking(Program* program)
 static void opTileGetObjectWithPid(Program* program)
 {
     const ProtoId protoId = programStackPopProtoId(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
     Object* found = nullptr;
 

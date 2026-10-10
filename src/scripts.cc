@@ -253,7 +253,7 @@ static CombatStartData gScriptsCSD;
 static int gScriptsRequestedElevatorType;
 
 // 0x6649AC elevLevel
-static int gScriptsRequestedElevatorLevel;
+static MapElevation gScriptsRequestedElevatorLevel;
 
 // 0x6649B0 tile_num
 static int gScriptsRequestedExplosionTile;
@@ -706,7 +706,7 @@ Object* scriptGetSelf(Program* program)
     spatialScript->ownerId = object->id;
     spatialScript->owner = object;
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         Script* spatialIter = scriptGetFirstSpatialScript(elevation);
         while (spatialIter != nullptr) {
             if (spatialIter == script) {
@@ -1273,7 +1273,7 @@ static void scriptsCloseNearbyElevatorDoors()
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 {
     Map map = gMapHeader.index;
-    int elevation = gScriptsRequestedElevatorLevel;
+    MapElevation elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 
     if (elevatorSelectLevel(gScriptsRequestedElevatorType, &map, &elevation, &tile) == -1) {
