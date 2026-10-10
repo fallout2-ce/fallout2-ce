@@ -82,8 +82,6 @@ constexpr inline bool objectTypeIsValid(int type)
     return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_COUNT;
 }
 
-#define SID_TYPE(value) (value) >> 24
-
 enum OutlineType : int {
     OUTLINE_TYPE_NONE = 0x00,
     OUTLINE_TYPE_HOSTILE = 0x01,

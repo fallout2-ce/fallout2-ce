@@ -120,7 +120,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    int scriptType = SID_TYPE(sid);
+    ScriptType scriptType = scriptTypeFromSid(sid);
     if (scriptAdd(sidPtr, scriptType) == -1) {
         return -1;
     }
@@ -130,7 +130,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    script->index = sid & 0xFFFFFF;
+    script->index = scriptIdFromSid(sid);
 
     if (objectType == OBJ_TYPE_CRITTER) {
         object->scriptIndex = script->index;
@@ -148,13 +148,13 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     script->ownerId = object->id;
     script->owner = object;
 
-    _scr_find_str_run_info(sid & 0xFFFFFF, &(script->field_50), *sidPtr);
+    _scr_find_str_run_info(scriptIdFromSid(sid), &(script->field_50), *sidPtr);
 
     return 0;
 }
 
 // 0x49AAC0 obj_new_sid_inst
-int objectSetScript(Object* obj, int scriptType, int scriptIndex)
+int objectSetScript(Object* obj, ScriptType scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
         return -1;

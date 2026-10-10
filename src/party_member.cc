@@ -635,7 +635,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
         return 0;
     }
 
-    int scriptType = SCRIPT_TYPE_CRITTER;
+    ScriptType scriptType = SCRIPT_TYPE_CRITTER;
     if (ProtoId(a1->object).objectType() != OBJ_TYPE_CRITTER) {
         scriptType = SCRIPT_TYPE_ITEM;
     }

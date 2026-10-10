@@ -172,7 +172,7 @@ static int scr_find_index(const char* name, int count)
     return -1;
 }
 
-int scr_choose(int scriptType)
+int scr_choose(ScriptType scriptType)
 {
     constexpr ColorWithFlags kDialogColor = static_cast<ColorWithFlags>(0x10104);
     static const char* kScriptTypeNames[] = { "s_system", "s_spatial", "s_time", "s_item", "s_critter" };
@@ -182,11 +182,11 @@ int scr_choose(int scriptType)
         return -1;
     }
 
-    int type = scriptType;
-    if (type == -1) {
-        type = _win_list_select("Script Type", kScriptTypeNames, 5, nullptr, 100, 100, kDialogColor);
-        if (type == -1) {
-            type = 0;
+    ScriptType type = scriptType;
+    if (type == SCRIPT_TYPE_INVALID) {
+        type = static_cast<ScriptType>(_win_list_select("Script Type", kScriptTypeNames, 5, nullptr, 100, 100, kDialogColor));
+        if (type == SCRIPT_TYPE_INVALID) {
+            type = SCRIPT_TYPE_SYSTEM;
         }
     }
 
@@ -292,8 +292,8 @@ int scr_choose(int scriptType)
 
 int map_scr_add_spatial(int tile, int elevation)
 {
-    int scriptId = scr_choose(1);
-    if (scriptId < 0) {
+    int chosenSid = scr_choose(SCRIPT_TYPE_SPATIAL);
+    if (chosenSid < 0) {
         return -1;
     }
 
@@ -323,9 +323,9 @@ int map_scr_add_spatial(int tile, int elevation)
     }
 
     scr->sp.built_tile = builtTileCreate(tile, elevation);
-    scr->index = scriptId & 0xFFFFFF;
+    scr->index = scriptIdFromSid(chosenSid);
     scr->sp.radius = radius;
-    _scr_find_str_run_info(scriptId & 0xFFFFFF, nullptr, sid);
+    _scr_find_str_run_info(scriptIdFromSid(chosenSid), nullptr, sid);
 
     return 0;
 }
@@ -408,7 +408,7 @@ void scr_debug_print_scripts()
     constexpr int kMaxScriptId = 32000;
 
     // Phase 1: Scripts WITH owners on current elevation — label on owner
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;
             Script* scr;
@@ -422,7 +422,7 @@ void scr_debug_print_scripts()
 
     // Phase 2: Scripts WITHOUT owners — find marker object at script's built_tile
     constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
-    for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;
             Script* scr;
