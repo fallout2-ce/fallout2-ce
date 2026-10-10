@@ -23,6 +23,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "interface.h"
+#include "inventory.h"
 #include "item.h"
 #include "light.h"
 #include "loadsave.h"
@@ -965,8 +966,16 @@ static void opDestroyObject(Program* program)
 
     Object* owner = objectGetOwner(object);
     if (owner != nullptr) {
+        // CE: Read before itemRemoveWithReason() clears the hand flags.
+        bool heldLitFlare = ProtoId(object) == ItemProtoTypeId::LitFlare
+            && (object->flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE;
+
         int quantity = itemGetQuantity(owner, object);
         itemRemoveWithReason(owner, object, quantity, RemoveInventoryObjectHookReason::ItemDestroyed);
+
+        if (heldLitFlare) {
+            critterRestoreLightWithoutFlare(owner);
+        }
 
         if (owner == gDude) {
             bool animated = !gameUiIsDisabled();

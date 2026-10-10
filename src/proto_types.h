@@ -308,6 +308,8 @@ enum class SceneryProtoTypeId : int {
     ElevatorDoorAlternate = 470,
     ForceFieldNorthSouth = 491,
     FirstRadioactiveGoo = 985,
+    SecondRadioactiveGoo = 986,
+    ThirdRadioactiveGoo = 987,
     LastRadioactiveGoo = 988,
     Car = 1009,
     ElevatorStub = 1293
