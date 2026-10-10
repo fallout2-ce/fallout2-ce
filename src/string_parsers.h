@@ -61,7 +61,9 @@ int strParseEnumWithKey(char** stringPtr, const char* key, T* valuePtr, const ch
 
     int temp;
     int result = strParseIntWithKey(stringPtr, key, &temp, delimeter);
-    *valuePtr = static_cast<T>(temp);
+    if (result == 0) {
+        *valuePtr = static_cast<T>(temp);
+    }
     return result;
 }
 
