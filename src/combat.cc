@@ -5642,14 +5642,42 @@ static void _draw_loc_on_(int a1, int a2)
 // 0x4261CC
 static void _draw_loc_(int eventCode, Color color)
 {
+    assert(eventCode >= 0 && eventCode < HIT_LOCATION_SPECIFIC_COUNT);
+    const HitLocation hitLocation = eventCode < 4 ? _hit_loc_left[eventCode] : _hit_loc_right[eventCode - 4];
+    Dam injury = DAM_NONE;
+    switch (hitLocation) {
+    case HIT_LOCATION_LEFT_ARM:
+        injury = DAM_CRIP_ARM_LEFT;
+        break;
+    case HIT_LOCATION_RIGHT_ARM:
+        injury = DAM_CRIP_ARM_RIGHT;
+        break;
+    case HIT_LOCATION_LEFT_LEG:
+        injury = DAM_CRIP_LEG_LEFT;
+        break;
+    case HIT_LOCATION_RIGHT_LEG:
+        injury = DAM_CRIP_LEG_RIGHT;
+        break;
+    case HIT_LOCATION_EYES:
+        injury = DAM_BLIND;
+        break;
+    default:
+        break;
+    }
+    if ((gCalledShotCritter->data.critter.combat.results & injury) != DAM_NONE) {
+        color = COLOR_GREY;
+    }
     ColorWithFlags colorWithFlags = color | (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
 
+    char* name = hitLocationGetName(gCalledShotCritter, hitLocation);
+    if (name == nullptr) {
+        return;
+    }
+
     if (eventCode >= 4) {
-        char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_right[eventCode - 4]);
         int width = fontGetStringWidth(name);
         windowDrawText(gCalledShotWindow, name, 0, 431 - width, _call_ty[eventCode - 4] - 86, colorWithFlags);
     } else {
-        char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_left[eventCode]);
         windowDrawText(gCalledShotWindow, name, 0, 74, _call_ty[eventCode] - 86, colorWithFlags);
     }
 }
