@@ -225,7 +225,7 @@ void _scripts_request_combat_locked(CombatStartData* combat);
 void scripts_request_townmap();
 void scriptsRequestWorldMap();
 int scriptsRequestElevator(Object* obj, int elevatorType);
-int scriptsRequestExplosion(int tile, int elevation, int minDamage, int maxDamage);
+int scriptsRequestExplosion(int tile, MapElevation elevation, int minDamage, int maxDamage);
 void scriptsRequestDialog(Object* obj);
 void scriptsRequestEndgame();
 int scriptsRequestLooting(Object* looter, Object* container);
@@ -254,7 +254,7 @@ int scriptSaveAll(File* stream);
 int scriptLoadAll(File* stream);
 int scriptGetScript(int sid, Script** script);
 int scriptAdd(int* sidPtr, int scriptType);
-Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius);
+Object* scriptCreateSpatial(int scriptIndex, int tile, MapElevation elevation, int radius);
 int scriptGetSpatialRadius(Object* obj);
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 int scriptsGetListLength();
@@ -262,11 +262,11 @@ bool scriptsIsValidScriptIndex(int scriptIndex);
 int scriptRemove(int index);
 int _scr_remove_all();
 int _scr_remove_all_force();
-Script* scriptGetFirstSpatialScript(int elevation);
+Script* scriptGetFirstSpatialScript(MapElevation elevation);
 Script* scriptGetNextSpatialScript();
 void _scr_spatials_enable();
 void _scr_spatials_disable();
-bool scriptsExecSpatialProc(Object* obj, int tile, int elevation);
+bool scriptsExecSpatialProc(Object* obj, int tile, MapElevation elevation);
 int scriptsExecStartProc();
 void scriptsExecMapEnterProc();
 void scriptsExecMapUpdateProc();
@@ -277,7 +277,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
 int scriptGetLocalVar(int sid, int var, ProgramValue& value);
 int scriptSetLocalVar(int sid, int var, ProgramValue& value);
 bool _scr_end_combat();
-int _scr_explode_scenery(Object* explosionSource, int tile, int radius, int elevation);
+int _scr_explode_scenery(Object* explosionSource, int tile, int radius, MapElevation elevation);
 
 } // namespace fallout
 

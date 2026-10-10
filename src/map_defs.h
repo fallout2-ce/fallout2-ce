@@ -42,10 +42,27 @@ enum MapElevation : int {
     ELEVATION_COUNT = 3,
 };
 
+inline MapElevation operator+(MapElevation lhs, int rhs)
+{
+    return static_cast<MapElevation>(static_cast<int>(lhs) + rhs);
+}
+
 inline MapElevation operator++(MapElevation& e, int)
 {
     MapElevation result = e;
-    e = static_cast<MapElevation>(static_cast<int>(e) + 1);
+    e = e + 1;
+    return result;
+}
+
+inline MapElevation operator-(MapElevation lhs, int rhs)
+{
+    return static_cast<MapElevation>(static_cast<int>(lhs) - rhs);
+}
+
+inline MapElevation operator--(MapElevation& e, int)
+{
+    MapElevation result = e;
+    e = e - 1;
     return result;
 }
 

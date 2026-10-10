@@ -435,7 +435,7 @@ static int protoInstAddToInven(const ProtoId& protoId, int count)
     Object* newObj;
     if (objectCreateWithFrmIdProtoId(&newObj, proto, protoId) == -1) return 0;
 
-    objectSetLocation(newObj, 0, 0, nullptr);
+    objectSetLocation(newObj, 0, ELEVATION_FIRST, nullptr);
 
     if (itemAdd(proto_inst_who_obj, newObj, count) != 0) {
         win_timed_msg("Error adding obj to critter!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
@@ -767,17 +767,19 @@ static int protoInstSceneryEdit(Object* obj)
                 ? builtTileGetTile(obj->data.scenery.ladder.destinationBuiltTile)
                 : 0;
             if (win_get_num_i(&destTile, 0, 40000, false, "Destination Tile", 100, 100) != -1) {
-                int elev = (obj->data.scenery.ladder.destinationBuiltTile != -1)
+                MapElevation elev = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                     ? builtTileGetElevation(obj->data.scenery.ladder.destinationBuiltTile)
-                    : 0;
+                    : ELEVATION_FIRST;
                 obj->data.scenery.ladder.destinationBuiltTile = builtTileCreate(destTile, elev);
                 windowRefresh(winId);
             }
         } else if (key == 'e' && sceneryType != SCENERY_TYPE_GENERIC && sceneryType != SCENERY_TYPE_ELEVATOR) {
-            int destElev = (obj->data.scenery.ladder.destinationBuiltTile != -1)
+            MapElevation destElev = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                 ? builtTileGetElevation(obj->data.scenery.ladder.destinationBuiltTile)
-                : 0;
-            if (win_get_num_i(&destElev, 0, 3, false, "Destination Elevation", 100, 100) != -1) {
+                : ELEVATION_FIRST;
+            int temp = static_cast<int>(destElev);
+            if (win_get_num_i(&temp, 0, 3, false, "Destination Elevation", 100, 100) != -1) {
+                destElev = static_cast<MapElevation>(temp);
                 int tile = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                     ? builtTileGetTile(obj->data.scenery.ladder.destinationBuiltTile)
                     : 0;

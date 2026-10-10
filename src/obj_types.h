@@ -1,6 +1,7 @@
 #ifndef OBJ_TYPES_H
 #define OBJ_TYPES_H
 
+#include "map_defs.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -459,7 +460,7 @@ typedef struct StairsSceneryData {
 
 typedef struct ElevatorSceneryData {
     int type;
-    int level;
+    MapElevation level;
 } ElevatorSceneryData;
 
 typedef struct LadderSceneryData {
@@ -538,7 +539,7 @@ static inline int builtTileGetTile(int builtTile)
 
 static inline MapElevation builtTileGetElevation(int builtTile)
 {
-    return (builtTile & BUILT_TILE_ELEVATION_MASK) >> BUILT_TILE_ELEVATION_SHIFT;
+    return static_cast<MapElevation>((builtTile & BUILT_TILE_ELEVATION_MASK) >> BUILT_TILE_ELEVATION_SHIFT);
 }
 
 static inline Rotation builtTileGetRotation(int builtTile)

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "geometry.h"
+#include "map_defs.h"
 
 namespace fallout {
 

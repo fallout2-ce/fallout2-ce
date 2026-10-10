@@ -5,6 +5,7 @@
 #include "color.h"
 #include "config.h"
 #include "db.h"
+#include "map_defs.h"
 
 namespace fallout {
 

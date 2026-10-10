@@ -305,7 +305,7 @@ typedef struct MapAmbientSoundEffectInfo {
 } MapAmbientSoundEffectInfo;
 
 typedef struct MapStartPointInfo {
-    int elevation;
+    MapElevation elevation;
     int tile;
     Rotation rotation;
 } MapStartPointInfo;
@@ -1260,7 +1260,7 @@ int wmParseMapsConfig(Config* cfg, bool reindex)
                     // NOTE: Uninline.
                     wmRStartSlotInit(rsp);
 
-                    strParseIntWithKey(&str, "elev", &(rsp->elevation), ":");
+                    strParseEnumWithKey<MapElevation>(&str, "elev", &(rsp->elevation), ":");
                     strParseIntWithKey(&str, "tile_num", &(rsp->tile), ":");
 
                     map->startPointsLength++;
@@ -3186,7 +3186,7 @@ static int wmMapInit()
 // 0x4BF954 wmRStartSlotInit
 static int wmRStartSlotInit(MapStartPointInfo* rsp)
 {
-    rsp->elevation = 0;
+    rsp->elevation = ELEVATION_FIRST;
     rsp->tile = -1;
     rsp->rotation = ROTATION_INVALID;
 
@@ -4382,7 +4382,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
             if (encounter->position != ENCOUNTER_FORMATION_TYPE_SURROUNDING) {
                 objectSetLocation(object, tile, gElevation, nullptr);
             } else {
-                objectAttemptPlacement(object, tile, 0, 0);
+                objectAttemptPlacement(object, tile, ELEVATION_FIRST, 0);
             }
 
             Rotation rotation = tileGetRotationTo(tile, gDude->tile);

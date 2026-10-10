@@ -127,148 +127,148 @@ static int gElevatorLevels[ELEVATORS_MAX] = {
 // 0x43EA7C retvals
 static ElevatorDescription gElevatorDescriptions[ELEVATORS_MAX][ELEVATOR_LEVEL_MAX] = {
     {
-        { MAP_KLAMATH_GRAZE, 0, 18940 },
-        { MAP_KLAMATH_GRAZE, 1, 18936 },
-        { MAP_VAULTCITY_COURTYARD, 0, 21340 },
-        { MAP_VAULTCITY_COURTYARD, 1, 21340 },
+        { MAP_KLAMATH_GRAZE, ELEVATION_FIRST, 18940 },
+        { MAP_KLAMATH_GRAZE, ELEVATION_SECOND, 18936 },
+        { MAP_VAULTCITY_COURTYARD, ELEVATION_FIRST, 21340 },
+        { MAP_VAULTCITY_COURTYARD, ELEVATION_SECOND, 21340 },
     },
     {
-        { MAP_KLAMATH_TRAPCAVES, 0, 20502 },
-        { MAP_KLAMATH_GRAZE, 0, 14912 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_KLAMATH_TRAPCAVES, ELEVATION_FIRST, 20502 },
+        { MAP_KLAMATH_GRAZE, ELEVATION_FIRST, 14912 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_GECKO_JUNKYARD, 0, 12498 },
-        { MAP_GECKO_JUNKYARD, 1, 20094 },
-        { MAP_GECKO_ACCESS_TUNNELS, 0, 17312 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_GECKO_JUNKYARD, ELEVATION_FIRST, 12498 },
+        { MAP_GECKO_JUNKYARD, ELEVATION_SECOND, 20094 },
+        { MAP_GECKO_ACCESS_TUNNELS, ELEVATION_FIRST, 17312 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_GECKO_ACCESS_TUNNELS, 0, 16140 },
-        { MAP_GECKO_ACCESS_TUNNELS, 1, 16140 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_GECKO_ACCESS_TUNNELS, ELEVATION_FIRST, 16140 },
+        { MAP_GECKO_ACCESS_TUNNELS, ELEVATION_SECOND, 16140 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_MILITARY_BASE_12, 0, 14920 },
-        { MAP_MILITARY_BASE_12, 1, 15120 },
-        { MAP_MILITARY_BASE_34, 0, 12944 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_MILITARY_BASE_12, ELEVATION_FIRST, 14920 },
+        { MAP_MILITARY_BASE_12, ELEVATION_SECOND, 15120 },
+        { MAP_MILITARY_BASE_34, ELEVATION_FIRST, 12944 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_MILITARY_BASE_34, 0, 24520 },
-        { MAP_MILITARY_BASE_34, 1, 25316 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_MILITARY_BASE_34, ELEVATION_FIRST, 24520 },
+        { MAP_MILITARY_BASE_34, ELEVATION_SECOND, 25316 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NCR_DOWNTOWN, 0, 22526 },
-        { MAP_NCR_DOWNTOWN, 1, 22526 },
-        { MAP_NCR_DOWNTOWN, 2, 22526 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NCR_DOWNTOWN, ELEVATION_FIRST, 22526 },
+        { MAP_NCR_DOWNTOWN, ELEVATION_SECOND, 22526 },
+        { MAP_NCR_DOWNTOWN, ELEVATION_THIRD, 22526 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NCR_DOWNTOWN, 2, 14086 },
-        { MAP_NCR_COUNCIL_1, 0, 14086 },
-        { MAP_NCR_COUNCIL_1, 2, 14086 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NCR_DOWNTOWN, ELEVATION_THIRD, 14086 },
+        { MAP_NCR_COUNCIL_1, ELEVATION_FIRST, 14086 },
+        { MAP_NCR_COUNCIL_1, ELEVATION_THIRD, 14086 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_VAULT_13, 0, 14104 },
-        { MAP_VAULT_13, 1, 22504 },
-        { MAP_VAULT_13, 2, 17312 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_VAULT_13, ELEVATION_FIRST, 14104 },
+        { MAP_VAULT_13, ELEVATION_SECOND, 22504 },
+        { MAP_VAULT_13, ELEVATION_THIRD, 17312 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_KLAMATH_1, 0, 13704 },
-        { MAP_KLAMATH_1, 1, 23302 },
-        { MAP_KLAMATH_1, 2, 17308 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_KLAMATH_1, ELEVATION_FIRST, 13704 },
+        { MAP_KLAMATH_1, ELEVATION_SECOND, 23302 },
+        { MAP_KLAMATH_1, ELEVATION_THIRD, 17308 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_SIERRA_123, 0, 19300 },
-        { MAP_SIERRA_123, 1, 19300 },
-        { MAP_SIERRA_123, 2, 20110 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_SIERRA_123, ELEVATION_FIRST, 19300 },
+        { MAP_SIERRA_123, ELEVATION_SECOND, 19300 },
+        { MAP_SIERRA_123, ELEVATION_THIRD, 20110 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_SIERRA_123, 2, 20118 },
-        { MAP_SIERRA_4, 0, 21710 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_SIERRA_123, ELEVATION_THIRD, 20118 },
+        { MAP_SIERRA_4, ELEVATION_FIRST, 21710 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_SIERRA_123, 0, 20122 },
-        { MAP_SIERRA_123, 1, 20124 },
-        { MAP_SIERRA_123, 2, 20940 },
-        { MAP_SIERRA_4, 0, 22540 },
+        { MAP_SIERRA_123, ELEVATION_FIRST, 20122 },
+        { MAP_SIERRA_123, ELEVATION_SECOND, 20124 },
+        { MAP_SIERRA_123, ELEVATION_THIRD, 20940 },
+        { MAP_SIERRA_4, ELEVATION_FIRST, 22540 },
     },
     {
-        { MAP_KLAMATH_TOXICCAVES, 1, 16052 },
-        { MAP_KLAMATH_TOXICCAVES, 2, 14480 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_KLAMATH_TOXICCAVES, ELEVATION_SECOND, 16052 },
+        { MAP_KLAMATH_TOXICCAVES, ELEVATION_THIRD, 14480 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_DEN_ENTRANCE, 0, 14104 },
-        { MAP_DEN_ENTRANCE, 1, 22504 },
-        { MAP_DEN_ENTRANCE, 2, 17312 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_DEN_ENTRANCE, ELEVATION_FIRST, 14104 },
+        { MAP_DEN_ENTRANCE, ELEVATION_SECOND, 22504 },
+        { MAP_DEN_ENTRANCE, ELEVATION_THIRD, 17312 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_VAULT_CITY_VAULT, 0, 14104 },
-        { MAP_VAULT_CITY_VAULT, 1, 22504 },
-        { MAP_VAULT_CITY_VAULT, 2, 17312 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_VAULT_CITY_VAULT, ELEVATION_FIRST, 14104 },
+        { MAP_VAULT_CITY_VAULT, ELEVATION_SECOND, 22504 },
+        { MAP_VAULT_CITY_VAULT, ELEVATION_THIRD, 17312 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_VAULT_15, 0, 13704 },
-        { MAP_VAULT_15, 1, 23302 },
-        { MAP_VAULT_15, 2, 17308 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_VAULT_15, ELEVATION_FIRST, 13704 },
+        { MAP_VAULT_15, ELEVATION_SECOND, 23302 },
+        { MAP_VAULT_15, ELEVATION_THIRD, 17308 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_VAULT_15_EAST_ENTRANCE, 0, 17285 },
-        { MAP_VAULT_15, 0, 19472 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_VAULT_15_EAST_ENTRANCE, ELEVATION_FIRST, 17285 },
+        { MAP_VAULT_15, ELEVATION_FIRST, 19472 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NAVARRO_ENTRANCE, 2, 10701 },
-        { MAP_NAVARRO_ENTRANCE, 1, 10705 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_THIRD, 10701 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_SECOND, 10705 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NAVARRO_ENTRANCE, 2, 14697 },
-        { MAP_NAVARRO_ENTRANCE, 1, 15099 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_THIRD, 14697 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_SECOND, 15099 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NAVARRO_ENTRANCE, 2, 23877 },
-        { MAP_NAVARRO_ENTRANCE, 1, 25481 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_THIRD, 23877 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_SECOND, 25481 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_NAVARRO_ENTRANCE, 2, 26130 },
-        { MAP_NAVARRO_ENTRANCE, 1, 24721 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_THIRD, 26130 },
+        { MAP_NAVARRO_ENTRANCE, ELEVATION_SECOND, 24721 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_SAN_FRAN_CHINATOWN, 0, 23953 },
-        { MAP_SHI_TEMPLE, 1, 16526 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_SAN_FRAN_CHINATOWN, ELEVATION_FIRST, 23953 },
+        { MAP_SHI_TEMPLE, ELEVATION_SECOND, 16526 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
     {
-        { MAP_REDDING_WANAMINGO_ENT, 0, 13901 },
-        { MAP_REDDING_WANAMINGO_12, 1, 17923 },
-        { MAP_RND_DESERT_1, 0, -1 },
-        { MAP_RND_DESERT_1, 0, -1 },
+        { MAP_REDDING_WANAMINGO_ENT, ELEVATION_FIRST, 13901 },
+        { MAP_REDDING_WANAMINGO_12, ELEVATION_SECOND, 17923 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
+        { MAP_RND_DESERT_1, ELEVATION_FIRST, -1 },
     },
 };
 
@@ -375,29 +375,29 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, MapElevation* elevationPtr, i
     if (index < ELEVATOR_LEVEL_MAX) {
         int adjustedIndex = *elevationPtr + index;
         if (adjustedIndex >= 0 && adjustedIndex < ELEVATOR_LEVEL_MAX && elevatorDescription[adjustedIndex].tile != -1) {
-            *elevationPtr = adjustedIndex;
+            *elevationPtr = static_cast<MapElevation>(adjustedIndex);
         }
     }
 
     if (elevator == ELEVATOR_SIERRA_2) {
         if (*elevationPtr <= 2) {
-            *elevationPtr -= 2;
+            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
         } else {
-            *elevationPtr -= 3;
+            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 3);
         }
     } else if (elevator == ELEVATOR_MILITARY_BASE_LOWER) {
         if (*elevationPtr >= 2) {
-            *elevationPtr -= 2;
+            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
         }
     } else if (elevator == ELEVATOR_MILITARY_BASE_UPPER && *elevationPtr == 4) {
-        *elevationPtr -= 2;
+        *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
     }
 
     if (*elevationPtr > 3) {
-        *elevationPtr -= 3;
+        *elevationPtr = static_cast<MapElevation>(*elevationPtr - 3);
     }
 
-    MapElevation clampedElevation = std::clamp(*elevationPtr, ELEVATION_FIRST, gElevatorLevels[elevator] - 1);
+    MapElevation clampedElevation = std::clamp(*elevationPtr, ELEVATION_FIRST, static_cast<MapElevation>(gElevatorLevels[elevator] - 1));
     if (clampedElevation != *elevationPtr) {
         *elevationPtr = clampedElevation;
     }

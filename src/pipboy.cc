@@ -1757,7 +1757,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1765,7 +1765,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, _sortlist[userInput - 1].mapOrElevation);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, static_cast<MapElevation>(_sortlist[userInput - 1].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
