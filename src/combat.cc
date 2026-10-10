@@ -1933,7 +1933,7 @@ static Object* gCalledShotCritter;
 static int gCalledShotWindow;
 
 // 0x56D378 combat_elev
-static int _combat_elev;
+static MapElevation _combat_elev;
 
 // 0x56D37C list_total
 static int _list_total;

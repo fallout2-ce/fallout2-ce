@@ -549,7 +549,7 @@ typedef struct {
 
 typedef struct {
     int type;
-    int level;
+    MapElevation level;
 } SceneryProtoElevatorData;
 
 typedef struct {

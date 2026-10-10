@@ -25,7 +25,7 @@
 namespace fallout {
 
 // 0x49B170
-int map_scr_remove_spatial(int tile, int elevation)
+int map_scr_remove_spatial(int tile, MapElevation elevation)
 {
     Script* scr;
     Object* obj;
@@ -62,12 +62,11 @@ int map_scr_remove_spatial(int tile, int elevation)
 // 0x49B214
 int map_scr_remove_all_spatials()
 {
-    int elevation;
     Script* scr;
     Object* obj;
     int sid;
 
-    for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         scr = scriptGetFirstSpatialScript(elevation);
         while (scr != NULL) {
             scriptRemove(scr->sid);
@@ -113,7 +112,7 @@ void map_scr_toggle_hexes()
 
     if (!_scr_show_toggled) {
         // REMOVE mode: erase all existing spatial marker objects
-        for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
             Object* obj = objectFindFirstAtElevation(elev);
             while (obj != nullptr) {
                 if (obj->fid == kMarkerFrmId.fid()) {
@@ -290,7 +289,7 @@ int scr_choose(int scriptType)
     return result;
 }
 
-int map_scr_add_spatial(int tile, int elevation)
+int map_scr_add_spatial(int tile, MapElevation elevation)
 {
     int scriptId = scr_choose(1);
     if (scriptId < 0) {
@@ -344,7 +343,7 @@ void map_set_script(int scriptIndex)
     Object* obj;
     objectCreateWithFrmIdProtoId(&obj, MiscFrameId::ScrollBlocker, ProtoId::Empty());
     obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
-    objectSetLocation(obj, 1, 0, nullptr);
+    objectSetLocation(obj, 1, ELEVATION_FIRST, nullptr);
     obj->sid = gMapSid;
     scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
     Script* script;
@@ -431,7 +430,7 @@ void scr_debug_print_scripts()
                 if (builtTile == -1 || builtTile == 0) continue;
 
                 int tile = builtTileGetTile(builtTile);
-                int elevation = builtTileGetElevation(builtTile);
+                MapElevation elevation = builtTileGetElevation(builtTile);
                 if (tile == -1 || elevation != gElevation) continue;
 
                 Object* obj = objectFindFirstAtLocation(elevation, tile);

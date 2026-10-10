@@ -5,6 +5,7 @@
 #include "color.h"
 #include "config.h"
 #include "db.h"
+#include "map_defs.h"
 
 namespace fallout {
 
@@ -367,7 +368,7 @@ bool wmRestModeIsStrict();
 bool wmRestModeNoHealing();
 bool wmMapPipboyActive();
 int wmMapMarkVisited(Map mapIdx);
-int wmMapMarkMapEntranceState(Map mapIdx, int elevation, int state);
+int wmMapMarkMapEntranceState(Map mapIdx, MapElevation elevation, int state);
 void wmWorldMap();
 int wmCheckGameAreaEvents();
 int wmSetupRandomEncounter();

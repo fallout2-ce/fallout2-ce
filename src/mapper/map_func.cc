@@ -365,7 +365,7 @@ int pickHex()
 {
     constexpr int kIsoMarginTop = 16;
 
-    int elevation = gElevation;
+    MapElevation elevation = gElevation;
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -398,7 +398,7 @@ int pickHex()
         }
 
         if (keyCode == KEY_PAGE_UP || keyCode == KEY_PAGE_DOWN) {
-            int newElevation = elevation;
+            MapElevation newElevation = elevation;
             if (keyCode == KEY_PAGE_UP) {
                 if (elevation < ELEVATION_COUNT - 1) {
                     newElevation = elevation + 1;
@@ -776,7 +776,7 @@ void copyObject(int filterType)
 
     mpCopyCount = 0;
 
-    int elevation = gElevation;
+    MapElevation elevation = gElevation;
     // Walk the region cell-by-cell and add matching objects. Outer loop skips by 12 vertically
     // and 32 horizontally to match the hex stride used by the original (one unit per visual hex).
     for (int sy = region.top + 8; sy < region.bottom; sy += 12) {
@@ -835,7 +835,7 @@ void copyObject(int filterType)
 // elevation `elevation`. Returns the number of tiles written. Hex-grid screen-coords aren't
 // monotonic with square-grid coords (the iso projection is angled), so the bounding box is
 // computed by taking min/max of all four screen-rect corners.
-static int squares_in_rect(const Rect* screenRect, int elevation, int* outTiles, int cap)
+static int squares_in_rect(const Rect* screenRect, MapElevation elevation, int* outTiles, int cap)
 {
     if (cap <= 0) return 0;
 
@@ -984,7 +984,7 @@ void eraseObject()
                         // Don't destroy exit-grid markers (interface art, id=3).
                         if (FrmId(hit) != InterfaceFrameId::ExitGridMarker) {
                             Rect rect;
-                            int elev = hit->elevation;
+                            MapElevation elev = hit->elevation;
                             reg_anim_clear(hit);
                             objectDestroy(hit, &rect);
                             tileWindowRefreshRect(&rect, elev);
@@ -1188,12 +1188,13 @@ void mapper_shift_map_elev()
         return;
     }
 
-    int destElev = gElevation + 1;
-    if (win_get_num_i(&destElev, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
+    int val = gElevation + 1;
+    if (win_get_num_i(&val, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
         return;
     }
 
-    destElev -= 1;
+    val -= 1;
+    MapElevation destElev = static_cast<MapElevation>(val);
     if (destElev == gElevation) {
         return;
     }
@@ -1282,12 +1283,13 @@ void mapper_copy_map_elev()
         return;
     }
 
-    int destElev = gElevation + 1;
-    if (win_get_num_i(&destElev, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
+    int val = gElevation + 1;
+    if (win_get_num_i(&val, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
         return;
     }
 
-    destElev -= 1;
+    val -= 1;
+    MapElevation destElev = static_cast<MapElevation>(val);
     if (destElev == gElevation) {
         return;
     }

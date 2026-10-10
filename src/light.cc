@@ -58,7 +58,7 @@ void lightSetAmbientIntensity(int intensity, bool shouldUpdateScreen)
 }
 
 // 0x47A980 light_get_tile
-int lightGetTileIntensity(int elevation, int tile)
+int lightGetTileIntensity(MapElevation elevation, int tile)
 {
     if (!elevationIsValid(elevation)) {
         return 0;
@@ -72,7 +72,7 @@ int lightGetTileIntensity(int elevation, int tile)
 }
 
 // 0x47A9C4 light_get_tile_true
-int lightGetTrueTileIntensity(int elevation, int tile)
+int lightGetTrueTileIntensity(MapElevation elevation, int tile)
 {
     if (!elevationIsValid(elevation)) {
         return 0;
@@ -86,7 +86,7 @@ int lightGetTrueTileIntensity(int elevation, int tile)
 }
 
 // 0x47A9EC light_set_tile
-void lightSetTileIntensity(int elevation, int tile, int intensity)
+void lightSetTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -100,7 +100,7 @@ void lightSetTileIntensity(int elevation, int tile, int intensity)
 }
 
 // 0x47AA10 light_add_to_tile
-void lightIncreaseTileIntensity(int elevation, int tile, int intensity)
+void lightIncreaseTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -114,7 +114,7 @@ void lightIncreaseTileIntensity(int elevation, int tile, int intensity)
 }
 
 // 0x47AA48 light_subtract_from_tile
-void lightDecreaseTileIntensity(int elevation, int tile, int intensity)
+void lightDecreaseTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -130,7 +130,7 @@ void lightDecreaseTileIntensity(int elevation, int tile, int intensity)
 // 0x47AA84 light_reset_tiles
 void lightResetTileIntensity()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         for (int tile = 0; tile < HEX_GRID_SIZE; tile++) {
             gTileIntensity[elevation][tile] = 655;
         }

@@ -1637,7 +1637,7 @@ bool _action_explode_running()
 
 // action_explode
 // 0x412CF4
-int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object* sourceObj, bool animate)
+int actionExplode(int tile, MapElevation elevation, int minDamage, int maxDamage, Object* sourceObj, bool animate)
 {
     if (animate && _action_in_explode) {
         return -2;
@@ -1943,7 +1943,7 @@ int _talk_to(Object* _, Object* critter)
 }
 
 // 0x413494
-void actionDamage(int tile, int elevation, int minDamage, int maxDamage, DamageType damageType, bool animated, bool bypassArmor)
+void actionDamage(int tile, MapElevation elevation, int minDamage, int maxDamage, DamageType damageType, bool animated, bool bypassArmor)
 {
     Attack* attack = (Attack*)internal_malloc(sizeof(*attack));
     if (attack == nullptr) {

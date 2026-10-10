@@ -296,6 +296,17 @@ inline HitLocation programStackPopEnum(Program* program)
 }
 
 template <>
+inline MapElevation programStackPopEnum(Program* program)
+{
+    int elevation = programStackPopInteger(program);
+    if (!elevationIsValid(elevation)) {
+        programPrintError("invalid elevation %d", elevation);
+    }
+
+    return static_cast<MapElevation>(elevation);
+}
+
+template <>
 inline CriticalHitDataMember programStackPopEnum(Program* program)
 {
     int criticalHitDataMember = programStackPopInteger(program);

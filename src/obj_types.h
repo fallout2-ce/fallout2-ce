@@ -1,6 +1,7 @@
 #ifndef OBJ_TYPES_H
 #define OBJ_TYPES_H
 
+#include "map_defs.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -459,7 +460,7 @@ typedef struct StairsSceneryData {
 
 typedef struct ElevatorSceneryData {
     int type;
-    int level;
+    MapElevation level;
 } ElevatorSceneryData;
 
 typedef struct LadderSceneryData {
@@ -477,7 +478,7 @@ typedef union SceneryObjectData {
 typedef struct MiscObjectData {
     Map map;
     int tile;
-    int elevation;
+    MapElevation elevation;
     Rotation rotation;
 } MiscObjectData;
 
@@ -508,7 +509,7 @@ typedef struct Object {
     Rotation rotation; // obj_cur_rot
     int fid; // obj_fid
     ObjectFlags flags; // obj_flags
-    int elevation; // obj_elev
+    MapElevation elevation; // obj_elev
     ObjectData data;
     int pid; // obj_pid
     int cid; // obj_cid
@@ -536,9 +537,9 @@ static inline int builtTileGetTile(int builtTile)
     return builtTile & BUILT_TILE_TILE_MASK;
 }
 
-static inline int builtTileGetElevation(int builtTile)
+static inline MapElevation builtTileGetElevation(int builtTile)
 {
-    return (builtTile & BUILT_TILE_ELEVATION_MASK) >> BUILT_TILE_ELEVATION_SHIFT;
+    return static_cast<MapElevation>((builtTile & BUILT_TILE_ELEVATION_MASK) >> BUILT_TILE_ELEVATION_SHIFT);
 }
 
 static inline Rotation builtTileGetRotation(int builtTile)
@@ -546,7 +547,7 @@ static inline Rotation builtTileGetRotation(int builtTile)
     return static_cast<Rotation>((builtTile & BUILT_TILE_ROTATION_MASK) >> BUILT_TILE_ROTATION_SHIFT);
 }
 
-static inline int builtTileCreate(int tile, int elevation)
+static inline int builtTileCreate(int tile, MapElevation elevation)
 {
     return tile | ((elevation << BUILT_TILE_ELEVATION_SHIFT) & BUILT_TILE_ELEVATION_MASK);
 }

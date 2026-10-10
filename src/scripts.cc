@@ -117,7 +117,7 @@ static int gScriptsEnumerationScriptIndex = 0;
 static ScriptListExtent* gScriptsEnumerationScriptListExtent = nullptr;
 
 // 0x51C6B8 scr_find_first_elev
-static int gScriptsEnumerationElevation = 0;
+static MapElevation gScriptsEnumerationElevation = ELEVATION_FIRST;
 
 // 0x51C6BC scrSpatialsEnabled
 static bool gSpatialsEnabled = true;
@@ -253,13 +253,13 @@ static CombatStartData gScriptsCSD;
 static int gScriptsRequestedElevatorType;
 
 // 0x6649AC elevLevel
-static int gScriptsRequestedElevatorLevel;
+static MapElevation gScriptsRequestedElevatorLevel;
 
 // 0x6649B0 tile_num
 static int gScriptsRequestedExplosionTile;
 
 // 0x6649B4 elev
-static int gScriptsRequestedExplosionElevation;
+static MapElevation gScriptsRequestedExplosionElevation;
 
 // 0x6649B8 min_dmg
 static int gScriptsRequestedExplosionMinDamage;
@@ -706,7 +706,7 @@ Object* scriptGetSelf(Program* program)
     spatialScript->ownerId = object->id;
     spatialScript->owner = object;
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         Script* spatialIter = scriptGetFirstSpatialScript(elevation);
         while (spatialIter != nullptr) {
             if (spatialIter == script) {
@@ -1273,7 +1273,7 @@ static void scriptsCloseNearbyElevatorDoors()
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 {
     Map map = gMapHeader.index;
-    int elevation = gScriptsRequestedElevatorLevel;
+    MapElevation elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 
     if (elevatorSelectLevel(gScriptsRequestedElevatorType, &map, &elevation, &tile) == -1) {
@@ -1470,7 +1470,7 @@ void scriptsRequestWorldMap()
 // 0x4A466C
 int scriptsRequestElevator(Object* obj, int elevatorType)
 {
-    int elevatorLevel = gElevation;
+    MapElevation elevatorLevel = gElevation;
 
     int tile = obj->tile;
     if (tile == -1) {
@@ -1524,7 +1524,7 @@ int scriptsRequestElevator(Object* obj, int elevatorType)
 }
 
 // 0x4A4730
-int scriptsRequestExplosion(int tile, int elevation, int minDamage, int maxDamage)
+int scriptsRequestExplosion(int tile, MapElevation elevation, int minDamage, int maxDamage)
 {
     gScriptsRequests |= SCRIPT_REQUEST_EXPLOSION;
     gScriptsRequestedExplosionTile = tile;
@@ -2450,7 +2450,7 @@ static void scriptListsFreeAll()
 
     gScriptsEnumerationScriptIndex = 0;
     gScriptsEnumerationScriptListExtent = nullptr;
-    gScriptsEnumerationElevation = 0;
+    gScriptsEnumerationElevation = ELEVATION_FIRST;
     scriptSelfOverrides.clear();
 }
 
@@ -2641,9 +2641,9 @@ int scriptAdd(int* sidPtr, int scriptType)
     return 0;
 }
 
-Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius)
+Object* scriptCreateSpatial(int scriptIndex, int tile, MapElevation elevation, int radius)
 {
-    if (!scriptsIsValidScriptIndex(scriptIndex) || !hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+    if (!scriptsIsValidScriptIndex(scriptIndex) || !hexGridTileIsValid(tile) || elevation < ELEVATION_FIRST || elevation >= ELEVATION_COUNT) {
         return nullptr;
     }
 
@@ -2873,7 +2873,7 @@ int _scr_remove_all()
 
     gScriptsEnumerationScriptIndex = 0;
     gScriptsEnumerationScriptListExtent = nullptr;
-    gScriptsEnumerationElevation = 0;
+    gScriptsEnumerationElevation = ELEVATION_FIRST;
     gMapSid = -1;
 
     programListFree();
@@ -2906,7 +2906,7 @@ int _scr_remove_all_force()
 
     gScriptsEnumerationScriptIndex = 0;
     gScriptsEnumerationScriptListExtent = nullptr;
-    gScriptsEnumerationElevation = 0;
+    gScriptsEnumerationElevation = ELEVATION_FIRST;
     gMapSid = -1;
     programListFree();
     _exportClearAllVariables();
@@ -2915,7 +2915,7 @@ int _scr_remove_all_force()
 }
 
 // 0x4A6524
-Script* scriptGetFirstSpatialScript(int elevation)
+Script* scriptGetFirstSpatialScript(MapElevation elevation)
 {
     gScriptsEnumerationElevation = elevation;
     gScriptsEnumerationScriptIndex = 0;
@@ -2989,7 +2989,7 @@ void _scr_spatials_disable()
 }
 
 // 0x4A6610
-bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
+bool scriptsExecSpatialProc(Object* object, int tile, MapElevation elevation)
 {
     if (object == gGameMouseBouncingCursor) {
         return false;
@@ -3366,7 +3366,7 @@ bool _scr_end_combat()
 }
 
 // 0x4A6F70
-int _scr_explode_scenery(Object* explosionSource, int tile, int radius, int elevation)
+int _scr_explode_scenery(Object* explosionSource, int tile, int radius, MapElevation elevation)
 {
     int scriptExtentsCount = gScriptLists[SCRIPT_TYPE_SPATIAL].length + gScriptLists[SCRIPT_TYPE_ITEM].length;
     if (scriptExtentsCount == 0) {

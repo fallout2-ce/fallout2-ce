@@ -1737,7 +1737,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
             _amcty_indx = static_cast<Map>(_sortlist[realIndex].mapOrElevation);
             _map_count = _PrintAMelevList(1);
             pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
             main_sub_mode = 1;
         }
@@ -1757,7 +1757,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1765,7 +1765,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, _sortlist[userInput - 1].mapOrElevation);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, static_cast<MapElevation>(_sortlist[userInput - 1].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
@@ -1790,7 +1790,7 @@ static int _PrintAMelevList(int selectedMap)
     }
 
     // First pass: Count total valid entries
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             totalEntries++;
         }
@@ -1801,7 +1801,7 @@ static int _PrintAMelevList(int selectedMap)
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 totalEntries++;
             }
@@ -1820,7 +1820,7 @@ static int _PrintAMelevList(int selectedMap)
     int currentIndex = 0;
 
     // Second pass: Build the list for the selected page
-    for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             if (currentIndex >= startIndex && currentIndex < endIndex) {
                 _sortlist[elevationsListSize].name = mapGetName(_amcty_indx, elevation);
@@ -1837,7 +1837,7 @@ static int _PrintAMelevList(int selectedMap)
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (currentIndex >= startIndex && currentIndex < endIndex) {
                     _sortlist[elevationsListSize].name = mapGetName(map, elevation);
@@ -1911,8 +1911,8 @@ static int _PrintAMList(int selectedLocation)
 
     int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
     for (Map map = MAP_FIRST; map < mapCount; map++) {
-        int elevation;
-        for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        MapElevation elevation;
+        for (elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (_automapDisplayMap(map) == 0) {
                     break;

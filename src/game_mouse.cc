@@ -338,7 +338,7 @@ static int gameMouseActionMenuInit();
 static void gameMouseActionMenuFree();
 static int gameMouse3dSetFlatFrmId(const InterfaceFrmId& frmId, Rect* rect);
 static int gameMouseUpdateHexCursorFid(Rect* rect);
-static int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect);
+static int _gmouse_3d_move_to(int x, int y, MapElevation elevation, Rect* rect);
 static int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor);
 static int objectIsDoor(Object* object);
 static bool gameMouseClickOnInterfaceBar();
@@ -897,7 +897,7 @@ void gameMouseRefresh()
         if (gameMouseRenderActionPoints(formattedActionPoints, color) == 0) {
             Rect tmp;
             objectGetRect(gGameMouseHexCursor, &tmp);
-            tileWindowRefreshRect(&tmp, 0);
+            tileWindowRefreshRect(&tmp, ELEVATION_FIRST);
         }
 
         _gmouse_3d_last_move_time = v3;
@@ -1716,7 +1716,7 @@ bool gameMouseObjectsIsVisible()
 }
 
 // 0x44CEC4 object_under_mouse
-Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation)
+Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, MapElevation elevation)
 {
     int mouseX;
     int mouseY;
@@ -2437,7 +2437,7 @@ int gameMouseUpdateHexCursorFid(Rect* rect)
 }
 
 // 0x44DF94 gmouse_3d_move_to
-int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
+int _gmouse_3d_move_to(int x, int y, MapElevation elevation, Rect* rect)
 {
     if (_gmouse_mapper_mode == 0) {
         if (gGameMouseMode != GAME_MOUSE_MODE_MOVE) {
@@ -2468,7 +2468,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
                 bool v1 = false;
                 Rect rect1;
                 if (tileToScreenXY(tile, &screenX, &screenY) == 0) {
-                    if (_obj_move(gGameMouseBouncingCursor, screenX + 16, screenY + 15, 0, &rect1) == 0) {
+                    if (_obj_move(gGameMouseBouncingCursor, screenX + 16, screenY + 15, ELEVATION_FIRST, &rect1) == 0) {
                         v1 = true;
                     }
                 }

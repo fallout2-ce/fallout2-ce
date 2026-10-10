@@ -44,7 +44,7 @@ enum class EditMode {
 static bool active = false; // dialog open → draw the overlay
 static bool showAllRects = false; // persistent overlay toggle (Settings menu)
 static EditMode editMode = EditMode::Tiles;
-static int workingElevation = 0;
+static MapElevation workingElevation = ELEVATION_FIRST;
 static int activeRect = -1;
 static EdgeSide moveSide = EdgeSide::None;
 static int moveOrigValue = 0; // side value to restore on Cancel move
@@ -106,9 +106,9 @@ static Rect fullGridTileRect()
     return result;
 }
 
-static void editorOpen(int elevation, EditMode mode)
+static void editorOpen(MapElevation elevation, EditMode mode)
 {
-    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+    for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
         backup[elev] = mapEdgeGetElevationData(elev);
     }
 
@@ -127,7 +127,7 @@ static void editorClose(bool save)
         }
         mapEdgeRecalc();
     } else {
-        for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
             mapEdgeGetElevationData(elev) = backup[elev];
         }
     }
@@ -351,7 +351,7 @@ static void drawClippedLine(unsigned char* buffer, int pitch, const Rect* clip, 
 
 // Screen positions of the four outline vertices enclosing the visible squares of sr.
 // Indices: 0 top, 1 left, 2 bottom, 3 right (each offset to a cell corner by the basis).
-static void squareRectScreenCorners(const Rect& sr, int elevation, int outX[4], int outY[4])
+static void squareRectScreenCorners(const Rect& sr, MapElevation elevation, int outX[4], int outY[4])
 {
     auto corner = [&](int col, int row, int dx, int dy, int index) {
         int x;
@@ -397,7 +397,7 @@ static Color squareSideColor(EdgeSide side)
 }
 
 // Outlines the squareRect over the iso view, one diagonal edge per side.
-static void drawSquareOverlay(unsigned char* buffer, int pitch, int elevation, const Rect* clip)
+static void drawSquareOverlay(unsigned char* buffer, int pitch, MapElevation elevation, const Rect* clip)
 {
     int cx[4];
     int cy[4];
@@ -413,7 +413,7 @@ static void drawSquareOverlay(unsigned char* buffer, int pitch, int elevation, c
 // Registered as the tile renderer's overlay hook. While a dialog is open, only the active
 // rect is drawn (plus the moving side highlighted). Otherwise the persistent toggle outlines
 // every edge rect. Never drawn in play mode.
-static void renderOverlay(unsigned char* buffer, int pitch, int elevation, const Rect* clip)
+static void renderOverlay(unsigned char* buffer, int pitch, MapElevation elevation, const Rect* clip)
 {
     if (!mapEdgeIsMapperMode()) {
         return;
