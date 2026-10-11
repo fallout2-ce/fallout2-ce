@@ -327,8 +327,8 @@ Object* gGameMouseHexCursor;
 // 0x596C74
 static Object* gGameMousePointedObject;
 
-// Hex marking where the dude actually stops when a combat move costs
-// more AP than the dude has left.
+// Hex marking where the dude actually stops on a combat move that costs more
+// AP than the dude has left, or that targets a blocked hex.
 static Object* gGameMouseLandingMarker = nullptr;
 
 static void _gmouse_3d_enable_modes();
@@ -904,6 +904,15 @@ void gameMouseRefresh()
         } else {
             snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
             color = COLOR_RED;
+
+            // Clicking a blocked hex (critter, object) still walks the dude up
+            // to the hex next to it, as long as a path leads there.
+            if (isInCombat()) {
+                int pathLength = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 0);
+                if (pathLength > 1) {
+                    landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1);
+                }
+            }
         }
 
         if (gameMouseRenderActionPoints(formattedActionPoints, color) == 0) {
@@ -2328,6 +2337,9 @@ static void gameMouseLandingMarkerInit()
         gGameMouseLandingMarker = nullptr;
         return;
     }
+
+    // Same blended red outline as the hex cursor.
+    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr);
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
     gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;
