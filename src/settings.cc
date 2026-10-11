@@ -385,7 +385,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(party_trade_from_menu);
     SETTING(party_loot_and_barter);
     SETTING(fast_ammo_load);
-    SETTING_P(move_landing_marker, clamp(0, 2));
+    SETTING(move_landing_marker);
 #undef SECT
 
     if (isMapper) {

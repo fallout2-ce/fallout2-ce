@@ -2351,30 +2351,17 @@ void gameMouseObjectsFree()
 
 static void gameMouseLandingMarkerInit()
 {
-    // Red: msef002.frm, a filled hex the original game ships but never draws.
-    // Green: msef001.frm, the hex that marks exit grids and spatial scripts.
-    InterfaceFrameId frameId;
-    OutlineType outlineType;
-    switch (settings.qol.move_landing_marker) {
-    case 1:
-        frameId = InterfaceFrameId::HexMouseCursorOutline;
-        outlineType = OUTLINE_TYPE_SAME_TEAM;
-        break;
-    case 2:
-        frameId = InterfaceFrameId::ExitGridMarker;
-        outlineType = OUTLINE_TYPE_GREEN;
-        break;
-    default:
+    if (!settings.qol.move_landing_marker) {
         return;
     }
 
-    if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, frameId, ProtoId::Empty()) != 0) {
+    // Draw the marker like the hex cursor in move mode.
+    if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::ActionMove, ProtoId::Empty()) != 0) {
         gGameMouseLandingMarker = nullptr;
         return;
     }
 
-    // Blend the outline with the floor, as the hex cursor does.
-    objectSetOutline(gGameMouseLandingMarker, outlineType | OUTLINE_PALETTED, nullptr);
+    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr);
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
     gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;

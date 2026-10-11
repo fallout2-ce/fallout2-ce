@@ -204,8 +204,6 @@ static Color* _energyBlendTable = nullptr;
 // 0x519790 redBlendTable
 static Color* _redBlendTable = nullptr;
 
-static Color* _greenBlendTable = nullptr;
-
 // 0x519794 moveBlockObj
 Object* _moveBlockObj = nullptr;
 
@@ -3562,7 +3560,6 @@ static void _obj_blend_table_init()
     _steamBlendTable = _getColorBlendTable(COLOR_WHITE);
     _energyBlendTable = _getColorBlendTable(COLOR_YELLOW_GREEN);
     _redBlendTable = _getColorBlendTable(COLOR_RED);
-    _greenBlendTable = _getColorBlendTable(COLOR_GREEN);
 }
 
 // NOTE: Inlined.
@@ -3575,7 +3572,6 @@ static void _obj_blend_table_exit()
     _freeColorBlendTable(COLOR_WHITE);
     _freeColorBlendTable(COLOR_YELLOW_GREEN);
     _freeColorBlendTable(COLOR_RED);
-    _freeColorBlendTable(COLOR_GREEN);
 }
 
 // 0x48D348 obj_save_obj
@@ -4838,14 +4834,6 @@ static void objectDrawOutline(Object* object, Rect* rect)
             if (isOutlinePalleted != 0) {
                 grayTable = _commonGrayTable;
                 blendTable = _redBlendTable;
-            }
-            break;
-        case OUTLINE_TYPE_GREEN:
-            color = COLOR_GREEN;
-            animatedColorBandHeight = 0;
-            if (isOutlinePalleted != 0) {
-                grayTable = _commonGrayTable;
-                blendTable = _greenBlendTable;
             }
             break;
         case OUTLINE_TYPE_BLOCKED:
