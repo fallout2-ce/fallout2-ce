@@ -327,6 +327,11 @@ Object* gGameMouseHexCursor;
 // 0x596C74
 static Object* gGameMousePointedObject;
 
+// Yellow hex marking where the dude actually stops when a combat move costs
+// more AP than the dude has left.
+static Object* gGameMouseLandingMarker = nullptr;
+static CacheEntry* gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
+
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId);
 static int gameMouseRenderAccuracy(const char* string, Color color);
@@ -343,6 +348,11 @@ static int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor);
 static int objectIsDoor(Object* object);
 static bool gameMouseClickOnInterfaceBar();
 static bool gameMouseLongPressUsesLootActionForCritter(Object* object);
+static void gameMouseLandingMarkerInit();
+static void gameMouseLandingMarkerFree();
+static int gameMouseGetMoveLandingTile(const unsigned char* rotations, int pathLength);
+static void gameMouseShowLandingMarker(int tile);
+static void gameMouseHideLandingMarker();
 
 static void customMouseModeFrmsInit();
 
@@ -872,7 +882,9 @@ void gameMouseRefresh()
 
         char formattedActionPoints[8];
         Color color;
-        int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, nullptr, 1);
+        unsigned char rotations[800];
+        int landingTile = -1;
+        int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 1);
         if (distance != 0) {
             if (!isInCombat()) {
                 formattedActionPoints[0] = '\0';
@@ -887,6 +899,7 @@ void gameMouseRefresh()
                 } else {
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
                     color = COLOR_RED;
+                    landingTile = gameMouseGetMoveLandingTile(rotations, distance);
                 }
             }
         } else {
@@ -898,6 +911,12 @@ void gameMouseRefresh()
             Rect tmp;
             objectGetRect(gGameMouseHexCursor, &tmp);
             tileWindowRefreshRect(&tmp, 0);
+        }
+
+        if (landingTile != -1) {
+            gameMouseShowLandingMarker(landingTile);
+        } else {
+            gameMouseHideLandingMarker();
         }
 
         _gmouse_3d_last_move_time = v3;
@@ -914,6 +933,8 @@ void gameMouseRefresh()
     if (!_gmouse_mapper_mode) {
         gameMouseSetBouncingCursorFrmId(InterfaceFrameId::Blank);
     }
+
+    gameMouseHideLandingMarker();
 
     int v34 = 0;
 
@@ -1002,6 +1023,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 
     if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
         if (gGameMouseMode == GAME_MOUSE_MODE_MOVE) {
+            gameMouseHideLandingMarker();
+
             int actionPoints;
             if (isInCombat()) {
                 actionPoints = _combat_free_move + gDude->data.critter.combat.ap;
@@ -1455,6 +1478,8 @@ void gameMouseSetMode(GameMouseMode mode)
         return;
     }
 
+    gameMouseHideLandingMarker();
+
     if (mode == gGameMouseMode) {
         return;
     }
@@ -1698,6 +1723,8 @@ void gameMouseObjectsHide()
     if (objectHide(gGameMouseHexCursor, &rect2) == 0) {
         refreshFlags |= REFRESH_HEX_CURSOR;
     }
+
+    gameMouseHideLandingMarker();
 
     if (refreshFlags == REFRESH_BOUNCING_CURSOR) {
         tileWindowRefreshRect(&rect1, gElevation);
@@ -2232,6 +2259,8 @@ int gameMouseObjectsInit()
 
     _obj_toggle_flat(gGameMouseHexCursor, nullptr);
 
+    gameMouseLandingMarkerInit();
+
     int x;
     int y;
     mouseGetPosition(&x, &y);
@@ -2287,7 +2316,156 @@ void gameMouseObjectsFree()
         objectDestroy(gGameMouseBouncingCursor, nullptr);
         objectDestroy(gGameMouseHexCursor, nullptr);
 
+        gameMouseLandingMarkerFree();
+
         gGameMouseObjectsInitialized = false;
+    }
+}
+
+static void gameMouseLandingMarkerInit()
+{
+    // The move hex art is shared with the hex cursor, so the marker needs a
+    // copy to recolor. The unused msef002.frm has the same geometry; its
+    // cached pixels are overwritten with a yellow move hex. The art stays
+    // locked so the cache never reloads the original from disk.
+    CacheEntry* moveFrmHandle;
+    Art* moveFrm = artLock(InterfaceFrameId::ActionMove, &moveFrmHandle);
+    if (moveFrm == nullptr) {
+        return;
+    }
+
+    Art* markerFrm = artLock(InterfaceFrameId::HexMouseCursorOutline, &gGameMouseLandingMarkerFrmHandle);
+    if (markerFrm == nullptr) {
+        artUnlock(moveFrmHandle);
+        return;
+    }
+
+    int moveWidth;
+    int moveHeight;
+    int moveOffsetX;
+    int moveOffsetY;
+    unsigned char* moveData = artGetFrameData(moveFrm, 0, ROTATION_NE, &moveWidth, &moveHeight, &moveOffsetX, &moveOffsetY);
+
+    int markerWidth;
+    int markerHeight;
+    int markerOffsetX;
+    int markerOffsetY;
+    unsigned char* markerData = artGetFrameData(markerFrm, 0, ROTATION_NE, &markerWidth, &markerHeight, &markerOffsetX, &markerOffsetY);
+
+    int moveShiftX;
+    int moveShiftY;
+    artGetRotationOffsets(moveFrm, ROTATION_NE, &moveShiftX, &moveShiftY);
+
+    int markerShiftX;
+    int markerShiftY;
+    artGetRotationOffsets(markerFrm, ROTATION_NE, &markerShiftX, &markerShiftY);
+
+    bool sameGeometry = moveData != nullptr
+        && markerData != nullptr
+        && moveWidth == markerWidth
+        && moveHeight == markerHeight
+        && moveOffsetX == markerOffsetX
+        && moveOffsetY == markerOffsetY
+        && moveShiftX == markerShiftX
+        && moveShiftY == markerShiftY;
+
+    if (sameGeometry) {
+        for (int index = 0; index < moveWidth * moveHeight; index++) {
+            markerData[index] = moveData[index] != 0 ? COLOR_LIGHT_YELLOW : 0;
+        }
+    }
+
+    artUnlock(moveFrmHandle);
+
+    if (!sameGeometry
+        || objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
+        gGameMouseLandingMarker = nullptr;
+        artUnlock(gGameMouseLandingMarkerFrmHandle);
+        gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
+        return;
+    }
+
+    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_ITEM, nullptr);
+
+    gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
+    gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;
+    gGameMouseLandingMarker->flags |= OBJECT_NO_SAVE;
+    gGameMouseLandingMarker->flags |= OBJECT_LIGHT_THRU;
+    gGameMouseLandingMarker->flags |= OBJECT_SHOOT_THRU;
+    gGameMouseLandingMarker->flags |= OBJECT_NO_BLOCK;
+
+    _obj_toggle_flat(gGameMouseLandingMarker, nullptr);
+}
+
+static void gameMouseLandingMarkerFree()
+{
+    if (gGameMouseLandingMarker != nullptr) {
+        gGameMouseLandingMarker->flags &= ~OBJECT_NO_SAVE;
+        objectDestroy(gGameMouseLandingMarker, nullptr);
+        gGameMouseLandingMarker = nullptr;
+    }
+
+    if (gGameMouseLandingMarkerFrmHandle != INVALID_CACHE_ENTRY) {
+        artUnlock(gGameMouseLandingMarkerFrmHandle);
+        gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
+    }
+}
+
+// Returns the tile where the dude stops when walking the given path with the
+// AP left this turn, or -1 if the dude cannot move at all. Mirrors the per-step AP
+// deduction in animation.cc: a step is taken while any AP remain, even if it
+// costs more than what is left (crippled legs).
+static int gameMouseGetMoveLandingTile(const unsigned char* rotations, int pathLength)
+{
+    int actionPoints = gDude->data.critter.combat.ap + _combat_free_move;
+    if (actionPoints <= 0) {
+        return -1;
+    }
+
+    int stepCost = std::max(1, critterGetMovementPointCostAdjustedForCrippledLegs(gDude, 1));
+    int steps = std::min(pathLength, (actionPoints + stepCost - 1) / stepCost);
+
+    int tile = gDude->tile;
+    for (int index = 0; index < steps; index++) {
+        tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[index]), 1);
+    }
+
+    return tile;
+}
+
+static void gameMouseShowLandingMarker(int tile)
+{
+    if (gGameMouseLandingMarker == nullptr) {
+        return;
+    }
+
+    bool hidden = (gGameMouseLandingMarker->flags & OBJECT_HIDDEN) != OBJECT_NONE;
+    if (!hidden && gGameMouseLandingMarker->tile == tile && gGameMouseLandingMarker->elevation == gElevation) {
+        return;
+    }
+
+    Rect rect;
+    if (objectSetLocation(gGameMouseLandingMarker, tile, gElevation, &rect) != 0) {
+        return;
+    }
+
+    Rect showRect;
+    if (objectShow(gGameMouseLandingMarker, &showRect) == 0) {
+        rectUnion(&rect, &showRect, &rect);
+    }
+
+    tileWindowRefreshRect(&rect, gElevation);
+}
+
+static void gameMouseHideLandingMarker()
+{
+    if (gGameMouseLandingMarker == nullptr) {
+        return;
+    }
+
+    Rect rect;
+    if (objectHide(gGameMouseLandingMarker, &rect) == 0) {
+        tileWindowRefreshRect(&rect, gElevation);
     }
 }
 
