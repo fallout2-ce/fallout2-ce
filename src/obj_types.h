@@ -92,6 +92,8 @@ enum OutlineType : int {
     OUTLINE_TYPE_FRIENDLY = 0x08,
     OUTLINE_TYPE_ITEM = 0x10,
     OUTLINE_TYPE_BLOCKED = 0x20,
+    // CE: yellow move landing marker. Skips 0x40, which sfall scripts use for purple.
+    OUTLINE_TYPE_MOVE_TARGET = 0x80,
     OUTLINE_TYPE_MAX = 0xFFFFFF
 };
 

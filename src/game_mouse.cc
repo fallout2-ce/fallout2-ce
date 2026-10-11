@@ -330,7 +330,6 @@ static Object* gGameMousePointedObject;
 // Yellow hex marking where the dude actually stops when a combat move costs
 // more AP than the dude has left.
 static Object* gGameMouseLandingMarker = nullptr;
-static CacheEntry* gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
 
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId);
@@ -2324,68 +2323,14 @@ void gameMouseObjectsFree()
 
 static void gameMouseLandingMarkerInit()
 {
-    // The move hex art is shared with the hex cursor, so the marker needs a
-    // copy to recolor. The unused msef002.frm has the same geometry; its
-    // cached pixels are overwritten with a yellow move hex. The art stays
-    // locked so the cache never reloads the original from disk.
-    CacheEntry* moveFrmHandle;
-    Art* moveFrm = artLock(InterfaceFrameId::ActionMove, &moveFrmHandle);
-    if (moveFrm == nullptr) {
-        return;
-    }
-
-    Art* markerFrm = artLock(InterfaceFrameId::HexMouseCursorOutline, &gGameMouseLandingMarkerFrmHandle);
-    if (markerFrm == nullptr) {
-        artUnlock(moveFrmHandle);
-        return;
-    }
-
-    int moveWidth;
-    int moveHeight;
-    int moveOffsetX;
-    int moveOffsetY;
-    unsigned char* moveData = artGetFrameData(moveFrm, 0, ROTATION_NE, &moveWidth, &moveHeight, &moveOffsetX, &moveOffsetY);
-
-    int markerWidth;
-    int markerHeight;
-    int markerOffsetX;
-    int markerOffsetY;
-    unsigned char* markerData = artGetFrameData(markerFrm, 0, ROTATION_NE, &markerWidth, &markerHeight, &markerOffsetX, &markerOffsetY);
-
-    int moveShiftX;
-    int moveShiftY;
-    artGetRotationOffsets(moveFrm, ROTATION_NE, &moveShiftX, &moveShiftY);
-
-    int markerShiftX;
-    int markerShiftY;
-    artGetRotationOffsets(markerFrm, ROTATION_NE, &markerShiftX, &markerShiftY);
-
-    bool sameGeometry = moveData != nullptr
-        && markerData != nullptr
-        && moveWidth == markerWidth
-        && moveHeight == markerHeight
-        && moveOffsetX == markerOffsetX
-        && moveOffsetY == markerOffsetY
-        && moveShiftX == markerShiftX
-        && moveShiftY == markerShiftY;
-
-    if (sameGeometry) {
-        for (int index = 0; index < moveWidth * moveHeight; index++) {
-            markerData[index] = moveData[index] != 0 ? COLOR_LIGHT_YELLOW : 0;
-        }
-    }
-
-    artUnlock(moveFrmHandle);
-
-    if (!sameGeometry
-        || objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
+    // msef002.frm is unused by the original game; CE ships a yellow move hex
+    // in its place (files/ce.dat).
+    if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
         gGameMouseLandingMarker = nullptr;
-        artUnlock(gGameMouseLandingMarkerFrmHandle);
-        gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
         return;
     }
 
-    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_ITEM, nullptr);
+    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_MOVE_TARGET | OUTLINE_PALETTED, nullptr);
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
     gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;
@@ -2403,11 +2348,6 @@ static void gameMouseLandingMarkerFree()
         gGameMouseLandingMarker->flags &= ~OBJECT_NO_SAVE;
         objectDestroy(gGameMouseLandingMarker, nullptr);
         gGameMouseLandingMarker = nullptr;
-    }
-
-    if (gGameMouseLandingMarkerFrmHandle != INVALID_CACHE_ENTRY) {
-        artUnlock(gGameMouseLandingMarkerFrmHandle);
-        gGameMouseLandingMarkerFrmHandle = INVALID_CACHE_ENTRY;
     }
 }
 
