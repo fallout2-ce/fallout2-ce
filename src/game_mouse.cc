@@ -327,8 +327,8 @@ Object* gGameMouseHexCursor;
 // 0x596C74
 static Object* gGameMousePointedObject;
 
-// Hex marking where the dude actually stops on a combat move that costs more
-// AP than the dude has left, or that targets a blocked hex.
+// Marks the hex where a combat move stops short, because the dude runs out of
+// AP or the target hex is occupied.
 static Object* gGameMouseLandingMarker = nullptr;
 
 static void _gmouse_3d_enable_modes();
@@ -898,16 +898,18 @@ void gameMouseRefresh()
                 } else {
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
                     color = COLOR_RED;
-                    landingTile = gameMouseGetMoveLandingTile(rotations, distance);
+
+                    if (settings.qol.move_landing_marker) {
+                        landingTile = gameMouseGetMoveLandingTile(rotations, distance);
+                    }
                 }
             }
         } else {
             snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
             color = COLOR_RED;
 
-            // Clicking a blocked hex (critter, object) still walks the dude up
-            // to the hex next to it, as long as a path leads there.
-            if (isInCombat()) {
+            // A move onto an occupied hex stops on the hex before it.
+            if (settings.qol.move_landing_marker && isInCombat()) {
                 int pathLength = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 0);
                 if (pathLength > 1) {
                     landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1);
@@ -2332,13 +2334,13 @@ void gameMouseObjectsFree()
 
 static void gameMouseLandingMarkerInit()
 {
-    // msef002.frm is a filled hex the original game never uses.
+    // The original game ships msef002.frm, a filled hex, but never draws it.
     if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
         gGameMouseLandingMarker = nullptr;
         return;
     }
 
-    // Same blended red outline as the hex cursor.
+    // Use the blended red outline of the hex cursor.
     objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr);
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
@@ -2360,10 +2362,10 @@ static void gameMouseLandingMarkerFree()
     }
 }
 
-// Returns the tile where the dude stops when walking the given path with the
-// AP left this turn, or -1 if the dude cannot move at all. Mirrors the per-step AP
-// deduction in animation.cc: a step is taken while any AP remain, even if it
-// costs more than what is left (crippled legs).
+// Returns the tile where the dude stops after walking `pathLength` steps of
+// `rotations`, or -1 if the dude has no AP or free move left. animation.cc
+// charges each step in full and stops the walk once AP and free move reach 0,
+// so the last step can cost more than what remains (crippled legs).
 static int gameMouseGetMoveLandingTile(const unsigned char* rotations, int pathLength)
 {
     int actionPoints = gDude->data.critter.combat.ap + _combat_free_move;
