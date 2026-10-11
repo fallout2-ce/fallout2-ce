@@ -327,7 +327,7 @@ Object* gGameMouseHexCursor;
 // 0x596C74
 static Object* gGameMousePointedObject;
 
-// Yellow hex marking where the dude actually stops when a combat move costs
+// Hex marking where the dude actually stops when a combat move costs
 // more AP than the dude has left.
 static Object* gGameMouseLandingMarker = nullptr;
 
@@ -2323,14 +2323,11 @@ void gameMouseObjectsFree()
 
 static void gameMouseLandingMarkerInit()
 {
-    // msef002.frm is unused by the original game; CE ships a yellow move hex
-    // in its place (files/ce.dat).
+    // msef002.frm is a filled hex the original game never uses.
     if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
         gGameMouseLandingMarker = nullptr;
         return;
     }
-
-    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_MOVE_TARGET | OUTLINE_PALETTED, nullptr);
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
     gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;

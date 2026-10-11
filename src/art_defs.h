@@ -419,7 +419,7 @@ enum class InterfaceFrameId : int {
     PipBoySleepAlarmIn = 131, // alarmin.frm - pip boy sleep alarm - in
     PipBoySleepAlarmOut = 132, // alarmout.frm - pip boy sleep alarm - out
     PipBoyLogo = 133, // pipx.frm - pipboy 2000 logo
-    HexMouseCursorOutline = 134, // msef002.frm - hex mouse cursor outline (CE replaces it with the yellow move landing marker)
+    HexMouseCursorOutline = 134, // msef002.frm - hex mouse cursor outline (unused by the original game; move landing marker)
     WorldMapDialogBox = 136, // wmapbox.frm - World map dialog box
     WorldMapLocationMarker = 138, // wmaploc.frm - World map location marker
     WorldMapMoveTargetMarker1 = 139, // wmaptarg.frm - World map move target maker #1
