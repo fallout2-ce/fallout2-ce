@@ -899,7 +899,7 @@ void gameMouseRefresh()
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
                     color = COLOR_RED;
 
-                    if (settings.qol.move_landing_marker) {
+                    if (gGameMouseLandingMarker != nullptr) {
                         landingTile = gameMouseGetMoveLandingTile(rotations, distance);
                     }
                 }
@@ -909,7 +909,7 @@ void gameMouseRefresh()
             color = COLOR_RED;
 
             // A move onto an occupied hex stops on the hex before it.
-            if (settings.qol.move_landing_marker && isInCombat()) {
+            if (gGameMouseLandingMarker != nullptr && isInCombat()) {
                 int pathLength = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 0);
                 if (pathLength > 1) {
                     landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1);
@@ -2334,14 +2334,29 @@ void gameMouseObjectsFree()
 
 static void gameMouseLandingMarkerInit()
 {
-    // The original game ships msef002.frm, a filled hex, but never draws it.
-    if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, InterfaceFrameId::HexMouseCursorOutline, ProtoId::Empty()) != 0) {
+    // Red: msef002.frm, a filled hex the original game ships but never draws.
+    // Green: msef001.frm, the hex that marks exit grids and spatial scripts.
+    InterfaceFrameId frameId;
+    switch (settings.qol.move_landing_marker) {
+    case 1:
+        frameId = InterfaceFrameId::HexMouseCursorOutline;
+        break;
+    case 2:
+        frameId = InterfaceFrameId::ExitGridMarker;
+        break;
+    default:
+        return;
+    }
+
+    if (objectCreateWithFrmIdProtoId(&gGameMouseLandingMarker, frameId, ProtoId::Empty()) != 0) {
         gGameMouseLandingMarker = nullptr;
         return;
     }
 
-    // Use the blended red outline of the hex cursor.
-    objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr);
+    // Give the red hex the blended red outline of the hex cursor.
+    if (frameId == InterfaceFrameId::HexMouseCursorOutline) {
+        objectSetOutline(gGameMouseLandingMarker, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr);
+    }
 
     gGameMouseLandingMarker->flags |= OBJECT_HIDDEN;
     gGameMouseLandingMarker->flags |= OBJECT_NO_REMOVE;

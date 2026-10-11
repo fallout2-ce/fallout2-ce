@@ -278,7 +278,8 @@ struct QolSettings {
     bool party_trade_from_menu = true;
     bool party_loot_and_barter = false;
     bool fast_ammo_load = true;
-    bool move_landing_marker = false;
+    // 0 = off, 1 = red hex, 2 = green hex.
+    int move_landing_marker = 0;
 };
 
 struct MapperSettings {
