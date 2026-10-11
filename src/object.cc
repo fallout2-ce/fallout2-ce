@@ -902,23 +902,6 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
     tileRenderEdgeBlackSquares(&updatedRect, elevation, true);
 }
 
-// CE: draws the non-zero pixels of `src` at 50% opacity over `dest`.
-static void objectBlitHalfTranslucent(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
-{
-    // Averages each 5-bit RGB555 channel; 0x7BDE drops the low bit of each one.
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            if (src[x] != 0) {
-                int srcRgb = Color2RGB(static_cast<Color>(src[x]));
-                int destRgb = Color2RGB(static_cast<Color>(dest[x]));
-                dest[x] = _colorTable[((srcRgb & 0x7BDE) + (destRgb & 0x7BDE)) >> 1];
-            }
-        }
-        src += srcPitch;
-        dest += destPitch;
-    }
-}
-
 // 0x4897EC obj_render_post_roof
 void _obj_render_post_roof(Rect* rect, int elevation)
 {
@@ -5072,17 +5055,6 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     src += frameWidth * v49 + v50;
     int objectWidth = objectRect.right - objectRect.left + 1;
     int objectHeight = objectRect.bottom - objectRect.top + 1;
-
-    if (object == gGameMouseLandingMarker) {
-        objectBlitHalfTranslucent(src,
-            objectWidth,
-            objectHeight,
-            frameWidth,
-            gObjectsWindowBuffer + gObjectsWindowPitch * objectRect.top + objectRect.left,
-            gObjectsWindowPitch);
-        artUnlock(cacheEntry);
-        return;
-    }
 
     if (type == OBJ_TYPE_INTERFACE) {
         blitBufferToBufferTrans(src,
