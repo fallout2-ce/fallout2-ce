@@ -45,10 +45,17 @@ constexpr const char* kBlockViewListName[9] = {
     "block2", "block3", "block4", "block5",
     "block2", "block3", "scrblk", "trnblk", "blkexit"
 };
-constexpr int kBlockingProtoList[9] = {
-    0x02000043, 0x02000080, 0x0200008D, 0x02000158,
-    0x0300026D, 0x0300026E, 0x0500000C, 0x05000005,
-    0x02000031
+
+constexpr ProtoId kBlockingProtoIds[9] = {
+    SceneryProtoTypeId(67),
+    SceneryProtoTypeId(128),
+    SceneryProtoTypeId(141),
+    SceneryProtoTypeId(344),
+    WallProtoTypeId(621),
+    WallProtoTypeId(622),
+    MiscProtoTypeId(12),
+    MiscProtoTypeId(5),
+    SceneryProtoTypeId(49)
 };
 
 // 0x4825B0
@@ -258,7 +265,7 @@ void map_toggle_block_obj_viewing(int mode)
         if (obj == gDude || obj == gGameMouseBouncingCursor || (obj->flags & OBJECT_NO_SAVE)) continue;
 
         for (int index = 0; index < 9; index++) {
-            if (kBlockingProtoList[index] != obj->pid) continue;
+            if (kBlockingProtoIds[index] != ProtoId(obj)) continue;
 
             if (block_obj_view_on) {
                 if (blockedFidCache[index] != 0) {
@@ -711,7 +718,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     int newFid = srcFid;
     if (block_obj_view_on) {
         for (int i = 0; i < 9; i++) {
-            if (kBlockingProtoList[i] == srcObj->pid) {
+            if (kBlockingProtoIds[i] == ProtoId(srcObj)) {
                 newFid = fidShowList[i];
                 break;
             }
@@ -959,7 +966,7 @@ void eraseObject()
                          obj != nullptr;
                          obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
-                        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_INTERFACE) continue;
+                        if (!ProtoId(obj).valid()) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
                         if (obj == gGameMouseBouncingCursor) continue;
                         if (obj == gGameMouseHexCursor) continue;
@@ -1323,7 +1330,7 @@ void mapper_copy_map_elev()
                 || obj == gGameMouseHexCursor
                 || obj == gDude
                 || (obj->flags & OBJECT_NO_REMOVE) != OBJECT_NONE
-                || obj->pid == -1)) {
+                || ProtoId(obj) == ProtoId::Empty())) {
             obj = objectFindNextAtElevation();
         }
         if (obj == nullptr) break;

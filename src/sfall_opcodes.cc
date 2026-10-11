@@ -968,7 +968,7 @@ static void op_set_script(Program* program)
         obj->scriptIndex = -1;
     }
 
-    int scriptType = (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    int scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
     if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
         obj->sid = -1;
         obj->scriptIndex = -1;
@@ -1159,19 +1159,17 @@ static void op_get_weapon_ammo_count(Program* program)
 
     // CE: Implementation is different.
     int ammoQuantityOrCharges = 0;
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_AMMO:
-            case ITEM_TYPE_WEAPON:
-                ammoQuantityOrCharges = ammoGetQuantity(obj);
-                break;
-            case ITEM_TYPE_MISC:
-                ammoQuantityOrCharges = miscItemGetCharges(obj);
-                break;
-            default:
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_AMMO:
+        case ITEM_TYPE_WEAPON:
+            ammoQuantityOrCharges = ammoGetQuantity(obj);
+            break;
+        case ITEM_TYPE_MISC:
+            ammoQuantityOrCharges = miscItemGetCharges(obj);
+            break;
+        default:
+            break;
         }
     }
 
@@ -1185,19 +1183,17 @@ static void op_set_weapon_ammo_count(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     // CE: Implementation is different.
-    if (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_AMMO:
-            case ITEM_TYPE_WEAPON:
-                ammoSetQuantity(obj, ammoQuantityOrCharges);
-                break;
-            case ITEM_TYPE_MISC:
-                miscItemSetCharges(obj, ammoQuantityOrCharges);
-                break;
-            default:
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_AMMO:
+        case ITEM_TYPE_WEAPON:
+            ammoSetQuantity(obj, ammoQuantityOrCharges);
+            break;
+        case ITEM_TYPE_MISC:
+            miscItemSetCharges(obj, ammoQuantityOrCharges);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -1268,7 +1264,7 @@ static void op_refresh_pc_art(Program* program)
     _proto_dude_update_gender();
 
     const FrmId frmId = inventoryComputeCritterFrmId(gDude,
-        gDude->pid,
+        gDude,
         critterGetItem2(gDude),
         critterGetItem1(gDude),
         critterGetArmor(gDude),
@@ -1904,7 +1900,7 @@ static void op_make_path(Program* program)
     }
 
     // sfall only requires an empty destination tile when the source object is a critter.
-    int requireEmptyDest = objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER;
+    int requireEmptyDest = ProtoId(object).objectType() == OBJ_TYPE_CRITTER;
 
     // XXX: pathfinderFindPath does not accept a destination buffer length. Use the
     // same capacity as the engine's AnimationSad::rotations storage so this

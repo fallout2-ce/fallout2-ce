@@ -323,7 +323,7 @@ void statSetNpcMinimum(Stat stat, int minimum)
 // 0x4AEF48
 int critterGetStat(Object* critter, Stat stat)
 {
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
     int value;

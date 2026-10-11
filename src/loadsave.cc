@@ -2879,7 +2879,7 @@ static int _GameMap2Slot(File* stream)
     }
 
     for (int index = 1; index < gPartyMemberDescriptionsLength; index += 1) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (!protoId.valid()) {
             continue;
         }
@@ -3019,7 +3019,7 @@ static int _SlotMap2Game(File* stream)
     compat_remove(_str0);
 
     for (int index = 1; index < gPartyMemberDescriptionsLength; index += 1) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid()) {
             char protoPath[COMPAT_MAX_PATH];
             if (_proto_list_str(protoId, protoPath) == 0) {

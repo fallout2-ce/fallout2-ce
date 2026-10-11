@@ -466,7 +466,7 @@ static Object* _inven_dude = nullptr;
 // Probably fid of armor to display in inventory dialog.
 //
 // 0x51905C inven_pid
-static int _inven_pid = -1;
+static ProtoId inventoryProtoId = ProtoId::Empty();
 
 // 0x519060 inven_is_initialized
 static bool _inven_is_initialized = false;
@@ -1008,7 +1008,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 
     ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NONE;
     int inventoryWeight = objectGetInventoryWeight(object);
-    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+    if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
         int weightPercentage = maxWeight < 1 ? 0 : (int)std::ceil(currentWeight * 100 / (float)maxWeight);
@@ -1026,7 +1026,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         if (currentWeight > maxWeight) {
             color = COLOR_RED | DRAW_TEXT_FLAG_NONE;
         }
-    } else if (targetPane && objectTypeFromPid(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
+    } else if (targetPane && ProtoId(object).objectType() == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
         int maxSize = containerGetMaxSize(object);
         int sizePercentage = maxSize < 1 ? 0 : (int)std::ceil(currentSize * 100 / (float)maxSize);
@@ -1154,7 +1154,7 @@ static bool hasPartySlots()
         && partyTargetEquipped != nullptr
         && partyBaseTarget != nullptr
         && _target_stack[0] == partyBaseTarget
-        && objectTypeFromPid(partyBaseTarget->pid) == OBJ_TYPE_CRITTER
+        && ProtoId(partyBaseTarget).objectType() == OBJ_TYPE_CRITTER
         && objectIsPartyMember(partyBaseTarget);
 }
 
@@ -1512,7 +1512,7 @@ static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int sc
 void inventoryResetDude()
 {
     _inven_dude = gDude;
-    _inven_pid = ProtoId(CritterProtoTypeId::Dude).pid();
+    inventoryProtoId = CritterProtoTypeId::Dude;
 }
 
 int inventoryGetInvenApCost()
@@ -1542,11 +1542,11 @@ void inventoryResetInvenApCost()
 void inventorySetDude(Object* obj, const ProtoId& protoId)
 {
     _inven_dude = obj;
-    _inven_pid = protoId.pid();
+    inventoryProtoId = protoId;
 }
 
 // TODO(CE): move to more generic location
-FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
+FrmId inventoryComputeCritterFrmId(Object* critter, const ProtoId& baseProtoId, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
 {
     if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return FrmId(critter);
@@ -1555,7 +1555,7 @@ FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHa
     Proto* proto = nullptr;
 
     CritterFrameId inventoryFrameId = _art_vault_guy_num;
-    if (protoGetProto(ProtoId(basePid), &proto) != -1) {
+    if (protoGetProto(baseProtoId, &proto) != -1) {
         inventoryFrameId = FrmId(proto).frameId<CritterFrameId>();
     }
 
@@ -3138,7 +3138,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 static void _adjust_fid()
 {
     const FrmId frmId = inventoryComputeCritterFrmId(_inven_dude,
-        _inven_pid,
+        inventoryProtoId,
         gInventoryRightHandItem,
         gInventoryLeftHandItem,
         gInventoryArmor,
@@ -3745,7 +3745,7 @@ static void inventoryRenderSummary()
     // Total wt:
     messageListItem.num = 20;
     if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-        if (objectTypeFromPid(_stack[0]->pid) == OBJ_TYPE_CRITTER) {
+        if (ProtoId(_stack[0]).objectType() == OBJ_TYPE_CRITTER) {
             int carryWeight = critterGetStat(_stack[0], STAT_CARRY_WEIGHT);
             int inventoryWeight = objectGetInventoryWeight(_stack[0]);
             snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, inventoryWeight, carryWeight);
@@ -3927,22 +3927,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
             if (ProtoId(equippedItem) == ItemProtoTypeId::LitFlare) {
-                int lightIntensity;
-                int lightDistance;
-                if (critter == gDude) {
-                    lightIntensity = LIGHT_INTENSITY_MAX;
-                    lightDistance = 4;
-                } else {
-                    Proto* proto;
-                    if (protoGetProto(critter, &proto) == -1) {
-                        return -1;
-                    }
-
-                    lightDistance = proto->lightDistance;
-                    lightIntensity = proto->lightIntensity;
-                }
-
-                objectSetLight(critter, lightDistance, lightIntensity, &rect);
+                critterRestoreLightWithoutFlare(critter);
             }
         }
 
@@ -4008,6 +3993,40 @@ int inventoryUnequip(Object* critter_obj, Hand hand)
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
+// CE: Restore a critter's own light unless a lit flare is still in either hand.
+void critterRestoreLightWithoutFlare(Object* critter)
+{
+    Object* leftHandItem = critterGetItem1(critter);
+    if (leftHandItem != nullptr && ProtoId(leftHandItem) == ItemProtoTypeId::LitFlare) {
+        return;
+    }
+
+    Object* rightHandItem = critterGetItem2(critter);
+    if (rightHandItem != nullptr && ProtoId(rightHandItem) == ItemProtoTypeId::LitFlare) {
+        return;
+    }
+
+    int lightDistance;
+    int lightIntensity;
+    if (critter == gDude) {
+        lightDistance = 4;
+        lightIntensity = LIGHT_INTENSITY_MAX;
+    } else {
+        Proto* proto;
+        if (protoGetProto(critter, &proto) == -1) {
+            return;
+        }
+
+        lightDistance = proto->lightDistance;
+        lightIntensity = proto->lightIntensity;
+    }
+
+    Rect rect;
+    if (objectSetLight(critter, lightDistance, lightIntensity, &rect) == 0) {
+        tileWindowRefreshRect(&rect, critter->elevation);
+    }
+}
+
 // 0x472A64
 int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 {
@@ -4036,6 +4055,11 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
     if (item) {
         item->flags &= ~OBJECT_IN_ANY_HAND;
+
+        // CE: Restore light when unwielding a lit flare.
+        if (ProtoId(item) == ItemProtoTypeId::LitFlare) {
+            critterRestoreLightWithoutFlare(critter);
+        }
     }
 
     if (activeHand == hand && (FrmId(critter).weaponAnimation() != WeaponAnimation::None)) {
@@ -5143,7 +5167,7 @@ int inventoryOpenStealing(Object* thief, Object* target)
         return -1;
     }
 
-    _gIsSteal = objectTypeFromPid(thief->pid) == OBJ_TYPE_CRITTER && critterIsActive(target);
+    _gIsSteal = ProtoId(thief).objectType() == OBJ_TYPE_CRITTER && critterIsActive(target);
     _gStealCount = 0;
     _gStealSize = 0;
 
@@ -6692,6 +6716,11 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
             if (itemAdd(critter, item, 1) != 0) {
                 // item will be in an invalid state, but this can only happen on malloc failure
                 return -1;
+            }
+
+            // CE: This branch bypasses inventoryUnequipFunc(), so restore light here too.
+            if (ProtoId(item) == ItemProtoTypeId::LitFlare) {
+                critterRestoreLightWithoutFlare(critter);
             }
 
             update = true;

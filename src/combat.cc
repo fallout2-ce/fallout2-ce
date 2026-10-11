@@ -2107,7 +2107,7 @@ int _find_cid(int a1, int cid, Object** critterList, int critterListLength)
 static void combatClearWhoHitMeOutsideCombatList(Object** combatList, int combatListLength)
 {
     for (Object* obj = objectFindFirst(); obj != nullptr; obj = objectFindNext()) {
-        if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+        if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
             continue;
         }
 
@@ -2721,7 +2721,7 @@ static void _combat_update_critters_in_los(bool enableOutline)
 // 0x421D50
 void _combat_update_critter_outline_for_los(Object* critter, bool enableOutline)
 {
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -5664,7 +5664,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         return 0;
     }
 
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
 

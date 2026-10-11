@@ -21,6 +21,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "interface.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "memory.h"
@@ -793,6 +794,8 @@ int _action_ranged(Attack* attack, AnimationType anim)
                     projectile = weapon;
                     weaponFrmId = FrmId(weapon);
                     ObjectFlags weaponFlags = weapon->flags;
+                    // CE: Read before _cAIPrepWeaponItem() lights an unlit flare.
+                    const ProtoId weaponPid(weapon);
 
                     InterfaceItemAction leftItemAction;
                     InterfaceItemAction rightItemAction;
@@ -802,6 +805,11 @@ int _action_ranged(Attack* attack, AnimationType anim)
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
                     objectSetFrmId(projectile, projectileProto, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
+
+                    // CE: Restore the thrower's light after throwing a held lit flare.
+                    if (weaponPid == ItemProtoTypeId::LitFlare && (weaponFlags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
+                        critterRestoreLightWithoutFlare(attack->attacker);
+                    }
 
                     if (attack->attacker == gDude) {
                         if (replacedWeapon == nullptr) {
@@ -1372,6 +1380,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
         return -1;
     }
 
+    ObjectType targetObjectType = ProtoId(target).objectType();
     switch (skill) {
     case SKILL_FIRST_AID:
     case SKILL_DOCTOR:
@@ -1380,7 +1389,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
+        if (targetObjectType != OBJ_TYPE_CRITTER) {
             return -1;
         }
         break;
@@ -1390,7 +1399,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (objectTypeFromPid(target->pid) != OBJ_TYPE_ITEM && objectTypeFromPid(target->pid) != OBJ_TYPE_SCENERY) {
+        if (targetObjectType != OBJ_TYPE_ITEM && targetObjectType != OBJ_TYPE_SCENERY) {
             return -1;
         }
 
@@ -1401,7 +1410,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (objectTypeFromPid(target->pid) != OBJ_TYPE_ITEM && objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
+        if (targetObjectType != OBJ_TYPE_ITEM && targetObjectType != OBJ_TYPE_CRITTER) {
             return -1;
         }
 
@@ -1416,7 +1425,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (objectTypeFromPid(target->pid) == OBJ_TYPE_CRITTER) {
+        if (targetObjectType == OBJ_TYPE_CRITTER) {
             return -1;
         }
 
@@ -1428,7 +1437,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
+        if (targetObjectType != OBJ_TYPE_CRITTER) {
             break;
         }
 

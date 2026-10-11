@@ -33,11 +33,12 @@ int inventoryGetInvenApCost();
 void inventorySetInvenApCost(int cost);
 void inventoryResetInvenApCost();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
-FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation);
+FrmId inventoryComputeCritterFrmId(Object* critter, const ProtoId& baseProtoId, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation);
 void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);
 Object* critterGetArmor(Object* critter);
+void critterRestoreLightWithoutFlare(Object* critter);
 
 struct CritterEquipped {
     Object* leftHand = nullptr;

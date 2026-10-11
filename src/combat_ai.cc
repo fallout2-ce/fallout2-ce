@@ -553,7 +553,7 @@ int aiExit()
 int aiLoad(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
             if (protoGetProto(protoId, &proto) == -1) {
@@ -574,7 +574,7 @@ int aiLoad(File* stream)
 int aiSave(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
-        const ProtoId protoId = ProtoId(gPartyMemberPids[index]);
+        const ProtoId protoId = gPartyMemberProtoIds[index];
         if (protoId.valid() && protoId.objectType() == OBJ_TYPE_CRITTER) {
             Proto* proto;
             if (protoGetProto(protoId, &proto) == -1) {
@@ -1758,7 +1758,7 @@ int _caiSetupTeamCombat(Object* attackerTeam, Object* defenderTeam)
 {
     Object* obj = objectFindFirstAtElevation(attackerTeam->elevation);
     while (obj != nullptr) {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER && obj != gDude) {
+        if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER && obj != gDude) {
             obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
         }
         obj = objectFindNextAtElevation();
@@ -2556,7 +2556,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         _moveBlockObj = nullptr;
         if (pathfinderFindPath(critter, critter->tile, target->tile, nullptr, 0, _obj_ai_blocking_at) == 0
             && _moveBlockObj != nullptr
-            && objectTypeFromPid(_moveBlockObj->pid) == OBJ_TYPE_CRITTER) {
+            && ProtoId(_moveBlockObj).objectType() == OBJ_TYPE_CRITTER) {
             if (shouldUnhide) {
                 target->flags &= ~OBJECT_HIDDEN;
             }
@@ -3419,7 +3419,7 @@ bool _combatai_want_to_stop(Object* a1)
 // 0x42B504
 int critterSetTeam(Object* obj, int team)
 {
-    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
 
@@ -3490,7 +3490,7 @@ int critterSetAiPacket(Object* object, int aiPacket)
 // 0x42B634
 int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay)
 {
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return -1;
     }
 

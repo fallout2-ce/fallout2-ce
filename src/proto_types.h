@@ -308,6 +308,8 @@ enum class SceneryProtoTypeId : int {
     ElevatorDoorAlternate = 470,
     ForceFieldNorthSouth = 491,
     FirstRadioactiveGoo = 985,
+    SecondRadioactiveGoo = 986,
+    ThirdRadioactiveGoo = 987,
     LastRadioactiveGoo = 988,
     Car = 1009,
     ElevatorStub = 1293
@@ -653,11 +655,6 @@ typedef struct ProtoList {
     int max_entries_num;
 } ProtoList;
 
-constexpr inline int protoIdFromPid(int pid)
-{
-    return pid & 0xFFFFFF;
-}
-
 template <typename T>
 struct MapProtoTypeIdToObjectType;
 
@@ -817,6 +814,17 @@ private:
     static constexpr bool objectTypeIsValid(int type)
     {
         return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_PROTO_COUNT;
+    }
+
+    static constexpr ObjectType objectTypeFromPid(int pid)
+    {
+        int objectType = pid >> kObjectTypeMaskPosition;
+        return static_cast<ObjectType>(objectType);
+    }
+
+    static constexpr int protoIdFromPid(int pid)
+    {
+        return pid & kProtoIdMask;
     }
 };
 

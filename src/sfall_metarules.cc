@@ -557,7 +557,7 @@ namespace {
 
         handled = true;
 
-        switch (objectTypeFromPid(object->pid)) {
+        switch (ProtoId(object).objectType()) {
         case OBJ_TYPE_CRITTER:
             return getCritterObjectData(object, field);
         case OBJ_TYPE_ITEM:
@@ -752,7 +752,7 @@ namespace {
             return changed;
         }
 
-        switch (objectTypeFromPid(object->pid)) {
+        switch (ProtoId(object).objectType()) {
         case OBJ_TYPE_CRITTER:
             return setCritterObjectData(object, field, data);
         case OBJ_TYPE_ITEM:
@@ -1271,7 +1271,7 @@ void mf_get_object_ai_data(OpcodeContext& ctx)
     const int aiParam = ctx.arg(1).asInt();
 
     ProgramValue result(-1);
-    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(object).objectType() != OBJ_TYPE_CRITTER) {
         ctx.setReturn(result);
         return;
     }
@@ -1677,7 +1677,7 @@ void mf_inventory_redraw(OpcodeContext& ctx)
 void mf_item_weight(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    if (objectTypeFromPid(object->pid) != OBJ_TYPE_ITEM) {
+    if (ProtoId(object).objectType() != OBJ_TYPE_ITEM) {
         ctx.printError("%s() - expected item object.", ctx.name());
         ctx.setReturn(0);
         return;
@@ -1825,7 +1825,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
     int sourceTile = ctx.arg(0).asInt();
     int radius = std::clamp(ctx.arg(1).asInt(), 0, 50);
     int elevation = std::clamp(ctx.arg(2).asInt(), 0, ELEVATION_COUNT - 1);
-    int type = ctx.numArgs() > 3 ? ctx.arg(3).asInt() : -1;
+    ObjectType type = ctx.numArgs() > 3 ? static_cast<ObjectType>(ctx.arg(3).asInt()) : OBJ_TYPE_INVALID;
 
     ArrayId arrayId = CreateTempArray(0, 0);
 
@@ -1838,7 +1838,8 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
     int endTile;
     for (int tile = objectsInRadiusFirstTile(sourceTile, radius, &endTile); tile < endTile; tile++) {
         for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
-            if (type != -1 && (object->pid == -1 || objectTypeFromPid(object->pid) != type)) {
+            const ProtoId protoId = object;
+            if (type != OBJ_TYPE_INVALID && (!protoId.valid() || protoId.objectType() != type)) {
                 continue;
             }
 
@@ -2071,7 +2072,7 @@ void mf_unwield_slot(OpcodeContext& ctx)
         return;
     }
 
-    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         ctx.printError("%s() - the object is not a critter.", ctx.name());
         ctx.setReturn(-1);
         return;
