@@ -204,6 +204,8 @@ static Color* _energyBlendTable = nullptr;
 // 0x519790 redBlendTable
 static Color* _redBlendTable = nullptr;
 
+static Color* _greenBlendTable = nullptr;
+
 // 0x519794 moveBlockObj
 Object* _moveBlockObj = nullptr;
 
@@ -898,6 +900,23 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
     }
 
     tileRenderEdgeBlackSquares(&updatedRect, elevation, true);
+}
+
+// CE: draws the non-zero pixels of `src` at 50% opacity over `dest`.
+static void objectBlitHalfTranslucent(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
+{
+    // Averages each 5-bit RGB555 channel; 0x7BDE drops the low bit of each one.
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (src[x] != 0) {
+                int srcRgb = Color2RGB(static_cast<Color>(src[x]));
+                int destRgb = Color2RGB(static_cast<Color>(dest[x]));
+                dest[x] = _colorTable[((srcRgb & 0x7BDE) + (destRgb & 0x7BDE)) >> 1];
+            }
+        }
+        src += srcPitch;
+        dest += destPitch;
+    }
 }
 
 // 0x4897EC obj_render_post_roof
@@ -3560,6 +3579,7 @@ static void _obj_blend_table_init()
     _steamBlendTable = _getColorBlendTable(COLOR_WHITE);
     _energyBlendTable = _getColorBlendTable(COLOR_YELLOW_GREEN);
     _redBlendTable = _getColorBlendTable(COLOR_RED);
+    _greenBlendTable = _getColorBlendTable(COLOR_GREEN);
 }
 
 // NOTE: Inlined.
@@ -3572,6 +3592,7 @@ static void _obj_blend_table_exit()
     _freeColorBlendTable(COLOR_WHITE);
     _freeColorBlendTable(COLOR_YELLOW_GREEN);
     _freeColorBlendTable(COLOR_RED);
+    _freeColorBlendTable(COLOR_GREEN);
 }
 
 // 0x48D348 obj_save_obj
@@ -4836,6 +4857,14 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 blendTable = _redBlendTable;
             }
             break;
+        case OUTLINE_TYPE_GREEN:
+            color = COLOR_GREEN;
+            animatedColorBandHeight = 0;
+            if (isOutlinePalleted != 0) {
+                grayTable = _commonGrayTable;
+                blendTable = _greenBlendTable;
+            }
+            break;
         case OUTLINE_TYPE_BLOCKED:
             color = Color(61);
             isOutlinePalleted = 0;
@@ -5043,6 +5072,17 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     src += frameWidth * v49 + v50;
     int objectWidth = objectRect.right - objectRect.left + 1;
     int objectHeight = objectRect.bottom - objectRect.top + 1;
+
+    if (object == gGameMouseLandingMarker) {
+        objectBlitHalfTranslucent(src,
+            objectWidth,
+            objectHeight,
+            frameWidth,
+            gObjectsWindowBuffer + gObjectsWindowPitch * objectRect.top + objectRect.left,
+            gObjectsWindowPitch);
+        artUnlock(cacheEntry);
+        return;
+    }
 
     if (type == OBJ_TYPE_INTERFACE) {
         blitBufferToBufferTrans(src,
