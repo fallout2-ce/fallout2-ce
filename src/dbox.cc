@@ -285,6 +285,68 @@ namespace {
                     delay_ms(1000 / 24 - (getTicks() - tick));
                 }
             }
+
+            struct NavigationState {
+                int& selectedFileIndex;
+                int& pageOffset;
+                int maxPageOffset;
+                bool isScrollable;
+                int bgWidth;
+                int& doubleClickSelectedFileIndex;
+            };
+
+            inline bool handleKeyboardNavigation(int keyCode, NavigationState& s, unsigned char* windowBuffer, char** fileList, int fileListLength)
+            {
+                switch (keyCode) {
+                case KEY_ARROW_UP:
+                    s.pageOffset--;
+                    if (s.pageOffset < 0) {
+                        s.selectedFileIndex--;
+                        if (s.selectedFileIndex < 0) s.selectedFileIndex = 0;
+                        s.pageOffset = 0;
+                    }
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                    s.doubleClickSelectedFileIndex = -2;
+                    return true;
+
+                case KEY_ARROW_DOWN:
+                    if (s.isScrollable) {
+                        s.pageOffset++;
+                        if (s.pageOffset >= s.maxPageOffset) {
+                            s.selectedFileIndex++;
+                            if (s.selectedFileIndex >= lineCount) s.selectedFileIndex = lineCount - 1;
+                            s.pageOffset = s.maxPageOffset;
+                        }
+                    } else {
+                        s.selectedFileIndex++;
+                        if (s.selectedFileIndex > s.maxPageOffset) s.selectedFileIndex = s.maxPageOffset;
+                    }
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                    s.doubleClickSelectedFileIndex = -2;
+                    return true;
+
+                case KEY_HOME:
+                    s.selectedFileIndex = 0;
+                    s.pageOffset = 0;
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                    s.doubleClickSelectedFileIndex = -2;
+                    return true;
+
+                case KEY_END:
+                    if (s.isScrollable) {
+                        s.selectedFileIndex = lineCount - 1;
+                        s.pageOffset = s.maxPageOffset;
+                    } else {
+                        s.selectedFileIndex = s.maxPageOffset;
+                        s.pageOffset = 0;
+                    }
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                    s.doubleClickSelectedFileIndex = -2;
+                    return true;
+                }
+
+                return false;
+            }
         } // namespace file
 
         namespace alert {
@@ -805,61 +867,9 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         } else if (keyCode == 504) {
             scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_DOWN;
         } else {
-            switch (keyCode) {
-            case KEY_ARROW_UP:
-                pageOffset--;
-                if (pageOffset < 0) {
-                    selectedFileIndex--;
-                    if (selectedFileIndex < 0) {
-                        selectedFileIndex = 0;
-                    }
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_ARROW_DOWN:
-                if (isScrollable) {
-                    pageOffset++;
-                    // FIXME: Should be >= maxPageOffset (as in save dialog).
-                    // Otherwise out of bounds index is considered selected.
-                    if (pageOffset > maxPageOffset) {
-                        selectedFileIndex++;
-                        // FIXME: Should be >= FILE_DIALOG_LINE_COUNT (as in
-                        // save dialog). Otherwise out of bounds index is
-                        // considered selected.
-                        if (selectedFileIndex > file::lineCount) {
-                            selectedFileIndex = file::lineCount - 1;
-                        }
-                        pageOffset = maxPageOffset;
-                    }
-                } else {
-                    selectedFileIndex++;
-                    if (selectedFileIndex > maxPageOffset) {
-                        selectedFileIndex = maxPageOffset;
-                    }
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_HOME:
-                selectedFileIndex = 0;
-                pageOffset = 0;
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_END:
-                if (isScrollable) {
-                    selectedFileIndex = file::lineCount - 1;
-                    pageOffset = maxPageOffset;
-                } else {
-                    selectedFileIndex = maxPageOffset;
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            }
+            file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
+                isScrollable, bgWidth, doubleClickSelectedFileIndex };
+            file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
         }
 
         file::ScrollState scrollState {
@@ -909,7 +919,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     using namespace fallout::dbox;
     ScopedFont mainFont(103);
 
-    bool isScrollable = (fileListLength > file::lineCount);
+    const bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0, pageOffset = 0;
     int maxPageOffset = fileListLength - (file::lineCount + 1);
@@ -1050,56 +1060,9 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             } else if (keyCode == 504) {
                 scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_DOWN;
             } else {
-                switch (keyCode) {
-                case KEY_ARROW_UP:
-                    pageOffset--;
-                    if (pageOffset < 0) {
-                        selectedFileIndex--;
-                        if (selectedFileIndex < 0) {
-                            selectedFileIndex = 0;
-                        }
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_ARROW_DOWN:
-                    if (isScrollable) {
-                        pageOffset++;
-                        if (pageOffset >= maxPageOffset) {
-                            selectedFileIndex++;
-                            if (selectedFileIndex >= file::lineCount) {
-                                selectedFileIndex = file::lineCount - 1;
-                            }
-                            pageOffset = maxPageOffset;
-                        }
-                    } else {
-                        selectedFileIndex++;
-                        if (selectedFileIndex > maxPageOffset) {
-                            selectedFileIndex = maxPageOffset;
-                        }
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_HOME:
-                    selectedFileIndex = 0;
-                    pageOffset = 0;
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_END:
-                    if (isScrollable) {
-                        selectedFileIndex = 11;
-                        pageOffset = maxPageOffset;
-                    } else {
-                        selectedFileIndex = maxPageOffset;
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                }
+                file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset, isScrollable,
+                    bgWidth, doubleClickSelectedFileIndex };
+                file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
             }
         } else if (_isdoschar(keyCode)) {
             bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
