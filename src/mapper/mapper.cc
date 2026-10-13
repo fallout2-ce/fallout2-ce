@@ -1657,7 +1657,7 @@ void edit_mapper()
             int val;
             if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = static_cast<Map>(val);
             if (win_get_num_i(&val, -1, 40000, false, "Exit Grid Dest Tile #", 100, 100) != -1) mapInfo.tile = val;
-            if (win_get_num_i(&val, 0, 3, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = static_cast<MapElevation>(val);
+            if (win_get_num_i(&val, ELEVATION_FIRST, ELEVATION_COUNT, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = static_cast<MapElevation>(val);
             if (win_get_num_i(&val, ROTATION_FIRST, ROTATION_COUNT, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = static_cast<Rotation>(val);
             break;
         }

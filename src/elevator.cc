@@ -50,7 +50,7 @@ typedef struct ElevatorBackground {
 
 typedef struct ElevatorDescription {
     Map map;
-    MapElevation elevation;
+    int elevation;
     int tile;
 } ElevatorDescription;
 
@@ -718,7 +718,7 @@ void elevatorsInit()
             configGetEnum<Map>(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].map));
 
             snprintf(key, sizeof(key), "Elevation%d", level + 1);
-            configGetEnum<MapElevation>(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].elevation));
+            configGetInt(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].elevation));
 
             snprintf(key, sizeof(key), "Tile%d", level + 1);
             configGetInt(elevatorsConfig.get(), sectionKey, key, &(gElevatorDescriptions[index][level].tile));

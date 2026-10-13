@@ -364,6 +364,11 @@ void mapEdgeSave(const char* mapName)
 
 EdgeElevationData& mapEdgeGetElevationData(MapElevation elevation)
 {
+    if (!elevationIsValid(elevation)) {
+        assert(false && "mapEdgeGetElevationData: invalid elevation");
+        return edgeData[ELEVATION_FIRST];
+    }
+
     return edgeData[elevation];
 }
 
