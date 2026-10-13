@@ -14,6 +14,7 @@
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
+#include "geometry.h"
 #include "input.h"
 #include "kb.h"
 #include "message.h"
@@ -28,10 +29,6 @@ namespace fallout {
 
 namespace {
     namespace dbox {
-        struct Point {
-            int x, y;
-        };
-
         int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
         {
             int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
@@ -80,28 +77,6 @@ namespace {
         namespace file {
             constexpr size_t dialogFrmCount = 7;
 
-            // 0x510900 flgids
-            constexpr InterfaceFrmId kLoadFileDialogFrmIds[dialogFrmCount] = {
-                InterfaceFrameId::LoadBox,
-                InterfaceFrameId::LittleRedButtonUp,
-                InterfaceFrameId::LittleRedButtonDown,
-                InterfaceFrameId::CharacterEditorDownArrowOff,
-                InterfaceFrameId::CharacterEditorDownArrowOn,
-                InterfaceFrameId::CharacterEditorUpArrowOff,
-                InterfaceFrameId::CharacterEditorUpArrowOn,
-            };
-
-            // 0x51091C flgids2
-            constexpr InterfaceFrmId kSaveFileDialogFrmIds[dialogFrmCount] = {
-                InterfaceFrameId::SaveBox,
-                InterfaceFrameId::LittleRedButtonUp,
-                InterfaceFrameId::LittleRedButtonDown,
-                InterfaceFrameId::CharacterEditorDownArrowOff,
-                InterfaceFrameId::CharacterEditorDownArrowOn,
-                InterfaceFrameId::CharacterEditorUpArrowOff,
-                InterfaceFrameId::CharacterEditorUpArrowOn,
-            };
-
             struct DialogFrms {
                 FrmImage background;
                 FrmImage buttonNormal;
@@ -110,6 +85,21 @@ namespace {
                 FrmImage scrollDownPressed;
                 FrmImage scrollUpNormal;
                 FrmImage scrollUpPressed;
+            };
+
+            struct ModeConfig {
+                InterfaceFrmId frmIds[dialogFrmCount];
+
+                Point doneButton;
+                Point doneLabel;
+                Point cancelButton;
+                Point cancelLabel;
+            };
+
+            struct Context {
+                UniqueWindow window;
+                unsigned char* windowBuffer;
+                MessageList messageList;
             };
 
             bool loadImages(DialogFrms& images, const InterfaceFrmId* frmIds)
@@ -144,20 +134,6 @@ namespace {
             };
             constexpr ListRect list { 55, 49, 190, 124 };
 
-            namespace load {
-                constexpr Point doneButton { 58, 187 };
-                constexpr Point doneLabel { 79, 187 };
-                constexpr Point cancelButton { 163, 187 };
-                constexpr Point cancelLabel { 182, 187 };
-            } // namespace load
-
-            namespace save {
-                constexpr Point doneButton { 58, 214 };
-                constexpr Point doneLabel { 79, 213 };
-                constexpr Point cancelButton { 163, 214 };
-                constexpr Point cancelLabel { 182, 213 };
-            } // namespace save
-
             int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
                 const FrmImage& upFrm, const FrmImage& downFrm)
             {
@@ -169,23 +145,9 @@ namespace {
                 return btn;
             }
 
-            struct ModeConfig {
-                Point doneButton;
-                Point doneLabel;
-                Point cancelButton;
-                Point cancelLabel;
-            };
-
-            struct Context {
-                UniqueWindow window;
-                unsigned char* windowBuffer;
-                MessageList messageList;
-            };
-
-            bool initInterface(Context& ctx, DialogFrms& frms, const InterfaceFrmId* frmIds, const ModeConfig& cfg,
-                const char* title, int& x, int& y)
+            bool initInterface(Context& ctx, DialogFrms& frms, const ModeConfig& cfg, const char* title, int& x, int& y)
             {
-                if (!loadImages(frms, frmIds)) return false;
+                if (!loadImages(frms, cfg.frmIds)) return false;
 
                 int bgWidth = frms.background.getWidth(), bgHeight = frms.background.getHeight();
                 x += (screenGetWidth() - 640) / 2, y += (screenGetHeight() - 480) / 2;
@@ -499,7 +461,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     messageListItem.text, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            dbox::Point btnPos = { doneBoxX + 13, config.doneY + 4 };
+            Point btnPos = { doneBoxX + 13, config.doneY + 4 };
             int btn = createRedButton(window.get(), btnPos, 500, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
@@ -523,7 +485,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     secondaryButtonText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            dbox::Point btnPos = { buttonXOffset, config.doneY + 4 };
+            Point btnPos = { buttonXOffset, config.doneY + 4 };
             int btn = createRedButton(window.get(), btnPos, 501, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
@@ -651,6 +613,26 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     return rc;
 }
 
+namespace {
+    namespace dbox::file {
+        constexpr dbox::file::ModeConfig kLoadConfig {
+            {
+                // 0x510900 flgids
+                InterfaceFrameId::LoadBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 187 }, { 79, 187 }, // doneButton, doneLabel
+            { 163, 187 }, { 182, 187 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
 // 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
@@ -665,17 +647,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         maxPageOffset = std::max(0, fileListLength - 1);
     }
 
-    constexpr file::ModeConfig saveConfig {
-        file::load::doneButton,
-        file::load::doneLabel,
-        file::load::cancelButton,
-        file::load::cancelLabel
-    };
-
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kLoadFileDialogFrmIds, saveConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::kLoadConfig, title, x, y)) {
         return -1;
     }
 
@@ -887,6 +862,26 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
+namespace {
+    namespace dbox::file {
+        constexpr dbox::file::ModeConfig kSaveConfig {
+            {
+                // 0x51091C flgids2
+                InterfaceFrameId::SaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 214 }, { 79, 213 }, // doneButton, doneLabel
+            { 163, 214 }, { 182, 213 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
 // 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
@@ -901,17 +896,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         maxPageOffset = std::max(0, fileListLength - 1);
     }
 
-    constexpr file::ModeConfig saveConfig {
-        file::save::doneButton,
-        file::save::doneLabel,
-        file::save::cancelButton,
-        file::save::cancelLabel
-    };
-
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kSaveFileDialogFrmIds, saveConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::kSaveConfig, title, x, y)) {
         return -1;
     }
 
