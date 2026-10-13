@@ -1188,13 +1188,13 @@ void mapper_shift_map_elev()
         return;
     }
 
-    int val = gElevation + 1;
-    if (win_get_num_i(&val, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
+    int destElevNumber = gElevation + 1;
+    if (win_get_num_i(&destElevNumber, ELEVATION_SECOND, ELEVATION_COUNT, false, "Destination elevation:", 100, 100) == -1) {
         return;
     }
 
-    val -= 1;
-    MapElevation destElev = static_cast<MapElevation>(val);
+    destElevNumber -= 1;
+    MapElevation destElev = static_cast<MapElevation>(destElevNumber);
     if (destElev == gElevation) {
         return;
     }
@@ -1283,13 +1283,13 @@ void mapper_copy_map_elev()
         return;
     }
 
-    int val = gElevation + 1;
-    if (win_get_num_i(&val, 1, 3, false, "Destination elevation:", 100, 100) == -1) {
+    int destElevNumber = gElevation + 1;
+    if (win_get_num_i(&destElevNumber, ELEVATION_SECOND, ELEVATION_COUNT, false, "Destination elevation:", 100, 100) == -1) {
         return;
     }
 
-    val -= 1;
-    MapElevation destElev = static_cast<MapElevation>(val);
+    destElevNumber -= 1;
+    MapElevation destElev = static_cast<MapElevation>(destElevNumber);
     if (destElev == gElevation) {
         return;
     }

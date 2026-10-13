@@ -460,7 +460,7 @@ typedef struct StairsSceneryData {
 
 typedef struct ElevatorSceneryData {
     int type;
-    MapElevation level;
+    int level;
 } ElevatorSceneryData;
 
 typedef struct LadderSceneryData {

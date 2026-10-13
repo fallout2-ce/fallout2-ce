@@ -340,7 +340,7 @@ static FrmImage _elevatorPanelFrmImage;
 // Presents elevator dialog for player to pick a desired level.
 //
 // 0x43EF5C elevator_select
-int elevatorSelectLevel(int elevator, Map* mapPtr, MapElevation* elevationPtr, int* tilePtr)
+int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tilePtr)
 {
     if (elevator < 0 || elevator >= ELEVATORS_MAX) {
         return -1;
@@ -375,29 +375,29 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, MapElevation* elevationPtr, i
     if (index < ELEVATOR_LEVEL_MAX) {
         int adjustedIndex = *elevationPtr + index;
         if (adjustedIndex >= 0 && adjustedIndex < ELEVATOR_LEVEL_MAX && elevatorDescription[adjustedIndex].tile != -1) {
-            *elevationPtr = static_cast<MapElevation>(adjustedIndex);
+            *elevationPtr = adjustedIndex;
         }
     }
 
     if (elevator == ELEVATOR_SIERRA_2) {
         if (*elevationPtr <= 2) {
-            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
+            *elevationPtr -= 2;
         } else {
-            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 3);
+            *elevationPtr -= 3;
         }
     } else if (elevator == ELEVATOR_MILITARY_BASE_LOWER) {
         if (*elevationPtr >= 2) {
-            *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
+            *elevationPtr -= 2;
         }
     } else if (elevator == ELEVATOR_MILITARY_BASE_UPPER && *elevationPtr == 4) {
-        *elevationPtr = static_cast<MapElevation>(*elevationPtr - 2);
+        *elevationPtr -= 2;
     }
 
     if (*elevationPtr > 3) {
-        *elevationPtr = static_cast<MapElevation>(*elevationPtr - 3);
+        *elevationPtr -= 3;
     }
 
-    MapElevation clampedElevation = std::clamp(*elevationPtr, ELEVATION_FIRST, static_cast<MapElevation>(gElevatorLevels[elevator] - 1));
+    int clampedElevation = std::clamp(*elevationPtr, 0, gElevatorLevels[elevator] - 1);
     if (clampedElevation != *elevationPtr) {
         *elevationPtr = clampedElevation;
     }

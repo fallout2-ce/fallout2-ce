@@ -253,7 +253,7 @@ static CombatStartData gScriptsCSD;
 static int gScriptsRequestedElevatorType;
 
 // 0x6649AC elevLevel
-static MapElevation gScriptsRequestedElevatorLevel;
+static int gScriptsRequestedElevatorLevel;
 
 // 0x6649B0 tile_num
 static int gScriptsRequestedExplosionTile;
@@ -1273,7 +1273,7 @@ static void scriptsCloseNearbyElevatorDoors()
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 {
     Map map = gMapHeader.index;
-    MapElevation elevation = gScriptsRequestedElevatorLevel;
+    int elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 
     if (elevatorSelectLevel(gScriptsRequestedElevatorType, &map, &elevation, &tile) == -1) {
@@ -1293,7 +1293,7 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 
         reg_anim_clear(gDude);
         objectSetRotation(gDude, ROTATION_SE, nullptr);
-        objectAttemptPlacement(gDude, tile, elevation, 0);
+        objectAttemptPlacement(gDude, tile, static_cast<MapElevation>(elevation), 0);
 
         return 0;
     }
@@ -1306,7 +1306,7 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
     memset(&transition, 0, sizeof(transition));
 
     transition.map = map;
-    transition.elevation = elevation;
+    transition.elevation = static_cast<MapElevation>(elevation);
     transition.tile = tile;
     transition.rotation = ROTATION_SE;
 
@@ -1470,7 +1470,7 @@ void scriptsRequestWorldMap()
 // 0x4A466C
 int scriptsRequestElevator(Object* obj, int elevatorType)
 {
-    MapElevation elevatorLevel = gElevation;
+    int elevatorLevel = gElevation;
 
     int tile = obj->tile;
     if (tile == -1) {
@@ -2643,7 +2643,7 @@ int scriptAdd(int* sidPtr, int scriptType)
 
 Object* scriptCreateSpatial(int scriptIndex, int tile, MapElevation elevation, int radius)
 {
-    if (!scriptsIsValidScriptIndex(scriptIndex) || !hexGridTileIsValid(tile) || elevation < ELEVATION_FIRST || elevation >= ELEVATION_COUNT) {
+    if (!scriptsIsValidScriptIndex(scriptIndex) || !hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
         return nullptr;
     }
 

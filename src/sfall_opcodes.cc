@@ -1413,7 +1413,7 @@ static void op_get_tile_fid(Program* program)
     MapElevation elevation = static_cast<MapElevation>((tileData >> 24) & 0x0F);
     int mode = tileData >> 28;
 
-    if (!hexGridTileIsValid(tile) || elevation < ELEVATION_FIRST || elevation >= ELEVATION_COUNT) {
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
         debugPrint("%s: op_get_tile_fid invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
         programStackPushInteger(program, 0);
         return;
@@ -1866,7 +1866,7 @@ static void op_tile_get_objects(Program* program)
     int tile = programStackPopInteger(program);
     ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
 
-    if (!hexGridTileIsValid(tile) || elevation < ELEVATION_FIRST || elevation >= ELEVATION_COUNT) {
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
         debugPrint("%s: op_tile_get_objects invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
         programStackPushInteger(program, arrayId);
         return;

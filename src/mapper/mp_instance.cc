@@ -777,9 +777,9 @@ static int protoInstSceneryEdit(Object* obj)
             MapElevation destElev = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                 ? builtTileGetElevation(obj->data.scenery.ladder.destinationBuiltTile)
                 : ELEVATION_FIRST;
-            int temp = static_cast<int>(destElev);
-            if (win_get_num_i(&temp, 0, 3, false, "Destination Elevation", 100, 100) != -1) {
-                destElev = static_cast<MapElevation>(temp);
+            int destElevNumber = static_cast<int>(destElev);
+            if (win_get_num_i(&destElevNumber, ELEVATION_FIRST, ELEVATION_COUNT, false, "Destination Elevation", 100, 100) != -1) {
+                destElev = static_cast<MapElevation>(destElevNumber);
                 int tile = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                     ? builtTileGetTile(obj->data.scenery.ladder.destinationBuiltTile)
                     : 0;

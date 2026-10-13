@@ -624,7 +624,7 @@ int objectDataRead(Object* obj, File* stream)
                 break;
             case SCENERY_TYPE_ELEVATOR:
                 if (fileReadInt32(stream, &(obj->data.scenery.elevator.type)) == -1) return -1;
-                if (fileReadInt32Enum<MapElevation>(stream, &(obj->data.scenery.elevator.level)) == -1) return -1;
+                if (fileReadInt32(stream, &(obj->data.scenery.elevator.level)) == -1) return -1;
                 break;
             case SCENERY_TYPE_LADDER_UP:
                 if (gMapHeader.version == 19) {
@@ -719,7 +719,7 @@ int objectDataWrite(Object* obj, File* stream)
                 break;
             case SCENERY_TYPE_ELEVATOR:
                 if (fileWriteInt32(stream, data->scenery.elevator.type) == -1) return -1;
-                if (fileWriteInt32Enum<MapElevation>(stream, data->scenery.elevator.level) == -1) return -1;
+                if (fileWriteInt32(stream, data->scenery.elevator.level) == -1) return -1;
                 break;
             case SCENERY_TYPE_LADDER_UP:
                 if (fileWriteInt32Enum<Map>(stream, data->scenery.ladder.destinationMap) == -1) return -1;
@@ -998,7 +998,7 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
         break;
     case SCENERY_TYPE_ELEVATOR:
         proto->scenery.data.elevator.type = -1;
-        proto->scenery.data.elevator.level = ELEVATION_INVALID;
+        proto->scenery.data.elevator.level = -1;
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_LADDER_UP:
@@ -1671,7 +1671,7 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type
         return 0;
     case SCENERY_TYPE_ELEVATOR:
         if (fileReadInt32(stream, &(scenery_data->elevator.type)) == -1) return -1;
-        if (fileReadInt32Enum<MapElevation>(stream, &(scenery_data->elevator.level)) == -1) return -1;
+        if (fileReadInt32(stream, &(scenery_data->elevator.level)) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_LADDER_UP:
@@ -1857,7 +1857,7 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType typ
         return 0;
     case SCENERY_TYPE_ELEVATOR:
         if (fileWriteInt32(stream, scenery_data->elevator.type) == -1) return -1;
-        if (fileWriteInt32Enum<MapElevation>(stream, scenery_data->elevator.level) == -1) return -1;
+        if (fileWriteInt32(stream, scenery_data->elevator.level) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_LADDER_UP:
