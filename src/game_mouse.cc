@@ -334,10 +334,10 @@ Object* gGameMouseLandingMarker = nullptr;
 // AP count drawn over the landing marker, sized like the hex cursor.
 static constexpr int kLandingMarkerLabelWidth = 32;
 static constexpr int kLandingMarkerLabelHeight = 16;
-static unsigned char gGameMouseLandingMarkerLabel[kLandingMarkerLabelWidth * kLandingMarkerLabelHeight];
+static unsigned char gameMouseLandingMarkerLabel[kLandingMarkerLabelWidth * kLandingMarkerLabelHeight];
 
 // AP the last marker update kept for a Ctrl move, or -1 without Ctrl.
-static int gGameMouseLandingMarkerReservedActionPoints = -1;
+static int gameMouseLandingMarkerReservedActionPoints = -1;
 
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId);
@@ -727,7 +727,7 @@ void gameMouseRefresh()
             && gGameMouseMode == GAME_MOUSE_MODE_MOVE
             && gGameMouseLandingMarker != nullptr
             && isInCombat()
-            && dudeMoveGetReservedActionPoints() != gGameMouseLandingMarkerReservedActionPoints) {
+            && dudeMoveGetReservedActionPoints() != gameMouseLandingMarkerReservedActionPoints) {
             _gmouse_3d_hover_test = false;
         }
 
@@ -902,7 +902,7 @@ void gameMouseRefresh()
         unsigned char rotations[800];
         int landingTile = -1;
         int landingActionPoints = 0;
-        gGameMouseLandingMarkerReservedActionPoints = gGameMouseLandingMarker != nullptr && isInCombat()
+        gameMouseLandingMarkerReservedActionPoints = gGameMouseLandingMarker != nullptr && isInCombat()
             ? dudeMoveGetReservedActionPoints()
             : -1;
         int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 1);
@@ -922,7 +922,7 @@ void gameMouseRefresh()
                     color = COLOR_RED;
 
                     if (gGameMouseLandingMarker != nullptr) {
-                        landingTile = gameMouseGetMoveLandingTile(rotations, distance, false, gGameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
+                        landingTile = gameMouseGetMoveLandingTile(rotations, distance, false, gameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
                     }
                 }
             }
@@ -934,7 +934,7 @@ void gameMouseRefresh()
             if (gGameMouseLandingMarker != nullptr && isInCombat()) {
                 int pathLength = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 0);
                 if (pathLength > 1) {
-                    landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1, true, gGameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
+                    landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1, true, gameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
                 }
             }
         }
@@ -946,7 +946,7 @@ void gameMouseRefresh()
         }
 
         if (landingTile != -1) {
-            gameMouseShowLandingMarker(landingTile, landingActionPoints, gGameMouseLandingMarkerReservedActionPoints != -1);
+            gameMouseShowLandingMarker(landingTile, landingActionPoints, gameMouseLandingMarkerReservedActionPoints != -1);
         } else {
             gameMouseHideLandingMarker();
         }
@@ -2442,7 +2442,7 @@ static void gameMouseShowLandingMarker(int tile, int actionPoints, bool reserved
 
     char formattedActionPoints[8];
     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%d", actionPoints);
-    gameMouseDrawHexLabel(gGameMouseLandingMarkerLabel, kLandingMarkerLabelWidth, kLandingMarkerLabelHeight, formattedActionPoints, COLOR_WHITE);
+    gameMouseDrawHexLabel(gameMouseLandingMarkerLabel, kLandingMarkerLabelWidth, kLandingMarkerLabelHeight, formattedActionPoints, COLOR_WHITE);
 
     Rect rect;
     if (objectSetLocation(gGameMouseLandingMarker, tile, gElevation, &rect) != 0) {
@@ -2480,7 +2480,7 @@ void gameMouseRenderLandingMarkerLabel(unsigned char* buffer, int pitch, const R
         return;
     }
 
-    blitBufferToBufferTrans(gGameMouseLandingMarkerLabel + kLandingMarkerLabelWidth * (labelRect.top - y) + (labelRect.left - x),
+    blitBufferToBufferTrans(gameMouseLandingMarkerLabel + kLandingMarkerLabelWidth * (labelRect.top - y) + (labelRect.left - x),
         labelRect.right - labelRect.left + 1,
         labelRect.bottom - labelRect.top + 1,
         kLandingMarkerLabelWidth,
