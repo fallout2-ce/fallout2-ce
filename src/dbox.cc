@@ -42,16 +42,9 @@ namespace {
         }
 
         namespace input {
-            typedef enum InputDialogFrm {
-                INPUT_DIALOG_FRM_BACKGROUND,
-                INPUT_DIALOG_FRM_NAME_BOX,
-                INPUT_DIALOG_FRM_DONE_BOX,
-                INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_UP,
-                INPUT_DIALOG_FRM_LITTLE_RED_BUTTON_DOWN,
-                INPUT_DIALOG_FRM_COUNT
-            } InputDialogFrm;
+            constexpr size_t dialogFrmCount = 5;
 
-            constexpr InterfaceFrameId kInputDialogFrmIds[INPUT_DIALOG_FRM_COUNT] = {
+            constexpr InterfaceFrameId kInputDialogFrmIds[dialogFrmCount] = {
                 InterfaceFrameId::CharacterWindow,
                 InterfaceFrameId::CharacterEditorNameBox,
                 InterfaceFrameId::DoneBox,
