@@ -1015,6 +1015,14 @@ static int _ai_check_drugs(Object* critter)
         }
 
         int minHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS) * hpRatio / 100;
+
+        // SFALL: Fix for AI not checking minimum HP properly for using
+        // stimpaks: healing drugs bring the critter at least out of its run
+        // away range (`min_hp`), so it doesn't flee with them unused.
+        if (ai->min_hp > minHp) {
+            minHp = ai->min_hp;
+        }
+
         int inventoryItemIndex = -1;
         while (critterGetStat(critter, STAT_CURRENT_HIT_POINTS) < minHp && critter->data.critter.combat.ap >= 2) {
             Object* drug = inventoryFindByType(critter, ITEM_TYPE_DRUG, &inventoryItemIndex);
@@ -2990,6 +2998,9 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             if (toHitNoRange < minToHit) {
                 // hit chance is too low even at point blank range (not taking range into account)
                 debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
+                // SFALL: Not fleeing for the rest of combat (see
+                // `CRITTER_MANEUVER_RETARGET`).
+                attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
                 _ai_run_away(attacker, defender);
                 return 0;
             }
@@ -3026,6 +3037,9 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 int toHitNoRange = _determine_to_hit_no_range(attacker, defender, HIT_LOCATION_UNCALLED, hitMode, rotations);
                 if (toHitNoRange < minToHit) {
                     debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
+                    // SFALL: Not fleeing for the rest of combat (see
+                    // `CRITTER_MANEUVER_RETARGET`).
+                    attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
                     _ai_run_away(attacker, defender);
                     return 0;
                 }
@@ -3060,7 +3074,12 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
                 if (_ai_move_steps_closer(attacker, defender, actionPointsToUse, taunt) == -1) {
                     debugPrint("%s: FLEEING: Can't possibly get closer to Target!", critterGetName(attacker));
+                    // SFALL: Restore combat flags after fleeing when NPC
+                    // cannot move closer to target: it steps away this turn,
+                    // not for the rest of combat.
+                    CritterManeuver maneuver = attacker->data.critter.combat.maneuver;
                     _ai_run_away(attacker, defender);
+                    attacker->data.critter.combat.maneuver = maneuver;
                     return 0;
                 }
 
@@ -3260,12 +3279,27 @@ void _combat_ai(Object* a1, Object* a2)
     }
 
     CritterCombatData* combatData = &(a1->data.critter.combat);
-    if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
-        || (combatData->results & ai->hurt_too_much) != DAM_NONE
-        || critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp) {
-        debugPrint("%s: FLEEING: I'm Hurt!", critterGetName(a1));
-        _ai_run_away(a1, a2);
-        return;
+    bool shouldFlee = (combatData->maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
+        || (combatData->results & ai->hurt_too_much) != DAM_NONE;
+    if (!shouldFlee && critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp) {
+        // SFALL: Fix to allow fleeing NPC to use drugs. It runs away only if
+        // healing didn't bring it out of its run away range.
+        _ai_check_drugs(a1);
+        shouldFlee = critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp;
+    }
+
+    if (shouldFlee) {
+        if ((combatData->maneuver & CRITTER_MANEUVER_RETARGET) != CRITTER_MANEUVER_NONE) {
+            // SFALL: Fix for NPC stuck in fleeing mode when the hit chance of
+            // a target was too low: it ran away from that target, now it
+            // looks for a target again.
+            combatData->maneuver &= ~(CRITTER_MANUEVER_FLEEING | CRITTER_MANEUVER_RETARGET);
+            combatData->whoHitMe = nullptr;
+        } else {
+            debugPrint("%s: FLEEING: I'm Hurt!", critterGetName(a1));
+            _ai_run_away(a1, a2);
+            return;
+        }
     }
 
     if (_ai_check_drugs(a1)) {
