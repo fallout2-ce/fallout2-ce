@@ -4626,7 +4626,12 @@ static void opUseObjectOnObject(Program* program)
         return;
     }
 
-    if (ProtoId(self).objectType() == OBJ_TYPE_CRITTER) {
+    // SFALL: A critter using an item on itself uses it at once, as objects
+    // do, instead of the action with its animation, which waits for the end
+    // of a talk: a party member asked to heal himself used one stimpak after
+    // the talk however many times he was asked, and answered by his health
+    // before it.
+    if (ProtoId(self).objectType() == OBJ_TYPE_CRITTER && target != self) {
         _action_use_an_item_on_object(self, target, item);
     } else {
         objectUseItemOn(self, target, item);
