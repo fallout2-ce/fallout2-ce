@@ -1207,6 +1207,14 @@ static int partyFixMultipleMembers()
                 }
             }
 
+            // SFALL: Fix for the removal of party member's corpse when loading
+            // the map. A critter's script is removed when it dies and a dead
+            // party member leaves the party: its corpse was taken for a
+            // doppelganger and destroyed with everything it carried.
+            if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER && (obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
+                remove = false;
+            }
+
             if (remove) {
                 // NOTE: Uninline.
                 if (obj != partyMemberFindByProtoId(obj)) {
