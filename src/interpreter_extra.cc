@@ -2781,6 +2781,13 @@ static void opGetCritterState(Program* program)
                 state = CRITTER_STATE_PRONE;
             }
 
+            // SFALL: Fix for critter_state function when a critter in combat
+            // recovers from the knockout state outside its turn: it's prone
+            // until its turn.
+            if ((critter->data.critter.combat.results & DAM_KNOCKOUT_WOKEN) != DAM_NONE) {
+                state = CRITTER_STATE_PRONE;
+            }
+
             state |= (critter->data.critter.combat.results & DAM_CRIP);
         } else {
             if (!critterIsDead(critter)) {

@@ -582,6 +582,9 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
     scriptRemove(script->sid);
 
     if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) {
+        // SFALL: Fix for "NPC turns into a container" bug: it stands, so it
+        // isn't knocked down nor loses a turn.
+        obj->data.critter.combat.results &= ~(DAM_LOSE_TURN | DAM_KNOCKED_DOWN);
         _dude_stand(obj, obj->rotation, FrmId::Empty());
     }
 

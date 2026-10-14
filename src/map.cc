@@ -1548,6 +1548,14 @@ static int _map_save_file(File* stream)
     return 0;
 }
 
+// SFALL: Whether map_exit_p_proc of the map the player leaves runs.
+static bool gMapExitScriptsRunning = false;
+
+bool mapExitScriptsRunning()
+{
+    return gMapExitScriptsRunning;
+}
+
 // 0x483C98
 int _map_save_in_game(bool isLeavingMap)
 {
@@ -1562,7 +1570,12 @@ int _map_save_in_game(bool isLeavingMap)
         _queue_leaving_map();
         _partyMemberPrepLoad();
         _partyMemberPrepItemSaveAll();
+
+        // SFALL: Critters waking up while map_exit_p_proc advances the time
+        // stand up at once (see `knockoutEventProcess`).
+        gMapExitScriptsRunning = true;
         scriptsExecMapExitProc();
+        gMapExitScriptsRunning = false;
 
         if (gMapSid != -1) {
             Script* script;
