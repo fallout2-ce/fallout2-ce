@@ -2,6 +2,7 @@
 #define FALLOUT_MAPPER_MP_SCRPTR_H_
 
 #include "map_defs.h"
+#include "scripts.h"
 
 namespace fallout {
 
@@ -13,7 +14,7 @@ void map_scr_toggle_hexes();
 void map_set_script(int scriptIndex);
 void map_show_script();
 void scr_debug_print_scripts();
-int scr_choose(int scriptType);
+int scr_choose(ScriptType scriptType);
 
 } // namespace fallout
 

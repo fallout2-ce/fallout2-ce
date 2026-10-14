@@ -358,17 +358,17 @@ static int applyLightEdit(Object* obj)
     return 1;
 }
 
-static void selectNewScript(Object* obj, int scriptType, int winId, int scriptNameY)
+static void selectNewScript(Object* obj, ScriptType scriptType, int winId, int scriptNameY)
 {
-    int scriptIndex = scr_choose(scriptType);
-    if (scriptIndex != -1) {
+    int sid = scr_choose(scriptType);
+    if (sid != -1) {
         if (obj->sid != -1) {
             scriptRemove(obj->sid);
             obj->sid = -1;
         }
     }
-    if (scriptIndex >= 0) {
-        objectSetScript(obj, scriptIndex >> 24, scriptIndex & 0xFFFFFF);
+    if (sid >= 0) {
+        objectSetScript(obj, scriptTypeFromSid(sid), scriptIdFromSid(sid));
     }
 
     char scriptName[64];

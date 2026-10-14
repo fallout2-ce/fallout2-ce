@@ -968,7 +968,7 @@ static void op_set_script(Program* program)
         obj->scriptIndex = -1;
     }
 
-    int scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    ScriptType scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
     if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
         obj->sid = -1;
         obj->scriptIndex = -1;

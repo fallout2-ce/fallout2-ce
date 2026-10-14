@@ -2,6 +2,7 @@
 #define PROTOTYPE_INSTANCES_H
 
 #include "obj_types.h"
+#include "scripts.h"
 #include "skill_defs.h"
 
 namespace fallout {
@@ -15,7 +16,7 @@ enum UseItemResultCode {
 
 int objectGetSid(Object* object, int* sidPtr);
 int objectSetScriptFromProto(Object* object, int* sidPtr);
-int objectSetScript(Object* obj, int scriptType, int scriptIndex);
+int objectSetScript(Object* obj, ScriptType scriptType, int scriptIndex);
 int objectLookAt(Object* critter, Object* target);
 int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* string));
 int objectExamine(Object* critter, Object* target);
