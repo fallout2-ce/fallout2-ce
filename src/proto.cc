@@ -501,7 +501,7 @@ int proto_critter_init(Proto* proto, const ProtoId& protoId)
     proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
-    proto->critter.team = 0;
+    proto->critter.team = 1;
     if (!FrmId(proto).exist()) {
         proto->fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
     }

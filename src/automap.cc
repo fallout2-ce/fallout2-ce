@@ -596,11 +596,12 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         if (objectColor != COLOR_BLACK) {
             unsigned char* pixel = windowBuffer + pixelOffset;
             if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
+                // NOTE: The original (0x41BF02) checks the first pixel again
+                // (as just drawn) before drawing the second one, which is the
+                // same as drawing both.
                 if (*pixel != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
                     pixel[0] = objectColor;
-                    if (pixel[1] != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
-                        pixel[1] = objectColor;
-                    }
+                    pixel[1] = objectColor;
                 }
 
                 if (object == gDude) {
