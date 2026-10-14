@@ -1,6 +1,8 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include <vector>
+
 #include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
@@ -150,6 +152,9 @@ int drugItemClear(Object* obj, void* data);
 int drugEffectEventProcess(Object* obj, void* data);
 int drugEffectEventRead(File* stream, void** dataPtr);
 int drugEffectEventWrite(File* stream, void* data);
+std::vector<int> drugEffectEventsGetPids();
+void drugEffectEventsSetLoadedPids(const std::vector<int>& pids);
+void drugEffectEventsRestorePids();
 int withdrawalClear(Object* obj, void* data);
 int withdrawalEventProcess(Object* obj, void* data);
 int withdrawalEventRead(File* stream, void** dataPtr);

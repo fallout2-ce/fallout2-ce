@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "db.h"
 #include "debug.h"
+#include "item.h"
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_arrays.h"
@@ -125,9 +127,19 @@ bool sfallSaveGameData(File* stream)
         return false;
     }
 
-    if (fileWrite(&zero, sizeof(zero), 1, stream) != 1) { // drugPidsCount
+    // SFALL: The drug pids of the drug effect events (see
+    // `drugEffectEventsRestorePids`).
+    std::vector<int> drugPids = drugEffectEventsGetPids();
+    if (fileWriteInt32(stream, static_cast<int>(drugPids.size())) == -1) {
         debugPrint("LOADSAVE (SFALL): ** Error saving drug pids **\n");
         return false;
+    }
+
+    for (int drugPid : drugPids) {
+        if (fileWriteInt32(stream, drugPid) == -1) {
+            debugPrint("LOADSAVE (SFALL): ** Error saving drug pids **\n");
+            return false;
+        }
     }
 
     return true;
@@ -163,6 +175,21 @@ bool sfallLoadGameData(File* stream)
     }
 
     scriptsRestoreUniqueObjectIdCounter(nextObjectId);
+
+    // SFALL: The drug pids of the drug effect events (see
+    // `drugEffectEventsRestorePids`). Older saves don't have them.
+    int32_t drugPidsCount;
+    if (fileReadInt32(stream, &drugPidsCount) == 0 && drugPidsCount > 0) {
+        std::vector<int> drugPids;
+        for (int32_t i = 0; i < drugPidsCount; i++) {
+            int drugPid;
+            if (fileReadInt32(stream, &drugPid) == -1) {
+                break;
+            }
+            drugPids.push_back(drugPid);
+        }
+        drugEffectEventsSetLoadedPids(drugPids);
+    }
 
     return true;
 }
