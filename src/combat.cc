@@ -2317,6 +2317,51 @@ bool _combat_safety_invalidate_weapon(Object* attacker, Object* weapon, HitMode 
     return _combat_safety_invalidate_weapon_func(attacker, weapon, hitMode, defender, safeDistancePtr, nullptr);
 }
 
+// SFALL: Fix to reduce friendly fire in burst attacks (sfall's
+// `AIHelpers::CheckShootAndFriendlyInLineOfFire`): the first critter of
+// [team] or other blocking object in the line of fire from [object] to
+// [targetTile]; critters of other teams are shot through.
+static Object* combatShootAndFriendlyInLineOfFire(Object* object, int targetTile, int team)
+{
+    if (object != nullptr && ProtoId(object).objectType() == OBJ_TYPE_CRITTER && object->data.critter.combat.team != team) {
+        int objectTile = object->tile;
+        if (objectTile == targetTile) {
+            return nullptr;
+        }
+
+        if ((object->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
+            Rotation rotation = tileGetRotationTo(objectTile, targetTile);
+            objectTile = tileGetTileInDirection(objectTile, rotation, 1);
+            if (objectTile == targetTile) {
+                return nullptr;
+            }
+        }
+
+        // The object itself (multihex) is ignored on the rest of the line.
+        Object* obstacle = object;
+        _make_straight_path_func(object, objectTile, targetTile, nullptr, &obstacle, 32, _obj_shoot_blocking_at);
+        object = combatShootAndFriendlyInLineOfFire(obstacle, targetTile, team);
+    }
+
+    return object;
+}
+
+// SFALL: Fix to reduce friendly fire in burst attacks: a critter of the
+// attacker's team in the straight line of fire stops the burst if the
+// attacker notices it (Intelligence against 1d10).
+static bool combatRollFriendlyFire(Object* attacker, Object* defender)
+{
+    Object* obstacle = nullptr;
+    _make_straight_path_func(attacker, attacker->tile, defender->tile, nullptr, &obstacle, 32, _obj_shoot_blocking_at);
+    obstacle = combatShootAndFriendlyInLineOfFire(obstacle, defender->tile, attacker->data.critter.combat.team);
+    if (obstacle == nullptr || ProtoId(obstacle).objectType() != OBJ_TYPE_CRITTER) {
+        return false;
+    }
+
+    int roll = randomBetween(1, 10);
+    return critterGetStat(attacker, STAT_INTELLIGENCE) >= roll;
+}
+
 // 0x4213FC
 static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weapon, HitMode hitMode, Object* defender, int* safeDistancePtr, Object* attackerFriend)
 {
@@ -2382,6 +2427,12 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
     AnimationType anim = weaponGetAnimationForHitMode(weapon, hitMode);
     if (anim != ANIM_FIRE_BURST && anim != ANIM_FIRE_CONTINUOUS) {
         return false;
+    }
+
+    // SFALL: Fix to reduce friendly fire in burst attacks.
+    if (combatRollFriendlyFire(attacker, defender)) {
+        debugPrint("Friendly was in the way!");
+        return true;
     }
 
     Attack attack;
