@@ -108,7 +108,7 @@ static void _combat_sequence_init(Object* attacker, Object* defender);
 static void _combat_sequence();
 static void combatAttemptEnd();
 static int _combat_input();
-static void _combat_set_move_all();
+static void _combat_set_move(Object* object);
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
 static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId baseFrameId);
 static void waitForGorisAnimation(Object* critter);
@@ -3248,23 +3248,23 @@ static int _combat_input()
     return 0;
 }
 
-// 0x422914
-static void _combat_set_move_all()
+// SFALL: Fix for incorrect initialization of action points at the beginning
+// of each turn: a critter gets its action points when its turn comes, so what
+// changed its maximum during the round (drugs, perks, scripts) counts. It was
+// `combat_set_move_all` (0x422914) for every combatant at the start of the
+// round.
+static void _combat_set_move(Object* object)
 {
-    for (int index = 0; index < _list_com; index++) {
-        Object* object = _combat_list[index];
+    int actionPoints = critterGetStat(object, STAT_MAXIMUM_ACTION_POINTS);
 
-        int actionPoints = critterGetStat(object, STAT_MAXIMUM_ACTION_POINTS);
-
-        if (_gcsd) {
-            actionPoints += _gcsd->actionPointsBonus;
-        }
-
-        object->data.critter.combat.ap = actionPoints;
-
-        // NOTE: Uninline.
-        _combatAIInfoSetLastMove(object, 0);
+    if (_gcsd) {
+        actionPoints += _gcsd->actionPointsBonus;
     }
+
+    object->data.critter.combat.ap = actionPoints;
+
+    // NOTE: Uninline.
+    _combatAIInfoSetLastMove(object, 0);
 }
 
 // 0x42299C
@@ -3549,9 +3549,9 @@ void _combat(CombatStartData* csd)
                 break;
             }
 
-            _combat_set_move_all();
-
             for (; curIndex < _list_com; curIndex++) {
+                _combat_set_move(_combat_list[curIndex]);
+
                 if (combatTurnHooked(_combat_list[curIndex], false) == -1) {
                     break;
                 }
