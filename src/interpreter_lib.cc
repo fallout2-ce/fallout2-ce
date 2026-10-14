@@ -1927,7 +1927,7 @@ static int intLibSoundPlay(char* fileName, int mode)
         soundSetChannels(sound, 3);
     }
 
-    int rc = soundLoad(sound, fileName);
+    SoundError rc = soundLoad(sound, fileName);
     if (rc != SOUND_NO_ERROR) {
         goto err;
     }
@@ -2003,7 +2003,7 @@ static int intLibSoundPause(int value)
         return 0;
     }
 
-    int rc;
+    SoundError rc;
     if (_soundType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundStop(sound);
     } else {
@@ -2055,7 +2055,7 @@ static int intLibSoundResume(int value)
         return 0;
     }
 
-    int rc;
+    SoundError rc;
     if (_soundType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundPlay(sound);
     } else {

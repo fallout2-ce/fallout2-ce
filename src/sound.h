@@ -9,7 +9,7 @@ namespace fallout {
 #define VOLUME_MIN (0)
 #define VOLUME_MAX (0x7FFF)
 
-typedef enum SoundError {
+enum SoundError : int {
     SOUND_NO_ERROR = 0,
     SOUND_SOS_DRIVER_NOT_LOADED = 1,
     SOUND_SOS_INVALID_POINTER = 2,
@@ -44,7 +44,7 @@ typedef enum SoundError {
     SOUND_NO_MEMORY_AVAILABLE = 31,
     SOUND_UNKNOWN_ERROR = 32,
     SOUND_ERR_COUNT,
-} SoundError;
+};
 
 typedef struct AudioFileInfo {
     int channels;
@@ -132,35 +132,36 @@ typedef struct Sound {
 } Sound;
 
 void soundSetMemoryProcs(MallocProc* mallocProc, ReallocProc* reallocProc, FreeProc* freeProc);
-const char* soundGetErrorDescription(int err);
-int soundInit(int _, int numBuffers, int __, int dataSize, int rate, int channelCount);
+const char* soundGetErrorDescription(SoundError err);
+const char* soundGetLastErrorDescription();
+SoundError soundInit(int _, int numBuffers, int __, int dataSize, int rate, int channelCount);
 void soundExit();
 Sound* soundAllocate(int type, int soundFlags);
-int soundLoad(Sound* sound, char* filePath);
-int soundPlay(Sound* sound);
-int soundStop(Sound* sound);
-int soundDelete(Sound* sound);
+SoundError soundLoad(Sound* sound, char* filePath);
+SoundError soundPlay(Sound* sound);
+SoundError soundStop(Sound* sound);
+SoundError soundDelete(Sound* sound);
 bool soundIsPlaying(Sound* sound);
 bool _soundDone(Sound* sound);
 bool soundIsPaused(Sound* sound);
 int _soundType(Sound* sound, int type);
-int soundGetDuration(Sound* sound);
-int soundSetLooping(Sound* sound, int loops);
+SoundError soundGetDuration(Sound* sound, int* duration);
+SoundError soundSetLooping(Sound* sound, int loops);
 int _soundVolumeHMItoDirectSound(int volume);
-int soundSetVolume(Sound* sound, int volume);
-int soundSetCallback(Sound* sound, SoundCallback* callback, void* userData);
-int soundSetChannels(Sound* sound, int channels);
-int soundSetReadLimit(Sound* sound, int readLimit);
-int soundPause(Sound* sound);
-int soundResume(Sound* sound);
-int soundSetFileIO(Sound* sound, SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc);
-int _soundSetMasterVolume(int value);
-int _soundGetPosition(Sound* sound);
-int _soundSetPosition(Sound* sound, int pos);
-int _soundFade(Sound* sound, int duration, int targetVolume);
+SoundError soundSetVolume(Sound* sound, int volume);
+SoundError soundSetCallback(Sound* sound, SoundCallback* callback, void* userData);
+SoundError soundSetChannels(Sound* sound, int channels);
+SoundError soundSetReadLimit(Sound* sound, int readLimit);
+SoundError soundPause(Sound* sound);
+SoundError soundResume(Sound* sound);
+SoundError soundSetFileIO(Sound* sound, SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc);
+SoundError _soundSetMasterVolume(int value);
+SoundError _soundGetPosition(Sound* sound, int* position);
+SoundError _soundSetPosition(Sound* sound, int pos);
+SoundError _soundFade(Sound* sound, int duration, int targetVolume);
 void soundDeleteAll();
 void soundContinueAll();
-int soundSetDefaultFileIO(SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc);
+SoundError soundSetDefaultFileIO(SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc);
 
 } // namespace fallout
 

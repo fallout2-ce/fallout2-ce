@@ -94,8 +94,7 @@ static Sound* scriptSoundCreate(const char* path, bool looping, int volume, Scri
 
     soundSetVolume(sound, scriptSoundClampVolume(volume));
 
-    int rc;
-    rc = soundPlay(sound);
+    SoundError rc = soundPlay(sound);
     if (rc != SOUND_NO_ERROR) {
         soundDelete(sound);
         return nullptr;
