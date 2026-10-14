@@ -115,11 +115,13 @@ inline ScriptType operator++(ScriptType& e, int)
     return result;
 }
 
-inline constexpr ScriptType scriptTypeFromSid(int sid) {
+inline constexpr ScriptType scriptTypeFromSid(int sid)
+{
     return static_cast<ScriptType>(sid >> 24);
 }
 
-inline constexpr int scriptIdFromSid(int sid) {
+inline constexpr int scriptIdFromSid(int sid)
+{
     return sid & 0xFFFFFF;
 }
 
