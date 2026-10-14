@@ -224,7 +224,7 @@ namespace {
                 bool isScrollable;
             };
 
-            inline void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
+            void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
                 int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
             {
                 if (scrollDirection != scrollDirection::none) {
@@ -307,43 +307,33 @@ namespace {
                 int& doubleClickSelectedFileIndex;
             };
 
-            inline bool handleKeyboardNavigation(int keyCode, NavigationState& s, unsigned char* windowBuffer, char** fileList, int fileListLength)
+            bool handleKeyboardNavigation(int keyCode, NavigationState& s, unsigned char* windowBuffer, char** fileList, int fileListLength)
             {
+                bool handled = true;
+
                 switch (keyCode) {
                 case KEY_ARROW_UP:
                     s.pageOffset--;
                     if (s.pageOffset < 0) {
-                        s.selectedFileIndex--;
-                        if (s.selectedFileIndex < 0) s.selectedFileIndex = 0;
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex - 1, 0, fileListLength);
                         s.pageOffset = 0;
                     }
-                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
-                    s.doubleClickSelectedFileIndex = -2;
-                    return true;
-
+                    break;
                 case KEY_ARROW_DOWN:
                     if (s.isScrollable) {
                         s.pageOffset++;
                         if (s.pageOffset >= s.maxPageOffset) {
-                            s.selectedFileIndex++;
-                            if (s.selectedFileIndex >= lineCount) s.selectedFileIndex = lineCount - 1;
+                            s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, lineCount - 1);
                             s.pageOffset = s.maxPageOffset;
                         }
                     } else {
-                        s.selectedFileIndex++;
-                        if (s.selectedFileIndex > s.maxPageOffset) s.selectedFileIndex = s.maxPageOffset;
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, s.maxPageOffset);
                     }
-                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
-                    s.doubleClickSelectedFileIndex = -2;
-                    return true;
-
+                    break;
                 case KEY_HOME:
                     s.selectedFileIndex = 0;
                     s.pageOffset = 0;
-                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
-                    s.doubleClickSelectedFileIndex = -2;
-                    return true;
-
+                    break;
                 case KEY_END:
                     if (s.isScrollable) {
                         s.selectedFileIndex = lineCount - 1;
@@ -352,12 +342,18 @@ namespace {
                         s.selectedFileIndex = s.maxPageOffset;
                         s.pageOffset = 0;
                     }
-                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
-                    s.doubleClickSelectedFileIndex = -2;
-                    return true;
+                    break;
+                default:
+                    handled = false;
+                    break;
                 }
 
-                return false;
+                if (handled) {
+                    s.doubleClickSelectedFileIndex = -2;
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                }
+
+                return handled;
             }
         } // namespace file
 
@@ -804,10 +800,9 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0, pageOffset = 0;
-    int maxPageOffset = fileListLength - (file::lineCount + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = std::max(0, fileListLength - 1);
-    }
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
     file::DialogFrms frms;
     file::Context ctx;
@@ -934,10 +929,9 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     const bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0, pageOffset = 0;
-    int maxPageOffset = fileListLength - (file::lineCount + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = std::max(0, fileListLength - 1);
-    }
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
     file::DialogFrms frms;
     file::Context ctx;
