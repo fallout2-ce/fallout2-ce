@@ -1205,9 +1205,10 @@ int mapLoadSaved(char* fileName)
 // 0x48328C
 static int _map_age_dead_critters()
 {
-    if (!wmMapDeadBodiesAge()) {
-        return 0;
-    }
+    // SFALL: Fix for critters not being healed over time when entering a map
+    // with 'dead_bodies_age=No' set in maps.txt: the setting keeps the dead
+    // bodies, the living critters still heal (see below).
+    bool deadBodiesAge = wmMapDeadBodiesAge();
 
     int hoursSinceLastVisit = (gameTimeGetTime() - gMapHeader.lastVisitTime) / GAME_TIME_TICKS_PER_HOUR;
     if (hoursSinceLastVisit == 0) {
@@ -1227,6 +1228,10 @@ static int _map_age_dead_critters()
             }
         }
         obj = objectFindNext();
+    }
+
+    if (!deadBodiesAge) {
+        return 0;
     }
 
     int agingType;
