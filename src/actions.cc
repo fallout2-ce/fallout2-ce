@@ -1753,14 +1753,19 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
         showDamageToExtras(attack);
     } else {
+        // SFALL: Fix for destroy_p_proc not being called if the critter is
+        // killed by explosives when you leave the map: run it before
+        // critterKill removes the critter's script.
         if (critter != nullptr) {
             if ((attack->defenderFlags & DAM_DEAD) != DAM_NONE) {
+                scriptExecProc(critter->sid, SCRIPT_PROC_DESTROY);
                 critterKill(critter, ANIM_INVALID, false);
             }
         }
 
         for (int index = 0; index < attack->extrasLength; index++) {
             if ((attack->extrasFlags[index] & DAM_DEAD) != DAM_NONE) {
+                scriptExecProc(attack->extras[index]->sid, SCRIPT_PROC_DESTROY);
                 critterKill(attack->extras[index], ANIM_INVALID, false);
             }
         }
