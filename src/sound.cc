@@ -295,7 +295,7 @@ void _refreshSoundBuffers(Sound* sound)
     }
 
     if ((sound->soundFlags & SOUND_FLAG_0x100) != 0) {
-        if ((sound->type & SOUND_TYPE_0x20) != 0) {
+        if ((sound->type & SOUND_TYPE_0x20) != SOUND_TYPE_NONE) {
             if ((sound->soundFlags & SOUND_FLAG_0x200) != 0) {
                 sound->soundFlags |= SOUND_FLAG_0x80;
             }
@@ -494,7 +494,7 @@ void soundExit()
 }
 
 // 0x4AD0FC
-Sound* soundAllocate(int type, int soundFlags)
+Sound* soundAllocate(SoundType type, int soundFlags)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -523,7 +523,7 @@ Sound* soundAllocate(int type, int soundFlags)
     sound->numBuffers = _numBuffers;
     sound->readLimit = sound->dataSize * _numBuffers;
 
-    if ((type & SOUND_TYPE_INFINITE) != 0) {
+    if ((type & SOUND_TYPE_INFINITE) != SOUND_TYPE_NONE) {
         sound->loops = -1;
         sound->soundFlags |= SOUND_LOOPING;
     }
@@ -557,7 +557,7 @@ SoundError _preloadBuffers(Sound* sound)
     size = sound->io.filelength(sound->io.fd);
     sound->fileSize = size;
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
         if ((sound->soundFlags & SOUND_LOOPING) == 0) {
             sound->soundFlags |= SOUND_FLAG_0x100 | SOUND_LOOPING;
         }
@@ -597,7 +597,7 @@ SoundError _preloadBuffers(Sound* sound)
     result = _soundSetData(sound, buf, size);
     gSoundFreeProc(buf);
 
-    if ((sound->type & SOUND_TYPE_MEMORY) != 0) {
+    if ((sound->type & SOUND_TYPE_MEMORY) != SOUND_TYPE_NONE) {
         sound->io.close(sound->io.fd);
         sound->io.fd = -1;
     } else {
@@ -629,7 +629,7 @@ SoundError soundLoad(Sound* sound, char* filePath)
         sound->rate,
         sound->bitsPerSample,
     };
-    bool isMemoryBacked = (sound->type & SOUND_TYPE_MEMORY) != 0;
+    bool isMemoryBacked = (sound->type & SOUND_TYPE_MEMORY) != SOUND_TYPE_NONE;
 
     sound->io.fd = sound->io.open(mangledFilePath, &openInfo, &isMemoryBacked);
     if (sound->io.fd == -1) {
@@ -663,7 +663,7 @@ SoundError _soundRewind(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
         sound->io.seek(sound->io.fd, 0, SEEK_SET);
         sound->lastUpdate = 0;
         sound->lastPosition = 0;
@@ -884,7 +884,7 @@ SoundError soundContinue(Sound* sound)
     }
 
     if ((sound->soundFlags & SOUND_FLAG_0x80) == 0 && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != 0) {
-        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0 && (sound->type & SOUND_TYPE_STREAMING) != 0) {
+        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0 && (sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
             _refreshSoundBuffers(sound);
         }
     } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
@@ -893,7 +893,7 @@ SoundError soundContinue(Sound* sound)
             sound->callback = nullptr;
         }
 
-        if ((sound->type & SOUND_TYPE_FIRE_AND_FORGET) != 0) {
+        if ((sound->type & SOUND_TYPE_FIRE_AND_FORGET) != SOUND_TYPE_NONE) {
             sound->callback = nullptr;
             soundDelete(sound);
         } else {
@@ -962,7 +962,7 @@ bool soundIsPaused(Sound* sound)
 }
 
 // 0x4ADBC4
-int _soundType(Sound* sound, int type)
+int _soundType(Sound* sound, SoundType type)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1411,7 +1411,7 @@ SoundError _soundGetPosition(Sound* sound, int* position)
     audioEngineSoundBufferGetCurrentPosition(sound->soundBuffer, &readPos, &writePos);
 
     if (position != nullptr) {
-        if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+        if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
             int offset;
             // Original code uses <=, but equality can also mean the cursor has not
             // advanced. Match _refreshSoundBuffers by treating only < as wrap.
@@ -1447,7 +1447,7 @@ SoundError _soundSetPosition(Sound* sound, int pos)
         return gSoundLastError;
     }
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
         int section = pos / sound->dataSize % sound->numBuffers;
 
         audioEngineSoundBufferSetCurrentPosition(sound->soundBuffer, section * sound->dataSize + pos % sound->dataSize);
@@ -1455,7 +1455,7 @@ SoundError _soundSetPosition(Sound* sound, int pos)
         sound->io.seek(sound->io.fd, static_cast<long>(section) * sound->dataSize, SEEK_SET);
         int bytesRead = sound->io.read(sound->io.fd, sound->data, sound->dataSize);
         if (bytesRead < sound->dataSize) {
-            if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+            if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
                 sound->io.seek(sound->io.fd, 0, SEEK_SET);
                 sound->io.read(sound->io.fd, sound->data + bytesRead, sound->dataSize - bytesRead);
             } else {
@@ -1538,7 +1538,7 @@ void _fadeSounds()
                     soundPause(fadeSound->sound);
                     soundSetVolume(fadeSound->sound, fadeSound->initialVolume);
                 } else {
-                    if ((fadeSound->sound->type & SOUND_TYPE_FIRE_AND_FORGET) != 0) {
+                    if ((fadeSound->sound->type & SOUND_TYPE_FIRE_AND_FORGET) != SOUND_TYPE_NONE) {
                         soundDelete(fadeSound->sound);
                     } else {
                         soundStop(fadeSound->sound);

@@ -71,13 +71,41 @@ typedef struct SoundFileIO {
     int fd;
 } SoundFileIO;
 
-typedef enum SoundType {
+enum SoundType : int {
+    SOUND_TYPE_NONE = 0x00,
     SOUND_TYPE_MEMORY = 0x01,
     SOUND_TYPE_STREAMING = 0x02,
     SOUND_TYPE_FIRE_AND_FORGET = 0x04,
     SOUND_TYPE_INFINITE = 0x10,
     SOUND_TYPE_0x20 = 0x20,
-} SoundType;
+};
+
+constexpr inline SoundType operator&(SoundType lhs, SoundType rhs)
+{
+    return static_cast<SoundType>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline SoundType operator|(SoundType lhs, SoundType rhs)
+{
+    return static_cast<SoundType>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline SoundType operator~(SoundType rhs)
+{
+    return static_cast<SoundType>(~static_cast<int>(rhs));
+}
+
+inline SoundType& operator&=(SoundType& lhs, SoundType rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline SoundType& operator|=(SoundType& lhs, SoundType rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum SoundFlags {
     SOUND_FLAG_0x02 = 0x02,
@@ -107,7 +135,7 @@ typedef struct Sound {
     int rate;
     int soundFlags;
     int statusFlags;
-    int type;
+    SoundType type;
     int pausePos;
     int volume;
     int loops;
@@ -136,7 +164,7 @@ const char* soundGetErrorDescription(SoundError err);
 const char* soundGetLastErrorDescription();
 SoundError soundInit(int _, int numBuffers, int __, int dataSize, int rate, int channelCount);
 void soundExit();
-Sound* soundAllocate(int type, int soundFlags);
+Sound* soundAllocate(SoundType type, int soundFlags);
 SoundError soundLoad(Sound* sound, char* filePath);
 SoundError soundPlay(Sound* sound);
 SoundError soundStop(Sound* sound);
@@ -144,7 +172,7 @@ SoundError soundDelete(Sound* sound);
 bool soundIsPlaying(Sound* sound);
 bool _soundDone(Sound* sound);
 bool soundIsPaused(Sound* sound);
-int _soundType(Sound* sound, int type);
+int _soundType(Sound* sound, SoundType type);
 SoundError soundGetDuration(Sound* sound, int* duration);
 SoundError soundSetLooping(Sound* sound, int loops);
 int _soundVolumeHMItoDirectSound(int volume);

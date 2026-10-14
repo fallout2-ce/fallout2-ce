@@ -1870,7 +1870,7 @@ static int intLibSoundDelete(int value)
 // 0x466110 soundStartInterpret
 static int intLibSoundPlay(char* fileName, int mode)
 {
-    int type = SOUND_TYPE_MEMORY;
+    SoundType type = SOUND_TYPE_MEMORY;
     int soundFlags = 0;
 
     if (mode & 0x01) {
