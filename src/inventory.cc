@@ -3946,6 +3946,24 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             tileWindowRefreshRect(&rect, gElevation);
         }
 
+        // SFALL: Fix for "Unlimited Ammo" exploit: one item of a stack is
+        // wielded, the rest stays in the inventory. A whole stack in hand
+        // (from `wield_obj_critter`, a party member's equipping) shared one
+        // weapon's ammo.
+        ObjectFlags handFlags = item->flags & OBJECT_IN_ANY_HAND;
+        bool removed = itemRemoveWithReason(critter, item, 1, RemoveInventoryObjectHookReason::WieldStack, nullptr) == 0;
+
+        Object* stackInHand = handIndex == HAND_RIGHT ? critterGetItem2(critter) : critterGetItem1(critter);
+        if (stackInHand != nullptr) {
+            stackInHand->flags &= ~OBJECT_IN_ANY_HAND;
+        }
+
+        item->flags |= handFlags;
+
+        if (removed) {
+            itemAdd(critter, item, 1);
+        }
+
         if (itemGetType(item) == ITEM_TYPE_WEAPON) {
             weaponAnimationCode = weaponGetAnimationCode(item);
         } else {
