@@ -32,6 +32,16 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 
 namespace {
     namespace dbox {
+        namespace btnId {
+            constexpr int done = 500;
+            constexpr int cancel = 501;
+            constexpr int fileList = 502;
+            constexpr int scrollDown = 503; // Down arrow hold
+            constexpr int scrollDownArrow = 504; // Down arrow click
+            constexpr int scrollUp = 505; // Up arrow hold
+            constexpr int scrollUpArrow = 506; // Up arrow click
+        } // namespace btnId
+
         int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
         {
             int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
@@ -176,15 +186,17 @@ namespace {
                 const char* cancelText = getmsg(&ctx.messageList, &messageListItem, 103);
                 fontDrawText(ctx.windowBuffer + bgWidth * cfg.cancelLabel.y + cfg.cancelLabel.x, cancelText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
 
-                int doneBtn = createRedButton(ctx.window.get(), cfg.doneButton, 500, frms.buttonNormal, frms.buttonPressed);
-                int cancelBtn = createRedButton(ctx.window.get(), cfg.cancelButton, 501, frms.buttonNormal, frms.buttonPressed);
+                int doneBtn = createRedButton(ctx.window.get(), cfg.doneButton, btnId::done, frms.buttonNormal, frms.buttonPressed);
+                int cancelBtn = createRedButton(ctx.window.get(), cfg.cancelButton, btnId::cancel, frms.buttonNormal, frms.buttonPressed);
 
-                int scrollUpBtn = createScrollButton(ctx.window.get(), scrollButton, 505, -1, 505, 506, frms.scrollUpNormal, frms.scrollUpPressed);
+                int scrollUpBtn = createScrollButton(ctx.window.get(), scrollButton,
+                    btnId::scrollUp, -1, btnId::scrollUp, btnId::scrollUpArrow, frms.scrollUpNormal, frms.scrollUpPressed);
 
                 Point scrollDownPos { scrollButton.x, scrollButton.y + frms.scrollUpPressed.getHeight() };
-                int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos, 503, -1, 503, 504, frms.scrollDownNormal, frms.scrollDownPressed);
+                int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos,
+                    btnId::scrollDown, -1, btnId::scrollDown, btnId::scrollDownArrow, frms.scrollDownNormal, frms.scrollDownPressed);
 
-                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
+                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, btnId::fileList, nullptr, nullptr, nullptr, 0);
 
                 if (title != nullptr) {
                     fontDrawText(ctx.windowBuffer + bgWidth * file::title.y + file::title.x, title, bgWidth, bgWidth, COLOR_DARK_YELLOW);
@@ -193,11 +205,11 @@ namespace {
                 return true;
             }
 
-            typedef enum FileDialogScrollDirection {
-                FILE_DIALOG_SCROLL_DIRECTION_NONE,
-                FILE_DIALOG_SCROLL_DIRECTION_UP,
-                FILE_DIALOG_SCROLL_DIRECTION_DOWN,
-            } FileDialogScrollDirection;
+            namespace scrollDirection {
+                constexpr int none = 0;
+                constexpr int up = 1;
+                constexpr int down = 2;
+            } // namespace scrollDirection
 
             struct ScrollState {
                 int& selectedFileIndex;
@@ -215,7 +227,7 @@ namespace {
             inline void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
                 int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
             {
-                if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
+                if (scrollDirection != scrollDirection::none) {
                     unsigned int scrollDelay = 4;
                     s.doubleClickSelectedFileIndex = -2;
 
@@ -231,7 +243,7 @@ namespace {
                                 if (scrollDelay > 24) scrollDelay = 24;
                             }
 
-                            if (scrollDirection == FILE_DIALOG_SCROLL_DIRECTION_UP) {
+                            if (scrollDirection == scrollDirection::up) {
                                 s.pageOffset--;
                                 if (s.pageOffset < 0) {
                                     s.selectedFileIndex--;
@@ -267,7 +279,7 @@ namespace {
                         }
 
                         int keyCode = inputGetInput();
-                        if (keyCode == 505 || keyCode == 503) break;
+                        if (keyCode == btnId::scrollUp || keyCode == btnId::scrollDown) break;
 
                         renderPresent();
                     }
@@ -503,12 +515,12 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
             doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
     }
 
-    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, 500, frms.buttonUp, frms.buttonDown);
+    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, btnId::done, frms.buttonUp, frms.buttonDown);
 
     windowRefresh(window.get());
 
     std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
-    int status = _get_input_str(window.get(), 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
+    int status = _get_input_str(window.get(), btnId::done, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     if (status == 0 && !editableText.empty()) {
         result = std::move(editableText);
@@ -612,7 +624,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
 
             Point btnPos = { doneBoxX + 13, config.doneY + 4 };
-            int btn = createRedButton(window.get(), btnPos, 500, frms.buttonUp, frms.buttonDown);
+            int btn = createRedButton(window.get(), btnPos, btnId::done, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -636,7 +648,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
 
             Point btnPos = { buttonXOffset, config.doneY + 4 };
-            int btn = createRedButton(window.get(), btnPos, 501, frms.buttonUp, frms.buttonDown);
+            int btn = createRedButton(window.get(), btnPos, btnId::cancel, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -731,12 +743,12 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
         int keyCode = inputGetInput();
 
-        if (keyCode == 500) { // First button (Done/Yes)
+        if (keyCode == btnId::done) { // First button (Done/Yes)
             rc = 1;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 1;
-        } else if (keyCode == KEY_ESCAPE || keyCode == 501) { // Second button (NO) or ESC
+        } else if (keyCode == KEY_ESCAPE || keyCode == btnId::cancel) { // Second button (NO) or ESC
             rc = 0;
         } else {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
@@ -764,8 +776,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 }
 
 namespace {
-    namespace dbox::file {
-        constexpr dbox::file::ModeConfig kLoadConfig {
+    namespace dbox::file::load {
+        constexpr dbox::file::ModeConfig kDialogConfig {
             {
                 // 0x510900 flgids
                 InterfaceFrameId::LoadBox,
@@ -800,7 +812,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kLoadConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::load::kDialogConfig, title, x, y)) {
         return -1;
     }
 
@@ -820,22 +832,22 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             if (fileListLength != 0) {
                 strncpy(dest, fileList[selectedFileIndex + pageOffset], 16);
                 rc = 0;
             } else {
                 rc = 1;
             }
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
-        } else if (keyCode == 502 && fileListLength != 0) {
+        } else if (keyCode == btnId::fileList && fileListLength != 0) {
             int mouseX;
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
@@ -862,10 +874,10 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
             doubleClickSelectedFileIndex = selectedFileIndex;
             fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-        } else if (keyCode == 506) {
-            scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_UP;
-        } else if (keyCode == 504) {
-            scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+        } else if (keyCode == btnId::scrollUpArrow) {
+            scrollDirection = file::scrollDirection::up;
+        } else if (keyCode == btnId::scrollDownArrow) {
+            scrollDirection = file::scrollDirection::down;
         } else {
             file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
                 isScrollable, bgWidth, doubleClickSelectedFileIndex };
@@ -894,8 +906,8 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 }
 
 namespace {
-    namespace dbox::file {
-        constexpr dbox::file::ModeConfig kSaveConfig {
+    namespace dbox::file::save {
+        constexpr dbox::file::ModeConfig kDialogConfig {
             {
                 // 0x51091C flgids2
                 InterfaceFrameId::SaveBox,
@@ -930,7 +942,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kSaveConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::save::kDialogConfig, title, x, y)) {
         return -1;
     }
 
@@ -982,18 +994,18 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 0;
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
         } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && fileNameCopyLength > 0) {
             bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
@@ -1003,7 +1015,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             fileNameCopyLength--;
             windowRefresh(ctx.window.get());
         } else if (keyCode < KEY_FIRST_INPUT_CHARACTER || keyCode > KEY_LAST_INPUT_CHARACTER || fileNameCopyLength >= 8) {
-            if (keyCode == 502 && fileListLength != 0) {
+            if (keyCode == btnId::fileList && fileListLength != 0) {
                 int mouseX;
                 int mouseY;
                 mouseGetPosition(&mouseX, &mouseY);
@@ -1055,10 +1067,10 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
                     fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
                 }
-            } else if (keyCode == 506) {
-                scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_UP;
-            } else if (keyCode == 504) {
-                scrollDirection = file::FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+            } else if (keyCode == btnId::scrollUpArrow) {
+                scrollDirection = file::scrollDirection::up;
+            } else if (keyCode == btnId::scrollDownArrow) {
+                scrollDirection = file::scrollDirection::down;
             } else {
                 file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset, isScrollable,
                     bgWidth, doubleClickSelectedFileIndex };
