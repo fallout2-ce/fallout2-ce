@@ -1871,7 +1871,7 @@ static int intLibSoundDelete(int value)
 static int intLibSoundPlay(char* fileName, int mode)
 {
     SoundType type = SOUND_TYPE_MEMORY;
-    int soundFlags = 0;
+    SoundFlags soundFlags = SOUND_FLAG_NONE;
 
     if (mode & 0x01) {
         soundFlags |= SOUND_LOOPING;

@@ -1837,7 +1837,7 @@ void soundEffectCallback(void* userData, int event)
 // loopingMode relates to sound flags
 int _gsound_background_allocate(Sound** soundPtr, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
 {
-    int soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
+    SoundFlags soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
     SoundType type = SOUND_TYPE_NONE;
     if (storageType == GSOUND_MEMORY) {
         type |= SOUND_TYPE_MEMORY;

@@ -107,7 +107,8 @@ inline SoundType& operator|=(SoundType& lhs, SoundType rhs)
     return lhs;
 }
 
-typedef enum SoundFlags {
+enum SoundFlags : int {
+    SOUND_FLAG_NONE = 0x00,
     SOUND_FLAG_0x02 = 0x02,
     SOUND_FLAG_0x04 = 0x04,
     SOUND_16BIT = 0x08,
@@ -116,7 +117,34 @@ typedef enum SoundFlags {
     SOUND_FLAG_0x80 = 0x80,
     SOUND_FLAG_0x100 = 0x100,
     SOUND_FLAG_0x200 = 0x200,
-} SoundFlags;
+};
+
+constexpr inline SoundFlags operator&(SoundFlags lhs, SoundFlags rhs)
+{
+    return static_cast<SoundFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline SoundFlags operator|(SoundFlags lhs, SoundFlags rhs)
+{
+    return static_cast<SoundFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline SoundFlags operator~(SoundFlags rhs)
+{
+    return static_cast<SoundFlags>(~static_cast<int>(rhs));
+}
+
+inline SoundFlags& operator&=(SoundFlags& lhs, SoundFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline SoundFlags& operator|=(SoundFlags& lhs, SoundFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum SoundCallbackEvent {
     SOUND_CALLBACK_EVENT_DONE = 0x0001,
@@ -133,7 +161,7 @@ typedef struct Sound {
     int bitsPerSample;
     int channels;
     int rate;
-    int soundFlags;
+    SoundFlags soundFlags;
     int statusFlags;
     SoundType type;
     int pausePos;
@@ -164,7 +192,7 @@ const char* soundGetErrorDescription(SoundError err);
 const char* soundGetLastErrorDescription();
 SoundError soundInit(int _, int numBuffers, int __, int dataSize, int rate, int channelCount);
 void soundExit();
-Sound* soundAllocate(SoundType type, int soundFlags);
+Sound* soundAllocate(SoundType type, SoundFlags soundFlags);
 SoundError soundLoad(Sound* sound, char* filePath);
 SoundError soundPlay(Sound* sound);
 SoundError soundStop(Sound* sound);

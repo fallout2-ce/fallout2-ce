@@ -294,9 +294,9 @@ void _refreshSoundBuffers(Sound* sound)
         sound->numBytesRead += readPos - sound->lastPosition;
     }
 
-    if ((sound->soundFlags & SOUND_FLAG_0x100) != 0) {
+    if ((sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
         if ((sound->type & SOUND_TYPE_0x20) != SOUND_TYPE_NONE) {
-            if ((sound->soundFlags & SOUND_FLAG_0x200) != 0) {
+            if ((sound->soundFlags & SOUND_FLAG_0x200) != SOUND_FLAG_NONE) {
                 sound->soundFlags |= SOUND_FLAG_0x80;
             }
         } else {
@@ -358,7 +358,7 @@ void _refreshSoundBuffers(Sound* sound)
     int audioBytes = audioBytes1;
     while (--v53 != -1) {
         int bytesRead;
-        if ((sound->soundFlags & SOUND_FLAG_0x200) != 0) {
+        if ((sound->soundFlags & SOUND_FLAG_0x200) != SOUND_FLAG_NONE) {
             bytesRead = sound->dataSize;
             memset(sound->data, 0, bytesRead);
         } else {
@@ -372,7 +372,7 @@ void _refreshSoundBuffers(Sound* sound)
 
             bytesRead = sound->io.read(sound->io.fd, sound->data, bytesToRead);
             if (bytesRead < sound->dataSize) {
-                if ((sound->soundFlags & SOUND_LOOPING) == 0 || (sound->soundFlags & SOUND_FLAG_0x100) != 0) {
+                if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE || (sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
                     memset(sound->data + bytesRead, 0, sound->dataSize - bytesRead);
                     sound->soundFlags |= SOUND_FLAG_0x200;
                     bytesRead = sound->dataSize;
@@ -494,7 +494,7 @@ void soundExit()
 }
 
 // 0x4AD0FC
-Sound* soundAllocate(SoundType type, int soundFlags)
+Sound* soundAllocate(SoundType type, SoundFlags soundFlags)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -506,11 +506,11 @@ Sound* soundAllocate(SoundType type, int soundFlags)
 
     memcpy(&(sound->io), &gSoundDefaultFileIO, sizeof(gSoundDefaultFileIO));
 
-    if ((soundFlags & SOUND_FLAG_0x02) == 0) {
+    if ((soundFlags & SOUND_FLAG_0x02) == SOUND_FLAG_NONE) {
         soundFlags |= SOUND_FLAG_0x02;
     }
 
-    sound->bitsPerSample = (soundFlags & SOUND_16BIT) != 0 ? 16 : 8;
+    sound->bitsPerSample = (soundFlags & SOUND_16BIT) != SOUND_FLAG_NONE ? 16 : 8;
     sound->channels = 1;
     sound->rate = _sampleRate;
 
@@ -558,7 +558,7 @@ SoundError _preloadBuffers(Sound* sound)
     sound->fileSize = size;
 
     if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
-        if ((sound->soundFlags & SOUND_LOOPING) == 0) {
+        if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE) {
             sound->soundFlags |= SOUND_FLAG_0x100 | SOUND_LOOPING;
         }
 
@@ -577,7 +577,7 @@ SoundError _preloadBuffers(Sound* sound)
     buf = (unsigned char*)gSoundMallocProc(size);
     bytes_read = sound->io.read(sound->io.fd, buf, size);
     if (bytes_read != size) {
-        if ((sound->soundFlags & SOUND_LOOPING) == 0 || (sound->soundFlags & SOUND_FLAG_0x100) != 0) {
+        if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE || (sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
             memset(buf + bytes_read, 0, size - bytes_read);
         } else {
             v14 = buf + bytes_read;
@@ -883,7 +883,7 @@ SoundError soundContinue(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->soundFlags & SOUND_FLAG_0x80) == 0 && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != 0) {
+    if ((sound->soundFlags & SOUND_FLAG_0x80) == SOUND_FLAG_NONE && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != SOUND_FLAG_NONE) {
         if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0 && (sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
             _refreshSoundBuffers(sound);
         }
