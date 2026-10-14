@@ -23,13 +23,6 @@
 
 namespace fallout {
 
-typedef enum SoundStatusFlags {
-    SOUND_STATUS_DONE = 0x01,
-    SOUND_STATUS_IS_PLAYING = 0x02,
-    SOUND_STATUS_IS_FADING = 0x04,
-    SOUND_STATUS_IS_PAUSED = 0x08,
-} SoundStatusFlags;
-
 typedef char*(SoundFileNameMangler)(char*);
 
 typedef struct FadeSound {
@@ -519,7 +512,7 @@ Sound* soundAllocate(SoundType type, SoundFlags soundFlags)
     sound->dataSize = _dataSize;
     sound->numBytesRead = 0;
     sound->soundBuffer = -1;
-    sound->statusFlags = 0;
+    sound->statusFlags = SOUND_STATUS_NONE;
     sound->numBuffers = _numBuffers;
     sound->readLimit = sound->dataSize * _numBuffers;
 
@@ -758,7 +751,7 @@ SoundError soundPlay(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_DONE) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE) {
         _soundRewind(sound);
     }
 
@@ -797,7 +790,7 @@ SoundError soundStop(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
@@ -860,17 +853,17 @@ SoundError soundContinue(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_DONE) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_UNKNOWN_ERROR;
         return gSoundLastError;
     }
@@ -884,10 +877,10 @@ SoundError soundContinue(Sound* sound)
     }
 
     if ((sound->soundFlags & SOUND_FLAG_0x80) == SOUND_FLAG_NONE && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != SOUND_FLAG_NONE) {
-        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0 && (sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
+        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE && (sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
             _refreshSoundBuffers(sound);
         }
-    } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
+    } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE) {
         if (sound->callback != nullptr) {
             sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
             sound->callback = nullptr;
@@ -899,7 +892,7 @@ SoundError soundContinue(Sound* sound)
         } else {
             sound->statusFlags |= SOUND_STATUS_DONE;
 
-            if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0) {
+            if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE) {
                 --_numSounds;
             }
 
@@ -926,7 +919,7 @@ bool soundIsPlaying(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0;
+    return (sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADAC4
@@ -942,7 +935,7 @@ bool _soundDone(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_DONE) != 0;
+    return (sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADB44
@@ -958,7 +951,7 @@ bool soundIsPaused(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0;
+    return (sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADBC4
@@ -1186,12 +1179,12 @@ SoundError soundPause(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_ALREADY_PAUSED;
         return gSoundLastError;
     }
@@ -1225,12 +1218,12 @@ SoundError soundResume(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PAUSED;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PAUSED;
         return gSoundLastError;
     }
@@ -1298,7 +1291,7 @@ void soundDeleteInternal(Sound* sound)
     Sound* next;
     Sound* prev;
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != SOUND_STATUS_NONE) {
         FadeSound* fadeSound = _fadeHead;
 
         while (fadeSound != nullptr) {
@@ -1496,7 +1489,7 @@ void _removeFadeSound(FadeSound* fadeSound)
         return;
     }
 
-    if ((fadeSound->sound->statusFlags & SOUND_STATUS_IS_FADING) == 0) {
+    if ((fadeSound->sound->statusFlags & SOUND_STATUS_IS_FADING) == SOUND_STATUS_NONE) {
         return;
     }
 
@@ -1580,7 +1573,7 @@ SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool
     }
 
     fadeSound = nullptr;
-    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != SOUND_STATUS_NONE) {
         fadeSound = _fadeHead;
         while (fadeSound != nullptr) {
             if (fadeSound->sound == sound) {
@@ -1628,7 +1621,7 @@ SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool
     bool shouldPlay;
     if (gSoundInitialized) {
         if (sound->soundBuffer != -1) {
-            shouldPlay = (sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0;
+            shouldPlay = (sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE;
         } else {
             gSoundLastError = SOUND_NO_SOUND;
             shouldPlay = true;

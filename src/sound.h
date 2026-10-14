@@ -146,6 +146,41 @@ inline SoundFlags& operator|=(SoundFlags& lhs, SoundFlags rhs)
     return lhs;
 }
 
+enum SoundStatusFlags : int {
+    SOUND_STATUS_NONE = 0x00,
+    SOUND_STATUS_DONE = 0x01,
+    SOUND_STATUS_IS_PLAYING = 0x02,
+    SOUND_STATUS_IS_FADING = 0x04,
+    SOUND_STATUS_IS_PAUSED = 0x08,
+};
+
+constexpr inline SoundStatusFlags operator&(SoundStatusFlags lhs, SoundStatusFlags rhs)
+{
+    return static_cast<SoundStatusFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline SoundStatusFlags operator|(SoundStatusFlags lhs, SoundStatusFlags rhs)
+{
+    return static_cast<SoundStatusFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline SoundStatusFlags operator~(SoundStatusFlags rhs)
+{
+    return static_cast<SoundStatusFlags>(~static_cast<int>(rhs));
+}
+
+inline SoundStatusFlags& operator&=(SoundStatusFlags& lhs, SoundStatusFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline SoundStatusFlags& operator|=(SoundStatusFlags& lhs, SoundStatusFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
 enum SoundCallbackEvent : int {
     SOUND_CALLBACK_EVENT_DONE = 0x0001,
     SOUND_CALLBACK_EVENT_LOOP = 0x0400,
@@ -162,7 +197,7 @@ typedef struct Sound {
     int channels;
     int rate;
     SoundFlags soundFlags;
-    int statusFlags;
+    SoundStatusFlags statusFlags;
     SoundType type;
     int pausePos;
     int volume;
