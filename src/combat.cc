@@ -2369,7 +2369,11 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
 
         if (objectGetDistanceBetween(defender, attacker) <= damageRadius) {
             if (safeDistancePtr != nullptr) {
-                *safeDistancePtr = damageRadius - objectGetDistanceBetween(defender, attacker) + 1;
+                // SFALL: Fix for ai_move_away_ engine function not working
+                // correctly in cases when needing to move a distance away
+                // from the target: the distance to move away, negative (see
+                // `_ai_move_away`).
+                *safeDistancePtr = objectGetDistanceBetween(defender, attacker) - damageRadius - 1;
                 return false;
             }
 
