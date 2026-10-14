@@ -352,7 +352,7 @@ static void _exit_inventory(bool shouldEnableIso);
 static void _display_inventory(int stackOffset, int draggedSlotIndex, int inventoryWindowType);
 static void _display_target_inventory(int stackOffset, int dragSlotIndex, Inventory* inventory, int inventoryWindowType);
 static void _display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool isDragged);
-static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight);
+static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object);
 static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, int mouseEvent);
 static void _display_body(const FrmId& frmId, int inventoryWindowType);
 static int inventoryCommonInit();
@@ -411,6 +411,7 @@ static bool tryUnequipPartyItem(InvenSlot slot);
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item);
 static FrmId buildPartyDisplayFrmId();
 static FrmId getTargetDisplayFrmId();
+static void lootSetTakenOut();
 static void setLootTarget(Object* target, Object* hiddenBox);
 static void refreshAfterTargetChange();
 static int inventoryWrapIndex(int index, int count, int direction);
@@ -673,11 +674,10 @@ static Inventory* _target_pud;
 // 0x59E97C barter_back_win
 static int gInventoryBarterBackgroundWindow;
 
-// Weight of equipped items stripped from the left/right loot-pane critter.
-// Non-zero only while inventoryOpenLooting is active.
-static int partyRightEquippedWeight = 0;
 static CritterEquipped* partyTargetEquipped = nullptr; // stripped equipment of party member being "looted"
 static Object* partyBaseTarget = nullptr;
+// The loot target's hidden items while inventoryOpenLooting is active.
+static Object* lootHiddenBox = nullptr;
 
 static FrmImage _inventoryFrmImages[INVENTORY_FRM_COUNT];
 static FrmImage _moveFrmImages[8];
@@ -962,7 +962,7 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory)
         scrollerY + inventoryLootLayout.scrollerHeight);
 }
 
-static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight)
+static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object)
 {
     int loot_weight_indicator = settings.ui.loot_weight_indicator;
 
@@ -1009,7 +1009,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NONE;
     int inventoryWeight = objectGetInventoryWeight(object);
     if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
-        int currentWeight = inventoryWeight + extraWeight;
+        int currentWeight = inventoryWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
         int weightPercentage = maxWeight < 1 ? 0 : (int)std::ceil(currentWeight * 100 / (float)maxWeight);
 
@@ -1294,6 +1294,25 @@ static FrmId getTargetDisplayFrmId()
     return buildPartyDisplayFrmId();
 }
 
+// SFALL: Fix for not counting in the weight/size of equipped items on NPC when
+// stealing or bartering: what the loot screen has taken out of its target (the
+// equipped items while stealing, the hidden ones) still counts in the
+// target's weight (nothing can be put into a critter past what it can carry
+// with them).
+static void lootSetTakenOut()
+{
+    Object* leftHand = nullptr;
+    Object* rightHand = nullptr;
+    Object* armor = nullptr;
+    if (partyTargetEquipped != nullptr) {
+        leftHand = partyTargetEquipped->leftHand;
+        rightHand = partyTargetEquipped->rightHand != leftHand ? partyTargetEquipped->rightHand : nullptr;
+        armor = partyTargetEquipped->armor;
+    }
+
+    itemsSetTakenOut(partyBaseTarget, { leftHand, rightHand, armor }, lootHiddenBox);
+}
+
 static void setLootTarget(Object* target, Object* hiddenBox)
 {
     assert(target != nullptr);
@@ -1309,10 +1328,11 @@ static void setLootTarget(Object* target, Object* hiddenBox)
     itemMoveAllHidden(target, hiddenBox);
     if (partyTargetEquipped != nullptr) {
         *partyTargetEquipped = critterStripEquipped(target);
-        partyRightEquippedWeight = partyTargetEquipped->weight;
     }
 
     partyBaseTarget = target;
+    lootHiddenBox = hiddenBox;
+    lootSetTakenOut();
     _target_pud = &(target->data.inventory);
     _target_curr_stack = 0;
     _target_stack[0] = target;
@@ -1337,7 +1357,7 @@ static void refreshPartyEquippedAfterAction()
     assert(hasPartySlots());
 
     *partyTargetEquipped = critterStripEquipped(partyBaseTarget);
-    partyRightEquippedWeight = partyTargetEquipped->weight;
+    lootSetTakenOut();
     gInventoryWindowDudeRotationTimestamp = 0;
 }
 
@@ -1367,6 +1387,7 @@ static bool tryUnequipPartyItem(InvenSlot slot)
     }
 
     critterRestoreEquipped(partyBaseTarget, *partyTargetEquipped);
+    lootSetTakenOut();
 
     int rc = -1;
     if (slot == InvenSlot::RightHand) {
@@ -1423,6 +1444,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
     }
 
     critterRestoreEquipped(partyBaseTarget, *partyTargetEquipped);
+    lootSetTakenOut();
 
     // move from player -> party member
     if (fromLeftPane && itemMove(_inven_dude, partyBaseTarget, item, 1) != 0) {
@@ -2358,7 +2380,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        inventoryLootRenderPaneWeight(windowBuffer, pitch, false, _stack[0], 0);
+        inventoryLootRenderPaneWeight(windowBuffer, pitch, false, _stack[0]);
     }
 
     windowRefresh(gInventoryWindow);
@@ -2443,7 +2465,7 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
 
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        inventoryLootRenderPaneWeight(windowBuffer, pitch, true, _target_stack[_target_curr_stack], partyRightEquippedWeight);
+        inventoryLootRenderPaneWeight(windowBuffer, pitch, true, _target_stack[_target_curr_stack]);
         if (hasPartySlots()) {
             renderPartySlots();
         }
@@ -3336,15 +3358,12 @@ CritterEquipped critterStripEquipped(Object* critter)
         }
     }
     if (equipped.leftHand != nullptr) {
-        equipped.weight += itemGetWeight(equipped.leftHand);
         itemRemoveWithReason(critter, equipped.leftHand, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
     if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
-        equipped.weight += itemGetWeight(equipped.rightHand);
         itemRemoveWithReason(critter, equipped.rightHand, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
     if (equipped.armor != nullptr) {
-        equipped.weight += itemGetWeight(equipped.armor);
         itemRemoveWithReason(critter, equipped.armor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
     return equipped;
@@ -5113,6 +5132,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
         objectListFree(critters);
     }
 
+    itemsResetTakenOut();
+
     if (_gIsSteal) {
         critterRestoreEquipped(target, stealTargetEquipped);
     }
@@ -5137,9 +5158,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
     }
 
-    partyRightEquippedWeight = 0;
     partyTargetEquipped = nullptr;
     partyBaseTarget = nullptr;
+    lootHiddenBox = nullptr;
     gInventoryWindowDudeFrmId = savedDudeFrmId;
 
     _exit_inventory(isoWasEnabled);
@@ -5737,6 +5758,12 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     // Sfall: remove hidden items of barterer (relevant to Goris)
     itemMoveAllHidden(barterer, hiddenBox);
 
+    // SFALL: Fix for not counting in the weight/size of equipped items on NPC
+    // when stealing or bartering: what was taken out above still counts in
+    // the barterer's weight (a party member can't be given more than it can
+    // carry with it).
+    itemsSetTakenOut(barterer, { armor, item2, item1 }, hiddenBox);
+
     _pud = &(_inven_dude->data.inventory);
     gBartererTableObj = bartererTable;
     gPlayerTableObj = playerTable;
@@ -6009,6 +6036,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
         sharedFpsLimiter.throttle();
     }
 
+    itemsResetTakenOut();
     itemMoveAll(hiddenBox, barterer);
     objectDestroy(hiddenBox, nullptr);
 

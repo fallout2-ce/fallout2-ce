@@ -196,6 +196,14 @@ static int gHealingItemPids[HEALING_ITEM_COUNT];
 static std::unordered_set<int> forcedAimedShotPids;
 static std::unordered_set<int> disabledAimedShotPids;
 
+// SFALL: Fix for not counting in the weight/size of equipped items on NPC when
+// stealing or bartering: what the loot and barter screens take out of the
+// critter they show (its equipped and hidden items) and the weight and size
+// of it, counted in while they are open.
+static Object* gItemsTakenOutOwner = nullptr;
+static int gItemsTakenOutWeight = 0;
+static int gItemsTakenOutSize = 0;
+
 // 0x4770E0
 int itemsInit()
 {
@@ -981,6 +989,12 @@ int objectGetInventoryWeight(Object* obj)
     }
 
     int weight = 0;
+
+    // SFALL: Fix for not counting in the weight/size of equipped items on NPC
+    // when stealing or bartering.
+    if (obj == gItemsTakenOutOwner && obj != gDude) {
+        weight += gItemsTakenOutWeight;
+    }
 
     Inventory* inventory = &(obj->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
@@ -2702,6 +2716,12 @@ int containerGetTotalSize(Object* container)
 
     int totalSize = 0;
 
+    // SFALL: Fix for not counting in the weight/size of equipped items on NPC
+    // when stealing or bartering.
+    if (container == gItemsTakenOutOwner && container != gDude) {
+        totalSize += gItemsTakenOutSize;
+    }
+
     Inventory* inventory = &(container->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
@@ -2711,6 +2731,35 @@ int containerGetTotalSize(Object* container)
     }
 
     return totalSize;
+}
+
+// SFALL: The items the loot or barter screen has taken out of [owner] (its
+// equipped items, nullptr for none, and the hidden ones moved to
+// [hiddenBox]): their weight and size count in [owner]'s until
+// `itemsResetTakenOut`.
+void itemsSetTakenOut(Object* owner, std::initializer_list<Object*> items, Object* hiddenBox)
+{
+    gItemsTakenOutOwner = nullptr;
+
+    int weight = objectGetInventoryWeight(hiddenBox);
+    int size = containerGetTotalSize(hiddenBox);
+    for (Object* item : items) {
+        if (item != nullptr) {
+            weight += itemGetWeight(item);
+            size += itemGetSize(item);
+        }
+    }
+
+    gItemsTakenOutOwner = owner;
+    gItemsTakenOutWeight = weight;
+    gItemsTakenOutSize = size;
+}
+
+void itemsResetTakenOut()
+{
+    gItemsTakenOutOwner = nullptr;
+    gItemsTakenOutWeight = 0;
+    gItemsTakenOutSize = 0;
 }
 
 // 0x479A74
