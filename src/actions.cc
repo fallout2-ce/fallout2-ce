@@ -1062,7 +1062,10 @@ int _action_climb_ladder(Object* critter, Object* ladder)
     int actionPoints;
     if (isInCombat()) {
         animationRequestOptions = ANIMATION_REQUEST_RESERVED;
-        actionPoints = critter->data.critter.combat.ap;
+        // SFALL: Fix for the player's movement in combat being interrupted
+        // when trying to use objects with Bonus Move APs available: the walk
+        // may take the free move points too (the player's, 0 out of his turn).
+        actionPoints = critter->data.critter.combat.ap + _combat_free_move;
     } else {
         animationRequestOptions = ANIMATION_REQUEST_UNRESERVED;
         actionPoints = -1;
@@ -1138,7 +1141,10 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         int actionPoints;
         if (isInCombat()) {
             animationRequestOptions = ANIMATION_REQUEST_RESERVED;
-            actionPoints = user->data.critter.combat.ap;
+            // SFALL: Fix for the player's movement in combat being
+            // interrupted when trying to use objects with Bonus Move APs
+            // available (see `_action_climb_ladder`).
+            actionPoints = user->data.critter.combat.ap + _combat_free_move;
         } else {
             animationRequestOptions = ANIMATION_REQUEST_UNRESERVED;
             actionPoints = -1;

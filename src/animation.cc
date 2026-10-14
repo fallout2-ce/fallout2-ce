@@ -2489,6 +2489,14 @@ static int animateMoveObjectToTile(Object* obj, int tile, int elev, int actionPo
         if (actionPoints != -1 && actionPoints < sad->length) {
             sad->length = actionPoints;
         }
+    } else if (obj == gDude && actionPoints >= 0 && actionPoints - _combat_free_move < obj->data.critter.combat.ap) {
+        // SFALL: Fix for anim_move_to_tile_ engine function ignoring the
+        // distance argument for the player: a walk to a free tile shorter
+        // than the player's move points stops at the distance too.
+        AnimationSad* sad = &(gAnimationSads[index]);
+        if (actionPoints < sad->length) {
+            sad->length = actionPoints;
+        }
     }
 
     return 0;
