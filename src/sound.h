@@ -146,12 +146,12 @@ inline SoundFlags& operator|=(SoundFlags& lhs, SoundFlags rhs)
     return lhs;
 }
 
-typedef enum SoundCallbackEvent {
+enum SoundCallbackEvent : int {
     SOUND_CALLBACK_EVENT_DONE = 0x0001,
     SOUND_CALLBACK_EVENT_LOOP = 0x0400,
-} SoundCallbackEvent;
+};
 
-typedef void SoundCallback(void* userData, int event);
+typedef void SoundCallback(void* userData, SoundCallbackEvent event);
 typedef void SoundDeleteCallback(void* userData);
 
 typedef struct Sound {

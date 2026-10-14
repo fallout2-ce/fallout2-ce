@@ -195,9 +195,9 @@ static long gameSoundFileSeek(int handle, long offset, int origin);
 static long gameSoundFileTell(int handle);
 static long gameSoundFileGetSize(int handle);
 static bool gameSoundIsCompressed(char* filePath);
-static void speechCallback(void* userData, int event);
-static void backgroundSoundCallback(void* userData, int event);
-static void soundEffectCallback(void* userData, int event);
+static void speechCallback(void* userData, SoundCallbackEvent event);
+static void backgroundSoundCallback(void* userData, SoundCallbackEvent event);
+static void soundEffectCallback(void* userData, SoundCallbackEvent event);
 static int _gsound_background_allocate(Sound** outSound, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 static int gameSoundFindBackgroundSoundPath(char* dest, const char* src);
 static int gameSoundFindSpeechSoundPath(char* dest, const char* src);
@@ -211,7 +211,7 @@ static void gameSoundChannelPoolInit(GameSoundChannelPool* pool, AudioChannelTyp
 static void gameSoundChannelPoolStopAll(GameSoundChannelPool* pool);
 static void gameSoundChannelPoolSetVolume(GameSoundChannelPool* pool, int volume);
 static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path, int volume, Object* speaker);
-static void gameSoundChannelSlotCallback(void* userData, int event);
+static void gameSoundChannelSlotCallback(void* userData, SoundCallbackEvent event);
 
 // Generic decoded backend: supports arbitrary script/speech paths via audio decoders.
 const SoundFileIO gGameSoundAudioIO = {
@@ -1801,7 +1801,7 @@ bool gameSoundIsCompressed(char* filePath)
 }
 
 // 0x451A90
-void speechCallback(void* userData, int event)
+void speechCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         gSpeechSound = nullptr;
@@ -1813,7 +1813,7 @@ void speechCallback(void* userData, int event)
 }
 
 // 0x451AB0
-void backgroundSoundCallback(void* userData, int event)
+void backgroundSoundCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         gBackgroundSound = nullptr;
@@ -1825,7 +1825,7 @@ void backgroundSoundCallback(void* userData, int event)
 }
 
 // 0x451AD0
-void soundEffectCallback(void* userData, int event)
+void soundEffectCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         --_gsound_active_effect_counter;
@@ -2279,7 +2279,7 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
     return 0;
 }
 
-static void gameSoundChannelSlotCallback(void* userData, int event)
+static void gameSoundChannelSlotCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         GameSoundChannelSlot* slot = static_cast<GameSoundChannelSlot*>(userData);
