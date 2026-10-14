@@ -236,11 +236,11 @@ static void sfall_gl_scr_execute_due_timers(GlobalScript& scr)
     sfall_gl_scr_cleanup_timers(scr);
 }
 
-void sfall_gl_scr_exec_map_update_scripts(int action)
+void sfall_gl_scr_exec_map_update_scripts(ScriptProc proc)
 {
     for (auto& scr : state->globalScripts) {
         if (scr.mode == 0 || scr.mode == 3) {
-            sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[action]);
+            sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[proc]);
         }
     }
 }
