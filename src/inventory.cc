@@ -5371,8 +5371,12 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
 {
     MessageListItem messageListItem;
 
+    // SFALL: Fix for being unable to sell/give items in the barter screen when
+    // the player/party member is overloaded: a table that weighs nothing (the
+    // player or the party member takes nothing) always fits.
     int weightAvailable = critterGetStat(dude, STAT_CARRY_WEIGHT) - objectGetInventoryWeight(dude);
-    if (objectGetInventoryWeight(barterTable) > weightAvailable) {
+    int barterTableWeight = objectGetInventoryWeight(barterTable);
+    if (barterTableWeight != 0 && barterTableWeight > weightAvailable) {
         // Sorry, you cannot carry that much.
         messageListItem.num = 31;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
@@ -5383,7 +5387,8 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
 
     if (gGameDialogSpeakerIsPartyMember) {
         int npcWeightAvailable = critterGetStat(npc, STAT_CARRY_WEIGHT) - objectGetInventoryWeight(npc);
-        if (objectGetInventoryWeight(offerTable) > npcWeightAvailable) {
+        int offerTableWeight = objectGetInventoryWeight(offerTable);
+        if (offerTableWeight != 0 && offerTableWeight > npcWeightAvailable) {
             // Sorry, that's too much to carry.
             messageListItem.num = 32;
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
