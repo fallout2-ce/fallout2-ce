@@ -248,7 +248,7 @@ char* soundFileManglerDefaultImpl(char* fname)
     return fname;
 }
 
-const char* soundGetLastErrorDescription() 
+const char* soundGetLastErrorDescription()
 {
     return soundGetErrorDescription(gSoundLastError);
 }
