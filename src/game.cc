@@ -42,6 +42,7 @@
 #include "movie_effect.h"
 #include "object.h"
 #include "options.h"
+#include "options_schema.h"
 #include "palette.h"
 #include "party_member.h"
 #include "perk.h"
@@ -164,6 +165,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     // Content config reads from the VFS, so it must be initialized after gameDbInit.
     contentConfigInit();
+    optionsSchemaInit();
 
     // Message list repository is considered a specialized file manager, so
     // it should be initialized early in the process.
