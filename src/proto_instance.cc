@@ -21,11 +21,13 @@
 #include "geometry.h"
 #include "interface.h"
 #include "interpreter_extra.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "message.h"
 #include "object.h"
 #include "palette.h"
+#include "party_member.h"
 #include "perk.h"
 #include "proto.h"
 #include "queue.h"
@@ -737,6 +739,12 @@ int objectDrop(Object* invenObj, Object* itemObj)
 
     if (scriptOverrides) {
         return 0;
+    }
+
+    // SFALL: Fix for drop_obj function: the stats of the armor the player or
+    // a party member wears go with it.
+    if ((itemObj->flags & OBJECT_WORN) != OBJECT_NONE && objectIsPartyMember(invenObj)) {
+        adjustCritterStatsOnArmorChange(invenObj, itemObj, nullptr);
     }
 
     if (_obj_remove_from_inven(invenObj, itemObj) == 0) {
