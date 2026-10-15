@@ -4876,7 +4876,9 @@ void _apply_damage(Attack* attack, bool animated)
     if (!defenderIsCritter && !hitUnintendedTarget) {
         bool shouldRunDamageProc = !objectIsPartyMember(attack->defender) || !objectIsPartyMember(attack->attacker);
         if (shouldRunDamageProc) {
-            if (defender != nullptr && defender->sid != -1) {
+            // SFALL: Fix for damage_p_proc being called for misses if the
+            // target is not a critter.
+            if (defender != nullptr && defender->sid != -1 && (attack->attackerFlags & DAM_HIT) != DAM_NONE) {
                 scriptSetFixedParam(defender->sid, attack->attackerDamage);
                 scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
                 scriptExecProc(defender->sid, SCRIPT_PROC_DAMAGE);
