@@ -2250,7 +2250,7 @@ static bool scriptIsSavable(const Script* script)
         return false;
     }
 
-    if (script->owner != nullptr && !objectIsSavable(script->owner)) {
+    if (!objectIsSavable(script->owner)) {
         return false;
     }
 
@@ -2263,7 +2263,6 @@ int scriptSaveAll(File* stream)
     for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
 
-        // Collect pointers to all valid scripts that need to be saved
         std::vector<Script*> savableScripts;
 
         ScriptListExtent* scriptExtent = scriptList->head;
@@ -2277,19 +2276,18 @@ int scriptSaveAll(File* stream)
             scriptExtent = scriptExtent->next;
         }
 
-        // Write total script count for this type
         int scriptCount = static_cast<int>(savableScripts.size());
         if (fileWriteInt32(stream, scriptCount) == -1) {
             return -1;
         }
 
-        // Serialize scripts by emulating the original extent layout (chunks of 16)
         int totalSaved = 0;
         while (totalSaved < scriptCount) {
             int remaining = scriptCount - totalSaved;
             int currentExtentLength = (remaining > SCRIPT_LIST_EXTENT_SIZE) ? SCRIPT_LIST_EXTENT_SIZE : remaining;
 
-            // Write 16 scripts. If we ran out of valid scripts, we pad it with the last valid one
+            // Write 16 scripts (SCRIPT_LIST_EXTENT_SIZE).
+            // If we ran out of valid scripts, we pad it with the last valid one
             // (original code behavior when writing an incomplete tail extent).
             for (int i = 0; i < SCRIPT_LIST_EXTENT_SIZE; i++) {
                 int scriptIndex = totalSaved + i;
