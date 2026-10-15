@@ -955,19 +955,19 @@ bool soundIsPaused(Sound* sound)
 }
 
 // 0x4ADBC4
-int _soundType(Sound* sound, SoundType type)
+bool soundIsType(Sound* sound, SoundType type)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
-        return 0;
+        return false;
     }
 
     if (sound == nullptr || sound->soundBuffer == -1) {
         gSoundLastError = SOUND_NO_SOUND;
-        return 0;
+        return false;
     }
 
-    return sound->type & type;
+    return (sound->type & type) != SOUND_TYPE_NONE;
 }
 
 // 0x4ADC04
@@ -1610,7 +1610,10 @@ SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool
     }
 
     fadeSound->targetVolume = targetVolume;
-    _soundGetVolume(sound, &fadeSound->initialVolume);
+    SoundError rc = _soundGetVolume(sound, &fadeSound->initialVolume);
+    if (rc != SOUND_NO_ERROR) {
+        return rc;
+    }
     fadeSound->currentVolume = fadeSound->initialVolume;
     fadeSound->pause = pause;
     // TODO: Check.

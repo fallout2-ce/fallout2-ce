@@ -235,7 +235,7 @@ SoundError soundDelete(Sound* sound);
 bool soundIsPlaying(Sound* sound);
 bool _soundDone(Sound* sound);
 bool soundIsPaused(Sound* sound);
-int _soundType(Sound* sound, SoundType type);
+bool soundIsType(Sound* sound, SoundType type);
 SoundError soundGetDuration(Sound* sound, int* duration);
 SoundError soundSetLooping(Sound* sound, int loops);
 int _soundVolumeHMItoDirectSound(int volume);

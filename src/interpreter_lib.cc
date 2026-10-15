@@ -2004,7 +2004,7 @@ static int intLibSoundPause(int value)
     }
 
     SoundError rc;
-    if (_soundType(sound, SOUND_TYPE_MEMORY)) {
+    if (soundIsType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundStop(sound);
     } else {
         rc = soundPause(sound);
@@ -2056,7 +2056,7 @@ static int intLibSoundResume(int value)
     }
 
     SoundError rc;
-    if (_soundType(sound, SOUND_TYPE_MEMORY)) {
+    if (soundIsType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundPlay(sound);
     } else {
         rc = soundResume(sound);
