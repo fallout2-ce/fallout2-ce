@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "geometry.h"
+#include "map_defs.h"
 
 namespace fallout {
 
@@ -52,7 +53,7 @@ void mapEdgeSave(const char* mapName);
 
 // Mutable access to a single elevation's edge data. Used by the mapper edge editor,
 // which edits this data in place; the disk write happens later via mapEdgeSave.
-EdgeElevationData& mapEdgeGetElevationData(int elevation);
+EdgeElevationData& mapEdgeGetElevationData(MapElevation elevation);
 
 // Free all loaded EDG data. Safe to call when nothing is loaded.
 void mapEdgeFree();
@@ -77,14 +78,14 @@ bool mapEdgeZoneIsSelected();
 
 // Clamps tile to the EDG boundary for the given elevation.
 // Returns the clamped tile (may equal tile if already in bounds).
-int mapEdgeSelectZoneAndClamp(int tile, int elevation);
+int mapEdgeSelectZoneAndClamp(int tile, MapElevation elevation);
 
 // Returns true if tile is within the EDG boundary for the given elevation.
 // Used by the stencil flood-fill as a traversal gate.
 bool mapEdgeTileInBounds(int tile);
 
 // Returns true if squareRect data (v2 EDG) is available for this elevation.
-bool mapEdgeHasSquareRect(int elevation);
+bool mapEdgeHasSquareRect(MapElevation elevation);
 
 // Convert tile index to pixel-offset coordinates.
 // Equivalent to sfall ViewMap::GetTileCoordOffset.
@@ -95,10 +96,10 @@ void pixelToTileCoord(int& inOutX, int& inOutY);
 
 // Fills the squareRect for the given elevation.
 // Only valid when mapEdgeHasSquareRect(elevation) returns true.
-void mapEdgeGetSquareRect(int elevation, Rect* outRect);
+void mapEdgeGetSquareRect(MapElevation elevation, Rect* outRect);
 
 // Returns the clipSides for the given elevation (default-constructed if no EDG data).
-EdgeZone::ClipSides mapEdgeGetClipSides(int elevation);
+EdgeZone::ClipSides mapEdgeGetClipSides(MapElevation elevation);
 
 // Recalculate all pixel-space fields using current screen dimensions.
 // Call when resolution changes while a map is loaded.
@@ -117,7 +118,7 @@ bool mapEdgeSetBoundaryMods(int tile);
 
 // Computes the screen-space visible area rectangle.
 // Equivalent to sfall EdgeClipping's mapVisibleArea. Returns false if no EDG loaded.
-bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect);
+bool mapEdgeComputeVisibleArea(MapElevation elevation, Rect* outRect);
 
 // Returns true if the screen coordinate is over the map window but outside the EDG-visible area.
 bool mapEdgeIsOverClippedArea(int screenX, int screenY);

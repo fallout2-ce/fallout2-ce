@@ -304,6 +304,8 @@ enum AmmoCostHookType {
 };
 
 enum class RemoveInventoryObjectHookReason {
+    // sfall's value for its "Unlimited Ammo" fix (see `inventoryEquipFunc`).
+    WieldStack = -2,
     ItemRemovedInventory = 4831349,
     ItemRemoved = 4548572,
     ItemRemovedMulti = 4563866,

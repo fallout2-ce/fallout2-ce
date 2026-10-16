@@ -3946,6 +3946,24 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             tileWindowRefreshRect(&rect, gElevation);
         }
 
+        // SFALL: Fix for "Unlimited Ammo" exploit: one item of a stack is
+        // wielded, the rest stays in the inventory. A whole stack in hand
+        // (from `wield_obj_critter`, a party member's equipping) shared one
+        // weapon's ammo.
+        ObjectFlags handFlags = item->flags & OBJECT_IN_ANY_HAND;
+        bool removed = itemRemoveWithReason(critter, item, 1, RemoveInventoryObjectHookReason::WieldStack, nullptr) == 0;
+
+        Object* stackInHand = handIndex == HAND_RIGHT ? critterGetItem2(critter) : critterGetItem1(critter);
+        if (stackInHand != nullptr) {
+            stackInHand->flags &= ~OBJECT_IN_ANY_HAND;
+        }
+
+        item->flags |= handFlags;
+
+        if (removed) {
+            itemAdd(critter, item, 1);
+        }
+
         if (itemGetType(item) == ITEM_TYPE_WEAPON) {
             weaponAnimationCode = weaponGetAnimationCode(item);
         } else {
@@ -5371,8 +5389,12 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
 {
     MessageListItem messageListItem;
 
+    // SFALL: Fix for being unable to sell/give items in the barter screen when
+    // the player/party member is overloaded: a table that weighs nothing (the
+    // player or the party member takes nothing) always fits.
     int weightAvailable = critterGetStat(dude, STAT_CARRY_WEIGHT) - objectGetInventoryWeight(dude);
-    if (objectGetInventoryWeight(barterTable) > weightAvailable) {
+    int barterTableWeight = objectGetInventoryWeight(barterTable);
+    if (barterTableWeight != 0 && barterTableWeight > weightAvailable) {
         // Sorry, you cannot carry that much.
         messageListItem.num = 31;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
@@ -5383,7 +5405,8 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
 
     if (gGameDialogSpeakerIsPartyMember) {
         int npcWeightAvailable = critterGetStat(npc, STAT_CARRY_WEIGHT) - objectGetInventoryWeight(npc);
-        if (objectGetInventoryWeight(offerTable) > npcWeightAvailable) {
+        int offerTableWeight = objectGetInventoryWeight(offerTable);
+        if (offerTableWeight != 0 && offerTableWeight > npcWeightAvailable) {
             // Sorry, that's too much to carry.
             messageListItem.num = 32;
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
