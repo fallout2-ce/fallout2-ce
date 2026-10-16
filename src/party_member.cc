@@ -762,7 +762,7 @@ void _partyMemberClear()
 // when there's none: the usual placement then.
 static bool partyMemberPlaceMultihex(Object* critter)
 {
-    int elevation = gDude->elevation;
+    MapElevation elevation = gDude->elevation;
     int rotation = (gDude->rotation + 3) % ROTATION_COUNT;
     for (int side = 0; side < 2; side++) {
         for (int distance = 2; distance < 8; distance++) {
