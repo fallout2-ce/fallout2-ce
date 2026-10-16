@@ -304,6 +304,8 @@ enum AmmoCostHookType {
 };
 
 enum class RemoveInventoryObjectHookReason {
+    // sfall's value for its "Unlimited Ammo" fix (see `inventoryEquipFunc`).
+    WieldStack = -2,
     ItemRemovedInventory = 4831349,
     ItemRemoved = 4548572,
     ItemRemovedMulti = 4563866,
@@ -343,7 +345,7 @@ enum class EncounterHookResult {
 };
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
-bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+bool scriptHooks_StdProcedure(ScriptProc procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
 void scriptHooks_ItemDamage(Object* weapon, Object* critter, HitMode hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);

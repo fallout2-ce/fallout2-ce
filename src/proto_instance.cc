@@ -120,7 +120,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    int scriptType = SID_TYPE(sid);
+    ScriptType scriptType = scriptTypeFromSid(sid);
     if (scriptAdd(sidPtr, scriptType) == -1) {
         return -1;
     }
@@ -130,7 +130,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
         return -1;
     }
 
-    script->index = sid & 0xFFFFFF;
+    script->index = scriptIdFromSid(sid);
 
     if (objectType == OBJ_TYPE_CRITTER) {
         object->scriptIndex = script->index;
@@ -148,13 +148,13 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     script->ownerId = object->id;
     script->owner = object;
 
-    _scr_find_str_run_info(sid & 0xFFFFFF, &(script->field_50), *sidPtr);
+    _scr_find_str_run_info(scriptIdFromSid(sid), &(script->field_50), *sidPtr);
 
     return 0;
 }
 
 // 0x49AAC0 obj_new_sid_inst
-int objectSetScript(Object* obj, int scriptType, int scriptIndex)
+int objectSetScript(Object* obj, ScriptType scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
         return -1;
@@ -760,7 +760,7 @@ int objectDestroy(Object* obj)
         return -1;
     }
 
-    int elev;
+    MapElevation elev;
     Object* owner = obj->owner;
     if (owner != nullptr) {
         _obj_remove_from_inven(owner, obj);
@@ -1580,7 +1580,7 @@ static int useLadderDown(Object* user, Object* ladder)
     }
 
     int tile = builtTileGetTile(builtTile);
-    int elevation = builtTileGetElevation(builtTile);
+    MapElevation elevation = builtTileGetElevation(builtTile);
     if (ladder->data.scenery.ladder.destinationMap != 0) {
         MapTransition transition;
         memset(&transition, 0, sizeof(transition));
@@ -1614,7 +1614,7 @@ static int useLadderUp(Object* user, Object* ladder)
     }
 
     int tile = builtTileGetTile(builtTile);
-    int elevation = builtTileGetElevation(builtTile);
+    MapElevation elevation = builtTileGetElevation(builtTile);
     if (ladder->data.scenery.ladder.destinationMap != 0) {
         MapTransition transition;
         memset(&transition, 0, sizeof(transition));
@@ -1648,7 +1648,7 @@ static int useStairs(Object* user, Object* stairs)
     }
 
     int tile = builtTileGetTile(builtTile);
-    int elevation = builtTileGetElevation(builtTile);
+    MapElevation elevation = builtTileGetElevation(builtTile);
     if (stairs->data.scenery.stairs.destinationMap > 0) {
         MapTransition transition;
         memset(&transition, 0, sizeof(transition));
@@ -2256,7 +2256,7 @@ int objectUnjamAll()
 
 // critter_attempt_placement
 // 0x49D4D4
-int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
+int objectAttemptPlacement(Object* obj, int tile, MapElevation elevation, int radius)
 {
     constexpr int maxDist = 7;
     constexpr int maxAttempts = 100;
@@ -2316,7 +2316,7 @@ int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
 }
 
 // 0x49D628
-int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
+int objectAttemptPlacementPartyMember(Object* obj, int tile, MapElevation elevation)
 {
     if (obj == nullptr) {
         return -1;
