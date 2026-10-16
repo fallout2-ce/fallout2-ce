@@ -634,8 +634,16 @@ int objectPickup(Object* critter, Object* item)
             // SFALL: Fix for the incorrect message being displayed when the NPC
             // cannot pick up an item due to not enough space in the inventory
             // (the player's one).
+            // %s cannot pick up the item.
+            MessageListItem messageListItem;
+            messageListItem.num = 1000;
+            const char* format = "%s cannot pick up the item.";
+            if (messageListGetItem(&gCeMessageList, &messageListItem)) {
+                format = messageListItem.text;
+            }
+
             char formattedMessage[160];
-            snprintf(formattedMessage, sizeof(formattedMessage), "%s cannot pick up the item.", critterGetName(critter));
+            snprintf(formattedMessage, sizeof(formattedMessage), format, critterGetName(critter));
             displayMonitorAddMessage(formattedMessage);
         } else {
             MessageListItem messageListItem;
