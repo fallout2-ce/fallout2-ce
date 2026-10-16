@@ -51,6 +51,22 @@ int strParseStrFromFuncEnum(char** stringPtr, T* valuePtr, StringParserCallback*
 }
 
 int strParseIntWithKey(char** stringPtr, const char* key, int* valuePtr, const char* delimeter);
+
+template <typename T>
+int strParseEnumWithKey(char** stringPtr, const char* key, T* valuePtr, const char* delimeter)
+{
+    if (stringPtr == nullptr || *stringPtr == nullptr) {
+        return 0;
+    }
+
+    int temp;
+    int result = strParseIntWithKey(stringPtr, key, &temp, delimeter);
+    if (result == 0) {
+        *valuePtr = static_cast<T>(temp);
+    }
+    return result;
+}
+
 int strParseKeyValue(char** stringPtr, char* key, int* valuePtr, const char* delimeter);
 
 } // namespace fallout

@@ -33,6 +33,7 @@
 #include "text_object.h"
 #include "tile.h"
 #include "window_manager.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -635,7 +636,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
         return 0;
     }
 
-    int scriptType = SCRIPT_TYPE_CRITTER;
+    ScriptType scriptType = SCRIPT_TYPE_CRITTER;
     if (ProtoId(a1->object).objectType() != OBJ_TYPE_CRITTER) {
         scriptType = SCRIPT_TYPE_ITEM;
     }
@@ -756,6 +757,39 @@ void _partyMemberClear()
     _partyStatePrepped = 0;
 }
 
+// SFALL: Places a multihex party member behind the dude (else in front of
+// him), 2 to 7 tiles away, on a tile with the tiles around it free. False
+// when there's none: the usual placement then.
+static bool partyMemberPlaceMultihex(Object* critter)
+{
+    MapElevation elevation = gDude->elevation;
+    int rotation = (gDude->rotation + 3) % ROTATION_COUNT;
+    for (int side = 0; side < 2; side++) {
+        for (int distance = 2; distance < 8; distance++) {
+            int tile = tileGetTileInDirection(gDude->tile, static_cast<Rotation>(rotation), distance);
+            if (!wmEvalTileNumForPlacement(tile)) {
+                continue;
+            }
+
+            bool free = true;
+            for (int around = ROTATION_COUNT - 1; around >= 0; around--) {
+                if (_obj_blocking_at(critter, tileGetTileInDirection(tile, static_cast<Rotation>(around), 1), elevation) != nullptr) {
+                    free = false;
+                    break;
+                }
+            }
+
+            if (free) {
+                objectShow(critter, nullptr);
+                objectSetLocation(critter, tile, elevation, nullptr);
+                return true;
+            }
+        }
+        rotation = gDude->rotation;
+    }
+    return false;
+}
+
 // 0x494DD0 partyMemberSyncPosition
 int _partyMemberSyncPosition()
 {
@@ -768,6 +802,12 @@ int _partyMemberSyncPosition()
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         Object* partyMemberObj = partyMember->object;
         if ((partyMemberObj->flags & OBJECT_HIDDEN) == OBJECT_NONE && ProtoId(partyMemberObj).objectType() == OBJ_TYPE_CRITTER) {
+            // SFALL: Fix the placement of multihex critters in the player's
+            // party when entering a map or elevation.
+            if ((partyMemberObj->flags & OBJECT_MULTIHEX) != OBJECT_NONE && partyMemberPlaceMultihex(partyMemberObj)) {
+                continue;
+            }
+
             Rotation rotation;
             if ((n % 2) != 0) {
                 rotation = clockwiseRotation;
@@ -1205,6 +1245,14 @@ static int partyFixMultipleMembers()
                     }
                     remove = true;
                 }
+            }
+
+            // SFALL: Fix for the removal of party member's corpse when loading
+            // the map. A critter's script is removed when it dies and a dead
+            // party member leaves the party: its corpse was taken for a
+            // doppelganger and destroyed with everything it carried.
+            if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER && (obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
+                remove = false;
             }
 
             if (remove) {
