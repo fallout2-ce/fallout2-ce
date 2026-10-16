@@ -5396,19 +5396,25 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
         if (offerTable->data.inventory.length == 0) {
             badOffer = true;
         } else {
-            // SFALL: Fix for being unable to sell used geiger counters or
-            // stealth boys: active ones in the offer are turned off. The
-            // original checked the offer table's own pid, so nothing active
-            // could be sold.
-            Object* queuedItem;
-            while ((queuedItem = itemGetQueued(offerTable)) != nullptr) {
-                ProtoId queuedItemProtoId = ProtoId(queuedItem);
-                if (queuedItemProtoId != ItemProtoTypeId::ActivatedGeigerCounter && queuedItemProtoId != ItemProtoTypeId::ActivatedStealthBoy) {
-                    badOffer = true;
-                    break;
-                }
+            if (itemCanSellUsedGeiger()) {
+                // SFALL: Fix for being unable to sell used geiger counters or
+                // stealth boys: active ones in the offer are turned off. The
+                // original checked the offer table's own pid, so nothing
+                // active could be sold.
+                Object* queuedItem;
+                while ((queuedItem = itemGetQueued(offerTable)) != nullptr) {
+                    ProtoId queuedItemProtoId = ProtoId(queuedItem);
+                    if (queuedItemProtoId != ItemProtoTypeId::ActivatedGeigerCounter && queuedItemProtoId != ItemProtoTypeId::ActivatedStealthBoy) {
+                        badOffer = true;
+                        break;
+                    }
 
-                miscItemTurnOff(queuedItem);
+                    miscItemTurnOff(queuedItem);
+                }
+            } else if (itemIsQueued(offerTable)) {
+                if (ProtoId(offerTable) != ItemProtoTypeId::GeigerCounter || miscItemTurnOff(offerTable) == -1) {
+                    badOffer = true;
+                }
             }
         }
 

@@ -55,6 +55,7 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
 | `Misc` | `XPTable` | `stats` | `xp_table` |
 | `Misc` | `DisableSpecialMapIDs` | `maps` | `disable_special_map_ids` |
+| `Misc` | `CanSellUsedGeiger` | `items` | `can_sell_used_geiger` |
 | `Misc` | `Movie1` - `Movie32` | `movies` | `movie1` - `movie32` |
 | `Misc` | `Fallout1Behavior` movie behavior | `movies` | `endgame_play_after_slideshow`, `endgame_movie_male`, `endgame_movie_female` |
 | `Sound` | `MainMenuMusic` | `sound` | `main_menu_music` |

@@ -2607,7 +2607,9 @@ int miscItemTurnOff(Object* item)
     // SFALL: Fix for being unable to sell used geiger counters or stealth
     // boys: a turned off item isn't queued anymore (the flag stayed, and the
     // barter refused the item as an active one).
-    item->flags &= ~OBJECT_QUEUED;
+    if (itemCanSellUsedGeiger()) {
+        item->flags &= ~OBJECT_QUEUED;
+    }
     queueRemoveEventsByType(item, EVENT_TYPE_ITEM_TRICKLE);
 
     ProtoId itemProtoId = ProtoId(item);
@@ -3812,6 +3814,15 @@ int explosionGetMaxTargets()
 void explosionSetMaxTargets(int maxTargets)
 {
     gExplosionMaxTargets = maxTargets;
+}
+
+// SFALL: Fix for being unable to sell used geiger counters or stealth boys
+// (`CanSellUsedGeiger`, on by default).
+bool itemCanSellUsedGeiger()
+{
+    bool canSellUsedGeiger;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "can_sell_used_geiger", &canSellUsedGeiger, true);
+    return canSellUsedGeiger;
 }
 
 static void healingItemsInit()
