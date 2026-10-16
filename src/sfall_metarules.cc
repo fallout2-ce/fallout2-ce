@@ -600,7 +600,7 @@ namespace {
             return true;
         case ObjectDataField::Elevation:
             if (!intDataValue(data, intValue)) return false;
-            return objectSetLocation(object, object->tile, intValue, nullptr) == 0;
+            return objectSetLocation(object, object->tile, static_cast<MapElevation>(intValue), nullptr) == 0;
         case ObjectDataField::Inventory:
             return false;
         case ObjectDataField::Pid:
@@ -1824,7 +1824,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
 {
     int sourceTile = ctx.arg(0).asInt();
     int radius = std::clamp(ctx.arg(1).asInt(), 0, 50);
-    int elevation = std::clamp(ctx.arg(2).asInt(), 0, ELEVATION_COUNT - 1);
+    MapElevation elevation = std::clamp(static_cast<MapElevation>(ctx.arg(2).asInt()), ELEVATION_FIRST, ELEVATION_THIRD);
     ObjectType type = ctx.numArgs() > 3 ? static_cast<ObjectType>(ctx.arg(3).asInt()) : OBJ_TYPE_INVALID;
 
     ArrayId arrayId = CreateTempArray(0, 0);
