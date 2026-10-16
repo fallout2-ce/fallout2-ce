@@ -322,7 +322,7 @@ namespace {
                 case KEY_ARROW_DOWN:
                     if (s.isScrollable) {
                         s.pageOffset++;
-                        if (s.pageOffset >= s.maxPageOffset) {
+                        if (s.pageOffset > s.maxPageOffset) {
                             s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, lineCount - 1);
                             s.pageOffset = s.maxPageOffset;
                         }
