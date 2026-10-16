@@ -31,7 +31,7 @@ typedef struct MapHeader {
     int enteringTile;
 
     // map_ent_elev
-    int enteringElevation;
+    MapElevation enteringElevation;
 
     // map_ent_rot
     Rotation enteringRotation;
@@ -61,7 +61,7 @@ typedef struct MapHeader {
 
 typedef struct MapTransition {
     Map map;
-    int elevation;
+    MapElevation elevation;
     int tile;
     Rotation rotation;
 } MapTransition;
@@ -73,7 +73,7 @@ extern int* gMapLocalVars;
 extern int* gMapGlobalVars;
 extern int gMapLocalVarsLength;
 extern int gMapGlobalVarsLength;
-extern int gElevation;
+extern MapElevation gElevation;
 
 extern MessageList gMapMessageList;
 extern MapHeader gMapHeader;
@@ -88,21 +88,21 @@ void mapExit();
 void isoEnable();
 bool isoDisable();
 bool isoIsDisabled();
-int mapSetElevation(int elevation);
+int mapSetElevation(MapElevation elevation);
 int mapSetGlobalVar(int var, ProgramValue& value);
 int mapGetGlobalVar(int var, ProgramValue& value);
 int mapSetLocalVar(int var, ProgramValue& value);
 int mapGetLocalVar(int var, ProgramValue& value);
 int mapAllocLocalVars(int numNewVars);
-void mapSetStart(int tile, int elevation, Rotation rotation);
-char* mapGetName(Map map_num, int elev);
+void mapSetStart(int tile, MapElevation elevation, Rotation rotation);
+char* mapGetName(Map map_num, MapElevation elev);
 bool mapAreSameArea(Map map_num1, Map map_num2);
 int _get_map_idx_same(Map map_num1, Map map_num2);
 char* mapGetCityName(Map map_num);
 char* mapDescriptionById(Map map_index);
 Map mapGetCurrentMap();
 int mapScroll(int dx, int dy);
-int mapSetEnteringLocation(int elevation, int tile, Rotation rotation);
+int mapSetEnteringLocation(MapElevation elevation, int tile, Rotation rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
 int mapLoadById(Map map_index);

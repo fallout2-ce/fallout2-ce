@@ -2,6 +2,7 @@
 #define FALLOUT_SFALL_GLOBAL_SCRIPTS_H_
 
 #include "interpreter.h"
+#include "scripts.h"
 
 namespace fallout {
 
@@ -10,7 +11,7 @@ void sfall_gl_scr_reset();
 void sfall_gl_scr_exit();
 void sfall_gl_scr_exec_start_proc();
 void sfall_gl_scr_remove_all();
-void sfall_gl_scr_exec_map_update_scripts(int action);
+void sfall_gl_scr_exec_map_update_scripts(ScriptProc proc);
 void sfall_gl_scr_process_main();
 void sfall_gl_scr_process_input();
 void sfall_gl_scr_process_worldmap();
