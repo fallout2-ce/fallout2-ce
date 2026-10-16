@@ -97,7 +97,7 @@ void gameMouseRefresh();
 void _gmouse_handle_event(int mouseX, int mouseY, int mouseState);
 int gameMouseSetCursor(MouseCursorType cursor);
 MouseCursorType gameMouseGetCursor();
-Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation);
+Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, MapElevation elevation);
 void gmouse_set_mapper_mode(int mode);
 void gameMouseSetMode(GameMouseMode mode);
 GameMouseMode gameMouseGetMode();
