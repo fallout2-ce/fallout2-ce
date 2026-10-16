@@ -1252,11 +1252,20 @@ static void _ai_run_away(Object* a1, Object* a2)
 // 0x42899C ai_move_away
 static int _ai_move_away(Object* a1, Object* a2, int a3)
 {
-    if (aiGetPacket(a1)->distance == DISTANCE_STAY) {
+    // SFALL: Fix for ai_move_away_ engine function not working correctly in
+    // cases when needing to move a distance away from the target: a negative
+    // [a3] is the distance to move away (at most the action points), whatever
+    // the distance to [a2] is.
+    bool moveDistance = a3 < 0;
+    if (moveDistance) {
+        a3 = -a3;
+    }
+
+    if (!moveDistance && aiGetPacket(a1)->distance == DISTANCE_STAY) {
         return -1;
     }
 
-    if (objectGetDistanceBetween(a1, a2) <= a3) {
+    if (moveDistance || objectGetDistanceBetween(a1, a2) <= a3) {
         int actionPoints = a1->data.critter.combat.ap;
         if (a3 < actionPoints) {
             actionPoints = a3;
@@ -2384,6 +2393,29 @@ static Object* _ai_search_environ(Object* critter, ItemType itemType)
 }
 
 // 0x429D60
+// SFALL: Fix for ai_retrieve_object_ engine function not returning the
+// requested object when there are different objects with the same ID: the
+// object itself in [owner]'s inventory (containers included).
+static Object* aiInventoryFindObject(Object* owner, Object* object)
+{
+    Inventory* inventory = &(owner->data.inventory);
+    for (int index = 0; index < inventory->length; index++) {
+        Object* item = inventory->items[index].item;
+        if (item == object) {
+            return item;
+        }
+
+        if (itemGetType(item) == ITEM_TYPE_CONTAINER) {
+            item = aiInventoryFindObject(item, object);
+            if (item != nullptr) {
+                return item;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 static Object* _ai_retrieve_object(Object* critter, Object* item)
 {
     if (actionPickUp(critter, item) != 0) {
@@ -2395,7 +2427,13 @@ static Object* _ai_retrieve_object(Object* critter, Object* item)
 
     // Find the item in NPC's inventory. This step is needed because NPC could
     // not get the item on this turn.
-    Object* retrievedItem = inventoryFindById(critter, item->id);
+    // SFALL: Fix for ai_retrieve_object_ engine function not returning the
+    // requested object when there are different objects with the same ID:
+    // the object itself first, else the one with its id (the original).
+    Object* retrievedItem = aiInventoryFindObject(critter, item);
+    if (retrievedItem == nullptr) {
+        retrievedItem = inventoryFindById(critter, item->id);
+    }
 
     if (retrievedItem != nullptr || item->owner != nullptr) {
         // Either NPC have the item, or someone else have picked it up.
