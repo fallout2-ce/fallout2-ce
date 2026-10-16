@@ -651,7 +651,7 @@ int objectDataRead(Object* obj, File* stream)
             if (isExitGridProtoId(obj)) {
                 if (fileReadInt32Enum<Map>(stream, &(obj->data.misc.map)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.tile)) == -1) return -1;
-                if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
+                if (fileReadInt32Enum<MapElevation>(stream, &(obj->data.misc.elevation)) == -1) return -1;
                 if (fileReadInt32Enum<Rotation>(stream, &(obj->data.misc.rotation)) == -1) return -1;
             }
             break;
@@ -815,7 +815,7 @@ static int _proto_update_gen(Object* obj)
     case OBJ_TYPE_MISC:
         if (isExitGridProtoId(obj)) {
             data->misc.tile = -1;
-            data->misc.elevation = 0;
+            data->misc.elevation = ELEVATION_FIRST;
             data->misc.rotation = ROTATION_NE;
             data->misc.map = MAP_INVALID;
         }
