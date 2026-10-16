@@ -4,7 +4,12 @@ Fallout 2:CE is a fully working re-implementation of the classic Fallout engine,
 
 This is a fork of the original Fallout 2:CE project, which is no longer getting regular updates.
 
-Popular total conversion mods are partially supported. Nevada and Sonora work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project) is supported. [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
+Popular total conversion mods are supported:
+ * [Fallout Et Tu](https://github.com/rotators/Fo1in2): Full Support.  Use v2.0+
+ * [Fallout: Sonora](https://github.com/NovaRain/Fallout-Sonora-English): Full Support.
+ * [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project): Full Support.
+ * Fallout of Nevada: Supported with minor tweaks needed.
+ * [Olympus 2207](https://olympus2207.com), Resurrection, Yesterday: partially work but not fully supported.
 
 CE has broad (though not total) compatibility with [Sfall](https://github.com/sfall-team/sfall) scripting extensions.  Many traditional Fallout mods work out of the box, including NPC Armor, Party Orders, FO2Tweaks (we recommend v14.5+), Talking Heads, and many others.
 

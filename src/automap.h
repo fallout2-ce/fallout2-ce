@@ -72,7 +72,7 @@ int automapLoad(File* stream);
 int automapSave(File* stream);
 int _automapDisplayMap(int map);
 void automapShow(bool isInGame, bool isUsingScanner);
-int automapRenderInPipboyWindow(int win, Map map, int elevation);
+int automapRenderInPipboyWindow(int win, Map map, MapElevation elevation);
 int automapSaveCurrent();
 int automapGetHeader(AutomapHeader** automapHeaderPtr);
 int automapGetWindow();

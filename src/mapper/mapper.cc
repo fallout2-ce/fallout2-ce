@@ -244,7 +244,7 @@ char** menu_names[] = {
 };
 
 // 0x559748
-MapTransition mapInfo = { MAP_INVALID, -1, 0, ROTATION_NE };
+MapTransition mapInfo = { MAP_INVALID, ELEVATION_INVALID, 0, ROTATION_NE };
 
 // 0x559880
 int max_art_buttons = 7;
@@ -1657,7 +1657,7 @@ void edit_mapper()
             int val;
             if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = static_cast<Map>(val);
             if (win_get_num_i(&val, -1, 40000, false, "Exit Grid Dest Tile #", 100, 100) != -1) mapInfo.tile = val;
-            if (win_get_num_i(&val, 0, 3, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = val;
+            if (win_get_num_i(&val, ELEVATION_FIRST, ELEVATION_COUNT, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = static_cast<MapElevation>(val);
             if (win_get_num_i(&val, ROTATION_FIRST, ROTATION_COUNT, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = static_cast<Rotation>(val);
             break;
         }
@@ -1746,11 +1746,11 @@ void edit_mapper()
             break;
         case kBtnSetMapScript: {
             if (map_entered) break;
-            int id = scr_choose(0);
-            if (id == -2) {
+            int sid = scr_choose(SCRIPT_TYPE_SYSTEM);
+            if (sid == -2) {
                 map_set_script(-1);
-            } else if (id >= 0) {
-                map_set_script((id & 0xFFFFFF) + 1);
+            } else if (sid >= 0) {
+                map_set_script(scriptIdFromSid(sid) + 1);
             }
             break;
         }
@@ -2434,7 +2434,7 @@ void update_high_obj_name(Object* obj)
 void mapper_destroy_highlight_obj(Object** a1, Object** a2)
 {
     Rect rect;
-    int elevation;
+    MapElevation elevation;
 
     if (a2 != nullptr && *a2 != nullptr) {
         elevation = (*a2)->elevation;
