@@ -3155,7 +3155,14 @@ void drugEffectEventsRestorePids()
         }
 
         if (pidIndex < gDrugEffectLoadedPids.size()) {
-            drugEffectEvent->drugPid = gDrugEffectLoadedPids[pidIndex++];
+            // Only a drug's pid (a bad one is inferred, as without the list).
+            int drugPid = gDrugEffectLoadedPids[pidIndex++];
+            Proto* proto;
+            if (ProtoId(drugPid).objectType() == OBJ_TYPE_ITEM
+                && protoGetProto(ProtoId(drugPid), &proto) != -1
+                && proto->item.type == ITEM_TYPE_DRUG) {
+                drugEffectEvent->drugPid = drugPid;
+            }
         }
 
         if (drugEffectEvent->drugPid != 0) {
