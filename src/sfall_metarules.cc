@@ -2351,6 +2351,7 @@ void mf_string_format(OpcodeContext& ctx)
     bool conversion = false;
     int j = 0;
     int valIdx = 0;
+    int fieldValue = 0;
 
     char out[5120 + 1] = { 0 };
     int bufCount = sizeof(out) - 1;
@@ -2360,14 +2361,32 @@ void mf_string_format(OpcodeContext& ctx)
 
     for (int i = 0; i < fmtLen; i++) {
         char c = format[i];
+        if (conversion) {
+            // Width and precision are bounded; * and $ would consume extra arguments.
+            if (c >= '0' && c <= '9') {
+                fieldValue = fieldValue * 10 + c - '0';
+                if (fieldValue > static_cast<int>(sizeof(out))) {
+                    ctx.setReturn("Error");
+                    return;
+                }
+            } else {
+                fieldValue = 0;
+                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+                    && strchr("%.-+ #", c) == nullptr) {
+                    ctx.setReturn("Error");
+                    return;
+                }
+            }
+        }
         if (!conversion) {
             if (c == '%') conversion = true;
         } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%') {
             int partLen;
             if (c == '%') {
                 newFmt[j] = '\0';
-                strncpy(outBuf, newFmt.get(), std::min(j, bufCount - 1));
-                partLen = j;
+                partLen = std::min(j, bufCount - 1);
+                memcpy(outBuf, newFmt.get(), partLen);
+                outBuf[partLen] = '\0';
             } else {
                 if (c == 'h' || c == 'l' || c == 'j' || c == 'z' || c == 't' || c == 'w' || c == 'L' || c == 'I') continue;
                 if (++valIdx == numArgs) {
@@ -2382,19 +2401,34 @@ void mf_string_format(OpcodeContext& ctx)
                 if ((c == 's' && !arg.isString()) || c == 'n') {
                     c = 'd';
                 }
+                // Match the actual variadic argument type, including normalized %s/%n.
+                if ((arg.isFloat() && strchr("fFeEgGaA", c) == nullptr)
+                    || (arg.isInt() && strchr("diuoxXc", c) == nullptr)
+                    || (arg.isString() && c != 's')
+                    || (!arg.isFloat() && !arg.isInt() && !arg.isString())) {
+                    ctx.setReturn("Error");
+                    return;
+                }
                 newFmt[j++] = c;
                 newFmt[j] = '\0';
                 partLen = arg.isFloat()
                     ? snprintf(outBuf, bufCount, newFmt.get(), arg.floatValue)
-                    : arg.isInt()    ? snprintf(outBuf, bufCount, newFmt.get(), arg.integerValue)
-                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(), arg.asString(ctx.program()))
-                                     : snprintf(outBuf, bufCount, newFmt.get(), "<UNSUPPORTED TYPE>");
+                    : arg.isInt() ? (strchr("uoxX", c) != nullptr
+                                            ? snprintf(outBuf, bufCount, newFmt.get(), static_cast<unsigned int>(arg.integerValue))
+                                            : snprintf(outBuf, bufCount, newFmt.get(), arg.integerValue))
+                                  : snprintf(outBuf, bufCount, newFmt.get(), arg.asString(ctx.program()));
             }
+            if (partLen < 0) {
+                ctx.setReturn("Error");
+                return;
+            }
+            // snprintf returns the required size, not the number of bytes written.
+            partLen = std::min(partLen, bufCount - 1);
             outBuf += partLen;
             bufCount -= partLen;
             conversion = false;
             j = 0;
-            if (bufCount <= 0) {
+            if (bufCount <= 1) {
                 break;
             }
             continue;
