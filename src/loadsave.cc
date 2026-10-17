@@ -543,7 +543,7 @@ int lsgSaveGame(int mode)
         }
 
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s%s", asc_5186C8, "LSGAME.MSG");
+        snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "LSGAME.MSG");
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
@@ -1161,7 +1161,7 @@ int lsgLoadGame(int mode)
         }
 
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s\\%s", asc_5186C8, "LSGAME.MSG");
+        snprintf(path, sizeof(path), "%s\\%s", gGameMsgPath, "LSGAME.MSG");
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
@@ -1648,7 +1648,7 @@ static int lsgWindowInit(int windowType)
         return -1;
     }
 
-    snprintf(_str, sizeof(_str), "%s%s", asc_5186C8, LSGAME_MSG_NAME);
+    snprintf(_str, sizeof(_str), "%s%s", gGameMsgPath, LSGAME_MSG_NAME);
     if (!messageListLoad(&gLoadSaveMessageList, _str)) {
         return -1;
     }

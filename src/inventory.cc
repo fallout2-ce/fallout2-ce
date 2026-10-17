@@ -1595,7 +1595,7 @@ static int inventoryMessageListInit()
     if (!messageListInit(&gInventoryMessageList))
         return -1;
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "inventry.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "inventry.msg");
     if (!messageListLoad(&gInventoryMessageList, path))
         return -1;
 

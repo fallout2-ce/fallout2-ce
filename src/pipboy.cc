@@ -621,7 +621,7 @@ int pipboyMessageListInit()
     pipboyMessageListFree();
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "pipboy.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "pipboy.msg");
 
     if (!(messageListLoad(&gPipboyMessageList, path))) {
         return -1;

@@ -1450,7 +1450,7 @@ int wmWorldMap_init()
         return -1;
     }
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "worldmap.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "worldmap.msg");
 
     if (!messageListLoad(&wmMsgFile, path)) {
         return -1;

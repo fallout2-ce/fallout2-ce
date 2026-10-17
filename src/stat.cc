@@ -159,7 +159,7 @@ int statsInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "stat.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "stat.msg");
 
     if (!messageListLoad(&gStatsMessageList, path)) {
         return -1;

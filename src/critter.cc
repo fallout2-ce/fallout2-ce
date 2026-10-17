@@ -151,7 +151,7 @@ int critterInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%sscrname.msg", asc_5186C8);
+    snprintf(path, sizeof(path), "%sscrname.msg", gGameMsgPath);
 
     if (!messageListLoad(&gCritterMessageList, path)) {
         debugPrint("\nError: Loading critter name message file!");

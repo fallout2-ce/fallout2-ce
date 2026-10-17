@@ -2033,7 +2033,7 @@ int combatInit()
         return -1;
     }
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "combat.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "combat.msg");
 
     if (!messageListLoad(&gCombatMessageList, path)) {
         return -1;

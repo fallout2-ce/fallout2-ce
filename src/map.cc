@@ -306,7 +306,7 @@ void mapInit()
 
     if (messageListInit(&gMapMessageList)) {
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%smap.msg", asc_5186C8);
+        snprintf(path, sizeof(path), "%smap.msg", gGameMsgPath);
 
         if (!messageListLoad(&gMapMessageList, path)) {
             debugPrint("\nError loading map_msg_file!");

@@ -26,7 +26,7 @@ enum GameQuitRequest : int {
 
 extern int* gGameGlobalVars;
 extern int gGameGlobalVarsLength;
-extern const char* asc_5186C8;
+extern const char* gGameMsgPath;
 extern GameQuitRequest _game_user_wants_to_quit;
 
 extern MessageList gMiscMessageList;

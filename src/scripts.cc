@@ -1969,7 +1969,7 @@ int _scr_game_init()
         }
     }
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "script.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "script.msg");
     if (!messageListLoad(&gScrMessageList, path)) {
         debugPrint("\nError loading script message file!");
         return -1;

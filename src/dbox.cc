@@ -175,7 +175,7 @@ namespace {
                 if (!messageListInit(&ctx.messageList)) return false;
 
                 char path[COMPAT_MAX_PATH];
-                snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
+                snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "DBOX.MSG");
                 if (!messageListLoad(&ctx.messageList, path)) return false;
 
                 fontSetCurrent(103);
@@ -593,7 +593,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     if (hasPrimaryButton || hasSecondaryButton) {
         if (!alert::loadImages(frms) || !messageListInit(&messageList)) return -1;
 
-        std::string path = std::string(asc_5186C8) + "DBOX.MSG";
+        std::string path = std::string(gGameMsgPath) + "DBOX.MSG";
         if (!messageListLoad(&messageList, path.c_str())) {
             messageListFree(&messageList);
             return -1;

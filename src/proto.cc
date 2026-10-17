@@ -1399,7 +1399,7 @@ int protoInit()
     }
 
     for (ObjectType i = OBJ_TYPE_FIRST; i < OBJ_TYPE_PROTO_COUNT; i++) {
-        snprintf(path, sizeof(path), "%spro_%.4s%s", asc_5186C8, artGetObjectTypeName(i), ".msg");
+        snprintf(path, sizeof(path), "%spro_%.4s%s", gGameMsgPath, artGetObjectTypeName(i), ".msg");
 
         if (!messageListLoad(&(_proto_msg_files[i]), path)) {
             debugPrint("\nError: Loading proto message files!");
@@ -1437,7 +1437,7 @@ int protoInit()
         return -1;
     }
 
-    snprintf(path, sizeof(path), "%sproto.msg", asc_5186C8);
+    snprintf(path, sizeof(path), "%sproto.msg", gGameMsgPath);
 
     if (!messageListLoad(&gProtoMessageList, path)) {
         debugPrint("\nError: Loading main proto message file!");

@@ -103,7 +103,7 @@ int traitsInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "trait.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "trait.msg");
 
     if (!messageListLoad(&gTraitsMessageList, path)) {
         return -1;

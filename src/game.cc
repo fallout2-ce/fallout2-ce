@@ -119,7 +119,7 @@ int* gGameGlobalVars = nullptr;
 int gGameGlobalVarsLength = 0;
 
 // 0x5186C8 msg_path
-const char* asc_5186C8 = _aGame_0;
+const char* gGameMsgPath = _aGame_0;
 
 // 0x5186CC game_user_wants_to_quit
 GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
@@ -360,7 +360,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     debugPrint(">message_init\t");
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "misc.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "misc.msg");
 
     if (!messageListLoad(&gMiscMessageList, path)) {
         debugPrint("Failed on message_load\n");
@@ -371,7 +371,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     // CE: Optional, the code has the English texts.
     messageListInit(&gCeMessageList);
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "ce.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "ce.msg");
     messageListLoad(&gCeMessageList, path);
 
     if (scriptsDisable() != 0) {
@@ -871,7 +871,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
             MessageList messageList;
             if (messageListInit(&messageList)) {
                 char path[COMPAT_MAX_PATH];
-                snprintf(path, sizeof(path), "%s%s", asc_5186C8, "editor.msg");
+                snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "editor.msg");
 
                 if (messageListLoad(&messageList, path)) {
                     MessageListItem messageListItem;
