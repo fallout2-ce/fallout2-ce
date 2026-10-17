@@ -353,6 +353,11 @@ enum Dam : int {
     DAM_CRIP_RANDOM = 0x200000,
     DAM_BACKWASH = 0x400000,
     DAM_PERFORM_REVERSE = 0x800000,
+
+    // SFALL: A critter knocked out in combat woke up outside its turn: it's
+    // still prone until its turn (or the end of combat). Internal, cleared
+    // at its turn and at the end of combat (sfall's value).
+    DAM_KNOCKOUT_WOKEN = 0x40000000,
     DAM_CRIP_LEG_ANY = DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_ANY = DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP = DAM_CRIP_LEG_ANY | DAM_CRIP_ARM_ANY | DAM_BLIND,
