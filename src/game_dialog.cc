@@ -869,7 +869,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Cannot see there ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");
@@ -885,7 +885,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Too far ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");

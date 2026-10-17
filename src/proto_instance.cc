@@ -426,7 +426,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                     exit(1);
                 }
 
-                debugPrint(hpMessageListItem.text);
+                debugPrint("%s", hpMessageListItem.text);
                 return 0;
             }
 
