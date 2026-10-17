@@ -1970,6 +1970,12 @@ static int _combat_exps;
 // 0x56D39C combat_free_move
 int _combat_free_move;
 
+// SFALL: Fix for Bonus Move APs being replenished when you save and load the
+// game in combat: the free move points a game in combat was saved with, for
+// the player's turn resumed after loading it (-1 - none). Kept apart because
+// the turn the loading interrupted ends by clearing them.
+static int combatFreeMoveLoaded = -1;
+
 // 0x56D3A0 shoot_ctd
 static Attack _shoot_ctd;
 
@@ -2022,6 +2028,7 @@ int combatInit()
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
     _combat_free_move = 0;
+    combatFreeMoveLoaded = -1;
     _combat_ending_guy = nullptr;
     _combat_end_due_to_load = 0;
 
@@ -2071,6 +2078,7 @@ void combatReset()
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
     _combat_free_move = 0;
+    combatFreeMoveLoaded = -1;
     _combat_ending_guy = nullptr;
 
     gDude->data.critter.combat.ap = max_action_points;
@@ -2138,6 +2146,11 @@ int combatLoad(File* stream)
 
     if (fileReadInt32(stream, &_combat_turn_running) == -1) return -1;
     if (fileReadInt32(stream, &_combat_free_move) == -1) return -1;
+
+    // SFALL: Free move points to resume the player's turn with.
+    if (perkGetRank(gDude, PERK_BONUS_MOVE) != 0) {
+        combatFreeMoveLoaded = _combat_free_move;
+    }
     if (fileReadInt32(stream, &_combat_exps) == -1) return -1;
     if (fileReadInt32(stream, &_list_com) == -1) return -1;
     if (fileReadInt32(stream, &_list_noncom) == -1) return -1;
@@ -3285,7 +3298,16 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
             keyboardReset();
             inputEventQueueReset();
             interfaceRenderArmorClass(true);
-            _combat_free_move = 2 * perkGetRank(gDude, PERK_BONUS_MOVE);
+
+            // SFALL: The turn resumed after loading keeps the free move
+            // points the game was saved with.
+            if (combatFreeMoveLoaded != -1) {
+                _combat_free_move = combatFreeMoveLoaded;
+                combatFreeMoveLoaded = -1;
+            } else {
+                _combat_free_move = 2 * perkGetRank(gDude, PERK_BONUS_MOVE);
+            }
+
             interfaceRenderActionPoints(gDude->data.critter.combat.ap, _combat_free_move);
         } else {
             soundContinueAll();
