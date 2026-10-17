@@ -617,13 +617,34 @@ int objectPickup(Object* critter, Object* item)
                 itemSetMoney(item, 0);
             }
         } else {
-            rc = itemAttemptAdd(critter, item, 1);
+            // SFALL: Fix for NPC stuck in a loop of picking up items in combat:
+            // in combat an NPC picks up the item regardless of its weight.
+            if (critter != gDude && isInCombat()) {
+                rc = itemAdd(critter, item, 1);
+            } else {
+                rc = itemAttemptAdd(critter, item, 1);
+            }
         }
 
         if (rc == 0) {
             Rect rect;
             _obj_disconnect(item, &rect);
             tileWindowRefreshRect(&rect, item->elevation);
+        } else if (critter != gDude) {
+            // SFALL: Fix for the incorrect message being displayed when the NPC
+            // cannot pick up an item due to not enough space in the inventory
+            // (the player's one).
+            // %s cannot pick up the item.
+            MessageListItem messageListItem;
+            messageListItem.num = 1000;
+            const char* format = "%s cannot pick up the item.";
+            if (messageListGetItem(&gCeMessageList, &messageListItem)) {
+                format = messageListItem.text;
+            }
+
+            char formattedMessage[160];
+            snprintf(formattedMessage, sizeof(formattedMessage), format, critterGetName(critter));
+            displayMonitorAddMessage(formattedMessage);
         } else {
             MessageListItem messageListItem;
             // You cannot pick up that item. You are at your maximum weight capacity.

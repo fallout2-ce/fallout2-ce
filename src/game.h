@@ -30,6 +30,7 @@ extern const char* asc_5186C8;
 extern GameQuitRequest _game_user_wants_to_quit;
 
 extern MessageList gMiscMessageList;
+extern MessageList gCeMessageList;
 
 extern bool gGameLoaded;
 
