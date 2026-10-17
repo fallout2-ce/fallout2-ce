@@ -588,4 +588,17 @@ void* queueFindNextEvent(Object* owner, EventType eventType)
     return nullptr;
 }
 
+// The data of every event of [eventType], in the queue order (the order of
+// `queueSave` and `queueLoad`).
+std::vector<void*> queueGetEventsData(EventType eventType)
+{
+    std::vector<void*> data;
+    for (QueueListNode* queueListNode = gQueueListHead; queueListNode != nullptr; queueListNode = queueListNode->next) {
+        if (queueListNode->type == eventType) {
+            data.push_back(queueListNode->data);
+        }
+    }
+    return data;
+}
+
 } // namespace fallout

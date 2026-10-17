@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "db.h"
 #include "debug.h"
+#include "item.h"
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_arrays.h"
@@ -92,6 +94,34 @@ void sfallLoadMods()
     }
 }
 
+// SFALL: sfall writes the drug pids with raw 4-byte writes, so they are
+// little-endian (unlike `fileWriteInt32`).
+static bool sfallWriteInt32LE(File* stream, int32_t value)
+{
+    uint32_t bits = static_cast<uint32_t>(value);
+    unsigned char bytes[4] = {
+        static_cast<unsigned char>(bits & 0xFF),
+        static_cast<unsigned char>((bits >> 8) & 0xFF),
+        static_cast<unsigned char>((bits >> 16) & 0xFF),
+        static_cast<unsigned char>((bits >> 24) & 0xFF),
+    };
+    return fileWrite(bytes, sizeof(bytes), 1, stream) == 1;
+}
+
+static bool sfallReadInt32LE(File* stream, int32_t* valuePtr)
+{
+    unsigned char bytes[4];
+    if (fileRead(bytes, sizeof(bytes), 1, stream) != 1) {
+        return false;
+    }
+
+    *valuePtr = static_cast<int32_t>(static_cast<uint32_t>(bytes[0])
+        | (static_cast<uint32_t>(bytes[1]) << 8)
+        | (static_cast<uint32_t>(bytes[2]) << 16)
+        | (static_cast<uint32_t>(bytes[3]) << 24));
+    return true;
+}
+
 // Binary layout of sfallgv.sav (must match sfall's SaveGame2 / LoadGame_Before order):
 //   global vars | nextObjectId(4) | addedYears(4) | fakeTraitsCount(4) |
 //   fakePerksCount(4) | fakeSelectablePerksCount(4) | arrays | drugPidsCount(4)
@@ -125,9 +155,19 @@ bool sfallSaveGameData(File* stream)
         return false;
     }
 
-    if (fileWrite(&zero, sizeof(zero), 1, stream) != 1) { // drugPidsCount
+    // SFALL: The drug pids of the drug effect events (see
+    // `drugEffectEventsRestorePids`).
+    std::vector<int> drugPids = drugEffectEventsGetPids();
+    if (!sfallWriteInt32LE(stream, static_cast<int32_t>(drugPids.size()))) {
         debugPrint("LOADSAVE (SFALL): ** Error saving drug pids **\n");
         return false;
+    }
+
+    for (int drugPid : drugPids) {
+        if (!sfallWriteInt32LE(stream, drugPid)) {
+            debugPrint("LOADSAVE (SFALL): ** Error saving drug pids **\n");
+            return false;
+        }
     }
 
     return true;
@@ -163,6 +203,25 @@ bool sfallLoadGameData(File* stream)
     }
 
     scriptsRestoreUniqueObjectIdCounter(nextObjectId);
+
+    // SFALL: The drug pids of the drug effect events (see
+    // `drugEffectEventsRestorePids`). Older saves don't have them. A list
+    // cut short is dropped as a whole: the pids are matched to the events by
+    // their order.
+    int32_t drugPidsCount;
+    if (sfallReadInt32LE(stream, &drugPidsCount) && drugPidsCount > 0) {
+        std::vector<int> drugPids;
+        for (int32_t i = 0; i < drugPidsCount; i++) {
+            int32_t drugPid;
+            if (!sfallReadInt32LE(stream, &drugPid)) {
+                debugPrint("LOADSAVE (SFALL): ** Drug pids cut short (%d of %d), ignored **\n", i, drugPidsCount);
+                drugPids.clear();
+                break;
+            }
+            drugPids.push_back(drugPid);
+        }
+        drugEffectEventsSetLoadedPids(drugPids);
+    }
 
     return true;
 }
