@@ -50,7 +50,7 @@ static void _obj_light_table_init();
 static void _obj_blend_table_init();
 static void _obj_blend_table_exit();
 static int _obj_save_obj(File* stream, Object* object);
-static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object* owner);
+static int _obj_load_obj(File* stream, Object** objectPtr, MapElevation elevation, Object* owner);
 static int objectAllocate(Object** objectPtr);
 static void objectDeallocate(Object** objectPtr);
 static int objectListNodeCreate(ObjectListNode** nodePtr);
@@ -58,7 +58,7 @@ static void objectListNodeDestroy(ObjectListNode** nodePtr);
 static int objectGetListNode(Object* obj, ObjectListNode** out_node, ObjectListNode** out_prev_node);
 static void _obj_insert(ObjectListNode* ptr);
 static int _obj_remove(ObjectListNode* a1, ObjectListNode* a2);
-static int _obj_connect_to_tile(ObjectListNode* node, int tile_index, int elev, Rect* rect);
+static int _obj_connect_to_tile(ObjectListNode* node, int tile_index, MapElevation elev, Rect* rect);
 static int _obj_adjust_light(Object* obj, int a2, Rect* rect);
 static void objectDrawOutline(Object* object, Rect* rect);
 static void _obj_render_object(Object* object, Rect* rect, int light);
@@ -107,7 +107,7 @@ static ObjectListNode* gObjectListHead = nullptr;
 static int _centerToUpperLeft = 0;
 
 // 0x519630 find_elev
-static int gObjectFindElevation = 0;
+static MapElevation gObjectFindElevation = ELEVATION_FIRST;
 
 // 0x519634 find_tile
 static int gObjectFindTile = 0;
@@ -184,7 +184,7 @@ static int _obj_last_roof_x = -1;
 static int _obj_last_roof_y = -1;
 
 // 0x519778 obj_last_elev
-static int _obj_last_elev = -1;
+static MapElevation _obj_last_elev = ELEVATION_INVALID;
 
 // 0x51977C obj_last_is_empty
 static bool _obj_last_is_empty = true;
@@ -440,7 +440,7 @@ int objectRead(Object* obj, File* stream)
     if (fileReadInt32Enum<Rotation>(stream, &(obj->rotation)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->fid)) == -1) return -1;
     if (fileReadUInt32Enum<ObjectFlags>(stream, &(obj->flags)) == -1) return -1;
-    if (fileReadInt32(stream, &(obj->elevation)) == -1) return -1;
+    if (fileReadInt32Enum<MapElevation>(stream, &(obj->elevation)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->pid)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->cid)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->lightDistance)) == -1) return -1;
@@ -537,7 +537,7 @@ static int objectLoadAllInternal(File* stream)
         memset(gObjectFids, 0, sizeof(*gObjectFids) * objectCount);
     }
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         int objectCountAtElevation;
         if (fileReadInt32(stream, &objectCountAtElevation) == -1) {
             return -1;
@@ -703,7 +703,7 @@ static int objectWrite(Object* obj, File* stream)
     if (fileWriteInt32Enum<Rotation>(stream, obj->rotation) == -1) return -1;
     if (fileWriteInt32(stream, obj->fid) == -1) return -1;
     if (fileWriteUInt32Enum<ObjectFlags>(stream, obj->flags) == -1) return -1;
-    if (fileWriteInt32(stream, obj->elevation) == -1) return -1;
+    if (fileWriteInt32Enum<MapElevation>(stream, obj->elevation) == -1) return -1;
     if (fileWriteInt32(stream, obj->pid) == -1) return -1;
     if (fileWriteInt32(stream, obj->cid) == -1) return -1;
     if (fileWriteInt32(stream, obj->lightDistance) == -1) return -1;
@@ -732,7 +732,7 @@ int objectSaveAll(File* stream)
         return -1;
     }
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         int objectCountAtElevation = 0;
 
         long objectCountAtElevationPos = fileTell(stream);
@@ -800,7 +800,7 @@ int objectSaveAll(File* stream)
 }
 
 // 0x489550 obj_render_pre_roof
-void _obj_render_pre_roof(Rect* rect, int elevation)
+void _obj_render_pre_roof(Rect* rect, MapElevation elevation)
 {
     if (!gObjectsInitialized) {
         return;
@@ -901,7 +901,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
 }
 
 // 0x4897EC obj_render_post_roof
-void _obj_render_post_roof(Rect* rect, int elevation)
+void _obj_render_post_roof(Rect* rect, MapElevation elevation)
 {
     if (!gObjectsInitialized) {
         return;
@@ -1111,7 +1111,7 @@ int _obj_copy(Object** a1, Object* a2)
 }
 
 // 0x489EC4 obj_connect
-int _obj_connect(Object* object, int tile, int elevation, Rect* rect)
+int _obj_connect(Object* object, int tile, MapElevation elevation, Rect* rect)
 {
     if (object == nullptr) {
         return -1;
@@ -1295,7 +1295,7 @@ int _obj_offset(Object* obj, int x, int y, Rect* rect)
 }
 
 // 0x48A324 obj_move
-int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5)
+int _obj_move(Object* a1, int a2, int a3, MapElevation elevation, Rect* a5)
 {
     if (a1 == nullptr) {
         return -1;
@@ -1397,7 +1397,7 @@ int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5)
 }
 
 // 0x48A568 obj_move_to_tile
-int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
+int objectSetLocation(Object* obj, int tile, MapElevation elevation, Rect* rect)
 {
     if (obj == nullptr) {
         return -1;
@@ -2202,7 +2202,7 @@ void _obj_remove_all()
     }
 
     _obj_last_roof_y = -1;
-    _obj_last_elev = -1;
+    _obj_last_elev = ELEVATION_INVALID;
     _obj_last_is_empty = true;
     _obj_last_roof_x = -1;
 }
@@ -2210,7 +2210,7 @@ void _obj_remove_all()
 // 0x48B3A8 obj_find_first
 Object* objectFindFirst()
 {
-    gObjectFindElevation = 0;
+    gObjectFindElevation = ELEVATION_FIRST;
 
     for (gObjectFindTile = 0; gObjectFindTile < HEX_GRID_SIZE; gObjectFindTile++) {
         ObjectListNode* objectListNode = gObjectListHeadByTile[gObjectFindTile];
@@ -2262,7 +2262,7 @@ Object* objectFindNext()
 }
 
 // 0x48B48C obj_find_first_at
-Object* objectFindFirstAtElevation(int elevation)
+Object* objectFindFirstAtElevation(MapElevation elevation)
 {
     gObjectFindElevation = elevation;
     gObjectFindTile = 0;
@@ -2321,7 +2321,7 @@ Object* objectFindNextAtElevation()
 }
 
 // 0x48B5A8 obj_find_first_at_tile
-Object* objectFindFirstAtLocation(int elevation, int tile)
+Object* objectFindFirstAtLocation(MapElevation elevation, int tile)
 {
     gObjectFindElevation = elevation;
     gObjectFindTile = tile;
@@ -2435,7 +2435,7 @@ void objectGetRect(Object* obj, Rect* rect)
 }
 
 // 0x48B7F8 obj_occupied
-bool _obj_occupied(int tile, int elevation)
+bool _obj_occupied(int tile, MapElevation elevation)
 {
     ObjectListNode* objectListNode = gObjectListHeadByTile[tile];
     while (objectListNode != nullptr) {
@@ -2451,7 +2451,7 @@ bool _obj_occupied(int tile, int elevation)
 }
 
 // 0x48B848 obj_blocking_at
-Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
+Object* _obj_blocking_at(Object* excludeObj, int tile, MapElevation elev)
 {
     ObjectListNode* objectListNode;
     Object* obj;
@@ -2503,7 +2503,7 @@ Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
 }
 
 // 0x48B930 obj_shoot_blocking_at
-Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
+Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, MapElevation elev)
 {
     if (!hexGridTileIsValid(tile)) {
         return nullptr;
@@ -2559,7 +2559,7 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
 }
 
 // 0x48BA20 obj_ai_blocking_at
-Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation)
+Object* _obj_ai_blocking_at(Object* excludeObj, int tile, MapElevation elevation)
 {
     if (!hexGridTileIsValid(tile)) {
         return nullptr;
@@ -2622,7 +2622,7 @@ Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation)
 }
 
 // 0x48BB44 obj_scroll_blocking_at
-int _obj_scroll_blocking_at(int tile, int elev)
+int _obj_scroll_blocking_at(int tile, MapElevation elev)
 {
     // TODO: Might be an error - why tile 0 is excluded?
     if (tile <= 0 || tile >= 40000) {
@@ -2646,7 +2646,7 @@ int _obj_scroll_blocking_at(int tile, int elev)
 }
 
 // 0x48BB88 obj_sight_blocking_at
-Object* _obj_sight_blocking_at(Object* excludeObj, int tile, int elevation)
+Object* _obj_sight_blocking_at(Object* excludeObj, int tile, MapElevation elevation)
 {
     ObjectListNode* objectListNode = gObjectListHeadByTile[tile];
     while (objectListNode != nullptr) {
@@ -2732,7 +2732,7 @@ bool objectWithinWalkDistance(Object* critter, Object* target)
 }
 
 // 0x48BC38 obj_create_list
-int objectListCreate(int tile, int elevation, ObjectType objectType, Object*** objectListPtr)
+int objectListCreate(int tile, MapElevation elevation, ObjectType objectType, Object*** objectListPtr)
 {
     if (objectListPtr == nullptr) {
         return -1;
@@ -3061,7 +3061,7 @@ ObjectFlags _obj_intersects_with(Object* object, int x, int y)
 }
 
 // 0x48C5C4 obj_create_intersect_list
-int _obj_create_intersect_list(int x, int y, int elevation, ObjectType objectType, ObjectWithFlags** entriesPtr)
+int _obj_create_intersect_list(int x, int y, MapElevation elevation, ObjectType objectType, ObjectWithFlags** entriesPtr)
 {
     int upperLeftTile = tileFromScreenXY(x - 320, y - 240, true);
     *entriesPtr = nullptr;
@@ -3234,7 +3234,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
         MAP_HEADER_ELEVATION_2,
     };
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & kElevationFlags[elevation]) != MAP_HEADER_NONE) {
             continue;
         }
@@ -3614,7 +3614,7 @@ static int _obj_save_obj(File* stream, Object* object)
 }
 
 // 0x48D414 obj_load_obj
-static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object* owner)
+static int _obj_load_obj(File* stream, Object** objectPtr, MapElevation elevation, Object* owner)
 {
     Object* obj;
 
@@ -3646,7 +3646,7 @@ static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object
         return -2;
     }
 
-    if (elevation == -1) {
+    if (elevation == ELEVATION_INVALID) {
         elevation = obj->elevation;
     } else {
         obj->elevation = elevation;
@@ -3710,14 +3710,14 @@ int _obj_save_dude(File* stream)
 int _obj_load_dude(File* stream)
 {
     int savedTile = gDude->tile;
-    int savedElevation = gDude->elevation;
+    MapElevation savedElevation = gDude->elevation;
     Rotation savedRotation = gDude->rotation;
     int savedOid = gDude->id;
 
     scriptsClearDudeScript();
 
     Object* temp = nullptr;
-    int rc = _obj_load_obj(stream, &temp, -1, nullptr);
+    int rc = _obj_load_obj(stream, &temp, ELEVATION_INVALID, nullptr);
     if (rc == -1 || temp == nullptr) {
         gDude->tile = savedTile;
         gDude->elevation = savedElevation;
@@ -3740,7 +3740,7 @@ int _obj_load_dude(File* stream)
     int newTile = gDude->tile;
     gDude->tile = savedTile;
 
-    int newElevation = gDude->elevation;
+    MapElevation newElevation = gDude->elevation;
     gDude->elevation = savedElevation;
 
     Rotation newRotation = gDude->rotation;
@@ -4019,7 +4019,7 @@ static int _obj_remove(ObjectListNode* a1, ObjectListNode* a2)
 }
 
 // 0x48DB28 obj_connect_to_tile
-static int _obj_connect_to_tile(ObjectListNode* node, int tile, int elevation, Rect* rect)
+static int _obj_connect_to_tile(ObjectListNode* node, int tile, MapElevation elevation, Rect* rect)
 {
     if (node == nullptr) {
         return -1;
@@ -5302,7 +5302,7 @@ Object* objectTypedFindById(int id, ObjectType type)
     return nullptr;
 }
 
-bool isExitGridAt(int tile, int elevation)
+bool isExitGridAt(int tile, MapElevation elevation)
 {
     ObjectListNode* objectListNode = gObjectListHeadByTile[tile];
     while (objectListNode != nullptr) {

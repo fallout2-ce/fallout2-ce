@@ -72,7 +72,7 @@ static void clean_cache()
     memset(visited_tiles, 0, sizeof(visited_tiles));
     memset(visible_squares, 0, sizeof(visible_squares));
 }
-static void clean_cache_for_elevation(int elevation)
+static void clean_cache_for_elevation(MapElevation elevation)
 {
     memset(visited_tiles[elevation], 0, sizeof(visited_tiles[elevation]));
     memset(visible_squares[elevation], 0, sizeof(visible_squares[elevation]));

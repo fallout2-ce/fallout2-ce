@@ -113,7 +113,7 @@ static void opSayScrollUp(Program* program);
 static void opSayScrollDown(Program* program);
 static void opSaySetSpacing(Program* program);
 static void opSayRestart(Program* program);
-static void intLibSoundCallback(void* userData, int event);
+static void intLibSoundCallback(void* userData, SoundCallbackEvent event);
 static int intLibSoundDelete(int value);
 static int intLibSoundPlay(char* fileName, int mode);
 static int intLibSoundPause(int value);
@@ -1831,7 +1831,7 @@ static void opSayRestart(Program* program)
 }
 
 // 0x466064 soundCallbackInterpret
-static void intLibSoundCallback(void* userData, int event)
+static void intLibSoundCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         Sound** sound = (Sound**)userData;
@@ -1870,8 +1870,8 @@ static int intLibSoundDelete(int value)
 // 0x466110 soundStartInterpret
 static int intLibSoundPlay(char* fileName, int mode)
 {
-    int type = SOUND_TYPE_MEMORY;
-    int soundFlags = 0;
+    SoundType type = SOUND_TYPE_MEMORY;
+    SoundFlags soundFlags = SOUND_FLAG_NONE;
 
     if (mode & 0x01) {
         soundFlags |= SOUND_LOOPING;
@@ -1927,7 +1927,7 @@ static int intLibSoundPlay(char* fileName, int mode)
         soundSetChannels(sound, 3);
     }
 
-    int rc = soundLoad(sound, fileName);
+    SoundError rc = soundLoad(sound, fileName);
     if (rc != SOUND_NO_ERROR) {
         goto err;
     }
@@ -2003,8 +2003,8 @@ static int intLibSoundPause(int value)
         return 0;
     }
 
-    int rc;
-    if (_soundType(sound, SOUND_TYPE_MEMORY)) {
+    SoundError rc;
+    if (soundIsType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundStop(sound);
     } else {
         rc = soundPause(sound);
@@ -2055,8 +2055,8 @@ static int intLibSoundResume(int value)
         return 0;
     }
 
-    int rc;
-    if (_soundType(sound, SOUND_TYPE_MEMORY)) {
+    SoundError rc;
+    if (soundIsType(sound, SOUND_TYPE_MEMORY)) {
         rc = soundPlay(sound);
     } else {
         rc = soundResume(sound);

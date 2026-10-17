@@ -101,7 +101,7 @@ void sfall_lists_fill(int type, std::vector<Object*>& objects)
     objects.reserve(100);
 
     if (type == LIST_SPATIAL) {
-        for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             Script* script = scriptGetFirstSpatialScript(elevation);
             while (script != nullptr) {
                 Object* obj = script->owner;
