@@ -1444,6 +1444,12 @@ int protoInit()
         return -1;
     }
 
+    // Merge CE's additional descriptions without replacing a mod's proto.msg.
+    // Older installations without these messages can still load the game.
+    if (!messageListLoad(&gProtoMessageList, "game\\proto_examine.msg")) {
+        debugPrint("\nSupplemental examine messages are unavailable. Update ce.dat.\n");
+    }
+
     _proto_none_str = getmsg(&gProtoMessageList, &messageListItem, 10);
 
     // material type names
