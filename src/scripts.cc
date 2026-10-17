@@ -91,7 +91,6 @@ static int _scr_header_load();
 static void scriptsCloseNearbyElevatorDoors();
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition);
 static int scriptWrite(Script* scr, File* stream);
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream);
 static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
@@ -648,6 +647,19 @@ void scriptsSyncObjectId(Object* object)
     if (scriptGetScript(object->sid, &script) != -1) {
         script->ownerId = object->id;
     }
+}
+
+bool scriptIsSavable(const Script* script)
+{
+    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
+        return false;
+    }
+
+    if (script->owner != nullptr && !objectIsSavable(script->owner)) {
+        return false;
+    }
+
+    return true;
 }
 
 // 0x4A390C src_find_sid_from_program
@@ -2220,41 +2232,6 @@ static int scriptWrite(Script* scr, File* stream)
     if (fileWriteInt32(stream, scr->field_50) == -1) return -1;
 
     return 0;
-}
-
-// 0x4A5704
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
-{
-    for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
-        Script* script = &(scriptExtent->scripts[index]);
-        if (scriptWrite(script, stream) != 0) {
-            return -1;
-        }
-    }
-
-    if (fileWriteInt32(stream, scriptExtent->length) != 0) {
-        return -1;
-    }
-
-    // NOTE: Original code writes `scriptExtent->next` pointer which is meaningless.
-    if (fileWriteInt32(stream, 0) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-static bool scriptIsSavable(const Script* script)
-{
-    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-        return false;
-    }
-
-    if (!objectIsSavable(script->owner)) {
-        return false;
-    }
-
-    return true;
 }
 
 // 0x4A5768
