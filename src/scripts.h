@@ -274,6 +274,7 @@ bool scriptsIsUniqueObjectId(int objectId);
 int scriptsNewUniqueObjectId();
 int scriptsSetUniqueObjectId(Object* object);
 void scriptsSyncObjectId(Object* object);
+bool scriptIsSavable(const Script* script);
 int scriptsGetUniqueObjectIdCounter();
 void scriptsResetUniqueObjectIdCounter();
 void scriptsRestoreUniqueObjectIdCounter(int savedCounter);

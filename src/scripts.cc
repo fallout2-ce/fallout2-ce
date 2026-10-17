@@ -91,7 +91,6 @@ static int _scr_header_load();
 static void scriptsCloseNearbyElevatorDoors();
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition);
 static int scriptWrite(Script* scr, File* stream);
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream);
 static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
@@ -648,6 +647,19 @@ void scriptsSyncObjectId(Object* object)
     if (scriptGetScript(object->sid, &script) != -1) {
         script->ownerId = object->id;
     }
+}
+
+bool scriptIsSavable(const Script* script)
+{
+    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
+        return false;
+    }
+
+    if (script->owner != nullptr && !objectIsSavable(script->owner)) {
+        return false;
+    }
+
+    return true;
 }
 
 // 0x4A390C src_find_sid_from_program
@@ -2222,117 +2234,59 @@ static int scriptWrite(Script* scr, File* stream)
     return 0;
 }
 
-// 0x4A5704
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
-{
-    for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
-        Script* script = &(scriptExtent->scripts[index]);
-        if (scriptWrite(script, stream) != 0) {
-            return -1;
-        }
-    }
-
-    if (fileWriteInt32(stream, scriptExtent->length) != 0) {
-        return -1;
-    }
-
-    // NOTE: Original code writes `scriptExtent->next` pointer which is meaningless.
-    if (fileWriteInt32(stream, 0) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 // 0x4A5768
 int scriptSaveAll(File* stream)
 {
     for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
 
-        int scriptCount = scriptList->length * SCRIPT_LIST_EXTENT_SIZE;
-        if (scriptList->tail != nullptr) {
-            scriptCount += scriptList->tail->length - SCRIPT_LIST_EXTENT_SIZE;
-        }
+        std::vector<Script*> savableScripts;
 
         ScriptListExtent* scriptExtent = scriptList->head;
-        ScriptListExtent* lastScriptExtent = nullptr;
         while (scriptExtent != nullptr) {
             for (int index = 0; index < scriptExtent->length; index++) {
                 Script* script = &(scriptExtent->scripts[index]);
-
-                lastScriptExtent = scriptList->tail;
-                if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-                    scriptCount--;
-
-                    int backwardsIndex = lastScriptExtent->length - 1;
-                    if (lastScriptExtent == scriptExtent && backwardsIndex <= index) {
-                        break;
-                    }
-
-                    while (lastScriptExtent != scriptExtent || backwardsIndex > index) {
-                        Script* backwardsScript = &(lastScriptExtent->scripts[backwardsIndex]);
-                        if ((backwardsScript->flags & SCRIPT_FLAG_NO_SAVE) == SCRIPT_FLAG_NONE) {
-                            break;
-                        }
-
-                        backwardsIndex--;
-
-                        if (backwardsIndex < 0) {
-                            ScriptListExtent* previousScriptExtent = scriptList->head;
-                            while (previousScriptExtent->next != lastScriptExtent) {
-                                previousScriptExtent = previousScriptExtent->next;
-                            }
-
-                            lastScriptExtent = previousScriptExtent;
-                            backwardsIndex = lastScriptExtent->length - 1;
-                        }
-                    }
-
-                    if (lastScriptExtent != scriptExtent || backwardsIndex > index) {
-                        Script temp;
-                        memcpy(&temp, script, sizeof(Script));
-                        memcpy(script, &(lastScriptExtent->scripts[backwardsIndex]), sizeof(Script));
-                        memcpy(&(lastScriptExtent->scripts[backwardsIndex]), &temp, sizeof(Script));
-
-                        scriptCount++;
-                    }
+                if (scriptIsSavable(script)) {
+                    savableScripts.push_back(script);
                 }
             }
             scriptExtent = scriptExtent->next;
         }
 
+        int scriptCount = static_cast<int>(savableScripts.size());
         if (fileWriteInt32(stream, scriptCount) == -1) {
             return -1;
         }
 
-        if (scriptCount > 0) {
-            ScriptListExtent* scriptExtent = scriptList->head;
-            while (scriptExtent != lastScriptExtent) {
-                if (scriptListExtentWrite(scriptExtent, stream) == -1) {
+        int totalSaved = 0;
+        while (totalSaved < scriptCount) {
+            int remaining = scriptCount - totalSaved;
+            int currentExtentLength = (remaining > SCRIPT_LIST_EXTENT_SIZE) ? SCRIPT_LIST_EXTENT_SIZE : remaining;
+
+            // Write 16 scripts (SCRIPT_LIST_EXTENT_SIZE).
+            // If we ran out of valid scripts, we pad it with the last valid one
+            // (original code behavior when writing an incomplete tail extent).
+            for (int i = 0; i < SCRIPT_LIST_EXTENT_SIZE; i++) {
+                int scriptIndex = totalSaved + i;
+
+                if (scriptIndex >= scriptCount) {
+                    scriptIndex = scriptCount - 1;
+                }
+
+                if (scriptWrite(savableScripts[scriptIndex], stream) == -1) {
                     return -1;
                 }
-                scriptExtent = scriptExtent->next;
             }
 
-            if (lastScriptExtent != nullptr) {
-                int index;
-                for (index = 0; index < lastScriptExtent->length; index++) {
-                    Script* script = &(lastScriptExtent->scripts[index]);
-                    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-                        break;
-                    }
-                }
-
-                if (index > 0) {
-                    int length = lastScriptExtent->length;
-                    lastScriptExtent->length = index;
-                    if (scriptListExtentWrite(lastScriptExtent, stream) == -1) {
-                        return -1;
-                    }
-                    lastScriptExtent->length = length;
-                }
+            if (fileWriteInt32(stream, currentExtentLength) == -1) {
+                return -1;
             }
+
+            if (fileWriteInt32(stream, 0) == -1) {
+                return -1;
+            }
+
+            totalSaved += currentExtentLength;
         }
     }
 
