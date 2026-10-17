@@ -1331,7 +1331,13 @@ static int replaceDeadCritter(Object* critter)
         }
     }
 
-    return objectSetFrame(blood, frame, nullptr);
+    // NOTE: The original (0x483545) ignores obj_set_frame's result. A multihex
+    // body's frame (6 to 9) can be past the stain art's last one (8), then the
+    // stain keeps its first frame. Failing here failed the critter aging, and
+    // with it the saved map's load: the map was loaded as new.
+    objectSetFrame(blood, frame, nullptr);
+
+    return 0;
 }
 
 // 0x48358C
