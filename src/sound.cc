@@ -1572,6 +1572,12 @@ SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool
         return gSoundLastError;
     }
 
+    int initialVolume;
+    SoundError rc = _soundGetVolume(sound, &initialVolume);
+    if (rc != SOUND_NO_ERROR) {
+        return rc;
+    }
+
     fadeSound = nullptr;
     if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != SOUND_STATUS_NONE) {
         fadeSound = _fadeHead;
@@ -1610,10 +1616,7 @@ SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool
     }
 
     fadeSound->targetVolume = targetVolume;
-    SoundError rc = _soundGetVolume(sound, &fadeSound->initialVolume);
-    if (rc != SOUND_NO_ERROR) {
-        return rc;
-    }
+    fadeSound->initialVolume = initialVolume;
     fadeSound->currentVolume = fadeSound->initialVolume;
     fadeSound->pause = pause;
     // TODO: Check.
