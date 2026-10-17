@@ -1234,10 +1234,12 @@ static int _map_age_dead_critters()
         return 0;
     }
 
+    // NOTE: The original (0x483334) replaces dead bodies by blood stains
+    // after 6 days and also removes the blood stains after 14 days.
     int agingType;
-    if (hoursSinceLastVisit > 21 * 24) {
+    if (hoursSinceLastVisit > 14 * 24) {
         agingType = 2;
-    } else if (hoursSinceLastVisit > 14 * 24) {
+    } else if (hoursSinceLastVisit > 6 * 24) {
         agingType = 1;
     } else {
         return 0;

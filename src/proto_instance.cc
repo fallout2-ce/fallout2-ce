@@ -2327,7 +2327,9 @@ int objectAttemptPlacementPartyMember(Object* obj, int tile, MapElevation elevat
     }
 
     int destinationTile = tile;
-    Rotation rotation = ROTATION_NW;
+    // NOTE: The original (0x49D639) starts the search with the direction after
+    // `ROTATION_NE`.
+    Rotation rotation = ROTATION_NE;
     if (!wmEvalTileNumForPlacement(tile)) {
         destinationTile = gDude->tile;
         for (int i = 1; i <= 100; i++) {
