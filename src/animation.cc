@@ -3068,6 +3068,21 @@ static void _object_anim_compact()
     gAnimationCurrentSad = index;
 }
 
+// Returns the AP a combat move keeps for an attack with the current weapon
+// mode while Ctrl is held, or -1 when Ctrl is up.
+int dudeMoveGetReservedActionPoints()
+{
+    if (!gPressedPhysicalKeys[SDL_SCANCODE_RCTRL] && !gPressedPhysicalKeys[SDL_SCANCODE_LCTRL]) {
+        return -1;
+    }
+
+    HitMode hitMode;
+    bool aiming;
+    interfaceGetCurrentHitMode(&hitMode, &aiming);
+
+    return itemGetActionPointCost(gDude, hitMode, aiming);
+}
+
 // 0x417FFC
 int _check_move(int* actionPointsPtr)
 {
@@ -3082,12 +3097,9 @@ int _check_move(int* actionPointsPtr)
 
     if (isInCombat()) {
         if (*actionPointsPtr != -1) {
-            if (gPressedPhysicalKeys[SDL_SCANCODE_RCTRL] || gPressedPhysicalKeys[SDL_SCANCODE_LCTRL]) {
-                HitMode hitMode;
-                bool aiming;
-                interfaceGetCurrentHitMode(&hitMode, &aiming);
-
-                *actionPointsPtr -= itemGetActionPointCost(gDude, hitMode, aiming);
+            int reservedActionPoints = dudeMoveGetReservedActionPoints();
+            if (reservedActionPoints != -1) {
+                *actionPointsPtr -= reservedActionPoints;
                 if (*actionPointsPtr <= 0) {
                     return -1;
                 }
