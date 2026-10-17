@@ -327,6 +327,7 @@ SettingValue settingsGetConfiguredValue(const SettingDescriptor& descriptor);
 bool settingsValidateValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
 // Honors applyPolicy. NextGame is rejected until a game lifecycle apply path exists.
 bool settingsSetValue(const SettingDescriptor& descriptor, const SettingValue& value, std::string* error = nullptr);
+void settingsApplySchemaDescriptors(const std::vector<SettingDescriptor>& schemaDescriptors);
 
 } // namespace fallout
 
