@@ -105,7 +105,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
 bool scriptWindowAddButtonProc(const char* buttonName, Program* program, int mouseEnterProc, int mouseExitProc, int mouseDownProc, int mouseUpProc);
 bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, int rightMouseDownProc, int rightMouseUpProc);
 bool scriptWindowAddButtonCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData);
-bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData);
+bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonRightMouseEventCallback* callback, void* userData);
 bool scriptWindowAddButtonText(const char* buttonName, const char* text);
 bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* text, int pressedImageOffsetX, int pressedImageOffsetY, int normalImageOffsetX, int normalImageOffsetY);
 bool scriptWindowFill(float r, float g, float b);
