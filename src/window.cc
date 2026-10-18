@@ -20,6 +20,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "widget.h"
+#include "window_defs.h"
 #include "window_manager.h"
 
 // Managed window API layer.
@@ -1057,7 +1058,7 @@ int _popWindow()
 }
 
 // 0x4B8414
-void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, int textAlignment)
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, TextAlignment textAlignment)
 {
     if (y + fontGetLineHeight() > maxY) {
         return;
@@ -1215,7 +1216,7 @@ void windowFreeWordList(char** substringList, int substringListLength)
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B8854
-void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment, int spacing)
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, TextAlignment textAlignment, int spacing)
 {
     if (string == nullptr) {
         return;
@@ -1235,13 +1236,13 @@ void windowWrapLineWithSpacing(int win, char* string, int width, int height, int
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B88FC
-void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment)
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, TextAlignment textAlignment)
 {
     windowWrapLineWithSpacing(win, string, width, height, x, y, color, textAlignment, 0);
 }
 
 // 0x4B8920
-bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
+bool scriptWindowPrintRect(char* string, int wrapWidth, TextAlignment textAlignment)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;
@@ -1259,7 +1260,7 @@ bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
 }
 
 // 0x4B89B0
-bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment)
+bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, TextAlignment textAlignment)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;

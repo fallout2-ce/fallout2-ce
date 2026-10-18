@@ -8,6 +8,7 @@
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
+#include "window_defs.h"
 #include "worldmap.h"
 #include <setjmp.h>
 
@@ -460,6 +461,17 @@ inline VisitedState programStackPopEnum(Program* program)
     }
 
     return static_cast<VisitedState>(visited);
+}
+
+template <>
+inline TextAlignment programStackPopEnum(Program* program)
+{
+    int textAlignment = programStackPopInteger(program);
+    if (!textAlignmentIsValid(textAlignment)) {
+        programPrintError("invalid text alignment %d", textAlignment);
+    }
+
+    return static_cast<TextAlignment>(textAlignment);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

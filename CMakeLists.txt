@@ -264,6 +264,7 @@ set(FALLOUT_ENGINE_SOURCES
     "src/widget.h"
     "src/win32.cc"
     "src/win32.h"
+    "src/window_defs.h"
     "src/window_manager_private.cc"
     "src/window_manager_private.h"
     "src/window_manager.cc"

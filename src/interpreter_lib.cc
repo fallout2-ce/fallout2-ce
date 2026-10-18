@@ -14,6 +14,7 @@
 #include "sound.h"
 #include "svga.h"
 #include "text_font.h"
+#include "window_defs.h"
 #include "window.h"
 #include "window_manager_private.h"
 
@@ -194,7 +195,7 @@ void opFillWin3x3(Program* program)
 // 0x461850 op_format
 static void opFormat(Program* program)
 {
-    int textAlignment = programStackPopInteger(program);
+    TextAlignment textAlignment = programStackPopEnum<TextAlignment>(program);
     int height = programStackPopInteger(program);
     int width = programStackPopInteger(program);
     int y = programStackPopInteger(program);
@@ -344,12 +345,8 @@ static void opPrintRect(Program* program)
 {
     scriptWindowSelectId(program->windowId);
 
-    int v1 = programStackPopInteger(program);
-    if (v1 > 2) {
-        programFatalError("Invalid arg 3 given to printrect, expecting int");
-    }
-
-    int v2 = programStackPopInteger(program);
+    TextAlignment textAlignment = programStackPopEnum<TextAlignment>(program);
+    int width = programStackPopInteger(program);
 
     ProgramValue value = programStackPopValue(program);
     char string[80];
@@ -365,7 +362,7 @@ static void opPrintRect(Program* program)
         break;
     }
 
-    if (!scriptWindowPrintRect(string, v2, v1)) {
+    if (!scriptWindowPrintRect(string, width, textAlignment)) {
         programFatalError("Error in printrect");
     }
 }
