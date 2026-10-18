@@ -14,8 +14,8 @@
 #include "sound.h"
 #include "svga.h"
 #include "text_font.h"
-#include "window_defs.h"
 #include "window.h"
+#include "window_defs.h"
 #include "window_manager_private.h"
 
 namespace fallout {
