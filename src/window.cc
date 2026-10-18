@@ -65,7 +65,7 @@ typedef struct ManagedButton {
     int procs[MANAGED_BUTTON_MOUSE_EVENT_COUNT];
     int rightProcs[MANAGED_BUTTON_RIGHT_MOUSE_EVENT_COUNT];
     ManagedButtonMouseEventCallback* mouseEventCallback;
-    ManagedButtonMouseEventCallback* rightMouseEventCallback;
+    ManagedButtonRightMouseEventCallback* rightMouseEventCallback;
     void* mouseEventCallbackUserData;
     void* rightMouseEventCallbackUserData;
 } ManagedButton;
@@ -546,7 +546,7 @@ void _doButtonOn(int btn, int keyCode)
 }
 
 // 0x4B6F68
-void scriptWindowDispatchButtonMouseEvent(int btn, int mouseEvent)
+void scriptWindowDispatchButtonMouseEvent(int btn, ManagedButtonMouseEvent mouseEvent)
 {
     int win = _win_last_button_winID();
     if (win == -1) {
@@ -606,7 +606,7 @@ void _doRightButtonPress(int btn, int keyCode)
 // NOTE: Unused.
 //
 // 0x4B704C
-void scriptWindowDispatchButtonRightMouseEvent(int btn, int mouseEvent)
+void scriptWindowDispatchButtonRightMouseEvent(int btn, ManagedButtonRightMouseEvent mouseEvent)
 {
     int win = _win_last_button_winID();
     if (win == -1) {
@@ -1919,7 +1919,7 @@ bool scriptWindowAddButtonCfunc(const char* buttonName, ManagedButtonMouseEventC
 // NOTE: Unused.
 //
 // 0x4BA2B4
-bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData)
+bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonRightMouseEventCallback* callback, void* userData)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;

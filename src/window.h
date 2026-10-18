@@ -14,22 +14,24 @@ typedef void WindowDrawingProc2(unsigned char* buf, int a2, int a3, int a4, int 
 typedef bool(WindowInputHandler)(int key);
 typedef void(WindowDeleteCallback)(int windowIndex, const char* windowName);
 typedef void(DisplayInWindowCallback)(int windowIndex, const char* windowName, unsigned char* data, int width, int height);
-typedef void(ManagedButtonMouseEventCallback)(void* userData, int eventType);
 typedef void(ManagedWindowCreateCallback)(int windowIndex, const char* windowName, int* flagsPtr);
 
-typedef enum ManagedButtonMouseEvent {
+enum ManagedButtonMouseEvent : int {
     MANAGED_BUTTON_MOUSE_EVENT_BUTTON_DOWN,
     MANAGED_BUTTON_MOUSE_EVENT_BUTTON_UP,
     MANAGED_BUTTON_MOUSE_EVENT_ENTER,
     MANAGED_BUTTON_MOUSE_EVENT_EXIT,
     MANAGED_BUTTON_MOUSE_EVENT_COUNT,
-} ManagedButtonMouseEvent;
+};
 
-typedef enum ManagedButtonRightMouseEvent {
+enum ManagedButtonRightMouseEvent : int {
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_DOWN,
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_UP,
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_COUNT,
-} ManagedButtonRightMouseEvent;
+};
+
+typedef void(ManagedButtonMouseEventCallback)(void* userData, ManagedButtonMouseEvent eventType);
+typedef void(ManagedButtonRightMouseEventCallback)(void* userData, ManagedButtonRightMouseEvent eventType);
 
 int windowGetFont();
 int windowSetFont(int font);
@@ -50,12 +52,12 @@ void _doRegionFunc(Region* region, int mouseEvent);
 bool scriptWindowActivateRegion(const char* regionName, int mouseEvent);
 int _getInput();
 void _doButtonOn(int btn, int keyCode);
-void scriptWindowDispatchButtonMouseEvent(int btn, int mouseEvent);
+void scriptWindowDispatchButtonMouseEvent(int btn, ManagedButtonMouseEvent mouseEvent);
 void _doButtonOff(int btn, int keyCode);
 void _doButtonPress(int btn, int keyCode);
 void _doButtonRelease(int btn, int keyCode);
 void _doRightButtonPress(int btn, int keyCode);
-void scriptWindowDispatchButtonRightMouseEvent(int btn, int mouseEvent);
+void scriptWindowDispatchButtonRightMouseEvent(int btn, ManagedButtonRightMouseEvent mouseEvent);
 void _doRightButtonRelease(int btn, int keyCode);
 void _setButtonGFX(int width, int height, unsigned char* normal);
 bool scriptWindowHide();
