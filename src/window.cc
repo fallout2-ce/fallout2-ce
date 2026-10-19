@@ -1089,11 +1089,6 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
     fontDrawText(backgroundBuffer, stringCopy, stringWidth, stringWidth, color);
 
     switch (textAlignment) {
-    case TEXT_ALIGNMENT_LEFT:
-        if (stringWidth < width) {
-            width = stringWidth;
-        }
-        break;
     case TEXT_ALIGNMENT_RIGHT:
         if (stringWidth <= width) {
             x += (width - stringWidth);
@@ -1108,6 +1103,11 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
             width = stringWidth;
         } else {
             backgroundBufferPtr = backgroundBuffer + (stringWidth - width) / 2;
+        }
+        break;
+    default:
+        if (stringWidth < width) {
+            width = stringWidth;
         }
         break;
     }
