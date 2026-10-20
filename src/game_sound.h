@@ -22,19 +22,17 @@ constexpr inline bool characterSoundEffectIsValid(int soundEffect)
     return soundEffect >= static_cast<int>(CharacterSoundEffect::Unused) && soundEffect <= static_cast<int>(CharacterSoundEffect::Contact);
 }
 
-enum WeaponSoundEffect : int {
-    WEAPON_SOUND_EFFECT_READY,
-    WEAPON_SOUND_EFFECT_ATTACK,
-    WEAPON_SOUND_EFFECT_OUT_OF_AMMO,
-    WEAPON_SOUND_EFFECT_AMMO_FLYING,
-    WEAPON_SOUND_EFFECT_HIT,
-    WEAPON_SOUND_EFFECT_COUNT,
-    WEAPON_SOUND_EFFECT_FIRST = WEAPON_SOUND_EFFECT_READY
+enum class WeaponSoundEffect : int {
+    Ready,
+    Attack,
+    OutOfAmmo,
+    AmmoFlying,
+    Hit
 };
 
 constexpr inline bool weaponSoundEffectIsValid(int effect)
 {
-    return effect >= WEAPON_SOUND_EFFECT_FIRST && effect < WEAPON_SOUND_EFFECT_COUNT;
+    return effect >= static_cast<int>(WeaponSoundEffect::Ready) && effect <= static_cast<int>(WeaponSoundEffect::Hit);
 }
 
 enum ScenerySoundEffect : int {

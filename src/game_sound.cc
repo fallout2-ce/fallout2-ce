@@ -87,7 +87,7 @@ static SoundEndCallback* gBackgroundSoundEndCallback = nullptr;
 static SoundEndCallback* gSpeechEndCallback = nullptr;
 
 // 0x518E60 snd_lookup_weapon_type
-static char _snd_lookup_weapon_type[WEAPON_SOUND_EFFECT_COUNT] = {
+static constexpr char _snd_lookup_weapon_type[] = {
     'R', // Ready
     'A', // Attack
     'O', // Out of ammo
@@ -1523,26 +1523,19 @@ char* gameSoundBuildInterfaceName(const char* a1)
 // 0x451760
 char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode hitMode, Object* target)
 {
-    int soundVariant;
-    char weaponSoundCode;
-    char effectTypeCode;
+    int soundVariant = 1;
     char materialCode;
-    Proto* proto;
+    char weaponSoundCode = weaponGetSoundId(weapon);
+    int lookupIndex = static_cast<int>(effectType);
+    char effectTypeCode = weaponSoundEffectIsValid(lookupIndex) ? _snd_lookup_weapon_type[lookupIndex] : _snd_lookup_weapon_type[0];
 
-    weaponSoundCode = weaponGetSoundId(weapon);
-    effectTypeCode = _snd_lookup_weapon_type[effectType];
-
-    if (effectType != WEAPON_SOUND_EFFECT_READY
-        && effectType != WEAPON_SOUND_EFFECT_OUT_OF_AMMO) {
+    if (effectType != WeaponSoundEffect::Ready
+        && effectType != WeaponSoundEffect::OutOfAmmo) {
         if (hitMode != HIT_MODE_LEFT_WEAPON_PRIMARY
             && hitMode != HIT_MODE_RIGHT_WEAPON_PRIMARY
             && hitMode != HIT_MODE_PUNCH) {
             soundVariant = 2;
-        } else {
-            soundVariant = 1;
         }
-    } else {
-        soundVariant = 1;
     }
 
     DamageType damageType = weaponGetDamageType(nullptr, weapon);
@@ -1552,6 +1545,7 @@ char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode h
         materialCode = 'X';
     } else {
         MaterialType material;
+        Proto* proto;
         switch (FrmId(target).objectType()) {
         case OBJ_TYPE_ITEM:
             protoGetProto(target, &proto);

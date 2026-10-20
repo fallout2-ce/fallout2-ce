@@ -6001,7 +6001,7 @@ void _combat_attack_this(Object* target)
             displayMonitorAddMessage(messageListItem.text);
         }
 
-        sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_OUT_OF_AMMO, item, hitMode, nullptr);
+        sfx = sfxBuildWeaponName(WeaponSoundEffect::OutOfAmmo, item, hitMode, nullptr);
         soundPlayFile(sfx);
         return;
     case COMBAT_BAD_SHOT_OUT_OF_RANGE:
