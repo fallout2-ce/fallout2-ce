@@ -36,11 +36,6 @@
 
 namespace fallout {
 
-typedef enum SoundEffectActionType {
-    SOUND_EFFECT_ACTION_TYPE_ACTIVE,
-    SOUND_EFFECT_ACTION_TYPE_PASSIVE,
-} SoundEffectActionType;
-
 // 0x5035BC aSoundSfx
 static char _aSoundSfx[] = "sound\\sfx\\";
 
@@ -1526,7 +1521,7 @@ char* gameSoundBuildInterfaceName(const char* a1)
 
 // sfx_build_weapon_name
 // 0x451760
-char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object* target)
+char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode hitMode, Object* target)
 {
     int soundVariant;
     char weaponSoundCode;
@@ -1602,7 +1597,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
 
 // sfx_build_scenery_name
 // 0x451898
-char* sfxBuildSceneryName(int actionType, int action, const char* name)
+char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect action, const char* name)
 {
     char actionTypeCode = actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE ? 'P' : 'A';
     char actionCode = _snd_lookup_scenery_action[action];
@@ -1615,7 +1610,7 @@ char* sfxBuildSceneryName(int actionType, int action, const char* name)
 
 // sfx_build_open_name
 // 0x4518D
-char* sfxBuildOpenName(Object* object, int action)
+char* sfxBuildOpenName(Object* object, ScenerySoundEffect action)
 {
     if (FrmId(object).objectType() == OBJ_TYPE_SCENERY) {
         char scenerySoundId;

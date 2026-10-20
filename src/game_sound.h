@@ -22,41 +22,63 @@ constexpr inline bool characterSoundEffectIsValid(int soundEffect)
     return soundEffect >= static_cast<int>(CharacterSoundEffect::Unused) && soundEffect <= static_cast<int>(CharacterSoundEffect::Contact);
 }
 
-typedef enum WeaponSoundEffect {
+enum WeaponSoundEffect : int {
     WEAPON_SOUND_EFFECT_READY,
     WEAPON_SOUND_EFFECT_ATTACK,
     WEAPON_SOUND_EFFECT_OUT_OF_AMMO,
     WEAPON_SOUND_EFFECT_AMMO_FLYING,
     WEAPON_SOUND_EFFECT_HIT,
     WEAPON_SOUND_EFFECT_COUNT,
-} WeaponSoundEffect;
+    WEAPON_SOUND_EFFECT_FIRST = WEAPON_SOUND_EFFECT_READY
+};
 
-typedef enum ScenerySoundEffect {
+constexpr inline bool weaponSoundEffectIsValid(int effect)
+{
+    return effect >= WEAPON_SOUND_EFFECT_FIRST && effect < WEAPON_SOUND_EFFECT_COUNT;
+}
+
+enum ScenerySoundEffect : int {
     SCENERY_SOUND_EFFECT_OPEN,
     SCENERY_SOUND_EFFECT_CLOSED,
     SCENERY_SOUND_EFFECT_LOCKED,
     SCENERY_SOUND_EFFECT_UNLOCKED,
     SCENERY_SOUND_EFFECT_USED,
     SCENERY_SOUND_EFFECT_COUNT,
-} ScenerySoundEffect;
+    SCENERY_SOUND_EFFECT_FIRST = SCENERY_SOUND_EFFECT_OPEN
+};
 
-typedef enum GameSoundReadLimitMode {
+constexpr inline bool scenerySoundEffectIsValid(int effect)
+{
+    return effect >= SCENERY_SOUND_EFFECT_FIRST && effect < SCENERY_SOUND_EFFECT_COUNT;
+}
+
+enum SoundEffectActionType : int {
+    SOUND_EFFECT_ACTION_TYPE_ACTIVE,
+    SOUND_EFFECT_ACTION_TYPE_PASSIVE,
+};
+
+constexpr inline bool soundEffectActionTypeIsValid(int actionType)
+{
+    return actionType == SOUND_EFFECT_ACTION_TYPE_ACTIVE || actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE;
+}
+
+enum GameSoundReadLimitMode : int {
     GSOUND_LOAD_NO_PLAY = 10,
     GSOUND_LIMIT_BEFORE = 11,
     GSOUND_LIMIT_AFTER = 12,
-} GameSoundReadLimitMode;
+};
 
-typedef enum GameSoundStorageType {
+enum GameSoundStorageType : int {
     GSOUND_STORAGE_INVALID = -1,
     GSOUND_MEMORY = 13,
     GSOUND_STREAM = 14,
-} GameSoundStorageType;
+};
 
-typedef enum GameSoundLoopingMode {
+enum GameSoundLoopingMode : int {
     GSOUND_LOOPING_INVALID = -1,
     GSOUND_NO_LOOP = 15,
     GSOUND_LOOP = 16,
-} GameSoundLoopingMode;
+};
 
 typedef struct GameSoundLoadOptions {
     GameSoundReadLimitMode readLimitMode;
@@ -126,9 +148,9 @@ int _gsound_compute_relative_volume(Object* obj);
 char* sfxBuildCharName(Object* object, AnimationType anim, CharacterSoundEffect soundEffect);
 char* gameSoundBuildAmbientSoundEffectName(const char* name);
 char* gameSoundBuildInterfaceName(const char* name);
-char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object* target);
-char* sfxBuildSceneryName(int actionType, int action, const char* name);
-char* sfxBuildOpenName(Object* object, int action);
+char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode hitMode, Object* target);
+char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect action, const char* name);
+char* sfxBuildOpenName(Object* object, ScenerySoundEffect action);
 void _gsound_red_butt_press(int btn, int keyCode);
 void _gsound_red_butt_release(int btn, int keyCode);
 void _gsound_toggle_butt_press_(int btn, int keyCode);

@@ -4445,7 +4445,7 @@ static void opSfxBuildWeaponName(Program* program)
     Object* target = static_cast<Object*>(programStackPopPointer(program));
     HitMode hitMode = programStackPopEnum<HitMode>(program);
     Object* weapon = static_cast<Object*>(programStackPopPointer(program));
-    int weaponSfxType = programStackPopInteger(program);
+    WeaponSoundEffect weaponSfxType = programStackPopEnum<WeaponSoundEffect>(program);
 
     char soundEffectName[16];
     strcpy(soundEffectName, sfxBuildWeaponName(weaponSfxType, weapon, hitMode, target));
@@ -4456,8 +4456,8 @@ static void opSfxBuildWeaponName(Program* program)
 // 0x45BD7C op_sfx_build_scenery_name
 static void opSfxBuildSceneryName(Program* program)
 {
-    int actionType = programStackPopInteger(program);
-    int action = programStackPopInteger(program);
+    SoundEffectActionType actionType = programStackPopEnum<SoundEffectActionType>(program);
+    ScenerySoundEffect action = programStackPopEnum<ScenerySoundEffect>(program);
     char* baseName = programStackPopString(program);
 
     char soundEffectName[16];
@@ -4469,7 +4469,7 @@ static void opSfxBuildSceneryName(Program* program)
 // 0x45BE58 op_sfx_build_open_name
 static void opSfxBuildOpenName(Program* program)
 {
-    int action = programStackPopInteger(program);
+    ScenerySoundEffect action = programStackPopEnum<ScenerySoundEffect>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object != nullptr) {
