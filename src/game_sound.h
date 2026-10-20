@@ -70,10 +70,10 @@ enum class GameSoundStorageType : int {
     Stream = 14,
 };
 
-enum GameSoundLoopingMode : int {
-    GSOUND_LOOPING_INVALID = -1,
-    GSOUND_NO_LOOP = 15,
-    GSOUND_LOOP = 16,
+enum class GameSoundLoopingMode : int {
+    Invalid = -1,
+    NoLoop = 15,
+    Loop = 16,
 };
 
 typedef struct GameSoundLoadOptions {
