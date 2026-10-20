@@ -64,10 +64,10 @@ enum class GameSoundReadLimitMode : int {
     LimitAfter = 12,
 };
 
-enum GameSoundStorageType : int {
-    GSOUND_STORAGE_INVALID = -1,
-    GSOUND_MEMORY = 13,
-    GSOUND_STREAM = 14,
+enum class GameSoundStorageType : int {
+    Invalid = -1,
+    Memory = 13,
+    Stream = 14,
 };
 
 enum GameSoundLoopingMode : int {

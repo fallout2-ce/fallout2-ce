@@ -1594,7 +1594,7 @@ static void _DoThing(int eventCode)
                 speechSetVolume(gPreferencesSpeechVolume1);
                 redrawLabels = true;
                 if (speechVolumeExample == 0) {
-                    speechLoad("narrator\\options", GameSoundReadLimitMode::LimitAfter, GSOUND_MEMORY, GSOUND_NO_LOOP);
+                    speechLoad("narrator\\options", GameSoundReadLimitMode::LimitAfter, GameSoundStorageType::Memory, GSOUND_NO_LOOP);
                     speechVolumeExample = 40;
                 } else {
                     speechVolumeExample--;

@@ -80,7 +80,7 @@ static Sound* scriptSoundCreate(const char* path, bool looping, int volume, Scri
 {
     GameSoundLoadOptions loadOptions = {
         GameSoundReadLimitMode::LimitAfter,
-        GSOUND_STREAM,
+        GameSoundStorageType::Stream,
         looping ? GSOUND_LOOP : GSOUND_NO_LOOP,
         0,
         scriptSoundSlotCallback,
