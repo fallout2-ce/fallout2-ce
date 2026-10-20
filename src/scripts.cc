@@ -3256,7 +3256,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
             } else if (gameDialogWindowActive()) {
                 // Dialogue without a talking head, so just play the line
                 // without lip-sync instead of dropping it.
-                speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
+                speechLoad(messageListItem.audio, GameSoundReadLimitMode::LimitAfter, GSOUND_STREAM, GSOUND_NO_LOOP);
             } else {
                 // Outside dialogue (float_msg barks, timed events...), so use
                 // the float channels and let lines from different speakers

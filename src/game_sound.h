@@ -58,10 +58,10 @@ constexpr inline bool soundEffectActionTypeIsValid(int actionType)
     return actionType == SOUND_EFFECT_ACTION_TYPE_ACTIVE || actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE;
 }
 
-enum GameSoundReadLimitMode : int {
-    GSOUND_LOAD_NO_PLAY = 10,
-    GSOUND_LIMIT_BEFORE = 11,
-    GSOUND_LIMIT_AFTER = 12,
+enum class GameSoundReadLimitMode : int {
+    LoadNoPlay = 10,
+    LimitBefore = 11,
+    LimitAfter = 12,
 };
 
 enum GameSoundStorageType : int {

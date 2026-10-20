@@ -1153,7 +1153,7 @@ int _gdialogExitFromScript()
     }
 
     if (gameDialogOldMusicVolume == -1) {
-        backgroundSoundRestart(GSOUND_LIMIT_BEFORE);
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitBefore);
     } else {
         backgroundSoundSetVolume(gameDialogOldMusicVolume);
     }

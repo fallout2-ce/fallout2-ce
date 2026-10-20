@@ -79,7 +79,7 @@ static void scriptSoundSlotCallback(void* userData, SoundCallbackEvent event)
 static Sound* scriptSoundCreate(const char* path, bool looping, int volume, ScriptSoundSlot* slot)
 {
     GameSoundLoadOptions loadOptions = {
-        GSOUND_LIMIT_AFTER,
+        GameSoundReadLimitMode::LimitAfter,
         GSOUND_STREAM,
         looping ? GSOUND_LOOP : GSOUND_NO_LOOP,
         0,
@@ -124,7 +124,7 @@ static void scriptSoundStopSlot(ScriptSoundSlot* slot, bool restoreBackground)
     }
 
     if (shouldRestoreBackground) {
-        backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter);
     }
 }
 
@@ -187,7 +187,7 @@ int scriptSoundPlay(const char* path, int mode)
     Sound* sound = slot != nullptr ? scriptSoundCreate(path, looping, volume, slot) : nullptr;
     if (sound == nullptr) {
         if (mode == SCRIPT_SOUND_MODE_MUSIC) {
-            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+            backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter);
         }
         debugPrint("scriptSoundPlay: failed to play %s\n", path);
         return 0;

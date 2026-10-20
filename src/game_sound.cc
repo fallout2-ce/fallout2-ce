@@ -559,7 +559,7 @@ void backgroundSoundEnable()
         if (!gMusicEnabled) {
             movieSetVolume((int)(gMusicVolume * 0.94));
             gMusicEnabled = true;
-            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+            backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter);
         }
     }
 }
@@ -653,9 +653,9 @@ int backgroundSoundGetDuration()
     [fileName] is base file name, without path and extension.
 
     readLimitMode
-        GSOUND_LOAD_NO_PLAY = don't auto play sound after loading
-        GSOUND_LIMIT_BEFORE = set read limit before soundLoad, autoplay
-        GSOUND_LIMIT_AFTER = set read limit after soundLoad, autoplay
+        GameSoundReadLimitMode::LoadNoPlay = don't auto play sound after loading
+        GameSoundReadLimitMode::LimitBefore = set read limit before soundLoad, autoplay
+        GameSoundReadLimitMode::LimitAfter = set read limit after soundLoad, autoplay
     storageType
         GSOUND_MEMORY = load entire sound into memory before playing
         GSOUND_STREAM = stream sound from disk while playing
@@ -664,14 +664,14 @@ int backgroundSoundGetDuration()
         GSOUND_LOOP
 
     examples:
-        backgroundSoundLoad("akiss", GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP) (endgame)
-        backgroundSoundLoad("10labone", GSOUND_LIMIT_BEFORE, GSOUND_STREAM, GSOUND_LOOP); (endgame)
+        backgroundSoundLoad("akiss", GameSoundReadLimitMode::LimitAfter, GSOUND_STREAM, GSOUND_NO_LOOP) (endgame)
+        backgroundSoundLoad("10labone", GameSoundReadLimitMode::LimitBefore, GSOUND_STREAM, GSOUND_LOOP); (endgame)
         backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP); (map music)
-        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP); (map load sound)
+        backgroundSoundLoad("wind2", GameSoundReadLimitMode::LimitAfter, GSOUND_MEMORY, GSOUND_LOOP); (map load sound)
 
         these use the last storage/loop settings passed to backgroundSoundLoad
-        backgroundSoundRestart(GSOUND_LIMIT_BEFORE); (end of of script)
-        backgroundSoundRestart(GSOUND_LIMIT_AFTER); (game init, volume change)
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitBefore); (end of of script)
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter); (game init, volume change)
 
     0x45067C
 */
@@ -731,7 +731,7 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
         return -1;
     }
 
-    if (readLimitMode == GSOUND_LOAD_NO_PLAY) {
+    if (readLimitMode == GameSoundReadLimitMode::LoadNoPlay) {
         return 0;
     }
 
@@ -881,7 +881,7 @@ int gameSoundLoadSound(Sound** soundPtr, const char* path, const SoundFileIO* fi
         }
     }
 
-    if (options->readLimitMode == GSOUND_LIMIT_BEFORE && soundSetReadLimit(sound, 0x40000) != SOUND_NO_ERROR) {
+    if (options->readLimitMode == GameSoundReadLimitMode::LimitBefore && soundSetReadLimit(sound, 0x40000) != SOUND_NO_ERROR) {
         if (gGameSoundDebugEnabled) {
             debugPrint("unable to set read limit ");
         }
@@ -897,7 +897,7 @@ int gameSoundLoadSound(Sound** soundPtr, const char* path, const SoundFileIO* fi
         return -1;
     }
 
-    if (options->readLimitMode != GSOUND_LIMIT_BEFORE && soundSetReadLimit(sound, 0x40000) != SOUND_NO_ERROR) {
+    if (options->readLimitMode != GameSoundReadLimitMode::LimitBefore && soundSetReadLimit(sound, 0x40000) != SOUND_NO_ERROR) {
         if (gGameSoundDebugEnabled) {
             debugPrint("unable to set read limit ");
         }
@@ -1043,7 +1043,7 @@ int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameS
         return -1;
     }
 
-    if (readLimitMode == GSOUND_LOAD_NO_PLAY) {
+    if (readLimitMode == GameSoundReadLimitMode::LoadNoPlay) {
         return 0;
     }
 
@@ -2242,7 +2242,7 @@ static int gameSoundChannelPoolPlay(GameSoundChannelPool* pool, const char* path
     }
 
     GameSoundLoadOptions loadOptions = {
-        GSOUND_LIMIT_AFTER,
+        GameSoundReadLimitMode::LimitAfter,
         GSOUND_STREAM,
         GSOUND_NO_LOOP,
         0,
