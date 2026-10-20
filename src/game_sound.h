@@ -48,14 +48,14 @@ constexpr inline bool scenerySoundEffectIsValid(int effect)
     return effect >= static_cast<int>(ScenerySoundEffect::Open) && effect <= static_cast<int>(ScenerySoundEffect::Used);
 }
 
-enum SoundEffectActionType : int {
-    SOUND_EFFECT_ACTION_TYPE_ACTIVE,
-    SOUND_EFFECT_ACTION_TYPE_PASSIVE,
+enum class SoundEffectActionType : int {
+    Active,
+    Passive,
 };
 
 constexpr inline bool soundEffectActionTypeIsValid(int actionType)
 {
-    return actionType == SOUND_EFFECT_ACTION_TYPE_ACTIVE || actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE;
+    return actionType == static_cast<int>(SoundEffectActionType::Active) || actionType == static_cast<int>(SoundEffectActionType::Passive);
 }
 
 enum class GameSoundReadLimitMode : int {

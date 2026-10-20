@@ -1593,7 +1593,7 @@ char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode h
 // 0x451898
 char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect action, const char* name)
 {
-    char actionTypeCode = actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE ? 'P' : 'A';
+    char actionTypeCode = actionType == SoundEffectActionType::Passive ? 'P' : 'A';
     int lookupIndex = static_cast<int>(action);
     char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[action] : _snd_lookup_scenery_action[0];
 
