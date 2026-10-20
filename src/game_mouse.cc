@@ -62,6 +62,10 @@ static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HE
 // 0x518BF8 gmouse_initialized
 static bool gGameMouseInitialized = false;
 
+// True while the hold-button action menu (Talk/Look/Use/...) modal loop is up,
+// so the gamepad code can drive its cursor-Y navigation with the D-pad.
+bool gGameMouseActionMenuActive = false;
+
 // 0x518BFC gmouse_enabled
 static bool _gmouse_enabled = false;
 
@@ -1224,6 +1228,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 
                     int newMouseY = mouseY;
                     int actionIndex = 0;
+                    gGameMouseActionMenuActive = true;
                     while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
                         sharedFpsLimiter.mark();
 
@@ -1255,6 +1260,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         renderPresent();
                         sharedFpsLimiter.throttle();
                     }
+                    gGameMouseActionMenuActive = false;
 
                     isoEnable();
 

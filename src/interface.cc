@@ -2271,6 +2271,65 @@ static int _intface_item_reload()
     return 0;
 }
 
+// Reload the active-hand weapon directly, without first cycling the item action
+// to "reload". Honors AP while in combat. Returns 0 on a successful reload, -1
+// otherwise (no weapon, not an ammo weapon, already full, or — in combat — not
+// enough AP).
+int interfaceGamepadReload()
+{
+    if (gInterfaceBarWindow == -1) {
+        return -1;
+    }
+
+    InterfaceItemState* ptr = &(gInterfaceItemStates[gInterfaceCurrentHand]);
+    if (ptr->isWeapon == 0 || ptr->item == nullptr) {
+        return -1;
+    }
+
+    Object* weapon = ptr->item;
+    if (ammoGetCapacity(weapon) <= 0) {
+        return -1;
+    }
+    if (ammoGetQuantity(weapon) >= ammoGetCapacity(weapon)) {
+        return -1;
+    }
+
+    int apRequired = 0;
+    if (isInCombat()) {
+        HitMode hitMode = gInterfaceCurrentHand == HAND_LEFT
+            ? HIT_MODE_LEFT_WEAPON_RELOAD
+            : HIT_MODE_RIGHT_WEAPON_RELOAD;
+        apRequired = itemGetActionPointCost(gDude, hitMode, false);
+        if (apRequired > gDude->data.critter.combat.ap) {
+            return -1;
+        }
+    }
+
+    bool wasReloaded = false;
+    while (weaponAttemptReload(gDude, weapon) != -1) {
+        wasReloaded = true;
+    }
+
+    if (!wasReloaded) {
+        return -1;
+    }
+
+    if (isInCombat()) {
+        gDude->data.critter.combat.ap -= apRequired;
+        if (gDude->data.critter.combat.ap < 0) {
+            gDude->data.critter.combat.ap = 0;
+        }
+        interfaceRenderActionPoints(gDude->data.critter.combat.ap, _combat_free_move);
+    }
+
+    interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
+
+    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
+    soundPlayFile(sfx);
+
+    return 0;
+}
+
 // internal helper for interfaceRenderCounter
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse)
 {
