@@ -36,18 +36,16 @@ constexpr inline bool weaponSoundEffectIsValid(int effect)
 }
 
 enum ScenerySoundEffect : int {
-    SCENERY_SOUND_EFFECT_OPEN,
-    SCENERY_SOUND_EFFECT_CLOSED,
-    SCENERY_SOUND_EFFECT_LOCKED,
-    SCENERY_SOUND_EFFECT_UNLOCKED,
-    SCENERY_SOUND_EFFECT_USED,
-    SCENERY_SOUND_EFFECT_COUNT,
-    SCENERY_SOUND_EFFECT_FIRST = SCENERY_SOUND_EFFECT_OPEN
+    Open,
+    Closed,
+    Locked,
+    Unlocked,
+    Used
 };
 
 constexpr inline bool scenerySoundEffectIsValid(int effect)
 {
-    return effect >= SCENERY_SOUND_EFFECT_FIRST && effect < SCENERY_SOUND_EFFECT_COUNT;
+    return effect >= static_cast<int>(ScenerySoundEffect::Open) && effect <= static_cast<int>(ScenerySoundEffect::Used);
 }
 
 enum SoundEffectActionType : int {

@@ -88,20 +88,20 @@ static SoundEndCallback* gSpeechEndCallback = nullptr;
 
 // 0x518E60 snd_lookup_weapon_type
 static constexpr char _snd_lookup_weapon_type[] = {
-    'R', // Ready
-    'A', // Attack
-    'O', // Out of ammo
-    'F', // Firing
-    'H', // Hit
+    'R', // WeaponSoundEffect::Ready
+    'A', // WeaponSoundEffect::Attack
+    'O', // WeaponSoundEffect::Out of ammo
+    'F', // WeaponSoundEffect::Firing
+    'H', // WeaponSoundEffect::Hit
 };
 
 // 0x518E65 snd_lookup_scenery_action
-static char _snd_lookup_scenery_action[SCENERY_SOUND_EFFECT_COUNT] = {
-    'O', // Open
-    'C', // Close
-    'L', // Lock
-    'N', // Unlock
-    'U', // Use
+static constexpr char _snd_lookup_scenery_action[] = {
+    'O', // ScenerySoundEffect::Open
+    'C', // ScenerySoundEffect::Close
+    'L', // ScenerySoundEffect::Lock
+    'N', // ScenerySoundEffect::Unlock
+    'U', // ScenerySoundEffect::Use
 };
 
 // 0x518E6C background_storage_requested
@@ -1594,7 +1594,8 @@ char* sfxBuildWeaponName(WeaponSoundEffect effectType, Object* weapon, HitMode h
 char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect action, const char* name)
 {
     char actionTypeCode = actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE ? 'P' : 'A';
-    char actionCode = _snd_lookup_scenery_action[action];
+    int lookupIndex = static_cast<int>(action);
+    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[action] : _snd_lookup_scenery_action[0];
 
     snprintf(_sfx_file_name, sizeof(_sfx_file_name), "S%c%c%4s%1d", actionTypeCode, actionCode, name, 1);
     compat_strupr(_sfx_file_name);
@@ -1606,6 +1607,9 @@ char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect a
 // 0x4518D
 char* sfxBuildOpenName(Object* object, ScenerySoundEffect action)
 {
+    int lookupIndex = static_cast<int>(action);
+    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[action] : _snd_lookup_scenery_action[0];
+
     if (FrmId(object).objectType() == OBJ_TYPE_SCENERY) {
         char scenerySoundId;
         Proto* proto;
@@ -1614,11 +1618,11 @@ char* sfxBuildOpenName(Object* object, ScenerySoundEffect action)
         } else {
             scenerySoundId = 'A';
         }
-        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "S%cDOORS%c", _snd_lookup_scenery_action[action], scenerySoundId);
+        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "S%cDOORS%c", actionCode, scenerySoundId);
     } else {
         Proto* proto;
         protoGetProto(object, &proto);
-        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "I%cCNTNR%c", _snd_lookup_scenery_action[action], proto->item.soundId);
+        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "I%cCNTNR%c", actionCode, proto->item.soundId);
     }
     compat_strupr(_sfx_file_name);
     return _sfx_file_name;
