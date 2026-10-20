@@ -35,7 +35,7 @@ constexpr inline bool weaponSoundEffectIsValid(int effect)
     return effect >= static_cast<int>(WeaponSoundEffect::Ready) && effect <= static_cast<int>(WeaponSoundEffect::Hit);
 }
 
-enum ScenerySoundEffect : int {
+enum class ScenerySoundEffect : int {
     Open,
     Closed,
     Locked,
