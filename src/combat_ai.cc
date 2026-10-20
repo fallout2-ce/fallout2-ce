@@ -2998,7 +2998,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
                 if (roundsLoaded > 0) {
                     int volume = _gsound_compute_relative_volume(attacker);
-                    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, hitMode, nullptr);
+                    const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Ready, weapon, hitMode, nullptr);
                     _gsound_play_sfx_file_volume(sfx, volume);
                     _ai_magic_hands(attacker, weapon, 5002);
 
@@ -3026,7 +3026,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
                         if (remainingAmmoQuantity != -1) {
                             int volume = _gsound_compute_relative_volume(attacker);
-                            const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, hitMode, nullptr);
+                            const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Ready, weapon, hitMode, nullptr);
                             _gsound_play_sfx_file_volume(sfx, volume);
                             _ai_magic_hands(attacker, weapon, 5002);
 
@@ -3045,7 +3045,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                     }
                 } else {
                     int volume = _gsound_compute_relative_volume(attacker);
-                    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_OUT_OF_AMMO, weapon, hitMode, nullptr);
+                    const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::OutOfAmmo, weapon, hitMode, nullptr);
                     _gsound_play_sfx_file_volume(sfx, volume);
                     _ai_magic_hands(attacker, weapon, 5001);
 
@@ -3204,7 +3204,7 @@ void aiAttemptWeaponReload(Object* critter, int animate)
 
         if (loadedRounds != 0 && objectIsPartyMember(critter)) {
             int volume = _gsound_compute_relative_volume(critter);
-            const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
+            const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Ready, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
             _gsound_play_sfx_file_volume(sfx, volume);
 
             if (animate) {

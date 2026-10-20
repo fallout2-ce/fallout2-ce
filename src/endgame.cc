@@ -246,7 +246,7 @@ void endgamePlayMovie()
     _endgame_maybe_done = 0;
     tickersAdd(_endgame_movie_bk_process);
     backgroundSoundSetEndCallback(_endgame_movie_callback);
-    backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music0", "akiss"), GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
+    backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music0", "akiss"), GameSoundReadLimitMode::LimitAfter, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop);
     inputPauseForTocks(3000);
 
     endgamePlayConfiguredMovie();
@@ -742,7 +742,7 @@ static void endgameEndingVoiceOverInit(const char* fileBaseName)
     // Build speech file path.
     snprintf(path, sizeof(path), "%s%s", "narrator\\", fileBaseName);
 
-    if (speechLoad(path, GSOUND_LOAD_NO_PLAY, GSOUND_STREAM, GSOUND_NO_LOOP) != -1) {
+    if (speechLoad(path, GameSoundReadLimitMode::LoadNoPlay, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop) != -1) {
         gEndgameEndingVoiceOverSpeechLoaded = true;
     }
 
@@ -954,7 +954,7 @@ static void _endgame_movie_callback()
 static void _endgame_movie_bk_process()
 {
     if (_endgame_maybe_done) {
-        backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music1", "10labone"), GSOUND_LIMIT_BEFORE, GSOUND_STREAM, GSOUND_LOOP);
+        backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music1", "10labone"), GameSoundReadLimitMode::LimitBefore, GameSoundStorageType::Stream, GameSoundLoopingMode::Loop);
         backgroundSoundSetEndCallback(nullptr);
         tickersRemove(_endgame_movie_bk_process);
     }

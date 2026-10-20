@@ -1820,7 +1820,7 @@ static int _check_door_state(Object* door, Object* obj2)
 int objectUseDoor(Object* user, Object* door, bool animateOnly)
 {
     if (objectIsLocked(door)) {
-        const char* sfx = sfxBuildOpenName(door, SCENERY_SOUND_EFFECT_LOCKED);
+        const char* sfx = sfxBuildOpenName(door, ScenerySoundEffect::Locked);
         soundPlayFile(sfx);
     }
 
@@ -1868,7 +1868,7 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
                     animationRegisterCallback(door, door, (AnimationCallback*)_set_door_state_closed, -1);
                 }
 
-                const char* sfx = sfxBuildOpenName(door, SCENERY_SOUND_EFFECT_CLOSED);
+                const char* sfx = sfxBuildOpenName(door, ScenerySoundEffect::Closed);
                 animationRegisterPlaySoundEffect(door, sfx, -1);
 
                 animationRegisterAnimateReversed(door, ANIM_STAND, 0);
@@ -1877,7 +1877,7 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
                     animationRegisterCallback(door, door, (AnimationCallback*)_set_door_state_open, -1);
                 }
 
-                const char* sfx = sfxBuildOpenName(door, SCENERY_SOUND_EFFECT_OPEN);
+                const char* sfx = sfxBuildOpenName(door, ScenerySoundEffect::Open);
                 animationRegisterPlaySoundEffect(door, sfx, -1);
 
                 animationRegisterAnimate(door, ANIM_STAND, 0);
@@ -1909,7 +1909,7 @@ int objectUseContainer(Object* critter, Object* item)
     }
 
     if (objectIsLocked(item)) {
-        const char* sfx = sfxBuildOpenName(item, SCENERY_SOUND_EFFECT_LOCKED);
+        const char* sfx = sfxBuildOpenName(item, ScenerySoundEffect::Locked);
         soundPlayFile(sfx);
 
         if (critter == gDude) {
@@ -1943,11 +1943,11 @@ int objectUseContainer(Object* critter, Object* item)
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
     if (item->frame == 0) {
-        const char* sfx = sfxBuildOpenName(item, SCENERY_SOUND_EFFECT_OPEN);
+        const char* sfx = sfxBuildOpenName(item, ScenerySoundEffect::Open);
         animationRegisterPlaySoundEffect(item, sfx, 0);
         animationRegisterAnimate(item, ANIM_STAND, 0);
     } else {
-        const char* sfx = sfxBuildOpenName(item, SCENERY_SOUND_EFFECT_CLOSED);
+        const char* sfx = sfxBuildOpenName(item, ScenerySoundEffect::Closed);
         animationRegisterPlaySoundEffect(item, sfx, 0);
         animationRegisterAnimateReversed(item, ANIM_STAND, 0);
     }
@@ -2183,14 +2183,14 @@ static int objectOpenClose(Object* obj)
     if (obj->frame != 0) {
         animationRegisterCallbackForced(obj, obj, (AnimationCallback*)_set_door_state_closed, -1);
 
-        const char* sfx = sfxBuildOpenName(obj, SCENERY_SOUND_EFFECT_CLOSED);
+        const char* sfx = sfxBuildOpenName(obj, ScenerySoundEffect::Closed);
         animationRegisterPlaySoundEffect(obj, sfx, -1);
 
         animationRegisterAnimateReversed(obj, ANIM_STAND, 0);
     } else {
         animationRegisterCallbackForced(obj, obj, (AnimationCallback*)_set_door_state_open, -1);
 
-        const char* sfx = sfxBuildOpenName(obj, SCENERY_SOUND_EFFECT_OPEN);
+        const char* sfx = sfxBuildOpenName(obj, ScenerySoundEffect::Open);
         animationRegisterPlaySoundEffect(obj, sfx, -1);
         animationRegisterAnimate(obj, ANIM_STAND, 0);
     }
