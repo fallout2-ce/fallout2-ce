@@ -280,6 +280,52 @@ struct QolSettings {
     bool fast_ammo_load = true;
 };
 
+struct GamepadSettings {
+    bool enabled = true;
+    std::string world_left_stick = "centered";
+    std::string world_right_stick = "cursor";
+    double stick_deadzone = 0.15;
+    double stick_curve = 1.50;
+    double cursor_speed = 450.0;
+    double cursor_speed_boost = 900.0;
+    double walk_deadzone = 0.30;
+    double run_threshold = 0.50;
+    int walk_project_tiles = 2;
+    int run_settle_ms = 50;
+    int camera_deadzone_x = 100;
+    int camera_deadzone_y = 75;
+    double camera_pan_threshold = 0.40;
+    int dpad_repeat_ms = 150;
+    int trigger_threshold = 8000;
+    bool combat_auto_aim = true;
+    bool world_auto_aim = true;
+    bool auto_aim_whole_map = false;
+    bool auto_aim_center_camera = false;
+    int melee_approach = 1;
+    bool loot_assist = true;
+    int loot_snap_distance = 20;
+    bool loot_skip_empty = true;
+    bool b_close_all = false;
+    bool touchpad_enabled = true;
+    double touch_sensitivity = 0.25;
+    double touch_accel = 0.001;
+    double touch_smoothing = 0.40;
+    double touch_deadzone = 2.0;
+    double touch_max_gain = 4.0;
+    int touch_tap_ms = 200;
+    int touch_tap_move = 40;
+    std::string btn_a = "lmb";
+    std::string btn_b = "rmb";
+    std::string btn_x = "inventory";
+    std::string btn_y = "charsheet";
+    std::string btn_lb = "skilldex";
+    std::string btn_rb = "reload";
+    std::string btn_ls = "swaphands";
+    std::string btn_rs = "combat";
+    std::string btn_back = "pipboy";
+    std::string btn_start = "esc";
+};
+
 struct MapperSettings {
     bool override_librarian = false;
     bool librarian = false;
@@ -310,6 +356,7 @@ struct Settings {
     DebugSettings debug;
     CombatAiSettings combat_ai;
     QolSettings qol;
+    GamepadSettings gamepad;
     MapperSettings mapper;
 };
 

@@ -387,6 +387,52 @@ void initSettingsRegistry(bool isMapper)
     SETTING(fast_ammo_load);
 #undef SECT
 
+#define SECT gamepad
+    SETTING(enabled);
+    SETTING(world_left_stick);
+    SETTING(world_right_stick);
+    SETTING_P(stick_deadzone, clamp(0.05, 0.70));
+    SETTING_P(stick_curve, clamp(1.0, 3.0));
+    SETTING_P(cursor_speed, clamp(50.0, 2500.0));
+    SETTING_P(cursor_speed_boost, clamp(100.0, 4000.0));
+    SETTING_P(walk_deadzone, clamp(0.05, 0.90));
+    SETTING_P(run_threshold, clamp(0.05, 1.0));
+    SETTING_P(walk_project_tiles, clamp(1, 8));
+    SETTING_P(run_settle_ms, clamp(0, 500));
+    SETTING_P(camera_deadzone_x, clamp(0, 1000));
+    SETTING_P(camera_deadzone_y, clamp(0, 1000));
+    SETTING_P(camera_pan_threshold, clamp(0.10, 0.95));
+    SETTING_P(dpad_repeat_ms, clamp(30, 1000));
+    SETTING_P(trigger_threshold, clamp(1000, 30000));
+    SETTING(combat_auto_aim);
+    SETTING(world_auto_aim);
+    SETTING(auto_aim_whole_map);
+    SETTING(auto_aim_center_camera);
+    SETTING_P(melee_approach, clamp(0, 2));
+    SETTING(loot_assist);
+    SETTING_P(loot_snap_distance, clamp(1, 50));
+    SETTING(loot_skip_empty);
+    SETTING(b_close_all);
+    SETTING(touchpad_enabled);
+    SETTING_P(touch_sensitivity, clamp(0.01, 10.0));
+    SETTING_P(touch_accel, clamp(0.0, 1.0));
+    SETTING_P(touch_smoothing, clamp(0.0, 0.90));
+    SETTING_P(touch_deadzone, clamp(0.0, 50.0));
+    SETTING_P(touch_max_gain, clamp(1.0, 20.0));
+    SETTING_P(touch_tap_ms, clamp(0, 1000));
+    SETTING_P(touch_tap_move, clamp(0, 500));
+    SETTING(btn_a);
+    SETTING(btn_b);
+    SETTING(btn_x);
+    SETTING(btn_y);
+    SETTING(btn_lb);
+    SETTING(btn_rb);
+    SETTING(btn_ls);
+    SETTING(btn_rs);
+    SETTING(btn_back);
+    SETTING(btn_start);
+#undef SECT
+
     if (isMapper) {
 #define SECT mapper
         SETTING(override_librarian);
