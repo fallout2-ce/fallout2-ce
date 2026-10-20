@@ -292,7 +292,7 @@ static void endgamePlayConfiguredMovie()
         // Match sfall's Fallout 1 endgame hook: let the endgame track play
         // through the movie and do not add another movie fade.
         inputPauseForTocks(1500);
-        gameMoviePlay(movie, 0);
+        gameMoviePlay(movie, GameMovieFlags::None);
     }
 }
 
@@ -1224,7 +1224,7 @@ void endgameSetupDeathEnding(int reason)
         }
         break;
     case ENDGAME_DEATH_ENDING_REASON_TIMEOUT:
-        gameMoviePlay(MOVIE_TIMEOUT, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
+        gameMoviePlay(MOVIE_TIMEOUT, GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic);
         break;
     }
 

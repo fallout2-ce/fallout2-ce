@@ -148,7 +148,7 @@ int gameMoviesSave(File* stream)
 
 // gmovie_play
 // 0x44E690 gmovie_play
-int gameMoviePlay(int movie, int flags)
+int gameMoviePlay(int movie, GameMovieFlags flags)
 {
     if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || movieFileNames[movie].empty()) {
         debugPrint("\ngmovie_play() - Error: Invalid movie %d\n", movie);
@@ -171,7 +171,7 @@ int gameMoviePlay(int movie, int flags)
         return -1;
     }
 
-    if ((flags & GAME_MOVIE_FADE_IN) != 0) {
+    if ((flags & GameMovieFlags::FadeIn) != GameMovieFlags::None) {
         paletteFadeTo(gPaletteBlack);
         gGameMovieFaded = true;
     }
@@ -187,9 +187,9 @@ int gameMoviePlay(int movie, int flags)
         return -1;
     }
 
-    if ((flags & GAME_MOVIE_STOP_MUSIC) != 0) {
+    if ((flags & GameMovieFlags::StopMusic) != GameMovieFlags::None) {
         backgroundSoundDelete();
-    } else if ((flags & GAME_MOVIE_PAUSE_MUSIC) != 0) {
+    } else if ((flags & GameMovieFlags::PauseMusic) != GameMovieFlags::None) {
         backgroundSoundPause();
     }
 
@@ -300,11 +300,11 @@ int gameMoviePlay(int movie, int flags)
     // 640x480). This leads to everything outside this rect to remain black.
     windowRefreshAll(&_scr_size);
 
-    if ((flags & GAME_MOVIE_PAUSE_MUSIC) != 0) {
+    if ((flags & GameMovieFlags::PauseMusic) != GameMovieFlags::None) {
         backgroundSoundResume();
     }
 
-    if ((flags & GAME_MOVIE_FADE_OUT) != 0) {
+    if ((flags & GameMovieFlags::FadeOut) != GameMovieFlags::None) {
         if (!subtitlesEnabled) {
             colorPaletteLoad("color.pal");
         }

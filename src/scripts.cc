@@ -478,7 +478,7 @@ int gameTimeEventProcess(Object* obj, void* data)
 int _scriptsCheckGameEvents(int* moviePtr, int window)
 {
     int movie = -1;
-    int movieFlags = GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC;
+    GameMovieFlags movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic;
     bool endgame = false;
     bool adjustRep = false;
 
@@ -486,7 +486,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
 
     if (gameGetGlobalVar(GVAR_ENEMY_ARROYO)) {
         movie = MOVIE_AFAILED;
-        movieFlags = GAME_MOVIE_FADE_IN | GAME_MOVIE_STOP_MUSIC;
+        movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::StopMusic;
         endgame = true;
     } else {
         if (day >= gMovieTimerArtimer4 || gameGetGlobalVar(GVAR_FALLOUT_2) >= 3) {
