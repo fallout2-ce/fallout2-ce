@@ -132,6 +132,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/game_vars.h"
     "src/game.cc"
     "src/game.h"
+    "src/gamepad.cc"
+    "src/gamepad.h"
     "src/gamepad_combat_assist.cc"
     "src/gamepad_combat_assist.h"
     "src/geometry.cc"

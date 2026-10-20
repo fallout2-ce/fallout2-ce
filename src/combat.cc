@@ -20,6 +20,7 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "gamepad.h"
 #include "input.h"
 #include "interface.h"
 #include "item.h"
@@ -2089,6 +2090,7 @@ void combatReset()
     // SFALL
     criticalsReset();
     combat_reset_hit_location_penalty();
+    gamepadClearPendingActions();
 }
 
 // 0x420E14
@@ -2099,6 +2101,7 @@ void combatExit()
 
     // SFALL
     criticalsExit();
+    gamepadClearPendingActions();
 }
 
 // 0x420E24
@@ -3286,6 +3289,8 @@ static int _combat_input()
         }
 
         int keyCode = inputGetInput();
+
+        gamepadProcessPendingActions();
 
         // SFALL: CombatLoopHook.
         sfall_gl_scr_process_main();
