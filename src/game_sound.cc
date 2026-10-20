@@ -1595,7 +1595,7 @@ char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect a
 {
     char actionTypeCode = actionType == SoundEffectActionType::Passive ? 'P' : 'A';
     int lookupIndex = static_cast<int>(action);
-    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[action] : _snd_lookup_scenery_action[0];
+    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[lookupIndex] : _snd_lookup_scenery_action[0];
 
     snprintf(_sfx_file_name, sizeof(_sfx_file_name), "S%c%c%4s%1d", actionTypeCode, actionCode, name, 1);
     compat_strupr(_sfx_file_name);
@@ -1608,7 +1608,7 @@ char* sfxBuildSceneryName(SoundEffectActionType actionType, ScenerySoundEffect a
 char* sfxBuildOpenName(Object* object, ScenerySoundEffect action)
 {
     int lookupIndex = static_cast<int>(action);
-    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[action] : _snd_lookup_scenery_action[0];
+    char actionCode = scenerySoundEffectIsValid(lookupIndex) ? _snd_lookup_scenery_action[lookupIndex] : _snd_lookup_scenery_action[0];
 
     if (FrmId(object).objectType() == OBJ_TYPE_SCENERY) {
         char scenerySoundId;
