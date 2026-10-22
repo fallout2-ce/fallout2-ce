@@ -308,7 +308,7 @@ namespace {
         assert(sfallConfig != nullptr && migratedConfig != nullptr);
 
         bool migrated = false;
-        for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+        for (GameMovie index = MOVIE_FIRST; index < GAME_MOVIE_MAX_COUNT; index++) {
             char sfallKey[16];
             snprintf(sfallKey, sizeof(sfallKey), "Movie%d", index + 1);
 

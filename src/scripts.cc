@@ -444,10 +444,7 @@ int gameTimeScheduleUpdateEvent()
 // 0x4A3620 gtime_q_process
 int gameTimeEventProcess(Object* obj, void* data)
 {
-    int movie_index;
-    int stopProcess;
-
-    movie_index = -1;
+    GameMovie movie_index = MOVIE_INVALID;
 
     debugPrint("\nQUEUE PROCESS: Midnight!");
 
@@ -461,13 +458,13 @@ int gameTimeEventProcess(Object* obj, void* data)
         _scriptsCheckGameEvents(&movie_index, -1);
     }
 
-    stopProcess = critterCheckRadiationEvent(gDude);
+    int stopProcess = critterCheckRadiationEvent(gDude);
 
     queueClearByEventType(EVENT_TYPE_GAME_TIME, nullptr);
 
     gameTimeScheduleUpdateEvent();
 
-    if (movie_index != -1) {
+    if (movie_index != MOVIE_INVALID) {
         stopProcess = 1;
     }
 
@@ -475,9 +472,9 @@ int gameTimeEventProcess(Object* obj, void* data)
 }
 
 // 0x4A3690
-int _scriptsCheckGameEvents(int* moviePtr, int window)
+int _scriptsCheckGameEvents(GameMovie* moviePtr, int window)
 {
-    int movie = -1;
+    GameMovie movie = MOVIE_INVALID;
     GameMovieFlags movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic;
     bool endgame = false;
     bool adjustRep = false;
@@ -509,9 +506,9 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
         }
     }
 
-    if (movie != -1) {
+    if (movie != MOVIE_INVALID) {
         if (gameMovieIsSeen(movie)) {
-            movie = -1;
+            movie = MOVIE_INVALID;
         } else {
             if (window != -1) {
                 windowHide(window);

@@ -2016,8 +2016,8 @@ static void pipboyHandleVideoArchive(int a1)
 
         pipboyRenderVideoArchive(a1);
 
-        int movie;
-        for (movie = 2; movie < 16; movie++) {
+        GameMovie movie;
+        for (movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
             if (gameMovieIsSeen(movie)) {
                 a1--;
                 if (a1 <= 0) {
@@ -2026,7 +2026,7 @@ static void pipboyHandleVideoArchive(int a1)
             }
         }
 
-        if (movie < MOVIE_COUNT) {
+        if (gameMovieIsValid(movie)) {
             gameMoviePlay(movie, GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");
@@ -2043,7 +2043,6 @@ static void pipboyHandleVideoArchive(int a1)
 static int pipboyRenderVideoArchive(int a1)
 {
     const char* text;
-    int i;
     int v12;
     int msg_num;
     int v5;
@@ -2077,7 +2076,7 @@ static int pipboyRenderVideoArchive(int a1)
     // 516 - Credits
     msg_num = 502;
 
-    for (i = 2; i < 16; i++) {
+    for (GameMovie i = MOVIE_ELDER; i < MOVIE_CREDITS; i++) {
         if (gameMovieIsSeen(i)) {
             v8 = v5++;
             if (v8 == v12) {

@@ -23,7 +23,8 @@ constexpr inline GameMovieFlags operator|(GameMovieFlags lhs, GameMovieFlags rhs
     return static_cast<GameMovieFlags>((static_cast<unsigned short>(lhs) | static_cast<unsigned short>(rhs)));
 }
 
-typedef enum GameMovie {
+enum GameMovie : int {
+    MOVIE_INVALID = -1,
     MOVIE_IPLOGO,
     MOVIE_INTRO,
     MOVIE_ELDER,
@@ -42,20 +43,38 @@ typedef enum GameMovie {
     MOVIE_ARTIMER4,
     MOVIE_CREDITS,
     MOVIE_COUNT,
-} GameMovie;
+    MOVIE_FIRST = MOVIE_IPLOGO
+};
+
+inline GameMovie operator++(GameMovie& e, int)
+{
+    GameMovie result = e;
+    e = static_cast<GameMovie>(static_cast<int>(e) + 1);
+    return result;
+}
 
 constexpr int GAME_MOVIE_MAX_COUNT = 32;
+
+constexpr inline bool gameMovieIsValid(int movie)
+{
+    return movie >= MOVIE_FIRST && movie < MOVIE_COUNT;
+}
+
+constexpr inline bool gameMovieExtendedIsValid(int movie)
+{
+    return movie >= MOVIE_FIRST && movie < GAME_MOVIE_MAX_COUNT;
+}
 
 int gameMoviesInit();
 void gameMoviesReset();
 int gameMoviesLoad(File* stream);
 int gameMoviesSave(File* stream);
-int gameMoviePlay(int movie, GameMovieFlags flags);
-const char* gameMovieGetDefaultFileName(int movie);
-bool gameMovieSetPath(int movie, const char* fileName);
-void gameMovieMarkSeen(int movie);
+int gameMoviePlay(GameMovie movie, GameMovieFlags flags);
+const char* gameMovieGetDefaultFileName(GameMovie movie);
+bool gameMovieSetPath(GameMovie movie, const char* fileName);
+void gameMovieMarkSeen(GameMovie movie);
 void gameMovieFadeOut();
-bool gameMovieIsSeen(int movie);
+bool gameMovieIsSeen(GameMovie movie);
 bool gameMovieIsPlaying();
 
 } // namespace fallout

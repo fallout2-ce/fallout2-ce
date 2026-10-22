@@ -3664,9 +3664,9 @@ static void opPlayGameMovie(Program* program)
 
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
-    int movie = programStackPopInteger(program);
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
     GameMovieFlags movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic;
-    if (movie >= 0 && movie < MOVIE_COUNT) {
+    if (gameMovieIsValid(movie)) {
         movieFlags = flags[movie];
     }
 
