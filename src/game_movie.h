@@ -5,7 +5,7 @@
 
 namespace fallout {
 
-enum GameMovieFlags : unsigned short {
+enum class GameMovieFlags : unsigned short {
     None = 0,
     FadeIn = 0x01,
     FadeOut = 0x02,
