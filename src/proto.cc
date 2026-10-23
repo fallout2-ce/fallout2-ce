@@ -26,6 +26,11 @@
 
 namespace fallout {
 
+enum PrototypeMessage : int {
+    PROTOTYPE_MESSAGE_NAME,
+    PROTOTYPE_MESSAGE_DESCRIPTION,
+};
+
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream);
 static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream);
 static int _proto_update_gen(Object* obj);
@@ -41,6 +46,7 @@ static int _proto_find_free_subnode(ObjectType type, Proto** out_ptr);
 static void _proto_remove_some_list(ObjectType type);
 static void _proto_remove_list(ObjectType type);
 static ProtoId _proto_new_id(ObjectType type);
+static char* protoGetMessage(const ProtoId& protoId, PrototypeMessage message);
 
 // 0x50CF3C aProto_0
 static char _aProto_0[] = "proto\\";
@@ -334,7 +340,7 @@ int _proto_action_can_pickup(const ProtoId& protoId)
 }
 
 // 0x49EAA4 proto_get_msg_info
-char* protoGetMessage(const ProtoId& protoId, int message)
+char* protoGetMessage(const ProtoId& protoId, PrototypeMessage message)
 {
     char* messageText = _proto_none_str;
     Proto* proto;
@@ -1116,240 +1122,228 @@ bool proto_is_subtype(Proto* proto, int subtype)
     }
 }
 
-// proto_data_member
-// 0x49FFD8 proto_data_member
-int protoGetDataMember(const ProtoId& protoId, int member, ProtoDataMemberValue* value)
+ProtoDataMemberType protoGetItemDataMember(Proto* proto, ItemDataMember member, ProtoDataMemberValue* value)
 {
-    Proto* proto;
-    if (protoGetProto(protoId, &proto) == -1) {
-        return -1;
-    }
-
-    switch (protoId.objectType()) {
-    case OBJ_TYPE_ITEM:
+    if (proto != nullptr && value != nullptr) {
         switch (member) {
         case ITEM_DATA_MEMBER_PID:
             value->integerValue = proto->pid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_NAME:
-            // NOTE: uninline
-            value->stringValue = protoGetName(ProtoId(proto->scenery.pid));
+            value->stringValue = protoGetName(ProtoId(proto->item.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(proto);
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_FID:
             value->integerValue = proto->fid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_LIGHT_DISTANCE:
             value->integerValue = proto->item.lightDistance;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_LIGHT_INTENSITY:
             value->integerValue = proto->item.lightIntensity;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_FLAGS:
             value->integerValue = proto->item.flags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_EXTENDED_FLAGS:
             value->integerValue = proto->item.extendedFlags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_SID:
             value->integerValue = proto->item.sid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_TYPE:
             value->integerValue = proto->item.type;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_MATERIAL:
             value->integerValue = proto->item.material;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_SIZE:
             value->integerValue = proto->item.size;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_WEIGHT:
             value->integerValue = proto->item.weight;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_COST:
             value->integerValue = proto->item.cost;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_INVENTORY_FID:
             value->integerValue = proto->item.inventoryFid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_WEAPON_RANGE:
             if (proto->item.type == ITEM_TYPE_WEAPON) {
                 value->integerValue = proto->item.data.weapon.maxRange1;
             }
-            break;
-        default:
-            debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         }
-        break;
-    case OBJ_TYPE_CRITTER:
+    }
+
+    return PROTO_DATA_MEMBER_TYPE_INVALID;
+}
+
+ProtoDataMemberType protoGetCritterDataMember(Proto* proto, CritterDataMember member, ProtoDataMemberValue* value)
+{
+    if (proto != nullptr && value != nullptr) {
         switch (member) {
         case CRITTER_DATA_MEMBER_PID:
             value->integerValue = proto->critter.pid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_FID:
             value->integerValue = proto->critter.fid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_LIGHT_DISTANCE:
             value->integerValue = proto->critter.lightDistance;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_LIGHT_INTENSITY:
             value->integerValue = proto->critter.lightIntensity;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_FLAGS:
             value->integerValue = proto->critter.flags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_EXTENDED_FLAGS:
             value->integerValue = proto->critter.extendedFlags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_SID:
             value->integerValue = proto->critter.sid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_HEAD_FID:
             value->integerValue = proto->critter.headFid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_BODY_TYPE:
             value->integerValue = proto->critter.data.bodyType;
-            break;
-        default:
-            debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
+            return PROTO_DATA_MEMBER_TYPE_INT;
+        case CRITTER_DATA_MEMBER_DATA:
             break;
         }
-        break;
-    case OBJ_TYPE_SCENERY:
+    }
+
+    return PROTO_DATA_MEMBER_TYPE_INVALID;
+}
+
+ProtoDataMemberType protoGetSceneryDataMember(Proto* proto, SceneryDataMember member, ProtoDataMemberValue* value)
+{
+    if (proto != nullptr && value != nullptr) {
         switch (member) {
         case SCENERY_DATA_MEMBER_PID:
             value->integerValue = proto->scenery.pid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_FID:
             value->integerValue = proto->scenery.fid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_LIGHT_DISTANCE:
             value->integerValue = proto->scenery.lightDistance;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_LIGHT_INTENSITY:
             value->integerValue = proto->scenery.lightIntensity;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_FLAGS:
             value->integerValue = proto->scenery.flags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_EXTENDED_FLAGS:
             value->integerValue = proto->scenery.extendedFlags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_SID:
             value->integerValue = proto->scenery.sid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_TYPE:
             value->integerValue = proto->scenery.type;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_MATERIAL:
             value->integerValue = proto->scenery.material;
-            break;
-        default:
-            debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
+            return PROTO_DATA_MEMBER_TYPE_INT;
+        case SCENERY_DATA_MEMBER_DATA:
             break;
         }
-        break;
-    case OBJ_TYPE_WALL:
+    }
+
+    return PROTO_DATA_MEMBER_TYPE_INVALID;
+}
+
+ProtoDataMemberType protoGetWallDataMember(Proto* proto, WallDataMember member, ProtoDataMemberValue* value)
+{
+    if (proto != nullptr && value != nullptr) {
         switch (member) {
         case WALL_DATA_MEMBER_PID:
             value->integerValue = proto->wall.pid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_FID:
             value->integerValue = proto->wall.fid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_LIGHT_DISTANCE:
             value->integerValue = proto->wall.lightDistance;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_LIGHT_INTENSITY:
             value->integerValue = proto->wall.lightIntensity;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_FLAGS:
             value->integerValue = proto->wall.flags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_EXTENDED_FLAGS:
             value->integerValue = proto->wall.extendedFlags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_SID:
             value->integerValue = proto->wall.sid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_MATERIAL:
             value->integerValue = proto->wall.material;
-            break;
-        default:
-            debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         }
-        break;
-    case OBJ_TYPE_TILE:
-        debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
-        break;
-    case OBJ_TYPE_MISC:
+    }
+
+    return PROTO_DATA_MEMBER_TYPE_INVALID;
+}
+
+ProtoDataMemberType protoGetMiscDataMember(Proto* proto, MiscDataMember member, ProtoDataMemberValue* value)
+{
+    if (proto != nullptr && value != nullptr) {
         switch (member) {
         case MISC_DATA_MEMBER_PID:
             value->integerValue = proto->misc.pid;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->misc.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case MISC_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->misc.pid));
-            // FIXME: Errornously report type as int, should be string.
-            return PROTO_DATA_MEMBER_TYPE_INT;
+            return PROTO_DATA_MEMBER_TYPE_STRING;
         case MISC_DATA_MEMBER_FID:
             value->integerValue = proto->misc.fid;
-            return 1;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_LIGHT_DISTANCE:
             value->integerValue = proto->misc.lightDistance;
-            return 1;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_LIGHT_INTENSITY:
             value->integerValue = proto->misc.lightIntensity;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_FLAGS:
             value->integerValue = proto->misc.flags;
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_EXTENDED_FLAGS:
             value->integerValue = proto->misc.extendedFlags;
-            break;
-        default:
-            debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
-            break;
+            return PROTO_DATA_MEMBER_TYPE_INT;
         }
-        break;
-    default:
-        break;
     }
 
-    return PROTO_DATA_MEMBER_TYPE_INT;
+    return PROTO_DATA_MEMBER_TYPE_INVALID;
 }
 
 // proto_init
