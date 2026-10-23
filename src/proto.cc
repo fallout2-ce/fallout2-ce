@@ -1223,6 +1223,8 @@ ProtoDataMemberType protoGetCritterDataMember(Proto* proto, CritterDataMember me
         case CRITTER_DATA_MEMBER_BODY_TYPE:
             value->integerValue = proto->critter.data.bodyType;
             return PROTO_DATA_MEMBER_TYPE_INT;
+        case CRITTER_DATA_MEMBER_DATA:
+            break;
         }
     }
 
@@ -1268,6 +1270,8 @@ ProtoDataMemberType protoGetSceneryDataMember(Proto* proto, SceneryDataMember me
         case SCENERY_DATA_MEMBER_MATERIAL:
             value->integerValue = proto->scenery.material;
             return PROTO_DATA_MEMBER_TYPE_INT;
+        case SCENERY_DATA_MEMBER_DATA:
+            break;
         }   
     }
 
