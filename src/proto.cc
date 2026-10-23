@@ -1130,11 +1130,9 @@ ProtoDataMemberType protoGetItemDataMember(Proto* proto, ItemDataMember member, 
             value->integerValue = proto->pid;
             return PROTO_DATA_MEMBER_TYPE_INT;
         case ITEM_DATA_MEMBER_NAME:
-            // NOTE: uninline
             value->stringValue = protoGetName(ProtoId(proto->item.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(proto);
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case ITEM_DATA_MEMBER_FID:
@@ -1192,11 +1190,9 @@ ProtoDataMemberType protoGetCritterDataMember(Proto* proto, CritterDataMember me
             value->integerValue = proto->critter.pid;
             return PROTO_DATA_MEMBER_TYPE_INT;
         case CRITTER_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->critter.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case CRITTER_DATA_MEMBER_FID:
@@ -1239,11 +1235,9 @@ ProtoDataMemberType protoGetSceneryDataMember(Proto* proto, SceneryDataMember me
             value->integerValue = proto->scenery.pid;
             return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->scenery.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case SCENERY_DATA_MEMBER_FID:
@@ -1286,11 +1280,9 @@ ProtoDataMemberType protoGetWallDataMember(Proto* proto, WallDataMember member, 
             value->integerValue = proto->wall.pid;
             return PROTO_DATA_MEMBER_TYPE_INT;
         case WALL_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->wall.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case WALL_DATA_MEMBER_FID:
@@ -1328,14 +1320,11 @@ ProtoDataMemberType protoGetMiscDataMember(Proto* proto, MiscDataMember member, 
             value->integerValue = proto->misc.pid;
             return PROTO_DATA_MEMBER_TYPE_INT;
         case MISC_DATA_MEMBER_NAME:
-            // NOTE: Uninline.
             value->stringValue = protoGetName(ProtoId(proto->misc.pid));
             return PROTO_DATA_MEMBER_TYPE_STRING;
         case MISC_DATA_MEMBER_DESCRIPTION:
-            // NOTE: Uninline.
             value->stringValue = protoGetDescription(ProtoId(proto->misc.pid));
-            // FIXME: Errornously report type as int, should be string.
-            return PROTO_DATA_MEMBER_TYPE_INT;
+            return PROTO_DATA_MEMBER_TYPE_STRING;
         case MISC_DATA_MEMBER_FID:
             value->integerValue = proto->misc.fid;
             return PROTO_DATA_MEMBER_TYPE_INT;
