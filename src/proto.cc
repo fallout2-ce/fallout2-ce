@@ -1272,7 +1272,7 @@ ProtoDataMemberType protoGetSceneryDataMember(Proto* proto, SceneryDataMember me
             return PROTO_DATA_MEMBER_TYPE_INT;
         case SCENERY_DATA_MEMBER_DATA:
             break;
-        }   
+        }
     }
 
     return PROTO_DATA_MEMBER_TYPE_INVALID;
