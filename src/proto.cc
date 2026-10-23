@@ -26,6 +26,11 @@
 
 namespace fallout {
 
+enum PrototypeMessage : int {
+    PROTOTYPE_MESSAGE_NAME,
+    PROTOTYPE_MESSAGE_DESCRIPTION,
+};
+
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream);
 static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream);
 static int _proto_update_gen(Object* obj);
@@ -41,6 +46,7 @@ static int _proto_find_free_subnode(ObjectType type, Proto** out_ptr);
 static void _proto_remove_some_list(ObjectType type);
 static void _proto_remove_list(ObjectType type);
 static ProtoId _proto_new_id(ObjectType type);
+static char* protoGetMessage(const ProtoId& protoId, PrototypeMessage message);
 
 // 0x50CF3C aProto_0
 static char _aProto_0[] = "proto\\";
@@ -334,7 +340,7 @@ int _proto_action_can_pickup(const ProtoId& protoId)
 }
 
 // 0x49EAA4 proto_get_msg_info
-char* protoGetMessage(const ProtoId& protoId, int message)
+char* protoGetMessage(const ProtoId& protoId, PrototypeMessage message)
 {
     char* messageText = _proto_none_str;
     Proto* proto;

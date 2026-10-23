@@ -93,11 +93,6 @@ typedef union ProtoDataMemberValue {
     char* stringValue;
 } ProtoDataMemberValue;
 
-typedef enum PrototypeMessage {
-    PROTOTYPE_MESSAGE_NAME,
-    PROTOTYPE_MESSAGE_DESCRIPTION,
-} PrototypeMesage;
-
 extern char _cd_path_base[COMPAT_MAX_PATH];
 
 extern MessageList gProtoMessageList;
@@ -111,7 +106,6 @@ bool _proto_action_can_use(const ProtoId& protoId);
 bool _proto_action_can_use_on(const ProtoId& protoId);
 bool _proto_action_can_talk_to(const ProtoId& protoId);
 int _proto_action_can_pickup(const ProtoId& protoId);
-char* protoGetMessage(const ProtoId& protoId, int message);
 char* protoGetName(const ProtoId& protoId);
 char* protoGetDescription(const ProtoId& protoId);
 int proto_item_init(Proto* proto, const ProtoId& protoId);
