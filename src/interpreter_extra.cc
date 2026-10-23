@@ -3001,9 +3001,40 @@ static void opGetProtoData(Program* program)
     int member = programStackPopInteger(program);
     const ProtoId protoId = programStackPopProtoId(program);
 
+    Proto* proto;
+    if (protoGetProto(protoId, &proto) == -1) {
+        scriptError("\nScript Error: op_proto_data: Could not get proto by pid %d!", protoId.pid());
+        programStackPushInteger(program, 0);
+        return;
+    }
+
     ProtoDataMemberValue value;
     value.integerValue = 0;
-    int valueType = protoGetDataMember(protoId, member, &value);
+    ProtoDataMemberType valueType;
+
+    ObjectType objType = protoId.objectType();
+    switch (objType) {
+    case OBJ_TYPE_ITEM:
+        valueType = protoGetItemDataMember(proto, static_cast<ItemDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_CRITTER:
+        valueType = protoGetCritterDataMember(proto, static_cast<CritterDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_SCENERY:
+        valueType = protoGetSceneryDataMember(proto, static_cast<SceneryDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_WALL:
+        valueType = protoGetWallDataMember(proto, static_cast<WallDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_MISC:
+        valueType = protoGetMiscDataMember(proto, static_cast<MiscDataMember>(member), &value);
+        break;
+    default:
+        scriptError("\nScript Error: op_proto_data: unsupported object type %d!", objType);
+        valueType = PROTO_DATA_MEMBER_TYPE_INT;
+        break;
+    }
+
     switch (valueType) {
     case PROTO_DATA_MEMBER_TYPE_INT:
         programStackPushInteger(program, value.integerValue);
@@ -3011,7 +3042,8 @@ static void opGetProtoData(Program* program)
     case PROTO_DATA_MEMBER_TYPE_STRING:
         programStackPushString(program, value.stringValue);
         break;
-    default:
+    case PROTO_DATA_MEMBER_TYPE_INVALID:
+        scriptError("\nScript Error: op_proto_data: invalid data member %d for object type %d!", member, objType);
         programStackPushInteger(program, 0);
         break;
     }
