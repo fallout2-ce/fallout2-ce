@@ -5,6 +5,7 @@
 #include "geometry.h"
 #include "interpreter.h"
 #include "region.h"
+#include "window_defs.h"
 
 namespace fallout {
 
@@ -13,28 +14,24 @@ typedef void WindowDrawingProc2(unsigned char* buf, int a2, int a3, int a4, int 
 typedef bool(WindowInputHandler)(int key);
 typedef void(WindowDeleteCallback)(int windowIndex, const char* windowName);
 typedef void(DisplayInWindowCallback)(int windowIndex, const char* windowName, unsigned char* data, int width, int height);
-typedef void(ManagedButtonMouseEventCallback)(void* userData, int eventType);
 typedef void(ManagedWindowCreateCallback)(int windowIndex, const char* windowName, int* flagsPtr);
 
-typedef enum TextAlignment {
-    TEXT_ALIGNMENT_LEFT,
-    TEXT_ALIGNMENT_RIGHT,
-    TEXT_ALIGNMENT_CENTER,
-} TextAlignment;
-
-typedef enum ManagedButtonMouseEvent {
+enum ManagedButtonMouseEvent : int {
     MANAGED_BUTTON_MOUSE_EVENT_BUTTON_DOWN,
     MANAGED_BUTTON_MOUSE_EVENT_BUTTON_UP,
     MANAGED_BUTTON_MOUSE_EVENT_ENTER,
     MANAGED_BUTTON_MOUSE_EVENT_EXIT,
     MANAGED_BUTTON_MOUSE_EVENT_COUNT,
-} ManagedButtonMouseEvent;
+};
 
-typedef enum ManagedButtonRightMouseEvent {
+enum ManagedButtonRightMouseEvent : int {
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_DOWN,
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_UP,
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_COUNT,
-} ManagedButtonRightMouseEvent;
+};
+
+typedef void(ManagedButtonMouseEventCallback)(void* userData, ManagedButtonMouseEvent eventType);
+typedef void(ManagedButtonRightMouseEventCallback)(void* userData, ManagedButtonRightMouseEvent eventType);
 
 int windowGetFont();
 int windowSetFont(int font);
@@ -55,12 +52,12 @@ void _doRegionFunc(Region* region, int mouseEvent);
 bool scriptWindowActivateRegion(const char* regionName, int mouseEvent);
 int _getInput();
 void _doButtonOn(int btn, int keyCode);
-void scriptWindowDispatchButtonMouseEvent(int btn, int mouseEvent);
+void scriptWindowDispatchButtonMouseEvent(int btn, ManagedButtonMouseEvent mouseEvent);
 void _doButtonOff(int btn, int keyCode);
 void _doButtonPress(int btn, int keyCode);
 void _doButtonRelease(int btn, int keyCode);
 void _doRightButtonPress(int btn, int keyCode);
-void scriptWindowDispatchButtonRightMouseEvent(int btn, int mouseEvent);
+void scriptWindowDispatchButtonRightMouseEvent(int btn, ManagedButtonRightMouseEvent mouseEvent);
 void _doRightButtonRelease(int btn, int keyCode);
 void _setButtonGFX(int width, int height, unsigned char* normal);
 bool scriptWindowHide();
@@ -82,14 +79,14 @@ unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
 int _popWindow();
 
-void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, int textAlignment);
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, TextAlignment textAlignment);
 char** windowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr);
 void windowFreeWordList(char** substringList, int substringListLength);
-void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment, int spacing);
-void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment);
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, TextAlignment textAlignment, int spacing);
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, TextAlignment textAlignment);
 
-bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment);
-bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment);
+bool scriptWindowPrintRect(char* string, int wrapWidth, TextAlignment textAlignment);
+bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, TextAlignment textAlignment);
 bool scriptWindowPrint(char* string, int width, int x, int y, ColorWithFlags color);
 void _displayInWindow(unsigned char* data, int width, int height, int pitch);
 void _displayFile(char* fileName);
@@ -108,7 +105,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
 bool scriptWindowAddButtonProc(const char* buttonName, Program* program, int mouseEnterProc, int mouseExitProc, int mouseDownProc, int mouseUpProc);
 bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, int rightMouseDownProc, int rightMouseUpProc);
 bool scriptWindowAddButtonCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData);
-bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData);
+bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonRightMouseEventCallback* callback, void* userData);
 bool scriptWindowAddButtonText(const char* buttonName, const char* text);
 bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* text, int pressedImageOffsetX, int pressedImageOffsetY, int normalImageOffsetX, int normalImageOffsetY);
 bool scriptWindowFill(float r, float g, float b);

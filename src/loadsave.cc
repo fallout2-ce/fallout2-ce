@@ -143,7 +143,7 @@ typedef struct LoadSaveSlotData {
     short gameDay;
     short gameYear;
     unsigned int gameTime;
-    short elevation;
+    MapElevation elevation;
     Map map;
     char fileName[16];
 } LoadSaveSlotData;
@@ -543,7 +543,7 @@ int lsgSaveGame(int mode)
         }
 
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s%s", asc_5186C8, "LSGAME.MSG");
+        snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "LSGAME.MSG");
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
@@ -1161,7 +1161,7 @@ int lsgLoadGame(int mode)
         }
 
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s\\%s", asc_5186C8, "LSGAME.MSG");
+        snprintf(path, sizeof(path), "%s\\%s", gGameMsgPath, "LSGAME.MSG");
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
@@ -1648,7 +1648,7 @@ static int lsgWindowInit(int windowType)
         return -1;
     }
 
-    snprintf(_str, sizeof(_str), "%s%s", asc_5186C8, LSGAME_MSG_NAME);
+    snprintf(_str, sizeof(_str), "%s%s", gGameMsgPath, LSGAME_MSG_NAME);
     if (!messageListLoad(&gLoadSaveMessageList, _str)) {
         return -1;
     }
@@ -2216,7 +2216,7 @@ static int lsgSaveHeaderInSlot(int slot)
     }
 
     ptr->elevation = gElevation;
-    if (fileWriteInt16(_flptr, ptr->elevation) == -1) {
+    if (fileWriteInt16Enum<MapElevation>(_flptr, ptr->elevation) == -1) {
         return -1;
     }
 
@@ -2316,7 +2316,7 @@ static int lsgLoadHeaderInSlot(int slot)
         return -1;
     }
 
-    if (fileReadInt16(_flptr, &(ptr->elevation)) == -1) {
+    if (fileReadInt16Enum<MapElevation>(_flptr, &(ptr->elevation)) == -1) {
         return -1;
     }
 

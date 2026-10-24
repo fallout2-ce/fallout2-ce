@@ -501,7 +501,7 @@ int proto_critter_init(Proto* proto, const ProtoId& protoId)
     proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
-    proto->critter.team = 0;
+    proto->critter.team = 1;
     if (!FrmId(proto).exist()) {
         proto->fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WeaponAnimation::None, ROTATION_NE).fid();
     }
@@ -651,7 +651,7 @@ int objectDataRead(Object* obj, File* stream)
             if (isExitGridProtoId(obj)) {
                 if (fileReadInt32Enum<Map>(stream, &(obj->data.misc.map)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.tile)) == -1) return -1;
-                if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
+                if (fileReadInt32Enum<MapElevation>(stream, &(obj->data.misc.elevation)) == -1) return -1;
                 if (fileReadInt32Enum<Rotation>(stream, &(obj->data.misc.rotation)) == -1) return -1;
             }
             break;
@@ -815,7 +815,7 @@ static int _proto_update_gen(Object* obj)
     case OBJ_TYPE_MISC:
         if (isExitGridProtoId(obj)) {
             data->misc.tile = -1;
-            data->misc.elevation = 0;
+            data->misc.elevation = ELEVATION_FIRST;
             data->misc.rotation = ROTATION_NE;
             data->misc.map = MAP_INVALID;
         }
@@ -1399,7 +1399,7 @@ int protoInit()
     }
 
     for (ObjectType i = OBJ_TYPE_FIRST; i < OBJ_TYPE_PROTO_COUNT; i++) {
-        snprintf(path, sizeof(path), "%spro_%.4s%s", asc_5186C8, artGetObjectTypeName(i), ".msg");
+        snprintf(path, sizeof(path), "%spro_%.4s%s", gGameMsgPath, artGetObjectTypeName(i), ".msg");
 
         if (!messageListLoad(&(_proto_msg_files[i]), path)) {
             debugPrint("\nError: Loading proto message files!");
@@ -1437,7 +1437,7 @@ int protoInit()
         return -1;
     }
 
-    snprintf(path, sizeof(path), "%sproto.msg", asc_5186C8);
+    snprintf(path, sizeof(path), "%sproto.msg", gGameMsgPath);
 
     if (!messageListLoad(&gProtoMessageList, path)) {
         debugPrint("\nError: Loading main proto message file!");

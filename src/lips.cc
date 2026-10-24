@@ -105,7 +105,8 @@ void lipsTicker()
     }
 
     if ((gLipsData.flags & LIPS_FLAG_PLAYING) != 0) {
-        int audioPosition = _soundGetPosition(gLipsData.sound);
+        int audioPosition = 0;
+        _soundGetPosition(gLipsData.sound, &audioPosition);
 
         speech_marker = &(gLipsData.markers[markerIndex]);
         while (audioPosition > speech_marker->position) {
@@ -174,7 +175,7 @@ int lipsStart()
         return -1;
     }
 
-    if (_soundSetPosition(gLipsData.sound, gLipsData.startOffset) != 0) {
+    if (_soundSetPosition(gLipsData.sound, gLipsData.startOffset) != SOUND_NO_ERROR) {
         debugPrint("Failed set of start_offset!\n");
     }
 
@@ -498,7 +499,7 @@ static int _lips_make_speech()
         debugPrint("Error!");
     }
 
-    if (soundLoad(gLipsData.sound, path)) {
+    if (soundLoad(gLipsData.sound, path) != SOUND_NO_ERROR) {
         soundDelete(gLipsData.sound);
         gLipsData.sound = nullptr;
 

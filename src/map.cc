@@ -99,7 +99,7 @@ static unsigned int gIsoWindowScrollTimestamp = 0;
 static bool gIsoEnabled = false;
 
 // 0x519558 mapEntranceElevation
-static int gEnteringElevation = 0;
+static MapElevation gEnteringElevation = ELEVATION_FIRST;
 
 // 0x51955C mapEntranceTileNum
 static int gEnteringTile = -1;
@@ -129,7 +129,7 @@ int gMapGlobalVarsLength = 0;
 // Current elevation.
 //
 // 0x519578 map_elevation
-int gElevation = 0;
+MapElevation gElevation = ELEVATION_FIRST;
 
 // 0x51957C errMapName
 static char* _errMapName = byte_50B058;
@@ -253,7 +253,7 @@ int isoInit()
     mapMakeMapsDirectory();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 
     return 0;
 }
@@ -274,7 +274,7 @@ void isoReset()
     interfaceReset();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 }
 
 // 0x481F48
@@ -306,7 +306,7 @@ void mapInit()
 
     if (messageListInit(&gMapMessageList)) {
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%smap.msg", asc_5186C8);
+        snprintf(path, sizeof(path), "%smap.msg", gGameMsgPath);
 
         if (!messageListLoad(&gMapMessageList, path)) {
             debugPrint("\nError loading map_msg_file!");
@@ -376,7 +376,7 @@ bool isoIsDisabled()
 }
 
 // 0x482158 map_set_elevation
-int mapSetElevation(int elevation)
+int mapSetElevation(MapElevation elevation)
 {
     if (!elevationIsValid(elevation)) {
         return -1;
@@ -512,7 +512,7 @@ int mapAllocLocalVars(const int numNewVars)
 }
 
 // 0x48234C
-void mapSetStart(int tile, int elevation, Rotation rotation)
+void mapSetStart(int tile, MapElevation elevation, Rotation rotation)
 {
     gMapHeader.enteringTile = tile;
     gMapHeader.enteringElevation = elevation;
@@ -520,7 +520,7 @@ void mapSetStart(int tile, int elevation, Rotation rotation)
 }
 
 // 0x4824CC
-char* mapGetName(Map map, int elevation)
+char* mapGetName(Map map, MapElevation elevation)
 {
     if (!mapIsValid(map)) {
         return nullptr;
@@ -769,7 +769,7 @@ const char* mapBuildSavePath(const char* name)
 }
 
 // 0x482924
-int mapSetEnteringLocation(int elevation, int tile_num, Rotation rotation)
+int mapSetEnteringLocation(MapElevation elevation, int tile_num, Rotation rotation)
 {
     gEnteringElevation = elevation;
     gEnteringTile = tile_num;
@@ -781,10 +781,10 @@ int mapSetEnteringLocation(int elevation, int tile_num, Rotation rotation)
 void mapNewMap()
 {
     mapEdgeFree();
-    mapSetElevation(0);
+    mapSetElevation(ELEVATION_FIRST);
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
-    gMapHeader.enteringElevation = 0;
+    gMapHeader.enteringElevation = ELEVATION_FIRST;
     gMapHeader.enteringRotation = ROTATION_NE;
     gMapHeader.localVariablesCount = 0;
     gMapHeader.version = 20;
@@ -1065,7 +1065,7 @@ static int mapLoad(File* stream)
         Object* object;
         objectCreateWithFrmIdProtoId(&object, MiscFrameId::ScrollBlocker, ProtoId::Empty());
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
-        objectSetLocation(object, 1, 0, nullptr);
+        objectSetLocation(object, 1, ELEVATION_FIRST, nullptr);
         object->sid = gMapSid;
         scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
 
@@ -1149,7 +1149,7 @@ err:
     gameMouseSetCursor(savedMouseCursorId);
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 
     tile_hires_stencil_on_map_load();
 
@@ -1180,9 +1180,11 @@ int mapLoadSaved(char* fileName)
             objectUnjamAll();
         }
 
+        // NOTE: The original fails the load here, and `mapLoadByName` loads
+        // the .MAP instead: the map as new. The saved map loads, the bodies
+        // the aging couldn't replace stay for the next visit.
         if (_map_age_dead_critters() == -1) {
             debugPrint("\nError: Critter aging failed on map load!");
-            return -1;
         }
     }
 
@@ -1205,9 +1207,10 @@ int mapLoadSaved(char* fileName)
 // 0x48328C
 static int _map_age_dead_critters()
 {
-    if (!wmMapDeadBodiesAge()) {
-        return 0;
-    }
+    // SFALL: Fix for critters not being healed over time when entering a map
+    // with 'dead_bodies_age=No' set in maps.txt: the setting keeps the dead
+    // bodies, the living critters still heal (see below).
+    bool deadBodiesAge = wmMapDeadBodiesAge();
 
     int hoursSinceLastVisit = (gameTimeGetTime() - gMapHeader.lastVisitTime) / GAME_TIME_TICKS_PER_HOUR;
     if (hoursSinceLastVisit == 0) {
@@ -1229,10 +1232,16 @@ static int _map_age_dead_critters()
         obj = objectFindNext();
     }
 
+    if (!deadBodiesAge) {
+        return 0;
+    }
+
+    // NOTE: The original (0x483334) replaces dead bodies by blood stains
+    // after 6 days and also removes the blood stains after 14 days.
     int agingType;
-    if (hoursSinceLastVisit > 21 * 24) {
+    if (hoursSinceLastVisit > 14 * 24) {
         agingType = 2;
-    } else if (hoursSinceLastVisit > 14 * 24) {
+    } else if (hoursSinceLastVisit > 6 * 24) {
         agingType = 1;
     } else {
         return 0;
@@ -1326,7 +1335,13 @@ static int replaceDeadCritter(Object* critter)
         }
     }
 
-    return objectSetFrame(blood, frame, nullptr);
+    // NOTE: The original (0x483545) ignores obj_set_frame's result. A multihex
+    // body's frame (6 to 9) can be past the stain art's last one (8), then the
+    // stain keeps its first frame. Failing here failed the critter aging, and
+    // with it the saved map's load: the map was loaded as new.
+    objectSetFrame(blood, frame, nullptr);
+
+    return 0;
 }
 
 // 0x48358C
@@ -1474,7 +1489,7 @@ static int _map_save_file(File* stream)
 
     scriptsDisable();
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrameId frameId;
@@ -1525,7 +1540,7 @@ static int _map_save_file(File* stream)
         fileWriteInt32List(stream, gMapLocalVars, gMapHeader.localVariablesCount);
     }
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
             _db_fwriteLongCount(stream, _square[elevation]->tileFid, SQUARE_GRID_SIZE);
         }
@@ -1817,7 +1832,7 @@ static void _map_place_dude_and_mouse()
 // 0x4841F0
 static void square_init()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         _square[elevation] = &(_square_data[elevation]);
     }
 }
@@ -1825,7 +1840,7 @@ static void square_init()
 // 0x484210
 static void _square_reset()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         int* p = _square[elevation]->tileFid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
@@ -1853,7 +1868,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
 {
     _square_reset();
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
             int* tileFids = _square[elevation]->tileFid;
             if (_db_freadIntCount(stream, tileFids, SQUARE_GRID_SIZE) != 0) {
@@ -1886,7 +1901,7 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     if (fileWriteInt32(stream, ptr->version) == -1) return -1;
     if (fileWriteFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileWriteInt32(stream, ptr->enteringTile) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->enteringElevation) == -1) return -1;
+    if (fileWriteInt32Enum<MapElevation>(stream, ptr->enteringElevation) == -1) return -1;
     if (fileWriteInt32Enum<Rotation>(stream, ptr->enteringRotation) == -1) return -1;
     if (fileWriteInt32(stream, ptr->localVariablesCount) == -1) return -1;
     if (fileWriteInt32(stream, ptr->scriptIndex) == -1) return -1;
@@ -1906,7 +1921,7 @@ static int mapHeaderRead(MapHeader* ptr, File* stream)
     if (fileReadInt32(stream, &(ptr->version)) == -1) return -1;
     if (fileReadFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->enteringTile)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->enteringElevation)) == -1) return -1;
+    if (fileReadInt32Enum<MapElevation>(stream, &(ptr->enteringElevation)) == -1) return -1;
     if (fileReadInt32Enum<Rotation>(stream, &(ptr->enteringRotation)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->localVariablesCount)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->scriptIndex)) == -1) return -1;

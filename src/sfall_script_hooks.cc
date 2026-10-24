@@ -226,7 +226,7 @@ int     arg5 - the parameter of this call (fixed_param), useful for combat_proc
 
 int     ret0 - pass -1 to cancel the execution of the handler
 */
-bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after)
+bool scriptHooks_StdProcedure(ScriptProc procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after)
 {
     if (procedureNumber == SCRIPT_PROC_START
         || procedureNumber == SCRIPT_PROC_CRITTER

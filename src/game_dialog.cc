@@ -857,7 +857,7 @@ void gameDialogEnter(Object* speaker, int mode)
         return;
     }
 
-    if (ProtoId(speaker).objectType() != OBJ_TYPE_ITEM && SID_TYPE(speaker->sid) != SCRIPT_TYPE_SPATIAL) {
+    if (ProtoId(speaker).objectType() != OBJ_TYPE_ITEM && scriptTypeFromSid(speaker->sid) != SCRIPT_TYPE_SPATIAL) {
         MessageListItem messageListItem;
 
         int rc = _action_can_talk_to(gDude, speaker);
@@ -869,7 +869,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Cannot see there ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");
@@ -885,7 +885,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Too far ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");

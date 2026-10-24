@@ -69,7 +69,7 @@ static ScriptSoundSlot* scriptSoundFindLoopingSlotById(int id)
     return nullptr;
 }
 
-static void scriptSoundSlotCallback(void* userData, int event)
+static void scriptSoundSlotCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         static_cast<ScriptSoundSlot*>(userData)->sound = nullptr;
@@ -94,8 +94,7 @@ static Sound* scriptSoundCreate(const char* path, bool looping, int volume, Scri
 
     soundSetVolume(sound, scriptSoundClampVolume(volume));
 
-    int rc;
-    rc = soundPlay(sound);
+    SoundError rc = soundPlay(sound);
     if (rc != SOUND_NO_ERROR) {
         soundDelete(sound);
         return nullptr;

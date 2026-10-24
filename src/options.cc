@@ -234,7 +234,7 @@ static int optionsWindowInit()
     messageListInit(&preferencesMessageList);
     messageListInit(&ceOptionsMessageList);
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "options.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "options.msg");
     if (!messageListLoad(&preferencesMessageList, path)) {
         goto err;
     }
@@ -444,7 +444,7 @@ int showPause(bool preserveWorldState)
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "options.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "options.msg");
     if (!messageListLoad(&preferencesMessageList, path)) {
         // FIXME: Leaking graphics.
         return -1;

@@ -1252,11 +1252,20 @@ static void _ai_run_away(Object* a1, Object* a2)
 // 0x42899C ai_move_away
 static int _ai_move_away(Object* a1, Object* a2, int a3)
 {
-    if (aiGetPacket(a1)->distance == DISTANCE_STAY) {
+    // SFALL: Fix for ai_move_away_ engine function not working correctly in
+    // cases when needing to move a distance away from the target: a negative
+    // [a3] is the distance to move away (at most the action points), whatever
+    // the distance to [a2] is.
+    bool moveDistance = a3 < 0;
+    if (moveDistance) {
+        a3 = -a3;
+    }
+
+    if (!moveDistance && aiGetPacket(a1)->distance == DISTANCE_STAY) {
         return -1;
     }
 
-    if (objectGetDistanceBetween(a1, a2) <= a3) {
+    if (moveDistance || objectGetDistanceBetween(a1, a2) <= a3) {
         int actionPoints = a1->data.critter.combat.ap;
         if (a3 < actionPoints) {
             actionPoints = a3;
@@ -2384,6 +2393,29 @@ static Object* _ai_search_environ(Object* critter, ItemType itemType)
 }
 
 // 0x429D60
+// SFALL: Fix for ai_retrieve_object_ engine function not returning the
+// requested object when there are different objects with the same ID: the
+// object itself in [owner]'s inventory (containers included).
+static Object* aiInventoryFindObject(Object* owner, Object* object)
+{
+    Inventory* inventory = &(owner->data.inventory);
+    for (int index = 0; index < inventory->length; index++) {
+        Object* item = inventory->items[index].item;
+        if (item == object) {
+            return item;
+        }
+
+        if (itemGetType(item) == ITEM_TYPE_CONTAINER) {
+            item = aiInventoryFindObject(item, object);
+            if (item != nullptr) {
+                return item;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 static Object* _ai_retrieve_object(Object* critter, Object* item)
 {
     if (actionPickUp(critter, item) != 0) {
@@ -2395,7 +2427,13 @@ static Object* _ai_retrieve_object(Object* critter, Object* item)
 
     // Find the item in NPC's inventory. This step is needed because NPC could
     // not get the item on this turn.
-    Object* retrievedItem = inventoryFindById(critter, item->id);
+    // SFALL: Fix for ai_retrieve_object_ engine function not returning the
+    // requested object when there are different objects with the same ID:
+    // the object itself first, else the one with its id (the original).
+    Object* retrievedItem = aiInventoryFindObject(critter, item);
+    if (retrievedItem == nullptr) {
+        retrievedItem = inventoryFindById(critter, item->id);
+    }
 
     if (retrievedItem != nullptr || item->owner != nullptr) {
         // Either NPC have the item, or someone else have picked it up.
@@ -2474,6 +2512,15 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
         if (intelligence < 6 || objectGetDistanceBetween(attacker, defender) < 10) {
             if (randomBetween(1, ai->secondary_freq) == 1) {
                 useSecondaryMode = true;
+
+                // SFALL: Fix to reduce friendly fire in burst attacks (for
+                // an unset `area_attack_mode`): unless the attacker is
+                // dumb, a burst that isn't safe isn't chosen.
+                if (intelligence >= 3
+                    && weaponGetAnimationForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY) == ANIM_FIRE_BURST
+                    && _combat_safety_invalidate_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, defender, nullptr)) {
+                    useSecondaryMode = false;
+                }
             }
         }
     }
@@ -2580,14 +2627,22 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         _cai_retargetTileFromFriendlyFire(critter, target, &tile);
     }
 
+    // SFALL: Fix for multihex critters moving too close and overlapping their
+    // targets in combat: when the target or the critter is multihex, to the
+    // object only when the tile isn't retargeted, else to the tile.
+    bool toObject = false;
+    if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE || (critter->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
+        toObject = target->tile == tile;
+    }
+
     if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFrmIdShouldRun(FrmId(critter))) {
-        if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
+        if (toObject) {
             animationRegisterRunToObject(critter, target, actionPoints, 0);
         } else {
             animationRegisterRunToTile(critter, tile, critter->elevation, actionPoints, 0);
         }
     } else {
-        if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
+        if (toObject) {
             animationRegisterMoveToObject(critter, target, actionPoints, 0);
         } else {
             animationRegisterMoveToTile(critter, tile, critter->elevation, actionPoints, 0);
@@ -2609,6 +2664,32 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
 static int _ai_move_closer(Object* a1, Object* a2, bool taunt)
 {
     return _ai_move_steps_closer(a1, a2, a1->data.critter.combat.ap, taunt);
+}
+
+// SFALL: The first object blocking a multihex [critter] moving to [tile]:
+// the tiles around it, or, next to it, the three ahead of it.
+static Object* aiMultihexMoveIsBlocking(Object* critter, int tile)
+{
+    if (tileDistanceBetween(critter->tile, tile) > 1) {
+        for (int rotation = ROTATION_COUNT - 1; rotation >= 0; rotation--) {
+            int aroundTile = tileGetTileInDirection(tile, static_cast<Rotation>(rotation), 1);
+            Object* obstacle = _obj_blocking_at(critter, aroundTile, critter->elevation);
+            if (obstacle != nullptr) {
+                return obstacle;
+            }
+        }
+        return nullptr;
+    }
+
+    int rotation = tileGetRotationTo(critter->tile, tile);
+    for (int turn : { 0, 1, 5 }) {
+        int aheadTile = tileGetTileInDirection(tile, static_cast<Rotation>((rotation + turn) % ROTATION_COUNT), 1);
+        Object* obstacle = _obj_blocking_at(critter, aheadTile, critter->elevation);
+        if (obstacle != nullptr) {
+            return obstacle;
+        }
+    }
+    return nullptr;
 }
 
 // 0x42A1D4
@@ -2679,7 +2760,11 @@ static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int
                 break;
             }
 
-            if (_obj_blocking_at(nullptr, tile, source->elevation) == nullptr) {
+            // SFALL: Check neighboring tiles to prevent critters from
+            // overlapping other object tiles when moving to the retargeted
+            // tile (the source itself doesn't block it).
+            if (_obj_blocking_at(source, tile, source->elevation) == nullptr
+                && ((source->flags & OBJECT_MULTIHEX) == OBJECT_NONE || aiMultihexMoveIsBlocking(source, tile) == nullptr)) {
                 int distance = tileDistanceBetween(*tilePtr, tile);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -3779,7 +3864,7 @@ static int aiMessageListInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "combatai.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "combatai.msg");
 
     if (!messageListLoad(&gCombatAiMessageList, path)) {
         return -1;

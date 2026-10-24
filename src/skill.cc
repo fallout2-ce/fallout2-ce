@@ -364,7 +364,7 @@ int skillsInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "skill.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "skill.msg");
 
     if (!messageListLoad(&gSkillsMessageList, path)) {
         return -1;
@@ -888,7 +888,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
             // 514: It's dead, get over it.
             messageListItem.num = 512 + randomBetween(0, 2);
             if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-                debugPrint(messageListItem.text);
+                debugPrint("%s", messageListItem.text);
             }
 
             break;
@@ -1308,7 +1308,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
     default:
         messageListItem.num = 510; // skill_use: invalid skill used.
         if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-            debugPrint(messageListItem.text);
+            debugPrint("%s", messageListItem.text);
         }
 
         return -1;

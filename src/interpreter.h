@@ -4,10 +4,12 @@
 #include "animation_defs.h"
 #include "combat_defs.h"
 #include "game.h"
+#include "game_movie.h"
 #include "game_sound.h"
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
+#include "window_defs.h"
 #include "worldmap.h"
 #include <setjmp.h>
 
@@ -296,6 +298,17 @@ inline HitLocation programStackPopEnum(Program* program)
 }
 
 template <>
+inline MapElevation programStackPopEnum(Program* program)
+{
+    int elevation = programStackPopInteger(program);
+    if (!elevationIsValid(elevation)) {
+        programPrintError("invalid elevation %d", elevation);
+    }
+
+    return static_cast<MapElevation>(elevation);
+}
+
+template <>
 inline CriticalHitDataMember programStackPopEnum(Program* program)
 {
     int criticalHitDataMember = programStackPopInteger(program);
@@ -449,6 +462,28 @@ inline VisitedState programStackPopEnum(Program* program)
     }
 
     return static_cast<VisitedState>(visited);
+}
+
+template <>
+inline TextAlignment programStackPopEnum(Program* program)
+{
+    int textAlignment = programStackPopInteger(program);
+    if (!textAlignmentIsValid(textAlignment)) {
+        programPrintError("invalid text alignment %d", textAlignment);
+    }
+
+    return static_cast<TextAlignment>(textAlignment);
+}
+
+template <>
+inline GameMovie programStackPopEnum(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    if (!gameMovieExtendedIsValid(movie)) {
+        programPrintError("invalid movie %d", movie);
+    }
+
+    return static_cast<GameMovie>(movie);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

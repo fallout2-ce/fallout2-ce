@@ -237,8 +237,8 @@ static int _qscmp(const void* a1, const void* a2);
 static void pipboyWindowHandleAutomaps(int a1);
 static int _PrintAMelevList(int a1);
 static int _PrintAMList(int a1);
-static void pipboyHandleVideoArchive(int a1);
-static int pipboyRenderVideoArchive(int a1);
+static void pipboyHandleVideoArchive(int eventCode);
+static int pipboyRenderVideoArchive(int selectedEntry);
 static void pipboyHandleAlarmClock(int eventCode);
 static void pipboyWindowRenderRestOptions(int a1);
 static void pipboyDrawHitPoints();
@@ -621,7 +621,7 @@ int pipboyMessageListInit()
     pipboyMessageListFree();
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "pipboy.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "pipboy.msg");
 
     if (!(messageListLoad(&gPipboyMessageList, path))) {
         return -1;
@@ -1737,7 +1737,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
             _amcty_indx = static_cast<Map>(_sortlist[realIndex].mapOrElevation);
             _map_count = _PrintAMelevList(1);
             pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
             main_sub_mode = 1;
         }
@@ -1757,7 +1757,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1765,7 +1765,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, _sortlist[userInput - 1].mapOrElevation);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, static_cast<MapElevation>(_sortlist[userInput - 1].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
@@ -1790,7 +1790,7 @@ static int _PrintAMelevList(int selectedMap)
     }
 
     // First pass: Count total valid entries
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             totalEntries++;
         }
@@ -1801,7 +1801,7 @@ static int _PrintAMelevList(int selectedMap)
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 totalEntries++;
             }
@@ -1820,7 +1820,7 @@ static int _PrintAMelevList(int selectedMap)
     int currentIndex = 0;
 
     // Second pass: Build the list for the selected page
-    for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             if (currentIndex >= startIndex && currentIndex < endIndex) {
                 _sortlist[elevationsListSize].name = mapGetName(_amcty_indx, elevation);
@@ -1837,7 +1837,7 @@ static int _PrintAMelevList(int selectedMap)
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (currentIndex >= startIndex && currentIndex < endIndex) {
                     _sortlist[elevationsListSize].name = mapGetName(map, elevation);
@@ -1911,8 +1911,8 @@ static int _PrintAMList(int selectedLocation)
 
     int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
     for (Map map = MAP_FIRST; map < mapCount; map++) {
-        int elevation;
-        for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        MapElevation elevation;
+        for (elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (_automapDisplayMap(map) == 0) {
                     break;
@@ -2005,29 +2005,30 @@ static int _PrintAMList(int selectedLocation)
 }
 
 // 0x49932C
-static void pipboyHandleVideoArchive(int a1)
+static void pipboyHandleVideoArchive(int eventCode)
 {
-    if (a1 == 1024) {
+    if (eventCode == 1024) {
         pipboyWindowDestroyButtons();
         _view_page = pipboyRenderVideoArchive(-1);
         pipboyWindowCreateButtons(2, _view_page, false);
-    } else if (a1 >= 0 && a1 <= _view_page) {
+    } else if (eventCode >= 0 && eventCode <= _view_page) {
         soundPlayFile("ib1p1xx1");
 
-        pipboyRenderVideoArchive(a1);
+        pipboyRenderVideoArchive(eventCode);
 
-        int movie;
-        for (movie = 2; movie < 16; movie++) {
+        int remainingMovieSelection = eventCode;
+        GameMovie movie;
+        for (movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
             if (gameMovieIsSeen(movie)) {
-                a1--;
-                if (a1 <= 0) {
+                remainingMovieSelection--;
+                if (remainingMovieSelection <= 0) {
                     break;
                 }
             }
         }
 
-        if (movie < MOVIE_COUNT) {
-            gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
+        if (gameMovieIsValid(movie)) {
+            gameMoviePlay(movie, GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");
         }
@@ -2040,14 +2041,13 @@ static void pipboyHandleVideoArchive(int a1)
 }
 
 // 0x4993DC
-static int pipboyRenderVideoArchive(int a1)
+static int pipboyRenderVideoArchive(int selectedEntry)
 {
     const char* text;
-    int i;
-    int v12;
+    int selectedEntryIndex;
     int msg_num;
-    int v5;
-    int v8;
+    int visibleEntryCount;
+    int entryIndex;
     Color color;
 
     blitBufferToBuffer(_pipboyFrmImages[PIPBOY_FRM_BACKGROUND].getData() + PIPBOY_WINDOW_WIDTH * PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_X,
@@ -2069,18 +2069,18 @@ static int pipboyRenderVideoArchive(int a1)
         gPipboyCurrentLine = 2;
     }
 
-    v5 = 0;
-    v12 = a1 - 1;
+    visibleEntryCount = 0;
+    selectedEntryIndex = selectedEntry - 1;
 
     // 502 - Elder Speech
     // ...
     // 516 - Credits
     msg_num = 502;
 
-    for (i = 2; i < 16; i++) {
-        if (gameMovieIsSeen(i)) {
-            v8 = v5++;
-            if (v8 == v12) {
+    for (GameMovie movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
+        if (gameMovieIsSeen(movie)) {
+            entryIndex = visibleEntryCount++;
+            if (entryIndex == selectedEntryIndex) {
                 color = COLOR_LIGHT_YELLOW;
             } else {
                 color = COLOR_GREEN;
@@ -2097,7 +2097,7 @@ static int pipboyRenderVideoArchive(int a1)
 
     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
 
-    return v5;
+    return visibleEntryCount;
 }
 
 // 0x499518

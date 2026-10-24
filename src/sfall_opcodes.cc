@@ -270,9 +270,9 @@ static void op_get_year(Program* program)
 
 static void op_set_movie_path(Program* program)
 {
-    int movie = programStackPopInteger(program);
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
     const char* fileName = programStackPopString(program);
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+    if (!gameMovieExtendedIsValid(movie) || fileName == nullptr) {
         programPrintError("set_movie_path: invalid argument");
         return;
     }
@@ -289,7 +289,7 @@ static void op_set_movie_path(Program* program)
 
 static void op_mark_movie_played(Program* program)
 {
-    int movie = programStackPopInteger(program);
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
     gameMovieMarkSeen(movie);
 }
 
@@ -968,7 +968,7 @@ static void op_set_script(Program* program)
         obj->scriptIndex = -1;
     }
 
-    int scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    ScriptType scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
     if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
         obj->sid = -1;
         obj->scriptIndex = -1;
@@ -1410,10 +1410,10 @@ static void op_get_tile_fid(Program* program)
 {
     int tileData = programStackPopInteger(program);
     int tile = tileData & 0xFFFFFF;
-    int elevation = (tileData >> 24) & 0x0F;
+    MapElevation elevation = static_cast<MapElevation>((tileData >> 24) & 0x0F);
     int mode = tileData >> 28;
 
-    if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
         debugPrint("%s: op_get_tile_fid invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
         programStackPushInteger(program, 0);
         return;
@@ -1795,7 +1795,7 @@ static void op_make_straight_path(Program* program)
 static void op_obj_blocking_at(Program* program)
 {
     int type = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
     int tile = programStackPopInteger(program);
 
     PathBuilderCallback* func = get_blocking_func(type);
@@ -1814,7 +1814,7 @@ static void op_obj_blocking_at(Program* program)
 static void op_create_spatial(Program* program)
 {
     int radius = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
     int tile = programStackPopInteger(program);
     int scriptId = programStackPopInteger(program);
 
@@ -1855,18 +1855,18 @@ static void op_create_spatial(Program* program)
 static void op_tile_light(Program* program)
 {
     int tile = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
     programStackPushInteger(program, lightGetTileIntensity(elevation, tile));
 }
 
 // tile_get_objs
 static void op_tile_get_objects(Program* program)
 {
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
     int tile = programStackPopInteger(program);
     ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
 
-    if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
         debugPrint("%s: op_tile_get_objects invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
         programStackPushInteger(program, arrayId);
         return;

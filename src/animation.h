@@ -5,6 +5,7 @@
 #include "art.h"
 #include "art_defs.h"
 #include "combat_defs.h"
+#include "map_defs.h"
 #include "obj_types.h"
 
 namespace fallout {
@@ -17,12 +18,12 @@ typedef int(AnimationCallback3)(void* a1, void* a2, void* a3);
 
 typedef struct StraightPathNode {
     int tile;
-    int elevation;
+    MapElevation elevation;
     int x;
     int y;
 } StraightPathNode;
 
-typedef Object* PathBuilderCallback(Object* object, int tile, int elevation);
+typedef Object* PathBuilderCallback(Object* object, int tile, MapElevation elevation);
 
 void animationInit();
 void animationReset();
@@ -37,10 +38,10 @@ int reg_anim_end();
 int animationIsBusy(Object* a1);
 int animationRegisterMoveToObject(Object* owner, Object* destination, int actionPoints, int delay);
 int animationRegisterRunToObject(Object* owner, Object* destination, int actionPoints, int delay);
-int animationRegisterMoveToTile(Object* owner, int tile, int elevation, int actionPoints, int delay);
-int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actionPoints, int delay);
-int animationRegisterMoveToTileStraight(Object* object, int tile, int elevation, AnimationType anim, int delay);
-int animationRegisterMoveToTileStraightAndWaitForComplete(Object* owner, int tile, int elev, AnimationType anim, int delay);
+int animationRegisterMoveToTile(Object* owner, int tile, MapElevation elevation, int actionPoints, int delay);
+int animationRegisterRunToTile(Object* owner, int tile, MapElevation elevation, int actionPoints, int delay);
+int animationRegisterMoveToTileStraight(Object* object, int tile, MapElevation elevation, AnimationType anim, int delay);
+int animationRegisterMoveToTileStraightAndWaitForComplete(Object* owner, int tile, MapElevation elev, AnimationType anim, int delay);
 int animationRegisterAnimate(Object* owner, AnimationType anim, int delay);
 int animationRegisterAnimateReversed(Object* owner, AnimationType anim, int delay);
 int animationRegisterAnimateAndHide(Object* owner, AnimationType anim, int delay);

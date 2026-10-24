@@ -3,17 +3,47 @@
 
 #include "combat_defs.h"
 #include "db.h"
+#include "game_movie.h"
 #include "interpreter.h"
 #include "obj_types.h"
 
 namespace fallout {
 
-// Script has been loaded.
-#define SCRIPT_FLAG_LOADED (0x01)
-#define SCRIPT_FLAG_NO_SPATIAL (0x02)
-#define SCRIPT_FLAG_EXECUTED (0x04)
-#define SCRIPT_FLAG_NO_SAVE (0x08)
-#define SCRIPT_FLAG_NO_REMOVE (0x10)
+enum ScriptFlags : unsigned int {
+    SCRIPT_FLAG_NONE = 0x00,
+    SCRIPT_FLAG_LOADED = 0x01,
+    SCRIPT_FLAG_NO_SPATIAL = 0x02,
+    SCRIPT_FLAG_EXECUTED = 0x04,
+    SCRIPT_FLAG_NO_SAVE = 0x08,
+    SCRIPT_FLAG_NO_REMOVE = 0x10,
+};
+
+constexpr inline ScriptFlags operator&(ScriptFlags lhs, ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptFlags operator|(ScriptFlags lhs, ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptFlags operator~(ScriptFlags rhs)
+{
+    return static_cast<ScriptFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline ScriptFlags& operator&=(ScriptFlags& lhs, ScriptFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ScriptFlags& operator|=(ScriptFlags& lhs, ScriptFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 // 60 * 60 * 10
 #define GAME_TIME_TICKS_PER_HOUR 36000
@@ -26,30 +56,77 @@ namespace fallout {
 
 constexpr int OBJECT_ID_UNIQUE_START = 0x0FFFFFFF;
 
-typedef enum ScriptRequests {
+enum ScriptRequests : unsigned int {
+    SCRIPT_REQUEST_NONE = 0x00,
     SCRIPT_REQUEST_COMBAT = 0x01,
     SCRIPT_REQUEST_TOWN_MAP = 0x02,
     SCRIPT_REQUEST_WORLD_MAP = 0x04,
     SCRIPT_REQUEST_ELEVATOR = 0x08,
     SCRIPT_REQUEST_EXPLOSION = 0x10,
     SCRIPT_REQUEST_DIALOG = 0x20,
-    SCRIPT_REQUEST_0x40 = 0x40,
+    SCRIPT_REQUEST_COMBAT_NO_DATA = 0x40,
     SCRIPT_REQUEST_ENDGAME = 0x80,
     SCRIPT_REQUEST_LOOTING = 0x100,
     SCRIPT_REQUEST_STEALING = 0x200,
-    SCRIPT_REQUEST_0x0400 = 0x400,
-} ScriptRequests;
+    SCRIPT_REQUEST_COMBAT_LOCKED = 0x400,
+};
 
-typedef enum ScriptType {
+constexpr inline ScriptRequests operator&(ScriptRequests lhs, ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptRequests operator|(ScriptRequests lhs, ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ScriptRequests operator~(ScriptRequests rhs)
+{
+    return static_cast<ScriptRequests>(~static_cast<unsigned int>(rhs));
+}
+
+inline ScriptRequests& operator&=(ScriptRequests& lhs, ScriptRequests rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ScriptRequests& operator|=(ScriptRequests& lhs, ScriptRequests rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+enum ScriptType : int {
+    SCRIPT_TYPE_INVALID = -1,
     SCRIPT_TYPE_SYSTEM, // s_system
     SCRIPT_TYPE_SPATIAL, // s_spatial
     SCRIPT_TYPE_TIMED, // s_time
     SCRIPT_TYPE_ITEM, // s_item
     SCRIPT_TYPE_CRITTER, // s_critter
     SCRIPT_TYPE_COUNT,
-} ScriptType;
+    SCRIPT_TYPE_FIRST = SCRIPT_TYPE_SYSTEM
+};
 
-typedef enum ScriptProc {
+inline ScriptType operator++(ScriptType& e, int)
+{
+    ScriptType result = e;
+    e = static_cast<ScriptType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline constexpr ScriptType scriptTypeFromSid(int sid)
+{
+    return static_cast<ScriptType>(sid >> 24);
+}
+
+inline constexpr int scriptIdFromSid(int sid)
+{
+    return sid & 0xFFFFFF;
+}
+
+enum ScriptProc : int {
     SCRIPT_PROC_NO_PROC = 0,
     SCRIPT_PROC_START = 1,
     SCRIPT_PROC_SPATIAL = 2,
@@ -79,7 +156,15 @@ typedef enum ScriptProc {
     SCRIPT_PROC_COMBAT_IS_STARTING = 26,
     SCRIPT_PROC_COMBAT_IS_OVER = 27,
     SCRIPT_PROC_COUNT,
-} ScriptProc;
+    SCRIPT_PROC_FIRST = SCRIPT_PROC_NO_PROC
+};
+
+inline ScriptProc operator++(ScriptProc& e, int)
+{
+    ScriptProc result = e;
+    e = static_cast<ScriptProc>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum class DetachedScriptOwnerKind {
     GlobalScript,
@@ -118,7 +203,7 @@ typedef struct Script {
     };
 
     // scr_flags
-    int flags;
+    ScriptFlags flags;
 
     // scr_script_idx
     int index;
@@ -183,7 +268,7 @@ void gameTimeAddSeconds(int seconds);
 void gameTimeSetTime(unsigned int time);
 int gameTimeScheduleUpdateEvent();
 int gameTimeEventProcess(Object* obj, void* data);
-int _scriptsCheckGameEvents(int* moviePtr, int window);
+int _scriptsCheckGameEvents(GameMovie* moviePtr, int window);
 int mapUpdateEventProcess(Object* obj, void* data);
 int scriptsNewObjectId();
 bool scriptsIsUniqueObjectId(int objectId);
@@ -225,14 +310,14 @@ void _scripts_request_combat_locked(CombatStartData* combat);
 void scripts_request_townmap();
 void scriptsRequestWorldMap();
 int scriptsRequestElevator(Object* obj, int elevatorType);
-int scriptsRequestExplosion(int tile, int elevation, int minDamage, int maxDamage);
+int scriptsRequestExplosion(int tile, MapElevation elevation, int minDamage, int maxDamage);
 void scriptsRequestDialog(Object* obj);
 void scriptsRequestEndgame();
 int scriptsRequestLooting(Object* looter, Object* container);
 int scriptsRequestStealing(Object* thief, Object* target);
 void _script_make_path(char* path);
-int scriptExecProc(int sid, int proc);
-bool scriptHasProc(int sid, int proc);
+int scriptExecProc(int sid, ScriptProc proc);
+bool scriptHasProc(int sid, ScriptProc proc);
 int _scr_find_str_run_info(int scriptIndex, int* unused, int sid);
 int scriptsSetDudeScript();
 int scriptsClearDudeScript();
@@ -253,8 +338,8 @@ int scriptsSkipGameGlobalVars(File* stream);
 int scriptSaveAll(File* stream);
 int scriptLoadAll(File* stream);
 int scriptGetScript(int sid, Script** script);
-int scriptAdd(int* sidPtr, int scriptType);
-Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius);
+int scriptAdd(int* sidPtr, ScriptType scriptType);
+Object* scriptCreateSpatial(int scriptIndex, int tile, MapElevation elevation, int radius);
 int scriptGetSpatialRadius(Object* obj);
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 int scriptsGetListLength();
@@ -262,22 +347,22 @@ bool scriptsIsValidScriptIndex(int scriptIndex);
 int scriptRemove(int index);
 int _scr_remove_all();
 int _scr_remove_all_force();
-Script* scriptGetFirstSpatialScript(int elevation);
+Script* scriptGetFirstSpatialScript(MapElevation elevation);
 Script* scriptGetNextSpatialScript();
 void _scr_spatials_enable();
 void _scr_spatials_disable();
-bool scriptsExecSpatialProc(Object* obj, int tile, int elevation);
+bool scriptsExecSpatialProc(Object* obj, int tile, MapElevation elevation);
 int scriptsExecStartProc();
 void scriptsExecMapEnterProc();
 void scriptsExecMapUpdateProc();
-void scriptsExecMapUpdateScripts(int proc);
+void scriptsExecMapUpdateScripts(ScriptProc proc);
 void scriptsExecMapExitProc();
 char* _scr_get_msg_str(int messageListId, int messageId);
 char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech, Object* speaker = nullptr);
 int scriptGetLocalVar(int sid, int var, ProgramValue& value);
 int scriptSetLocalVar(int sid, int var, ProgramValue& value);
 bool _scr_end_combat();
-int _scr_explode_scenery(Object* explosionSource, int tile, int radius, int elevation);
+int _scr_explode_scenery(Object* explosionSource, int tile, int radius, MapElevation elevation);
 
 } // namespace fallout
 

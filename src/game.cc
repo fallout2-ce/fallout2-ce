@@ -119,7 +119,7 @@ int* gGameGlobalVars = nullptr;
 int gGameGlobalVarsLength = 0;
 
 // 0x5186C8 msg_path
-const char* asc_5186C8 = _aGame_0;
+const char* gGameMsgPath = _aGame_0;
 
 // 0x5186CC game_user_wants_to_quit
 GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
@@ -128,6 +128,10 @@ GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 //
 // 0x58E940 misc_message_file
 MessageList gMiscMessageList;
+
+// CE: Texts CE adds (ce.msg). The ones missing in a translation are shown in
+// English, as the code has them.
+MessageList gCeMessageList;
 
 bool gGameLoaded = false;
 
@@ -356,7 +360,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     debugPrint(">message_init\t");
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "misc.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "misc.msg");
 
     if (!messageListLoad(&gMiscMessageList, path)) {
         debugPrint("Failed on message_load\n");
@@ -364,6 +368,11 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">message_load\t");
+
+    // CE: Optional, the code has the English texts.
+    messageListInit(&gCeMessageList);
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "ce.msg");
+    messageListLoad(&gCeMessageList, path);
 
     if (scriptsDisable() != 0) {
         debugPrint("Failed on scr_disable\n");
@@ -496,6 +505,7 @@ void gameExit()
     tileDisable();
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MISC, nullptr);
     messageListFree(&gMiscMessageList);
+    messageListFree(&gCeMessageList);
     combatExit();
     gameDialogExit();
     _scr_game_exit();
@@ -861,7 +871,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
             MessageList messageList;
             if (messageListInit(&messageList)) {
                 char path[COMPAT_MAX_PATH];
-                snprintf(path, sizeof(path), "%s%s", asc_5186C8, "editor.msg");
+                snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "editor.msg");
 
                 if (messageListLoad(&messageList, path)) {
                     MessageListItem messageListItem;

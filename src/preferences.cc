@@ -1029,7 +1029,7 @@ static int preferencesWindowInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "options.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "options.msg");
     if (!messageListLoad(&gPreferencesMessageList, path)) {
         return -1;
     }

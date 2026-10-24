@@ -335,7 +335,7 @@ long soundEffectsCacheFileLength(int handle)
 static int soundEffectsCacheGetFileSizeImpl(int tag, int* sizePtr)
 {
     int size;
-    if (soundEffectsListGetFileSize(tag, &size) == -1) {
+    if (soundEffectsListGetFileSize(tag, &size) != SFXL_OK) {
         return -1;
     }
 
