@@ -2899,6 +2899,20 @@ static void _combat_over()
         if (ProtoId(critter) == CritterProtoTypeId::Goris && !critterIsDead(critter) && !_isLoadingGame()) {
             waitForGorisAnimation(critter);
         }
+
+        // SFALL: Fix for knocked down critters not playing stand up animation
+        // when the combat ends (when DAM_LOSE_TURN and DAM_KNOCKED_DOWN flags
+        // are set); one woken from a knockout outside its turn stands up a
+        // moment later (its wake up event).
+        Dam results = critter->data.critter.combat.results;
+        critter->data.critter.combat.results &= ~(DAM_LOSE_TURN | DAM_KNOCKOUT_WOKEN);
+        if ((results & (DAM_DEAD | DAM_KNOCKED_OUT)) == DAM_NONE && (results & DAM_KNOCKED_DOWN) != DAM_NONE) {
+            if ((results & DAM_KNOCKOUT_WOKEN) != DAM_NONE) {
+                queueAddEvent(1, critter, nullptr, EVENT_TYPE_KNOCKOUT);
+            } else {
+                _dude_standup(critter);
+            }
+        }
     }
 
     tileWindowRefresh();
@@ -3628,6 +3642,10 @@ void _combat(CombatStartData* csd)
 
             for (; curIndex < _list_com; curIndex++) {
                 _combat_set_move(_combat_list[curIndex]);
+
+                // SFALL: The woken mark lasts until the critter's turn (see
+                // `DAM_KNOCKOUT_WOKEN`).
+                _combat_list[curIndex]->data.critter.combat.results &= ~DAM_KNOCKOUT_WOKEN;
 
                 if (combatTurnHooked(_combat_list[curIndex], false) == -1) {
                     break;
