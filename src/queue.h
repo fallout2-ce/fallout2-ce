@@ -1,6 +1,8 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include <vector>
+
 #include "critter.h"
 #include "db.h"
 #include "obj_types.h"
@@ -82,6 +84,7 @@ void _queue_leaving_map();
 bool queueIsEmpty();
 void* queueFindFirstEvent(Object* owner, EventType eventType);
 void* queueFindNextEvent(Object* owner, EventType eventType);
+std::vector<void*> queueGetEventsData(EventType eventType);
 
 } // namespace fallout
 

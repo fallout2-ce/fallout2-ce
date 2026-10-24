@@ -3097,6 +3097,10 @@ int drugEffectEventRead(File* stream, void** dataPtr)
     if (fileReadInt32EnumList<Stat>(stream, drugEffectEvent->stats, 3) == -1) goto err;
     if (fileReadInt32List(stream, drugEffectEvent->modifiers, 3) == -1) goto err;
 
+    // SFALL: The drug pid isn't in the save, it's restored after the game is
+    // loaded (see `drugEffectEventsRestorePids`).
+    drugEffectEvent->drugPid = 0;
+
     *dataPtr = drugEffectEvent;
     return 0;
 
@@ -3115,6 +3119,84 @@ int drugEffectEventWrite(File* stream, void* data)
     if (fileWriteInt32List(stream, drugEffectEvent->modifiers, 3) == -1) return -1;
 
     return 0;
+}
+
+// SFALL: Fix for gaining stats from more than two doses of a specific chem
+// after save-load. The original doesn't save the drug pid of a drug effect
+// event, so the loaded effects didn't count as doses (`_drug_effect_allowed`).
+// sfall saves the pids in sfallgv.sav, in the order of the events in the
+// queue.
+static std::vector<int> gDrugEffectLoadedPids;
+
+std::vector<int> drugEffectEventsGetPids()
+{
+    std::vector<int> pids;
+    for (void* data : queueGetEventsData(EVENT_TYPE_DRUG)) {
+        pids.push_back(static_cast<DrugEffectEvent*>(data)->drugPid);
+    }
+    return pids;
+}
+
+void drugEffectEventsSetLoadedPids(const std::vector<int>& pids)
+{
+    gDrugEffectLoadedPids = pids;
+}
+
+// SFALL: The pid of a loaded drug effect: the saved one in the queue order;
+// without it (a save made without sfallgv.sav's list) the drug whose effects
+// match the event's (sfall's `item_d_load_subfix`).
+void drugEffectEventsRestorePids()
+{
+    size_t pidIndex = 0;
+    for (void* data : queueGetEventsData(EVENT_TYPE_DRUG)) {
+        DrugEffectEvent* drugEffectEvent = static_cast<DrugEffectEvent*>(data);
+        if (drugEffectEvent->drugPid != 0) {
+            continue;
+        }
+
+        if (pidIndex < gDrugEffectLoadedPids.size()) {
+            // Only a drug's pid (a bad one is inferred, as without the list).
+            int drugPid = gDrugEffectLoadedPids[pidIndex++];
+            Proto* proto;
+            if (ProtoId(drugPid).objectType() == OBJ_TYPE_ITEM
+                && protoGetProto(ProtoId(drugPid), &proto) != -1
+                && proto->item.type == ITEM_TYPE_DRUG) {
+                drugEffectEvent->drugPid = drugPid;
+            }
+        }
+
+        if (drugEffectEvent->drugPid != 0) {
+            continue;
+        }
+
+        for (int index = 0; index < ADDICTION_COUNT; index++) {
+            DrugDescription* drugDescription = &(gDrugDescriptions[index]);
+            if (drugDescription->maxActiveEffects == 0) {
+                continue;
+            }
+
+            Proto* proto;
+            if (protoGetProto(ProtoId(drugDescription->drugPid), &proto) == -1) {
+                continue;
+            }
+
+            bool matches = true;
+            for (int effect = 0; effect < 3; effect++) {
+                if (proto->item.data.drug.stat[effect] != drugEffectEvent->stats[effect]
+                    || proto->item.data.drug.amount[effect] != drugEffectEvent->modifiers[effect]) {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if (matches) {
+                drugEffectEvent->drugPid = drugDescription->drugPid;
+                break;
+            }
+        }
+    }
+
+    gDrugEffectLoadedPids.clear();
 }
 
 // 0x47A290
