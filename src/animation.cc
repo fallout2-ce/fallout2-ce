@@ -3099,6 +3099,66 @@ int dudeMoveGetReservedStepLimit(int actionPoints)
     return stepCost > 0 ? moveActionPoints / stepCost : moveActionPoints;
 }
 
+// Returns the tile where a combat move from the dude toward `tile` stops, or
+// -1 when the move does not start. `actionPoints` is AP plus free move, as
+// _check_move gets it. Stores the hexes walked in `stepsPtr` and the AP (not
+// free move) the walk spends in `actionPointsSpentPtr`; either can be null.
+// The rules follow the move itself:
+// - A Ctrl move ends after dudeMoveGetReservedStepLimit steps.
+// - Otherwise the walk stops once AP and free move reach 0. Each step costs its
+//   full price, free move first, so the last step can cost more than what
+//   remains.
+// - A move onto an occupied hex stops on the hex before it, and
+//   animateMoveObjectToTile caps it at one hex per point of `actionPoints`.
+int dudeMoveGetLandingTile(int tile, int actionPoints, int* stepsPtr, int* actionPointsSpentPtr)
+{
+    if (actionPoints <= 0) {
+        return -1;
+    }
+
+    unsigned char rotations[800];
+    int pathLength = _make_path(gDude, gDude->tile, tile, rotations, 0);
+    bool blocked = _obj_blocking_at(gDude, tile, gDude->elevation) != nullptr;
+    int steps = blocked ? pathLength - 1 : pathLength;
+    if (steps <= 0) {
+        return -1;
+    }
+
+    int stepCost = critterGetMovementPointCostAdjustedForCrippledLegs(gDude, 1);
+    int stepLimit = dudeMoveGetReservedStepLimit(actionPoints);
+    if (stepLimit == -1) {
+        if (stepCost > 0) {
+            steps = std::min(steps, (actionPoints + stepCost - 1) / stepCost);
+        }
+
+        if (blocked) {
+            steps = std::min(steps, actionPoints);
+        }
+    } else {
+        if (stepLimit == 0) {
+            return -1;
+        }
+
+        steps = std::min(steps, stepLimit);
+    }
+
+    if (stepsPtr != nullptr) {
+        *stepsPtr = steps;
+    }
+
+    if (actionPointsSpentPtr != nullptr) {
+        int actionPointsSpent = std::max(0, steps * std::max(0, stepCost) - _combat_free_move);
+        *actionPointsSpentPtr = std::min(gDude->data.critter.combat.ap, actionPointsSpent);
+    }
+
+    int landingTile = gDude->tile;
+    for (int index = 0; index < steps; index++) {
+        landingTile = tileGetTileInDirection(landingTile, static_cast<Rotation>(rotations[index]), 1);
+    }
+
+    return landingTile;
+}
+
 // 0x417FFC
 int _check_move(int* actionPointsPtr)
 {
@@ -3113,22 +3173,13 @@ int _check_move(int* actionPointsPtr)
 
     if (isInCombat()) {
         if (*actionPointsPtr != -1) {
-            int steps = dudeMoveGetReservedStepLimit(*actionPointsPtr);
-            if (steps != -1) {
-                if (steps == 0) {
-                    return -1;
-                }
-
+            if (dudeMoveGetReservedActionPoints() != -1) {
                 // The walk itself only stops when AP runs out, so end the
-                // path early to keep the attack cost. animateMoveObjectToTile
-                // reads `steps` as a hex limit when the target is occupied.
-                unsigned char rotations[800];
-                int pathLength = _make_path(gDude, gDude->tile, tile, rotations, 0);
-                if (steps < pathLength) {
-                    tile = gDude->tile;
-                    for (int index = 0; index < steps; index++) {
-                        tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[index]), 1);
-                    }
+                // path early to keep the attack cost.
+                int steps;
+                tile = dudeMoveGetLandingTile(tile, *actionPointsPtr, &steps, nullptr);
+                if (tile == -1) {
+                    return -1;
                 }
 
                 // Callers expect AP back, but this hands back hexes. Both

@@ -357,7 +357,6 @@ static bool gameMouseClickOnInterfaceBar();
 static bool gameMouseLongPressUsesLootActionForCritter(Object* object);
 static void gameMouseLandingMarkerInit();
 static void gameMouseLandingMarkerFree();
-static int gameMouseGetMoveLandingTile(const unsigned char* rotations, int pathLength, bool blocked, int reservedActionPoints, int* actionPointsPtr);
 static void gameMouseShowLandingMarker(int tile, int actionPoints, bool reserved);
 static void gameMouseDrawHexLabel(unsigned char* buffer, int width, int height, const char* string, Color color);
 static void gameMouseHideLandingMarker();
@@ -899,13 +898,12 @@ void gameMouseRefresh()
 
         char formattedActionPoints[8];
         Color color;
-        unsigned char rotations[800];
         int landingTile = -1;
         int landingActionPoints = 0;
         gameMouseLandingMarkerReservedActionPoints = gGameMouseLandingMarker != nullptr && isInCombat()
             ? dudeMoveGetReservedActionPoints()
             : -1;
-        int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 1);
+        int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, nullptr, 1);
         if (distance != 0) {
             if (!isInCombat()) {
                 formattedActionPoints[0] = '\0';
@@ -920,22 +918,19 @@ void gameMouseRefresh()
                 } else {
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
                     color = COLOR_RED;
-
-                    if (gGameMouseLandingMarker != nullptr) {
-                        landingTile = gameMouseGetMoveLandingTile(rotations, distance, false, gameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
-                    }
                 }
             }
         } else {
             snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
             color = COLOR_RED;
+        }
 
-            // A move onto an occupied hex stops on the hex before it.
-            if (gGameMouseLandingMarker != nullptr && isInCombat()) {
-                int pathLength = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, rotations, 0);
-                if (pathLength > 1) {
-                    landingTile = gameMouseGetMoveLandingTile(rotations, pathLength - 1, true, gameMouseLandingMarkerReservedActionPoints, &landingActionPoints);
-                }
+        // Mark the hex where a combat move stops short of the cursor.
+        if (gGameMouseLandingMarker != nullptr && isInCombat()) {
+            int actionPoints = gDude->data.critter.combat.ap + _combat_free_move;
+            landingTile = dudeMoveGetLandingTile(gGameMouseHexCursor->tile, actionPoints, nullptr, &landingActionPoints);
+            if (landingTile == gGameMouseHexCursor->tile) {
+                landingTile = -1;
             }
         }
 
@@ -2395,39 +2390,6 @@ static void gameMouseLandingMarkerFree()
         objectDestroy(gGameMouseLandingMarker, nullptr);
         gGameMouseLandingMarker = nullptr;
     }
-}
-
-// Returns the tile where the dude stops after walking `pathLength` steps of
-// `rotations`, or -1 if the move does not start. Stores the AP the walk spends
-// in `actionPointsPtr`. Mirrors animation.cc:
-// - Each step costs its full price, free move first. The walk stops once AP and
-//   free move reach 0, so the last step can cost more than what remains.
-// - `reservedActionPoints` is the attack cost a Ctrl move keeps (-1 without
-//   Ctrl). _check_move cancels the move if nothing is left after it.
-// - On a `blocked` target, animateMoveObjectToTile also caps the walk at one
-//   hex per AP left after the reserve, ignoring crippled legs.
-static int gameMouseGetMoveLandingTile(const unsigned char* rotations, int pathLength, bool blocked, int reservedActionPoints, int* actionPointsPtr)
-{
-    int actionPoints = gDude->data.critter.combat.ap;
-    int budget = actionPoints + _combat_free_move;
-    int moveBudget = budget - std::max(0, reservedActionPoints);
-    if (budget <= 0 || moveBudget <= 0) {
-        return -1;
-    }
-
-    int stepCost = std::max(1, critterGetMovementPointCostAdjustedForCrippledLegs(gDude, 1));
-    int steps = std::min(pathLength, (budget + stepCost - 1) / stepCost);
-    if (blocked) {
-        steps = std::min(steps, moveBudget);
-    }
-    *actionPointsPtr = std::min(actionPoints, std::max(0, steps * stepCost - _combat_free_move));
-
-    int tile = gDude->tile;
-    for (int index = 0; index < steps; index++) {
-        tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[index]), 1);
-    }
-
-    return tile;
 }
 
 static void gameMouseShowLandingMarker(int tile, int actionPoints, bool reserved)

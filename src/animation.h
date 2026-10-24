@@ -68,6 +68,7 @@ int _make_straight_path_func(Object* object, int from, int to, StraightPathNode*
 void _object_animate();
 int dudeMoveGetReservedActionPoints();
 int dudeMoveGetReservedStepLimit(int actionPoints);
+int dudeMoveGetLandingTile(int tile, int actionPoints, int* stepsPtr, int* actionPointsSpentPtr);
 int _check_move(int* actionPointsPtr);
 int _dude_move(int actionPoints);
 int _dude_run(int actionPoints);
