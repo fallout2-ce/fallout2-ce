@@ -1,6 +1,8 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include <initializer_list>
+
 #include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
@@ -141,6 +143,8 @@ int miscItemTurnOff(Object* item_obj);
 int miscItemTurnOffFromQueue(Object* obj, void* data);
 int containerGetMaxSize(Object* container);
 int containerGetTotalSize(Object* container);
+void itemsSetTakenOut(Object* owner, std::initializer_list<Object*> items, Object* hiddenBox);
+void itemsResetTakenOut();
 int ammoGetArmorClassModifier(Object* armor);
 int ammoGetDamageResistanceModifier(Object* armor);
 int ammoGetDamageMultiplier(Object* armor);

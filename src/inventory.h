@@ -44,7 +44,6 @@ struct CritterEquipped {
     Object* leftHand = nullptr;
     Object* rightHand = nullptr;
     Object* armor = nullptr;
-    int weight = 0;
 };
 CritterEquipped critterStripEquipped(Object* critter);
 void critterRestoreEquipped(Object* critter, CritterEquipped& equipped);
