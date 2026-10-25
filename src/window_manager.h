@@ -14,7 +14,7 @@ namespace fallout {
 // The maximum number of buttons in one radio group.
 #define BUTTON_GROUP_BUTTON_LIST_CAPACITY (64)
 
-typedef enum WindowManagerErr {
+enum WindowManagerErr : int {
     WINDOW_MANAGER_OK = 0,
     WINDOW_MANAGER_ERR_INITIALIZING_VIDEO_MODE = 1,
     WINDOW_MANAGER_ERR_NO_MEMORY = 2,
@@ -33,7 +33,7 @@ typedef enum WindowManagerErr {
     WINDOW_MANAGER_ERR_ALREADY_RUNNING = 9,
     WINDOW_MANAGER_ERR_TITLE_NOT_SET = 10,
     WINDOW_MANAGER_ERR_INITIALIZING_INPUT = 11,
-} WindowManagerErr;
+};
 
 typedef enum WindowManagerInitFlags {
     WINDOW_MANAGER_INIT_FLAG_NONE = 0x0,
@@ -179,7 +179,7 @@ typedef void(VideoSystemExitProc)();
 extern bool gWindowSystemInitialized;
 extern int _GNW_wcolor[6];
 
-int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags);
+WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags);
 void windowManagerExit(void);
 int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags);
 

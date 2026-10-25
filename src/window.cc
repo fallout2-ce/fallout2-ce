@@ -1431,7 +1431,6 @@ void _removeProgramReferences_3(Program* program)
 void windowInit(int resolution, int flags)
 {
     char err[COMPAT_MAX_PATH];
-    int rc;
     int i, j;
 
     intLibRegisterProgramDeleteCallback(_removeProgramReferences_3);
@@ -1451,7 +1450,7 @@ void windowInit(int resolution, int flags)
         gManagedWindows[i].window = -1;
     }
 
-    rc = windowManagerInit(_gfx_init[resolution], directDrawFree, flags);
+    WindowManagerErr rc = windowManagerInit(_gfx_init[resolution], directDrawFree, flags);
     if (rc != WINDOW_MANAGER_OK) {
         switch (rc) {
         case WINDOW_MANAGER_ERR_INITIALIZING_VIDEO_MODE:
