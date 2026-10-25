@@ -346,7 +346,7 @@ static bool characterSelectorWindowInit()
         _previousButtonNormalFrmImage.getData(),
         _previousButtonPressedFrmImage.getData(),
         nullptr,
-        0);
+        BUTTON_FLAG_NONE);
     if (gCharacterSelectorWindowPreviousButton == -1) {
         return characterSelectorWindowFatalError(false);
     }
@@ -374,7 +374,7 @@ static bool characterSelectorWindowInit()
         _nextButtonNormalFrmImage.getData(),
         _nextButtonPressedFrmImage.getData(),
         nullptr,
-        0);
+        BUTTON_FLAG_NONE);
     if (gCharacterSelectorWindowNextButton == -1) {
         return characterSelectorWindowFatalError(false);
     }

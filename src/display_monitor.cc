@@ -161,7 +161,7 @@ int displayMonitorInit()
             nullptr,
             nullptr,
             nullptr,
-            0);
+            BUTTON_FLAG_NONE);
         if (gDisplayMonitorScrollUpButton != -1) {
             buttonSetMouseCallbacks(gDisplayMonitorScrollUpButton,
                 displayMonitorScrollUpOnMouseEnter,
@@ -182,7 +182,7 @@ int displayMonitorInit()
             nullptr,
             nullptr,
             nullptr,
-            0);
+            BUTTON_FLAG_NONE);
         if (gDisplayMonitorScrollDownButton != -1) {
             buttonSetMouseCallbacks(gDisplayMonitorScrollDownButton,
                 displayMonitorScrollDownOnMouseEnter,

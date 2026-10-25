@@ -124,7 +124,7 @@ int proto_choose_container_flags(Proto* proto)
         -1,
         '1',
         "Magic Hands Grnd",
-        0);
+        BUTTON_FLAG_NONE);
 
     if ((proto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) != 0) {
         windowDrawText(win,
@@ -150,7 +150,7 @@ int proto_choose_container_flags(Proto* proto)
         -1,
         '2',
         "Cannot Pick Up",
-        0);
+        BUTTON_FLAG_NONE);
 
     if (_proto_action_can_pickup(proto)) {
         windowDrawText(win,
@@ -259,7 +259,7 @@ int proto_subdata_setup_int_button(const char* title, int key, int value, int mi
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
     if (value >= min_value && value < max_value) {
         sprintf(text, "%d", value);
@@ -319,7 +319,7 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
     if (art_list_str(fid, text) != -1) {
         pch = strchr(text, '.');
@@ -374,7 +374,7 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
     if (protoId.valid()) {
         windowDrawText(subwin,
@@ -748,9 +748,9 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
 
     windowDrawBorder(win);
 
-    _win_register_text_button(win, 345, 350, -1, -1, -1, KEY_BRACKET_LEFT, "<<", 0);
-    _win_register_text_button(win, 375, 350, -1, -1, -1, KEY_BRACKET_RIGHT, ">>", 0);
-    _win_register_text_button(win, 10, 340, -1, -1, -1, KEY_BAR, "Done", 0);
+    _win_register_text_button(win, 345, 350, -1, -1, -1, KEY_BRACKET_LEFT, "<<", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 375, 350, -1, -1, -1, KEY_BRACKET_RIGHT, ">>", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 10, 340, -1, -1, -1, KEY_BAR, "Done", BUTTON_FLAG_NONE);
 
     unsigned char* buf = windowGetBuffer(win);
 
@@ -762,7 +762,7 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
 
             bufferDrawRect(buf, pitch, cellX, cellY, cellX + kCellBorderW - 1, cellY + kCellBorderH - 1, COLOR_BLACK_2);
 
-            int btn = buttonCreate(win, cellX, cellY, kCellBorderW, kCellBorderH, -1, -1, -1, keyCode, nullptr, nullptr, nullptr, 0);
+            int btn = buttonCreate(win, cellX, cellY, kCellBorderW, kCellBorderH, -1, -1, -1, keyCode, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
             if (btn != -1) {
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }

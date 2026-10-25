@@ -1096,7 +1096,7 @@ void opAddButton(Program* program)
     y = (y * windowGetYres() + 479) / 480;
     x = (x * windowGetXres() + 639) / 640;
 
-    scriptWindowAddButton(buttonName, x, y, width, height, 0);
+    scriptWindowAddButton(buttonName, x, y, width, height, BUTTON_FLAG_NONE);
 }
 
 // addbuttontext

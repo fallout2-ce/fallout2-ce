@@ -54,7 +54,7 @@ typedef struct ManagedButton {
     int x;
     int y;
     int flags;
-    int field_18;
+    ButtonFlags buttonFlags;
     char name[32];
     Program* program;
     unsigned char* pressed;
@@ -1672,7 +1672,7 @@ bool scriptWindowSetButtonFlag(const char* buttonName, int value)
 }
 
 // 0x4B99C8
-bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, int flags)
+bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, ButtonFlags flags)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;
@@ -1773,12 +1773,12 @@ bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int 
     managedButton->hover = nullptr;
     managedButton->pressed = pressed;
     managedButton->normal = normal;
-    managedButton->field_18 = flags;
+    managedButton->buttonFlags = flags;
     managedButton->field_4C = nullptr;
     buttonSetMouseCallbacks(managedButton->btn, _doButtonOn, _doButtonOff, _doButtonPress, _doButtonRelease);
     scriptWindowSetButtonFlag(buttonName, 1);
 
-    if ((flags & BUTTON_FLAG_TRANSPARENT) != 0) {
+    if ((flags & BUTTON_FLAG_TRANSPARENT) != BUTTON_FLAG_NONE) {
         buttonSetMask(managedButton->btn, normal);
     }
 
@@ -1823,7 +1823,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
                 }
             }
 
-            if ((managedButton->field_18 & 0x20) != 0) {
+            if ((managedButton->buttonFlags & BUTTON_FLAG_TRANSPARENT) != BUTTON_FLAG_NONE) {
                 buttonSetMask(managedButton->btn, managedButton->normal);
             }
 
@@ -2062,7 +2062,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
 
             internal_free_safe(buffer, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 2078
 
-            if ((managedButton->field_18 & 0x20) != 0) {
+            if ((managedButton->buttonFlags & BUTTON_FLAG_TRANSPARENT) != BUTTON_FLAG_NONE) {
                 buttonSetMask(managedButton->btn, managedButton->normal);
             }
 

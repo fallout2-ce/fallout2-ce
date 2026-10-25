@@ -1613,7 +1613,7 @@ static int characterEditorWindowInit()
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_OFF].getData(),
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_ON].getData(),
             nullptr,
-            96);
+            BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
         gCharacterEditorSliderMinusBtn = buttonCreate(
             gCharacterEditorWindow,
             614,
@@ -1627,7 +1627,7 @@ static int characterEditorWindowInit()
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
             nullptr,
-            96);
+            BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
         buttonSetCallbacks(gCharacterEditorSliderPlusBtn, _gsound_red_butt_press, nullptr);
         buttonSetCallbacks(gCharacterEditorSliderMinusBtn, _gsound_red_butt_press, nullptr);
     }
@@ -1654,7 +1654,7 @@ static int characterEditorWindowInit()
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_NAME_OFF],
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_NAME_ON],
             nullptr,
-            32);
+            BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             buttonSetMask(btn, _editorFrmImages[EDITOR_GRAPHIC_NAME_MASK].getData());
             buttonSetCallbacks(btn, _gsound_lrg_butt_press, nullptr);
@@ -1674,7 +1674,7 @@ static int characterEditorWindowInit()
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_AGE_OFF],
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_AGE_ON],
             nullptr,
-            32);
+            BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             buttonSetMask(btn, _editorFrmImages[EDITOR_GRAPHIC_AGE_MASK].getData());
             buttonSetCallbacks(btn, _gsound_lrg_butt_press, nullptr);
@@ -1694,7 +1694,7 @@ static int characterEditorWindowInit()
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_SEX_OFF],
             gCharacterEditorFrmCopy[EDITOR_GRAPHIC_SEX_ON],
             nullptr,
-            32);
+            BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
             buttonSetMask(btn, _editorFrmImages[EDITOR_GRAPHIC_SEX_MASK].getData());
             buttonSetCallbacks(btn, _gsound_lrg_butt_press, nullptr);
@@ -1715,7 +1715,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
-                32);
+                BUTTON_FLAG_TRANSPARENT);
             if (gCharacterEditorTagSkillBtns[i] != -1) {
                 buttonSetCallbacks(gCharacterEditorTagSkillBtns[i], _gsound_red_butt_press, nullptr);
             }
@@ -1737,7 +1737,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
-                32);
+                BUTTON_FLAG_TRANSPARENT);
             if (gCharacterEditorOptionalTraitBtns[i] != -1) {
                 buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
             }
@@ -1759,7 +1759,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
-                32);
+                BUTTON_FLAG_TRANSPARENT);
             if (gCharacterEditorOptionalTraitBtns[i] != -1) {
                 buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
             }
@@ -1825,7 +1825,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_ON].getData(),
                 nullptr,
-                32);
+                BUTTON_FLAG_TRANSPARENT);
             if (gCharacterEditorPrimaryStatPlusBtns[i] != -1) {
                 buttonSetCallbacks(gCharacterEditorPrimaryStatPlusBtns[i], _gsound_red_butt_press, nullptr);
             }
@@ -1842,7 +1842,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
                 nullptr,
-                32);
+                BUTTON_FLAG_TRANSPARENT);
             if (gCharacterEditorPrimaryStatMinusBtns[i] != -1) {
                 buttonSetCallbacks(gCharacterEditorPrimaryStatMinusBtns[i], _gsound_red_butt_press, nullptr);
             }
@@ -3024,7 +3024,7 @@ static void characterEditorDrawSkills(int a1)
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_OFF].getData(),
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_ON].getData(),
                     nullptr,
-                    96);
+                    BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
                 buttonSetCallbacks(gCharacterEditorSliderPlusBtn, _gsound_red_butt_press, nullptr);
             }
 
@@ -3042,7 +3042,7 @@ static void characterEditorDrawSkills(int a1)
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
                     nullptr,
-                    96);
+                    BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
                 buttonSetCallbacks(gCharacterEditorSliderMinusBtn, _gsound_red_butt_press, nullptr);
             }
         }
@@ -4668,21 +4668,21 @@ static void characterEditorResetScreen()
 // 0x43A5BC RegInfoAreas
 static void characterEditorRegisterInfoAreas()
 {
-    buttonCreate(gCharacterEditorWindow, 19, 38, 125, 227, -1, -1, 525, -1, nullptr, nullptr, nullptr, 0);
-    buttonCreate(gCharacterEditorWindow, 28, 280, 124, 32, -1, -1, 526, -1, nullptr, nullptr, nullptr, 0);
+    buttonCreate(gCharacterEditorWindow, 19, 38, 125, 227, -1, -1, 525, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+    buttonCreate(gCharacterEditorWindow, 28, 280, 124, 32, -1, -1, 526, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
 
     if (gCharacterEditorIsCreationMode) {
-        buttonCreate(gCharacterEditorWindow, 52, 324, 169, 20, -1, -1, 533, -1, nullptr, nullptr, nullptr, 0);
-        buttonCreate(gCharacterEditorWindow, 47, 353, 245, 100, -1, -1, 534, -1, nullptr, nullptr, nullptr, 0);
+        buttonCreate(gCharacterEditorWindow, 52, 324, 169, 20, -1, -1, 533, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+        buttonCreate(gCharacterEditorWindow, 47, 353, 245, 100, -1, -1, 534, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
     } else {
-        buttonCreate(gCharacterEditorWindow, 28, 363, 283, 105, -1, -1, 527, -1, nullptr, nullptr, nullptr, 0);
+        buttonCreate(gCharacterEditorWindow, 28, 363, 283, 105, -1, -1, 527, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
     }
 
-    buttonCreate(gCharacterEditorWindow, 191, 41, 122, 110, -1, -1, 528, -1, nullptr, nullptr, nullptr, 0);
-    buttonCreate(gCharacterEditorWindow, 191, 175, 122, 135, -1, -1, 529, -1, nullptr, nullptr, nullptr, 0);
-    buttonCreate(gCharacterEditorWindow, 376, 5, 223, 20, -1, -1, 530, -1, nullptr, nullptr, nullptr, 0);
-    buttonCreate(gCharacterEditorWindow, 370, 27, 223, 195, -1, -1, 531, -1, nullptr, nullptr, nullptr, 0);
-    buttonCreate(gCharacterEditorWindow, 396, 228, 171, 25, -1, -1, 532, -1, nullptr, nullptr, nullptr, 0);
+    buttonCreate(gCharacterEditorWindow, 191, 41, 122, 110, -1, -1, 528, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+    buttonCreate(gCharacterEditorWindow, 191, 175, 122, 135, -1, -1, 529, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+    buttonCreate(gCharacterEditorWindow, 376, 5, 223, 20, -1, -1, 530, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+    buttonCreate(gCharacterEditorWindow, 370, 27, 223, 195, -1, -1, 531, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+    buttonCreate(gCharacterEditorWindow, 396, 228, 171, 25, -1, -1, 532, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
 }
 
 // copy character to editor
@@ -6925,7 +6925,7 @@ static int characterEditorFolderViewInit()
     gCharacterEditorKillsFolderTopLine = 0;
 
     if (gCharacterEditorFolderViewScrollUpBtn == -1) {
-        gCharacterEditorFolderViewScrollUpBtn = buttonCreate(gCharacterEditorWindow, 317, 364, _editorFrmImages[22].getWidth(), _editorFrmImages[22].getHeight(), -1, -1, -1, 17000, _editorFrmImages[21].getData(), _editorFrmImages[22].getData(), nullptr, 32);
+        gCharacterEditorFolderViewScrollUpBtn = buttonCreate(gCharacterEditorWindow, 317, 364, _editorFrmImages[22].getWidth(), _editorFrmImages[22].getHeight(), -1, -1, -1, 17000, _editorFrmImages[21].getData(), _editorFrmImages[22].getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
         if (gCharacterEditorFolderViewScrollUpBtn == -1) {
             return -1;
         }
@@ -6946,7 +6946,7 @@ static int characterEditorFolderViewInit()
             _editorFrmImages[3].getData(),
             _editorFrmImages[4].getData(),
             nullptr,
-            32);
+            BUTTON_FLAG_TRANSPARENT);
         if (gCharacterEditorFolderViewScrollDownBtn == -1) {
             buttonDestroy(gCharacterEditorFolderViewScrollUpBtn);
             return -1;

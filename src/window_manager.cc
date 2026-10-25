@@ -33,7 +33,7 @@ static void _win_clip(Window* window, RectListNode** rect, unsigned char* dest);
 static void win_drag(int win);
 static void _refresh_all(Rect* rect, unsigned char* dest);
 static Button* buttonGetButton(int btn, Window** out_win);
-static Button* buttonCreateInternal(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, int flags, unsigned char* up, unsigned char* dn, unsigned char* hover);
+static Button* buttonCreateInternal(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, ButtonFlags flags, unsigned char* up, unsigned char* dn, unsigned char* hover);
 static int _GNW_check_buttons(Window* window, int* keyCodePtr);
 static bool _button_under_mouse(Button* button, Rect* rect);
 static void buttonFree(Button* ptr);
@@ -1387,7 +1387,7 @@ bool showMessageBox(const char* text)
 }
 
 // 0x4D8260
-int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* normal, unsigned char* pressed, unsigned char* hover, int flags)
+int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* normal, unsigned char* pressed, unsigned char* hover, ButtonFlags flags)
 {
     Window* window = windowGetWindow(win);
 
@@ -1415,7 +1415,7 @@ int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEve
 
 int buttonCreateWithFrm(int win, int x, int y,
     int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode,
-    const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId, const InterfaceFrmId& hoverId, int flags)
+    const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId, const InterfaceFrmId& hoverId, ButtonFlags flags)
 {
     FrmImage normalFrm;
     if (!normalFrm.lock(normalId)) return -1;
@@ -1463,7 +1463,7 @@ int buttonSetDisabledFrm(int btn,
 }
 
 // 0x4D8308
-int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, int flags)
+int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, ButtonFlags flags)
 {
     Window* window = windowGetWindow(win);
 
@@ -1710,7 +1710,7 @@ int buttonSetMask(int btn, unsigned char* mask)
 }
 
 // 0x4D8854
-Button* buttonCreateInternal(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, int flags, unsigned char* up, unsigned char* dn, unsigned char* hover)
+Button* buttonCreateInternal(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, ButtonFlags flags, unsigned char* up, unsigned char* dn, unsigned char* hover)
 {
     Window* window = windowGetWindow(win);
     if (window == nullptr) {
@@ -1724,12 +1724,12 @@ Button* buttonCreateInternal(int win, int x, int y, int width, int height, int m
 
     new (&button->frmImages) std::vector<FrmImage>();
 
-    if ((flags & BUTTON_FLAG_CHECKABLE) == 0) {
-        if ((flags & BUTTON_FLAG_CHECK_ON_DOWN) != 0) {
+    if ((flags & BUTTON_FLAG_CHECKABLE) == BUTTON_FLAG_NONE) {
+        if ((flags & BUTTON_FLAG_CHECK_ON_DOWN) != BUTTON_FLAG_NONE) {
             flags &= ~BUTTON_FLAG_CHECK_ON_DOWN;
         }
 
-        if ((flags & BUTTON_FLAG_NO_TOGGLE_OFF) != 0) {
+        if ((flags & BUTTON_FLAG_NO_TOGGLE_OFF) != BUTTON_FLAG_NONE) {
             flags &= ~BUTTON_FLAG_NO_TOGGLE_OFF;
         }
     }
@@ -2355,7 +2355,7 @@ int _win_set_button_rest_state(int btn, bool checked, int flags)
         return -1;
     }
 
-    if ((button->flags & BUTTON_FLAG_CHECKABLE) != 0) {
+    if ((button->flags & BUTTON_FLAG_CHECKABLE) != BUTTON_FLAG_NONE) {
         int keyCode = -1;
 
         if ((button->flags & BUTTON_FLAG_CHECKED) != 0) {
@@ -2472,7 +2472,7 @@ int _button_check_group(Button* button)
         if (button->buttonGroup->currChecked > 0) {
             for (int index = 0; index < button->buttonGroup->buttonsLength; index++) {
                 Button* groupButton = button->buttonGroup->buttons[index];
-                if ((groupButton->flags & BUTTON_FLAG_CHECKED) != 0) {
+                if ((groupButton->flags & BUTTON_FLAG_CHECKED) != BUTTON_FLAG_NONE) {
                     groupButton->flags &= ~BUTTON_FLAG_CHECKED;
 
                     Window* window;

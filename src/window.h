@@ -101,7 +101,7 @@ void windowInit(int resolution, WindowManagerInitFlags flags);
 void windowClose();
 bool scriptWindowDeleteButton(const char* buttonName);
 bool scriptWindowSetButtonFlag(const char* buttonName, int value);
-bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, int flags);
+bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, ButtonFlags flags);
 bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, char* normalFileName, char* hoverFileName);
 bool scriptWindowAddButtonProc(const char* buttonName, Program* program, int mouseEnterProc, int mouseExitProc, int mouseDownProc, int mouseUpProc);
 bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, int rightMouseDownProc, int rightMouseUpProc);

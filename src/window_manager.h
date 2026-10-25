@@ -85,7 +85,7 @@ inline WindowFlags& operator|=(WindowFlags& lhs, WindowFlags rhs)
     return lhs;
 }
 
-typedef enum ButtonFlags {
+enum ButtonFlags : unsigned int {
     // Button keeps a persistent checked state and uses the pressed image while checked.
     //
     // Seen in-game on toggles like the automap hi/low switch. Combining this
@@ -94,6 +94,7 @@ typedef enum ButtonFlags {
     // `BUTTON_FLAG_NO_TOGGLE_OFF` and `BUTTON_FLAG_RADIO` yields radio-button
     // behavior like the character editor sex selector and party disposition
     // controls.
+    BUTTON_FLAG_NONE = 0x00,
     BUTTON_FLAG_CHECKABLE = 0x01,
 
     // Checkable button toggles on mouse-down instead of mouse-up.
@@ -111,7 +112,34 @@ typedef enum ButtonFlags {
     BUTTON_FLAG_CHECKED = 0x020000,
     BUTTON_FLAG_RADIO = 0x040000,
     BUTTON_FLAG_RIGHT_MOUSE_BUTTON_CONFIGURED = 0x080000,
-} ButtonFlags;
+};
+
+constexpr inline ButtonFlags operator&(ButtonFlags lhs, ButtonFlags rhs)
+{
+    return static_cast<ButtonFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ButtonFlags operator|(ButtonFlags lhs, ButtonFlags rhs)
+{
+    return static_cast<ButtonFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ButtonFlags operator~(ButtonFlags rhs)
+{
+    return static_cast<ButtonFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline ButtonFlags& operator&=(ButtonFlags& lhs, ButtonFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ButtonFlags& operator|=(ButtonFlags& lhs, ButtonFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef struct MenuPulldown {
     Rect rect;
@@ -158,7 +186,7 @@ typedef void RadioButtonCallback(int btn);
 
 typedef struct Button {
     int id;
-    int flags;
+    ButtonFlags flags;
     Rect rect;
     int mouseEnterEventCode;
     int mouseExitEventCode;
@@ -260,14 +288,14 @@ int _win_check_all_buttons();
 int _GNW_check_menu_bars(int input);
 void programWindowSetTitle(const char* title);
 bool showMessageBox(const char* str);
-int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, int flags = 0);
+int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, ButtonFlags flags = BUTTON_FLAG_NONE);
 // Same as buttonCreate, but accepts InterfaceFrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.
-int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {}, int flags = 0);
+int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {}, ButtonFlags flags = BUTTON_FLAG_NONE);
 // Same as _win_register_button_disable, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.
 int buttonSetDisabledFrm(int btn, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {});
-int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, int flags);
+int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, ButtonFlags flags);
 int _win_register_button_disable(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover);
 int _win_register_button_image(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover, bool draw);
 int buttonSetMouseCallbacks(int btn, ButtonCallback* mouseEnterProc, ButtonCallback* mouseExitProc, ButtonCallback* mouseDownProc, ButtonCallback* mouseUpProc);
