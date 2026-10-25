@@ -237,8 +237,8 @@ static int _qscmp(const void* a1, const void* a2);
 static void pipboyWindowHandleAutomaps(int a1);
 static int _PrintAMelevList(int a1);
 static int _PrintAMList(int a1);
-static void pipboyHandleVideoArchive(int a1);
-static int pipboyRenderVideoArchive(int a1);
+static void pipboyHandleVideoArchive(int eventCode);
+static int pipboyRenderVideoArchive(int selectedEntry);
 static void pipboyHandleAlarmClock(int eventCode);
 static void pipboyWindowRenderRestOptions(int a1);
 static void pipboyDrawHitPoints();
@@ -2005,29 +2005,30 @@ static int _PrintAMList(int selectedLocation)
 }
 
 // 0x49932C
-static void pipboyHandleVideoArchive(int a1)
+static void pipboyHandleVideoArchive(int eventCode)
 {
-    if (a1 == 1024) {
+    if (eventCode == 1024) {
         pipboyWindowDestroyButtons();
         _view_page = pipboyRenderVideoArchive(-1);
         pipboyWindowCreateButtons(2, _view_page, false);
-    } else if (a1 >= 0 && a1 <= _view_page) {
+    } else if (eventCode >= 0 && eventCode <= _view_page) {
         soundPlayFile("ib1p1xx1");
 
-        pipboyRenderVideoArchive(a1);
+        pipboyRenderVideoArchive(eventCode);
 
-        int movie;
-        for (movie = 2; movie < 16; movie++) {
+        int remainingMovieSelection = eventCode;
+        GameMovie movie;
+        for (movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
             if (gameMovieIsSeen(movie)) {
-                a1--;
-                if (a1 <= 0) {
+                remainingMovieSelection--;
+                if (remainingMovieSelection <= 0) {
                     break;
                 }
             }
         }
 
-        if (movie < MOVIE_COUNT) {
-            gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
+        if (gameMovieIsValid(movie)) {
+            gameMoviePlay(movie, GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");
         }
@@ -2040,14 +2041,13 @@ static void pipboyHandleVideoArchive(int a1)
 }
 
 // 0x4993DC
-static int pipboyRenderVideoArchive(int a1)
+static int pipboyRenderVideoArchive(int selectedEntry)
 {
     const char* text;
-    int i;
-    int v12;
+    int selectedEntryIndex;
     int msg_num;
-    int v5;
-    int v8;
+    int visibleEntryCount;
+    int entryIndex;
     Color color;
 
     blitBufferToBuffer(_pipboyFrmImages[PIPBOY_FRM_BACKGROUND].getData() + PIPBOY_WINDOW_WIDTH * PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_X,
@@ -2069,18 +2069,18 @@ static int pipboyRenderVideoArchive(int a1)
         gPipboyCurrentLine = 2;
     }
 
-    v5 = 0;
-    v12 = a1 - 1;
+    visibleEntryCount = 0;
+    selectedEntryIndex = selectedEntry - 1;
 
     // 502 - Elder Speech
     // ...
     // 516 - Credits
     msg_num = 502;
 
-    for (i = 2; i < 16; i++) {
-        if (gameMovieIsSeen(i)) {
-            v8 = v5++;
-            if (v8 == v12) {
+    for (GameMovie movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
+        if (gameMovieIsSeen(movie)) {
+            entryIndex = visibleEntryCount++;
+            if (entryIndex == selectedEntryIndex) {
                 color = COLOR_LIGHT_YELLOW;
             } else {
                 color = COLOR_GREEN;
@@ -2097,7 +2097,7 @@ static int pipboyRenderVideoArchive(int a1)
 
     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
 
-    return v5;
+    return visibleEntryCount;
 }
 
 // 0x499518

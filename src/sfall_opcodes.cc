@@ -270,9 +270,9 @@ static void op_get_year(Program* program)
 
 static void op_set_movie_path(Program* program)
 {
-    int movie = programStackPopInteger(program);
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
     const char* fileName = programStackPopString(program);
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+    if (!gameMovieExtendedIsValid(movie) || fileName == nullptr) {
         programPrintError("set_movie_path: invalid argument");
         return;
     }
@@ -289,7 +289,7 @@ static void op_set_movie_path(Program* program)
 
 static void op_mark_movie_played(Program* program)
 {
-    int movie = programStackPopInteger(program);
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
     gameMovieMarkSeen(movie);
 }
 

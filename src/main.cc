@@ -96,9 +96,9 @@ int falloutMain(int argc, char** argv)
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies = settings.ui.skip_opening_movies;
     if (skipOpeningMovies < 1) {
-        gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
-        gameMoviePlay(MOVIE_INTRO, 0);
-        gameMoviePlay(MOVIE_CREDITS, 0);
+        gameMoviePlay(MOVIE_IPLOGO, GameMovieFlags::FadeIn);
+        gameMoviePlay(MOVIE_INTRO, GameMovieFlags::None);
+        gameMoviePlay(MOVIE_CREDITS, GameMovieFlags::None);
     } else {
         // If the splash is shown but opening movies are skipped, fade it out
         // before the main menu starts its normal fade-in.
@@ -128,15 +128,15 @@ int falloutMain(int argc, char** argv)
             switch (mainMenuRc) {
             case MAIN_MENU_INTRO:
                 mainMenuWindowHide(true);
-                gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_STOP_MUSIC);
-                gameMoviePlay(MOVIE_CREDITS, 0);
+                gameMoviePlay(MOVIE_INTRO, GameMovieFlags::StopMusic);
+                gameMoviePlay(MOVIE_CREDITS, GameMovieFlags::None);
                 break;
             case MAIN_MENU_NEW_GAME: {
                 mainMenuBeginSubscreen();
                 if (characterSelectorOpen() == 2) {
                     mainMenuFinishSubscreen();
 
-                    gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
+                    gameMoviePlay(MOVIE_ELDER, GameMovieFlags::StopMusic);
                     randomSeedPrerandom(-1);
 
                     // SFALL: Call "before start" event
@@ -196,7 +196,7 @@ int falloutMain(int argc, char** argv)
                 // FALLTHROUGH
             case MAIN_MENU_SCREENSAVER:
                 mainMenuWindowHide(true);
-                gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
+                gameMoviePlay(MOVIE_INTRO, GameMovieFlags::PauseMusic);
                 break;
             case MAIN_MENU_OPTIONS: {
                 mainMenuBeginSubscreen();

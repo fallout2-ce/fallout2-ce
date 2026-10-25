@@ -4,6 +4,7 @@
 #include "animation_defs.h"
 #include "combat_defs.h"
 #include "game.h"
+#include "game_movie.h"
 #include "game_sound.h"
 #include "object.h"
 #include "proto_types.h"
@@ -505,6 +506,17 @@ inline SoundEffectActionType programStackPopEnum(Program* program)
     }
 
     return static_cast<SoundEffectActionType>(actionType);
+}
+
+template <>
+inline GameMovie programStackPopEnum(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    if (!gameMovieExtendedIsValid(movie)) {
+        programPrintError("invalid movie %d", movie);
+    }
+
+    return static_cast<GameMovie>(movie);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
