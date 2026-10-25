@@ -12,15 +12,18 @@ enum class Roll : int {
     CriticalSuccess,
 };
 
-constexpr inline bool rollIsValid(int roll) {
+constexpr inline bool rollIsValid(int roll)
+{
     return roll >= static_cast<int>(Roll::CriticalFailure) && roll <= static_cast<int>(Roll::CriticalSuccess);
 }
 
-constexpr inline int rollIsFailure(Roll roll) {
+constexpr inline int rollIsFailure(Roll roll)
+{
     return roll == Roll::Failure || roll == Roll::CriticalFailure;
 }
 
-constexpr inline int rollIsSuccess(Roll roll) {
+constexpr inline int rollIsSuccess(Roll roll)
+{
     return roll == Roll::Success || roll == Roll::CriticalSuccess;
 }
 
