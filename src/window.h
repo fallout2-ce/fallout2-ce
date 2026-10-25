@@ -6,6 +6,7 @@
 #include "interpreter.h"
 #include "region.h"
 #include "window_defs.h"
+#include "window_manager.h"
 
 namespace fallout {
 
@@ -96,7 +97,7 @@ bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int
 int windowGetXres();
 int windowGetYres();
 void _removeProgramReferences_3(Program* program);
-void windowInit(int resolution, int flags);
+void windowInit(int resolution, WindowManagerInitFlags flags);
 void windowClose();
 bool scriptWindowDeleteButton(const char* buttonName);
 bool scriptWindowSetButtonFlag(const char* buttonName, int value);

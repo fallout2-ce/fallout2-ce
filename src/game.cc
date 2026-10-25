@@ -139,7 +139,7 @@ bool gGameLoaded = false;
 static void** gGameGlobalPointers = nullptr;
 
 // 0x442580
-int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int flags, int argc, char** argv)
+int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, WindowManagerInitFlags flags, int argc, char** argv)
 {
     char path[COMPAT_MAX_PATH];
 

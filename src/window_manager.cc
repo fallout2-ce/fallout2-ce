@@ -110,7 +110,7 @@ static void* _GNW_texture;
 static ButtonGroup gButtonGroups[BUTTON_GROUP_LIST_CAPACITY];
 
 // 0x4D5C30
-WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags)
+WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, WindowManagerInitFlags flags)
 {
 #ifdef _WIN32
     CloseHandle(GNW95_mutex);

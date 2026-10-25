@@ -35,10 +35,10 @@ enum WindowManagerErr : int {
     WINDOW_MANAGER_ERR_INITIALIZING_INPUT = 11,
 };
 
-typedef enum WindowManagerInitFlags {
+enum WindowManagerInitFlags : int {
     WINDOW_MANAGER_INIT_FLAG_NONE = 0x0,
     WINDOW_MANAGER_INIT_FLAG_BUFFERED = 0x1,
-} WindowManagerInitFlags;
+};
 
 typedef enum WindowFlags {
     // Use system window flags which are set during game startup and does not
@@ -179,7 +179,7 @@ typedef void(VideoSystemExitProc)();
 extern bool gWindowSystemInitialized;
 extern int _GNW_wcolor[6];
 
-WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags);
+WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, WindowManagerInitFlags flags);
 void windowManagerExit(void);
 int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags);
 

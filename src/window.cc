@@ -1428,7 +1428,7 @@ void _removeProgramReferences_3(Program* program)
 }
 
 // 0x4B9190 initWindow
-void windowInit(int resolution, int flags)
+void windowInit(int resolution, WindowManagerInitFlags flags)
 {
     char err[COMPAT_MAX_PATH];
     int i, j;
