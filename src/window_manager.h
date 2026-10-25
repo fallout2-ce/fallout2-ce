@@ -107,7 +107,7 @@ enum ButtonFlags : unsigned int {
     // Specifies that the button is a drag handle for parent window.
     BUTTON_DRAG_HANDLE = 0x10,
     BUTTON_FLAG_TRANSPARENT = 0x20,
-    BUTTON_FLAG_0x40 = 0x40,
+    BUTTON_FLAG_CALLBACK_PRESERVES_EVENT = 0x40,
     BUTTON_FLAG_GRAPHIC = 0x010000,
     BUTTON_FLAG_CHECKED = 0x020000,
     BUTTON_FLAG_RADIO = 0x040000,
@@ -190,7 +190,7 @@ typedef struct Button {
     Rect rect;
     int mouseEnterEventCode;
     int mouseExitEventCode;
-    int lefMouseDownEventCode;
+    int leftMouseDownEventCode;
     int leftMouseUpEventCode;
     int rightMouseDownEventCode;
     int rightMouseUpEventCode;

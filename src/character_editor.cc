@@ -1613,7 +1613,7 @@ static int characterEditorWindowInit()
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_OFF].getData(),
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_ON].getData(),
             nullptr,
-            BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
+            BUTTON_FLAG_CALLBACK_PRESERVES_EVENT | BUTTON_FLAG_TRANSPARENT);
         gCharacterEditorSliderMinusBtn = buttonCreate(
             gCharacterEditorWindow,
             614,
@@ -1627,7 +1627,7 @@ static int characterEditorWindowInit()
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
             _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
             nullptr,
-            BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
+            BUTTON_FLAG_CALLBACK_PRESERVES_EVENT | BUTTON_FLAG_TRANSPARENT);
         buttonSetCallbacks(gCharacterEditorSliderPlusBtn, _gsound_red_butt_press, nullptr);
         buttonSetCallbacks(gCharacterEditorSliderMinusBtn, _gsound_red_butt_press, nullptr);
     }
@@ -3024,7 +3024,7 @@ static void characterEditorDrawSkills(int a1)
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_OFF].getData(),
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_PLUS_ON].getData(),
                     nullptr,
-                    BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
+                    BUTTON_FLAG_CALLBACK_PRESERVES_EVENT | BUTTON_FLAG_TRANSPARENT);
                 buttonSetCallbacks(gCharacterEditorSliderPlusBtn, _gsound_red_butt_press, nullptr);
             }
 
@@ -3042,7 +3042,7 @@ static void characterEditorDrawSkills(int a1)
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
                     _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
                     nullptr,
-                    BUTTON_FLAG_0x40 | BUTTON_FLAG_TRANSPARENT);
+                    BUTTON_FLAG_CALLBACK_PRESERVES_EVENT | BUTTON_FLAG_TRANSPARENT);
                 buttonSetCallbacks(gCharacterEditorSliderMinusBtn, _gsound_red_butt_press, nullptr);
             }
         }
