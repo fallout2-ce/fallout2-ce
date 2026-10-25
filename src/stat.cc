@@ -926,7 +926,7 @@ SkillDexFrmId statGetFrmId(Stat stat)
 // `NULL` if you're not interested in this value.
 //
 // 0x4AFA78
-int statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
+Roll statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
 {
     int value = critterGetStat(critter, stat) + modifier;
     int chance = randomBetween(PRIMARY_STAT_MIN, PRIMARY_STAT_MAX);

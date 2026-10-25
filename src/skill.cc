@@ -742,7 +742,7 @@ int skillSubForce(Object* obj, Skill skill)
 }
 
 // 0x4AAAA4
-int skillRoll(Object* critter, Skill skill, int modifier, int* howMuch)
+Roll skillRoll(Object* critter, Skill skill, int modifier, int* howMuch)
 {
     if (!skillIsValid(skill)) {
         return ROLL_FAILURE;
@@ -897,7 +897,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
         if (currentHp < maximumHp) {
             paletteFadeTo(gPaletteBlack);
 
-            int roll;
+            Roll roll;
             if (critterGetBodyType(target) == BODY_TYPE_ROBOTIC) {
                 roll = ROLL_FAILURE;
             } else {
@@ -1005,7 +1005,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                     if ((target->data.critter.combat.results & flags[index]) != 0) {
                         damageHealingAttempts++;
 
-                        int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
+                        Roll roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                         // 530: damaged eye
                         // 531: crippled left arm
@@ -1050,7 +1050,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                 }
             }
 
-            int roll;
+            Roll roll;
             if (critterGetBodyType(target) == BODY_TYPE_ROBOTIC) {
                 roll = ROLL_FAILURE;
             } else {
@@ -1191,7 +1191,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                 if ((target->data.critter.combat.results & flags[index]) != 0) {
                     damageHealingAttempts++;
 
-                    int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
+                    Roll roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                     // 530: damaged eye
                     // 531: crippled left arm
@@ -1235,7 +1235,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
             }
 
             int skillValue = skillGetValue(obj, skill);
-            int roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
+            Roll roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
                 hpToHeal = randomBetween(minimumHpToHeal + 4, maximumHpToHeal + 10);
@@ -1375,7 +1375,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         stealChance = 95;
     }
 
-    int stealRoll;
+    Roll stealRoll;
     if (thief == gDude && objectIsPartyMember(target)) {
         stealRoll = ROLL_CRITICAL_SUCCESS;
     } else {
@@ -1383,7 +1383,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         stealRoll = randomRoll(stealChance, criticalChance, &howMuch);
     }
 
-    int catchRoll;
+    Roll catchRoll;
     if (stealRoll == ROLL_CRITICAL_SUCCESS) {
         catchRoll = ROLL_CRITICAL_FAILURE;
     } else if (stealRoll == ROLL_CRITICAL_FAILURE) {

@@ -2548,7 +2548,7 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
     if (useSecondaryMode) {
         if (attackType != ATTACK_TYPE_THROW
             || _ai_search_inven_weap(attacker, false, defender) != nullptr
-            || statRoll(attacker, STAT_INTELLIGENCE, 0, nullptr) <= 1) {
+            || statRoll(attacker, STAT_INTELLIGENCE, 0, nullptr) <= ROLL_FAILURE) {
             return HIT_MODE_RIGHT_WEAPON_SECONDARY;
         }
     }

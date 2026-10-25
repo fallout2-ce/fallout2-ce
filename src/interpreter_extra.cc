@@ -598,7 +598,7 @@ static void opRollVsSkill(Program* program)
     Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int roll = ROLL_CRITICAL_FAILURE;
+    Roll roll = ROLL_CRITICAL_FAILURE;
     if (object != nullptr) {
         if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
             int sid = scriptGetSid(program);
@@ -637,7 +637,7 @@ static void opDoCheck(Program* program)
     Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int roll = 0;
+    Roll roll = ROLL_CRITICAL_FAILURE;
     if (object != nullptr) {
         int sid = scriptGetSid(program);
 

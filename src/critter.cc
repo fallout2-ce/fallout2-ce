@@ -1372,7 +1372,7 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
     }
 
     if (ProtoId(critter).objectType() == OBJ_TYPE_CRITTER) {
-        if (hitMe == nullptr || critter->data.critter.combat.team != hitMe->data.critter.combat.team || (statRoll(critter, STAT_INTELLIGENCE, -1, nullptr) < 2 && (!objectIsPartyMember(critter) || !objectIsPartyMember(hitMe)))) {
+        if (hitMe == nullptr || critter->data.critter.combat.team != hitMe->data.critter.combat.team || (statRoll(critter, STAT_INTELLIGENCE, -1, nullptr) <= ROLL_FAILURE && (!objectIsPartyMember(critter) || !objectIsPartyMember(hitMe)))) {
             critter->data.critter.combat.whoHitMe = hitMe;
             if (hitMe == gDude) {
                 reactionSetValue(critter, -3);

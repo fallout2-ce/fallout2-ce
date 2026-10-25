@@ -116,7 +116,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
 static int _shoot_along_path(Attack* attack, int endTile, int rounds, AnimationType anim);
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim);
+static Roll _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim);
 static int attackComputeEnhancedKnockout(Attack* attack);
 static int attackCompute(Attack* attack);
 static int attackComputeCriticalHit(Attack* a1);
@@ -3795,7 +3795,7 @@ static bool _check_ranged_miss(Attack* attack)
     int range = weaponGetRange(attack->attacker, attack->hitMode);
     int to = _tile_num_beyond(attack->attacker->tile, attack->defender->tile, range);
 
-    int roll = ROLL_FAILURE;
+    Roll roll = ROLL_FAILURE;
     Object* critter = attack->attacker;
     if (critter != nullptr) {
         int curr = attack->attacker->tile;
@@ -3919,7 +3919,7 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, AnimationT
 }
 
 // 0x423488 compute_spray
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim)
+static Roll _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim)
 {
     *roundsHitMainTargetPtr = 0;
 
@@ -3948,7 +3948,7 @@ static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarget
     int ammoQuantity = *roundsFiredPtr;
 
     int criticalChance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
-    int roll = randomRoll(accuracy, criticalChance, nullptr);
+    Roll roll = randomRoll(accuracy, criticalChance, nullptr);
 
     if (roll == ROLL_CRITICAL_FAILURE) {
         return roll;
@@ -4079,7 +4079,7 @@ static int attackCompute(Attack* attack)
     int damageMultiplier = 2;
     int roundsFired = 1;
 
-    int roll;
+    Roll roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);

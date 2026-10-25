@@ -1000,7 +1000,7 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
 
             int delay = 10 * seconds;
 
-            int roll;
+            Roll roll;
             if (perkHasRank(gDude, PERK_DEMOLITION_EXPERT)) {
                 roll = ROLL_SUCCESS;
             } else {
@@ -1198,7 +1198,7 @@ static int _protinstTestDroppedExplosive(Object* explosiveItem)
             Object* target = attack.extras[index];
             if (target != gDude
                 && target->data.critter.combat.team != team
-                && statRoll(target, STAT_PERCEPTION, 0, nullptr) >= 2) {
+                && statRoll(target, STAT_PERCEPTION, 0, nullptr) >= ROLL_SUCCESS) {
                 critterSetWhoHitMe(target, gDude);
                 if (watcher == nullptr) {
                     watcher = target;

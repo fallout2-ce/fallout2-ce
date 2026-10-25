@@ -767,7 +767,7 @@ int     ret0 - Override the hit/miss
 int     ret1 - Override the targeted bodypart
 Critter ret2 - Override the target of the attack
 */
-int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll)
+Roll scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, Roll roll)
 {
     assert(defenderPtr != nullptr && hitLocationPtr != nullptr);
 
@@ -778,7 +778,7 @@ int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation
         return roll;
     }
 
-    int rollOverride = hook.getReturnValueAt(0).asInt();
+    Roll rollOverride = static_cast<Roll>(hook.getReturnValueAt(0).asInt());
     if (rollOverride >= ROLL_CRITICAL_FAILURE && rollOverride <= ROLL_CRITICAL_SUCCESS) {
         roll = rollOverride;
     } else {
