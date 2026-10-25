@@ -3795,7 +3795,7 @@ static bool _check_ranged_miss(Attack* attack)
     int range = weaponGetRange(attack->attacker, attack->hitMode);
     int to = _tile_num_beyond(attack->attacker->tile, attack->defender->tile, range);
 
-    Roll roll = ROLL_FAILURE;
+    Roll roll = Roll::Failure;
     Object* critter = attack->attacker;
     if (critter != nullptr) {
         int curr = attack->attacker->tile;
@@ -3804,7 +3804,7 @@ static bool _check_ranged_miss(Attack* attack)
             if (critter != nullptr) {
                 if ((critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
                     if (FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
-                        roll = ROLL_SUCCESS;
+                        roll = Roll::Success;
                         break;
                     }
 
@@ -3815,7 +3815,7 @@ static bool _check_ranged_miss(Attack* attack)
                         }
 
                         if (randomBetween(1, 100) <= v6) {
-                            roll = ROLL_SUCCESS;
+                            roll = Roll::Success;
                             break;
                         }
                     }
@@ -3832,7 +3832,7 @@ static bool _check_ranged_miss(Attack* attack)
 
     attack->defenderHitLocation = HIT_LOCATION_TORSO;
 
-    if (roll < ROLL_SUCCESS || critter == nullptr || (critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
+    if (rollIsFailure(roll) || critter == nullptr || (critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
         return false;
     }
 
@@ -3950,11 +3950,11 @@ static Roll _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarge
     int criticalChance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
     Roll roll = randomRoll(accuracy, criticalChance, nullptr);
 
-    if (roll == ROLL_CRITICAL_FAILURE) {
+    if (roll == Roll::CriticalFailure) {
         return roll;
     }
 
-    if (roll == ROLL_CRITICAL_SUCCESS) {
+    if (roll == Roll::CriticalSuccess) {
         accuracy += 20;
     }
 
@@ -3988,7 +3988,7 @@ static Roll _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarge
     }
 
     for (int index = 0; index < mainTargetRounds; index += 1) {
-        if (randomRoll(accuracy, 0, nullptr) >= ROLL_SUCCESS) {
+        if (rollIsSuccess(randomRoll(accuracy, 0, nullptr))) {
             *roundsHitMainTargetPtr += 1;
         }
     }
@@ -4018,12 +4018,12 @@ static Roll _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarge
     int rightEndTile = _tile_num_beyond(attack->attacker->tile, rightTile, range);
     *roundsHitMainTargetPtr += _shoot_along_path(attack, rightEndTile, rightRounds, anim);
 
-    if (roll != ROLL_FAILURE || (*roundsHitMainTargetPtr <= 0 && attack->extrasLength <= 0)) {
-        if (roll >= ROLL_SUCCESS && *roundsHitMainTargetPtr == 0 && attack->extrasLength == 0) {
-            roll = ROLL_FAILURE;
+    if (roll != Roll::Failure || (*roundsHitMainTargetPtr <= 0 && attack->extrasLength <= 0)) {
+        if (rollIsSuccess(roll) && *roundsHitMainTargetPtr == 0 && attack->extrasLength == 0) {
+            roll = Roll::Failure;
         }
     } else {
-        roll = ROLL_SUCCESS;
+        roll = Roll::Success;
     }
 
     return roll;
@@ -4088,18 +4088,18 @@ static int attackCompute(Attack* attack)
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
     }
 
-    if (roll == ROLL_FAILURE) {
+    if (roll == Roll::Failure) {
         if (traitIsSelectedAndActive(TRAIT_JINXED) || perkHasRank(gDude, PERK_JINXED)) {
             if (randomBetween(0, 1) == 1) {
-                roll = ROLL_CRITICAL_FAILURE;
+                roll = Roll::CriticalFailure;
             }
         }
     }
 
-    if (roll == ROLL_SUCCESS) {
+    if (roll == Roll::Success) {
         if ((attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) && attack->attacker == gDude) {
             if (perkHasRank(attack->attacker, PERK_SLAYER)) {
-                roll = ROLL_CRITICAL_SUCCESS;
+                roll = Roll::CriticalSuccess;
             }
 
             if (perkHasRank(gDude, PERK_SILENT_DEATH)
@@ -4113,18 +4113,18 @@ static int attackCompute(Attack* attack)
             int bonusCriticalChance = unarmedGetBonusCriticalChance(attack->hitMode);
             if (bonusCriticalChance != 0) {
                 if (randomBetween(1, 100) <= bonusCriticalChance) {
-                    roll = ROLL_CRITICAL_SUCCESS;
+                    roll = Roll::CriticalSuccess;
                 }
             }
         }
     }
 
-    if (attackType == ATTACK_TYPE_RANGED && roll == ROLL_SUCCESS && attack->attacker == gDude) {
+    if (attackType == ATTACK_TYPE_RANGED && roll == Roll::Success && attack->attacker == gDude) {
         if (perkGetRank(gDude, PERK_SNIPER) != 0) {
             int d10 = randomBetween(1, 10);
             int luck = critterGetStat(gDude, STAT_LUCK);
             if (d10 <= luck) {
-                roll = ROLL_CRITICAL_SUCCESS;
+                roll = Roll::CriticalSuccess;
             }
         }
     }
@@ -4152,7 +4152,7 @@ static int attackCompute(Attack* attack)
     }
 
     switch (roll) {
-    case ROLL_CRITICAL_SUCCESS:
+    case Roll::CriticalSuccess:
         damageMultiplier = attackComputeCriticalHit(attack);
 
         // SFALL: Fix Silent Death bonus not being applied to critical hits.
@@ -4165,17 +4165,17 @@ static int attackCompute(Attack* attack)
             }
         }
         // FALLTHROUGH
-    case ROLL_SUCCESS:
+    case Roll::Success:
         attack->attackerFlags |= DAM_HIT;
         attackComputeEnhancedKnockout(attack);
         attackComputeDamage(attack, roundsHitMainTarget, damageMultiplier);
         break;
-    case ROLL_FAILURE:
+    case Roll::Failure:
         if (attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW) {
             _check_ranged_miss(attack);
         }
         break;
-    case ROLL_CRITICAL_FAILURE:
+    case Roll::CriticalFailure:
         attackComputeCriticalFailure(attack);
         break;
     }
@@ -4378,7 +4378,7 @@ static int attackComputeCriticalHit(Attack* attack)
     attack->criticalMessageId = criticalHitDescription->messageId;
 
     if (criticalHitDescription->massiveCriticalStat != -1) {
-        if (statRoll(defender, criticalHitDescription->massiveCriticalStat, criticalHitDescription->massiveCriticalStatModifier, nullptr) <= ROLL_FAILURE) {
+        if (rollIsFailure(statRoll(defender, criticalHitDescription->massiveCriticalStat, criticalHitDescription->massiveCriticalStatModifier, nullptr))) {
             attack->defenderFlags |= criticalHitDescription->massiveCriticalFlags;
             attack->criticalMessageId = criticalHitDescription->massiveCriticalMessageId;
         }

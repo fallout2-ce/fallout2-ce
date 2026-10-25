@@ -936,10 +936,10 @@ Roll statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
     }
 
     if (chance <= value) {
-        return ROLL_SUCCESS;
+        return Roll::Success;
     }
 
-    return ROLL_FAILURE;
+    return Roll::Failure;
 }
 
 // 0x4AFAA8

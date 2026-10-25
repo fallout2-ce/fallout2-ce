@@ -1002,18 +1002,18 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
 
             Roll roll;
             if (perkHasRank(gDude, PERK_DEMOLITION_EXPERT)) {
-                roll = ROLL_SUCCESS;
+                roll = Roll::Success;
             } else {
                 roll = skillRoll(gDude, SKILL_TRAPS, 0, nullptr);
             }
 
             EventType eventType;
             switch (roll) {
-            case ROLL_CRITICAL_FAILURE:
+            case Roll::CriticalFailure:
                 delay = 0;
                 eventType = EVENT_TYPE_EXPLOSION_FAILURE;
                 break;
-            case ROLL_FAILURE:
+            case Roll::Failure:
                 eventType = EVENT_TYPE_EXPLOSION_FAILURE;
                 delay /= 2;
                 break;
@@ -1198,7 +1198,7 @@ static int _protinstTestDroppedExplosive(Object* explosiveItem)
             Object* target = attack.extras[index];
             if (target != gDude
                 && target->data.critter.combat.team != team
-                && statRoll(target, STAT_PERCEPTION, 0, nullptr) >= ROLL_SUCCESS) {
+                && rollIsSuccess(statRoll(target, STAT_PERCEPTION, 0, nullptr))) {
                 critterSetWhoHitMe(target, gDude);
                 if (watcher == nullptr) {
                     watcher = target;

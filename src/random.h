@@ -5,12 +5,24 @@
 
 namespace fallout {
 
-enum Roll : int {
-    ROLL_CRITICAL_FAILURE,
-    ROLL_FAILURE,
-    ROLL_SUCCESS,
-    ROLL_CRITICAL_SUCCESS,
+enum class Roll : int {
+    CriticalFailure,
+    Failure,
+    Success,
+    CriticalSuccess,
 };
+
+constexpr inline bool rollIsValid(int roll) {
+    return roll >= static_cast<int>(Roll::CriticalFailure) && roll <= static_cast<int>(Roll::CriticalSuccess);
+}
+
+constexpr inline int rollIsFailure(Roll roll) {
+    return roll == Roll::Failure || roll == Roll::CriticalFailure;
+}
+
+constexpr inline int rollIsSuccess(Roll roll) {
+    return roll == Roll::Success || roll == Roll::CriticalSuccess;
+}
 
 void randomInit();
 void randomReset();

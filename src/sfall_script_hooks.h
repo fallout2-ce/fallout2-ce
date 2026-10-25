@@ -8,6 +8,7 @@
 #include "interpreter_extra.h"
 #include "queue.h"
 #include "scripts.h"
+#include "random.h"
 #include "skill_defs.h"
 #include "worldmap.h"
 #include <initializer_list>

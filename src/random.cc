@@ -105,21 +105,21 @@ static Roll randomTranslateRoll(int delta, int criticalSuccessModifier)
 
     Roll roll;
     if (delta < 0) {
-        roll = ROLL_FAILURE;
+        roll = Roll::Failure;
 
         if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% to become critical failure.
             if (randomBetween(1, 100) <= -delta / 10) {
-                roll = ROLL_CRITICAL_FAILURE;
+                roll = Roll::CriticalFailure;
             }
         }
     } else {
-        roll = ROLL_SUCCESS;
+        roll = Roll::Success;
 
         if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% + modifier to become critical success.
             if (randomBetween(1, 100) <= delta / 10 + criticalSuccessModifier) {
-                roll = ROLL_CRITICAL_SUCCESS;
+                roll = Roll::CriticalSuccess;
             }
         }
     }

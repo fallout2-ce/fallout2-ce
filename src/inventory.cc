@@ -2164,7 +2164,7 @@ static void _exit_inventory(bool shouldEnableIso)
             Object* critter = attack.extras[index];
             if (critter != gDude
                 && critter->data.critter.combat.team != gDude->data.critter.combat.team
-                && statRoll(critter, STAT_PERCEPTION, 0, nullptr) >= ROLL_SUCCESS) {
+                && rollIsSuccess(statRoll(critter, STAT_PERCEPTION, 0, nullptr))) {
                 critterSetWhoHitMe(critter, gDude);
 
                 if (watcher == nullptr) {

@@ -598,7 +598,7 @@ static void opRollVsSkill(Program* program)
     Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    Roll roll = ROLL_CRITICAL_FAILURE;
+    Roll roll = Roll::CriticalFailure;
     if (object != nullptr) {
         if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
             int sid = scriptGetSid(program);
@@ -612,7 +612,7 @@ static void opRollVsSkill(Program* program)
         scriptPredefinedError(program, "roll_vs_skill", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
 
-    programStackPushInteger(program, roll);
+    programStackPushInteger(program, static_cast<int>(roll));
 }
 
 // skill_contest
@@ -637,7 +637,7 @@ static void opDoCheck(Program* program)
     Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    Roll roll = ROLL_CRITICAL_FAILURE;
+    Roll roll = Roll::CriticalFailure;
     if (object != nullptr) {
         int sid = scriptGetSid(program);
 
@@ -662,24 +662,24 @@ static void opDoCheck(Program* program)
         scriptPredefinedError(program, "do_check", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
 
-    programStackPushInteger(program, roll);
+    programStackPushInteger(program, static_cast<int>(roll));
 }
 
 // is_success
 // 0x4549A8 op_is_success
 static void opSuccess(Program* program)
 {
-    int data = programStackPopInteger(program);
+    Roll roll = programStackPopEnum<Roll>(program);
 
     int result = -1;
 
-    switch (data) {
-    case ROLL_CRITICAL_FAILURE:
-    case ROLL_FAILURE:
+    switch (roll) {
+    case Roll::CriticalFailure:
+    case Roll::Failure:
         result = 0;
         break;
-    case ROLL_SUCCESS:
-    case ROLL_CRITICAL_SUCCESS:
+    case Roll::Success:
+    case Roll::CriticalSuccess:
         result = 1;
         break;
     }
@@ -691,17 +691,17 @@ static void opSuccess(Program* program)
 // 0x454A44 op_is_critical
 static void opCritical(Program* program)
 {
-    int data = programStackPopInteger(program);
+    Roll roll = programStackPopEnum<Roll>(program);
 
     int result = -1;
 
-    switch (data) {
-    case ROLL_CRITICAL_FAILURE:
-    case ROLL_CRITICAL_SUCCESS:
+    switch (roll) {
+    case Roll::CriticalFailure:
+    case Roll::CriticalSuccess:
         result = 1;
         break;
-    case ROLL_FAILURE:
-    case ROLL_SUCCESS:
+    case Roll::Failure:
+    case Roll::Success:
         result = 0;
         break;
     }

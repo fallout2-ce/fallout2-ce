@@ -8,6 +8,7 @@
 #include "game_sound.h"
 #include "object.h"
 #include "proto_types.h"
+#include "random.h"
 #include "stat_defs.h"
 #include "window_defs.h"
 #include "worldmap.h"
@@ -517,6 +518,17 @@ inline GameMovie programStackPopEnum(Program* program)
     }
 
     return static_cast<GameMovie>(movie);
+}
+
+template <>
+inline Roll programStackPopEnum(Program* program)
+{
+    int roll = programStackPopInteger(program);
+    if (!rollIsValid(roll)) {
+        programPrintError("invalid roll %d", roll);
+    }
+
+    return static_cast<Roll>(roll);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
