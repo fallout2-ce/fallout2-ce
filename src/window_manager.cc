@@ -253,6 +253,7 @@ WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, Vid
     _bk_color = COLOR_FIRST;
     _GNW_wcolor[0] = 10570;
 
+    _window_flags = WINDOW_NONE;
     if (flags & WINDOW_MANAGER_INIT_FLAG_BUFFERED) {
         _window_flags = WINDOW_USE_DEFAULTS;
     }
