@@ -838,7 +838,7 @@ int mapper_edit_init(int argc, char** argv)
         screenWidth,
         100,
         static_cast<ColorWithFlags>(256),
-        0);
+        WINDOW_NONE);
 
     tool_buf = windowGetBuffer(tool_win);
 

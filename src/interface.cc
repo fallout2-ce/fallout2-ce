@@ -2600,7 +2600,7 @@ int indicatorBarRefresh()
                 (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count,
                 INDICATOR_BOX_HEIGHT,
                 COLOR_BLACK,
-                0);
+                WINDOW_NONE);
             indicatorBarRender(count);
             windowRefresh(gIndicatorBarWindow);
         }

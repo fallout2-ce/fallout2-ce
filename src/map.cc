@@ -192,7 +192,7 @@ int isoInit()
     // NOTE: Uninline.
     square_init();
 
-    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), 10);
+    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
     if (gIsoWindow == -1) {
         debugPrint("win_add failed in iso_init\n");
         return -1;

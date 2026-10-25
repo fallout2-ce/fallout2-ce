@@ -289,7 +289,7 @@ static bool characterSelectorWindowInit()
 
     int characterSelectorWindowX = (screenGetWidth() - CS_WINDOW_WIDTH) / 2;
     int characterSelectorWindowY = (screenGetHeight() - CS_WINDOW_HEIGHT) / 2;
-    int characterSelectorWindowFlags = mainMenuSubscreenWindowFlags(0, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    WindowFlags characterSelectorWindowFlags = mainMenuSubscreenWindowFlags(WINDOW_NONE, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     gCharacterSelectorWindow = windowCreate(characterSelectorWindowX, characterSelectorWindowY, CS_WINDOW_WIDTH, CS_WINDOW_HEIGHT, _colorTable[0], characterSelectorWindowFlags);
     if (gCharacterSelectorWindow == -1) {
         return characterSelectorWindowFatalError(false);

@@ -1,6 +1,8 @@
 #ifndef FALLOUT_MAINMENU_H_
 #define FALLOUT_MAINMENU_H_
 
+#include "window_manager.h"
+
 namespace fallout {
 
 typedef enum MainMenuOption {
@@ -23,7 +25,7 @@ void mainMenuWindowUnhide(bool animate);
 void mainMenuBeginSubscreen();
 void mainMenuCancelSubscreen();
 void mainMenuFinishSubscreen();
-int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags);
+WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags overlayFlags);
 void mainMenuShowSubscreen(bool animate);
 void mainMenuFadeOutForMenuReturn(bool animate);
 void mainMenuFadeOutForGameStart(bool animate);

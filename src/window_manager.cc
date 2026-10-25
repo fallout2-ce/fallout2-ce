@@ -89,7 +89,7 @@ static VideoSystemExitProc* gVideoSystemExitProc;
 static int gWindowsLength;
 
 // 0x6ADF28 window_flags
-static int _window_flags;
+static WindowFlags _window_flags;
 
 // 0x6ADF2C buffering
 static bool _buffering = false;
@@ -228,7 +228,7 @@ WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, Vid
     }
 
     window->id = 0;
-    window->flags = 0;
+    window->flags = WINDOW_NONE;
     window->rect.left = _scr_size.left;
     window->rect.top = _scr_size.top;
     window->rect.right = _scr_size.right;
@@ -252,7 +252,11 @@ WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, Vid
     _GNW_texture = nullptr;
     _bk_color = COLOR_FIRST;
     _GNW_wcolor[0] = 10570;
-    _window_flags = flags;
+
+    if (flags & WINDOW_MANAGER_INIT_FLAG_BUFFERED) {
+        _window_flags = WINDOW_USE_DEFAULTS;    
+    }
+    
     _GNW_wcolor[2] = 8456;
     _GNW_wcolor[1] = 15855;
 
@@ -305,7 +309,7 @@ void windowManagerExit(void)
 
 // win_add
 // 0x4D6238
-int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags)
+int windowCreate(int x, int y, int width, int height, ColorWithFlags color, WindowFlags flags)
 {
     int topWindowIndex;
     int insertionIndex;
@@ -656,7 +660,7 @@ void windowShow(int win)
         return;
     }
 
-    if ((window->flags & WINDOW_HIDDEN) != 0) {
+    if ((window->flags & WINDOW_HIDDEN) != WINDOW_NONE) {
         window->flags &= ~WINDOW_HIDDEN;
         if (index == gWindowsLength - 1) {
             _GNW_win_refresh(window, &(window->rect), nullptr);

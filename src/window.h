@@ -70,7 +70,7 @@ bool scriptWindowDraw();
 bool scriptWindowDelete(const char* windowName);
 int scriptWindowResize(const char* windowName, int x, int y, int width, int height);
 int scriptWindowScale(const char* windowName, int x, int y, int width, int height);
-int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, int flags);
+int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, WindowFlags flags);
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
@@ -131,8 +131,8 @@ void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned
 void _fillBuf3x3(unsigned char* src, int srcWidth, int srcHeight, unsigned char* dest, int destWidth, int destHeight);
 
 bool scriptWindowShowNamed(const char* name);
-bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled);
-bool scriptWindowSetNamedFlag(const char* name, int bitFlag, bool enabled);
+bool scriptWindowSetFlag(int windowId, WindowFlags bitFlag, bool enabled);
+bool scriptWindowSetNamedFlag(const char* name, WindowFlags bitFlag, bool enabled);
 
 } // namespace fallout
 

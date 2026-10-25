@@ -1053,7 +1053,7 @@ static int preferencesWindowInit()
 
     int preferencesWindowX = (screenGetWidth() - PREFERENCES_WINDOW_WIDTH) / 2;
     int preferencesWindowY = (screenGetHeight() - PREFERENCES_WINDOW_HEIGHT) / 2;
-    int preferencesWindowFlags = mainMenuSubscreenWindowFlags(WINDOW_MODAL | WINDOW_DONT_MOVE_TOP, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    WindowFlags preferencesWindowFlags = mainMenuSubscreenWindowFlags(WINDOW_MODAL | WINDOW_DONT_MOVE_TOP, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
 
     gPreferencesWindow = windowCreate(preferencesWindowX,
         preferencesWindowY,

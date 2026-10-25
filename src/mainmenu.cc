@@ -719,7 +719,7 @@ void mainMenuBeginSubscreen()
     mainMenuWindowHide(true);
     if (mainMenuSubscreenBackdrop == -1) {
         // Palette index 0 in the root window is grey, so cover it around 640x480 dialogs.
-        mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, 0);
+        mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_NONE);
         if (mainMenuSubscreenBackdrop != -1) {
             windowRefresh(mainMenuSubscreenBackdrop);
         }
@@ -744,7 +744,7 @@ void mainMenuFinishSubscreen()
     mainMenuWindowFree();
 }
 
-int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags)
+WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags overlayFlags)
 {
     return mainMenuWindowIsOverlayActive() ? overlayFlags : defaultFlags;
 }

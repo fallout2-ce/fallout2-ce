@@ -265,7 +265,7 @@ typedef struct KillInfo {
 
 static int characterEditorWindowInit();
 static void characterEditorWindowFree();
-static int characterEditorGetModalWindowFlags();
+static WindowFlags characterEditorGetModalWindowFlags();
 static void characterEditorDrawFolders();
 static void characterEditorDrawPerksFolder();
 static int characterEditorKillsCompare(const void* a1, const void* a2);
@@ -1273,7 +1273,7 @@ int characterEditorShow(bool isCreationMode)
     return rc;
 }
 
-static int characterEditorGetModalWindowFlags()
+static WindowFlags characterEditorGetModalWindowFlags()
 {
     return mainMenuSubscreenWindowFlags(WINDOW_MODAL | WINDOW_DONT_MOVE_TOP, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
 }

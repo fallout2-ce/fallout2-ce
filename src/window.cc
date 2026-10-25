@@ -719,7 +719,7 @@ bool scriptWindowHideNamed(const char* windowName)
     return false;
 }
 
-bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled)
+bool scriptWindowSetFlag(int windowId, WindowFlags bitFlag, bool enabled)
 {
     if (!windowIsValidWindowId(windowId) || windowId == 0) {
         return false;
@@ -851,7 +851,7 @@ int scriptWindowScale(const char* windowName, int x, int y, int width, int heigh
 }
 
 // 0x4B7F3C
-int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, int flags)
+int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, WindowFlags flags)
 {
     int windowIndex = -1;
 
@@ -2723,7 +2723,7 @@ bool scriptWindowShowNamed(const char* windowName)
     return false;
 }
 
-bool scriptWindowSetNamedFlag(const char* windowName, int bitFlag, bool enabled)
+bool scriptWindowSetNamedFlag(const char* windowName, WindowFlags bitFlag, bool enabled)
 {
     for (int index = 0; index < MANAGED_WINDOW_COUNT; index++) {
         ManagedWindow* managedWindow = &(gManagedWindows[index]);

@@ -40,7 +40,8 @@ enum WindowManagerInitFlags : int {
     WINDOW_MANAGER_INIT_FLAG_BUFFERED = 0x1,
 };
 
-typedef enum WindowFlags {
+enum WindowFlags : unsigned int {
+    WINDOW_NONE = 0x0,
     // Use system window flags which are set during game startup and does not
     // change afterwards.
     WINDOW_USE_DEFAULTS = 0x1,
@@ -55,7 +56,34 @@ typedef enum WindowFlags {
     // Specifies that the window is draggable by clicking and moving anywhere in its background.
     WINDOW_DRAGGABLE_BY_BACKGROUND = 0x80,
     WINDOW_MANAGED = 0x100,
-} WindowFlags;
+};
+
+constexpr inline WindowFlags operator&(WindowFlags lhs, WindowFlags rhs)
+{
+    return static_cast<WindowFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline WindowFlags operator|(WindowFlags lhs, WindowFlags rhs)
+{
+    return static_cast<WindowFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline WindowFlags operator~(WindowFlags rhs)
+{
+    return static_cast<WindowFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline WindowFlags& operator&=(WindowFlags& lhs, WindowFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline WindowFlags& operator|=(WindowFlags& lhs, WindowFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum ButtonFlags {
     // Button keeps a persistent checked state and uses the pressed image while checked.
@@ -110,7 +138,7 @@ typedef struct ButtonGroup ButtonGroup;
 
 typedef struct Window {
     int id;
-    int flags;
+    WindowFlags flags;
     Rect rect;
     int width;
     int height;
@@ -181,9 +209,9 @@ extern int _GNW_wcolor[6];
 
 WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, WindowManagerInitFlags flags);
 void windowManagerExit(void);
-int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags);
+int windowCreate(int x, int y, int width, int height, ColorWithFlags color, WindowFlags flags);
 
-inline int windowCreate(int x, int y, int width, int height, Color color, int flags)
+inline int windowCreate(int x, int y, int width, int height, Color color, WindowFlags flags)
 {
     return windowCreate(x, y, width, height, color | DRAW_TEXT_FLAG_NONE, flags);
 }

@@ -483,7 +483,7 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return rc;
 }
 
-const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, int flags)
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)
 {
     using namespace fallout::dbox;
 

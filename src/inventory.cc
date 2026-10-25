@@ -1831,7 +1831,7 @@ static bool _setup_inventory(int inventoryWindowType)
         windowGetRect(gInventoryBarterBackgroundWindow, &bgWindowRect);
         int tradeWindowX = bgWindowRect.left + INVENTORY_TRADE_WINDOW_X;
         int tradeWindowY = bgWindowRect.top + INVENTORY_TRADE_WINDOW_Y;
-        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, static_cast<ColorWithFlags>(257), 0);
+        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, static_cast<ColorWithFlags>(257), WINDOW_NONE);
         gInventoryWindowMaxX = tradeWindowX + INVENTORY_TRADE_WINDOW_WIDTH;
         gInventoryWindowMaxY = tradeWindowY + tradeWindowHeight;
 

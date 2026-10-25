@@ -81,7 +81,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
 
             int windowWidth = screenGetWidth();
             int windowHeight = screenGetHeight();
-            int window = windowCreate(0, 0, windowWidth, windowHeight, COLOR_BLACK, 20);
+            int window = windowCreate(0, 0, windowWidth, windowHeight, COLOR_BLACK, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
             soundContinueAll();
             if (window != -1) {
                 unsigned char* windowBuffer = windowGetBuffer(window);

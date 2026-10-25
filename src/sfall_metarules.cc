@@ -1051,11 +1051,6 @@ static bool clampWindowFillRect(int windowWidth, int windowHeight, int& x, int& 
     return truncated;
 }
 
-static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
-{
-    return scriptWindowSetFlag(windowId, bitFlag, enabled);
-}
-
 void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
@@ -1141,11 +1136,11 @@ void mf_combat_data(OpcodeContext& ctx)
 
 void mf_create_win(OpcodeContext& ctx)
 {
-    int flags = ctx.numArgs() > 5
-        ? ctx.arg(5).asInt()
+    WindowFlags flags = ctx.numArgs() > 5
+        ? static_cast<WindowFlags>(ctx.arg(5).asInt())
         : WINDOW_MOVE_ON_TOP;
 
-    ColorWithFlags color = (flags & WINDOW_TRANSPARENT) != 0 ? (COLOR_FIRST | DRAW_TEXT_FLAG_NONE) : static_cast<ColorWithFlags>(256);
+    ColorWithFlags color = (flags & WINDOW_TRANSPARENT) != WINDOW_NONE ? (COLOR_FIRST | DRAW_TEXT_FLAG_NONE) : static_cast<ColorWithFlags>(256);
     if (scriptWindowCreate(ctx.stringArg(0),
             ctx.arg(1).asInt(),
             ctx.arg(2).asInt(),
@@ -1944,7 +1939,7 @@ void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx)
 
 void mf_set_window_flag(OpcodeContext& ctx)
 {
-    int bitFlag = ctx.arg(1).asInt();
+    WindowFlags bitFlag = static_cast<WindowFlags>(ctx.arg(1).asInt());
     switch (bitFlag) {
     case WINDOW_DONT_MOVE_TOP:
     case WINDOW_MOVE_ON_TOP:
@@ -1974,7 +1969,7 @@ void mf_set_window_flag(OpcodeContext& ctx)
         return;
     }
 
-    applyWindowFlag(windowId, bitFlag, enabled);
+    scriptWindowSetFlag(windowId, bitFlag, enabled);
 }
 
 void mf_set_unique_id(OpcodeContext& ctx)
