@@ -355,7 +355,7 @@ bool scriptWindowRefreshRegions()
                 region->rightProcs[3] = 0;
             }
 
-            int mouseEvent = mouseGetEvent();
+            MouseEvent mouseEvent = mouseGetEvent();
             return scriptWindowCheckRegion(windowIndex, mouseX, mouseY, mouseEvent);
         }
     }
@@ -374,7 +374,7 @@ bool _checkAllRegions()
     int mouseY;
     mouseGetPosition(&mouseX, &mouseY);
 
-    int mouseEvent = mouseGetEvent();
+    MouseEvent mouseEvent = mouseGetEvent();
     int win = windowGetAtPoint(mouseX, mouseY);
 
     for (int windowIndex = 0; windowIndex < MANAGED_WINDOW_COUNT; windowIndex++) {
