@@ -61,7 +61,7 @@ static unsigned char* _mouse_fptr = nullptr;
 static double gMouseSensitivity = 1.0;
 
 // 0x51E2AC last_buttons
-static int last_buttons = 0;
+static MouseEvent last_buttons = MOUSE_EVENT_NONE;
 
 // 0x6AC790 mouse_is_hidden
 static bool gCursorIsHidden;
@@ -514,16 +514,16 @@ void _mouse_info()
 
             if (mouseDeviceUsesRelativeMode()) {
                 if (gesture.numberOfTouches == 1) {
-                    _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                    _mouse_simulate_input(0, 0, MOUSE_EVENT_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
-                    _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                    _mouse_simulate_input(0, 0, MOUSE_EVENT_RIGHT_BUTTON_DOWN);
                 }
             } else {
                 _mouse_set_position(gesture.x, gesture.y);
                 if (gesture.numberOfTouches == 1) {
-                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_EVENT_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
-                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_EVENT_RIGHT_BUTTON_DOWN);
                 }
             }
         tap_done:
@@ -542,13 +542,13 @@ void _mouse_info()
 
             if (gesture.type == kLongPress) {
                 if (gesture.numberOfTouches == 1) {
-                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_EVENT_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
-                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_EVENT_RIGHT_BUTTON_DOWN);
                 }
             } else if (gesture.type == kPan) {
                 if (!touch_get_pan_mode() && gesture.numberOfTouches == 1) {
-                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, 0);
+                    _mouse_simulate_input(gesture.x - prevx, gesture.y - prevy, MOUSE_EVENT_NONE);
                 } else if (touch_get_pan_mode() || gesture.numberOfTouches == 2) {
                     int coefficient = touch_get_pan_mode() ? 8 : 2;
                     gMouseWheelX = (prevx - gesture.x) / coefficient;
@@ -573,7 +573,7 @@ void _mouse_info()
 
     int x;
     int y;
-    int buttons = 0;
+    MouseEvent buttons = MOUSE_EVENT_NONE;
 
     MouseData mouseData;
     if (mouseDeviceGetData(&mouseData)) {
@@ -581,11 +581,11 @@ void _mouse_info()
         y = mouseData.y;
 
         if (mouseData.buttons[0] == 1) {
-            buttons |= MOUSE_STATE_LEFT_BUTTON_DOWN;
+            buttons |= MOUSE_EVENT_LEFT_BUTTON_DOWN;
         }
 
         if (mouseData.buttons[1] == 1) {
-            buttons |= MOUSE_STATE_RIGHT_BUTTON_DOWN;
+            buttons |= MOUSE_EVENT_RIGHT_BUTTON_DOWN;
         }
     } else {
         x = 0;
@@ -612,7 +612,7 @@ void _mouse_info()
 }
 
 // 0x4CA698
-void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
+void _mouse_simulate_input(int delta_x, int delta_y, MouseEvent buttons)
 {
     // 0x6AC7E4
     static unsigned int previousRightButtonTimestamp;
@@ -634,7 +634,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
                 _mouse_idling = 1;
             }
 
-            last_buttons = 0;
+            last_buttons = MOUSE_EVENT_NONE;
             _raw_buttons = MOUSE_EVENT_NONE;
             gMouseEvent = MOUSE_EVENT_NONE;
 
@@ -648,7 +648,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
     gMouseEvent = MOUSE_EVENT_NONE;
 
     if ((previousEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) != MOUSE_EVENT_NONE) {
-        if ((buttons & 0x01) != 0) {
+        if ((buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
             gMouseEvent |= MOUSE_EVENT_LEFT_BUTTON_REPEAT;
 
             if (getTicksSince(previousLeftButtonTimestamp) > BUTTON_REPEAT_TIME) {
@@ -659,14 +659,14 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
             gMouseEvent |= MOUSE_EVENT_LEFT_BUTTON_UP;
         }
     } else {
-        if ((buttons & 0x01) != 0) {
+        if ((buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
             gMouseEvent |= MOUSE_EVENT_LEFT_BUTTON_DOWN;
             previousLeftButtonTimestamp = getTicks();
         }
     }
 
     if ((previousEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN_REPEAT) != MOUSE_EVENT_NONE) {
-        if ((buttons & 0x02) != 0) {
+        if ((buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
             gMouseEvent |= MOUSE_EVENT_RIGHT_BUTTON_REPEAT;
             if (getTicksSince(previousRightButtonTimestamp) > BUTTON_REPEAT_TIME) {
                 gMouseEvent |= MOUSE_EVENT_RIGHT_BUTTON_DOWN;
@@ -676,7 +676,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
             gMouseEvent |= MOUSE_EVENT_RIGHT_BUTTON_UP;
         }
     } else {
-        if (buttons & 0x02) {
+        if ((buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
             gMouseEvent |= MOUSE_EVENT_RIGHT_BUTTON_DOWN;
             previousRightButtonTimestamp = getTicks();
         }
@@ -793,7 +793,7 @@ bool cursorIsHidden()
 }
 
 // 0x4CAB5C
-void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
+void _mouse_get_raw_state(int* out_x, int* out_y, MouseEvent* out_buttons)
 {
     MouseData mouseData;
     if (!mouseDeviceGetData(&mouseData)) {

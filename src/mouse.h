@@ -10,9 +10,6 @@ namespace fallout {
 #define MOUSE_DEFAULT_CURSOR_HEIGHT 8
 #define MOUSE_DEFAULT_CURSOR_SIZE (MOUSE_DEFAULT_CURSOR_WIDTH * MOUSE_DEFAULT_CURSOR_HEIGHT)
 
-#define MOUSE_STATE_LEFT_BUTTON_DOWN 0x01
-#define MOUSE_STATE_RIGHT_BUTTON_DOWN 0x02
-
 enum MouseEvent : unsigned int {
     MOUSE_EVENT_NONE = 0x00,
     MOUSE_EVENT_LEFT_BUTTON_DOWN = 0x01,
@@ -65,7 +62,7 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
 void mouseShowCursor();
 void mouseHideCursor();
 void _mouse_info();
-void _mouse_simulate_input(int delta_x, int delta_y, int buttons);
+void _mouse_simulate_input(int delta_x, int delta_y, MouseEvent buttons);
 bool _mouse_in(int left, int top, int right, int bottom);
 bool _mouse_click_in(int left, int top, int right, int bottom);
 void mouseGetRect(Rect* rect);
@@ -73,7 +70,7 @@ void mouseGetPosition(int* out_x, int* out_y);
 void _mouse_set_position(int x, int y);
 MouseEvent mouseGetEvent();
 bool cursorIsHidden();
-void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons);
+void _mouse_get_raw_state(int* out_x, int* out_y, MouseEvent* out_buttons);
 void mouseSetSensitivity(double value);
 
 void mouseGetPositionInWindow(int win, int* x, int* y);

@@ -247,8 +247,8 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
     _zero_vid_mem();
     _movieRun(win, movieFilePath);
 
-    int pressed = 0;
-    int buttons;
+    MouseEvent pressed = MOUSE_EVENT_NONE;
+    MouseEvent buttons;
     do {
         if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
             break;
@@ -266,7 +266,7 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
         pressed |= buttons;
         // Exit on mouse only after a click cycle: observe left/right down at
         // least once, then wait until both are released.
-    } while (((pressed & 1) == 0 && (pressed & 2) == 0) || (buttons & 1) != 0 || (buttons & 2) != 0);
+    } while (((pressed & MOUSE_EVENT_LEFT_BUTTON_DOWN) == MOUSE_EVENT_NONE && (pressed & MOUSE_EVENT_RIGHT_BUTTON_DOWN) == MOUSE_EVENT_NONE) || (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE || (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != MOUSE_EVENT_NONE);
 
     _movieStop();
     _moviefx_stop();
