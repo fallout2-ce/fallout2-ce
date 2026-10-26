@@ -235,7 +235,7 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
         mouseShowCursor();
     }
 
-    while (mouseGetEvent() != 0) {
+    while (mouseGetEvent() != MOUSE_EVENT_NONE) {
         _mouse_info();
     }
 

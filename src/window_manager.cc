@@ -1035,7 +1035,7 @@ void win_drag(int win)
 
     _mouse_info();
 
-    while ((mouseGetEvent() & MOUSE_EVENT_ANY_BUTTON_UP) == 0) {
+    while ((mouseGetEvent() & MOUSE_EVENT_ANY_BUTTON_UP) == MOUSE_EVENT_NONE) {
         sharedFpsLimiter.mark();
 
         if (dx != 0 || dy != 0) {
@@ -1824,9 +1824,9 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
     *keyCodePtr = -1;
 
     if (_mouse_click_in(window->rect.left, window->rect.top, window->rect.right, window->rect.bottom)) {
-        int mouseEvent = mouseGetEvent();
-        if ((window->flags & WINDOW_FLAG_0x40) || (mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) == 0) {
-            if (mouseEvent == 0) {
+        MouseEvent mouseEvent = mouseGetEvent();
+        if ((window->flags & WINDOW_FLAG_0x40) || (mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) == MOUSE_EVENT_NONE) {
+            if (mouseEvent == MOUSE_EVENT_NONE) {
                 window->clickedButton = nullptr;
             }
         } else {

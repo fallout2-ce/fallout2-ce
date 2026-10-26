@@ -13,18 +13,43 @@ namespace fallout {
 #define MOUSE_STATE_LEFT_BUTTON_DOWN 0x01
 #define MOUSE_STATE_RIGHT_BUTTON_DOWN 0x02
 
-#define MOUSE_EVENT_LEFT_BUTTON_DOWN 0x01
-#define MOUSE_EVENT_RIGHT_BUTTON_DOWN 0x02
-#define MOUSE_EVENT_LEFT_BUTTON_REPEAT 0x04
-#define MOUSE_EVENT_RIGHT_BUTTON_REPEAT 0x08
-#define MOUSE_EVENT_LEFT_BUTTON_UP 0x10
-#define MOUSE_EVENT_RIGHT_BUTTON_UP 0x20
-#define MOUSE_EVENT_ANY_BUTTON_DOWN (MOUSE_EVENT_LEFT_BUTTON_DOWN | MOUSE_EVENT_RIGHT_BUTTON_DOWN)
-#define MOUSE_EVENT_ANY_BUTTON_REPEAT (MOUSE_EVENT_LEFT_BUTTON_REPEAT | MOUSE_EVENT_RIGHT_BUTTON_REPEAT)
-#define MOUSE_EVENT_ANY_BUTTON_UP (MOUSE_EVENT_LEFT_BUTTON_UP | MOUSE_EVENT_RIGHT_BUTTON_UP)
-#define MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT (MOUSE_EVENT_LEFT_BUTTON_DOWN | MOUSE_EVENT_LEFT_BUTTON_REPEAT)
-#define MOUSE_EVENT_RIGHT_BUTTON_DOWN_REPEAT (MOUSE_EVENT_RIGHT_BUTTON_DOWN | MOUSE_EVENT_RIGHT_BUTTON_REPEAT)
-#define MOUSE_EVENT_WHEEL 0x40
+enum MouseEvent : unsigned int {
+    MOUSE_EVENT_NONE = 0x00,
+    MOUSE_EVENT_LEFT_BUTTON_DOWN = 0x01,
+    MOUSE_EVENT_RIGHT_BUTTON_DOWN = 0x02,
+    MOUSE_EVENT_LEFT_BUTTON_REPEAT = 0x04,
+    MOUSE_EVENT_RIGHT_BUTTON_REPEAT = 0x08,
+    MOUSE_EVENT_LEFT_BUTTON_UP = 0x10,
+    MOUSE_EVENT_RIGHT_BUTTON_UP = 0x20,
+    MOUSE_EVENT_ANY_BUTTON_DOWN = (MOUSE_EVENT_LEFT_BUTTON_DOWN | MOUSE_EVENT_RIGHT_BUTTON_DOWN),
+    MOUSE_EVENT_ANY_BUTTON_REPEAT = (MOUSE_EVENT_LEFT_BUTTON_REPEAT | MOUSE_EVENT_RIGHT_BUTTON_REPEAT),
+    MOUSE_EVENT_ANY_BUTTON_UP = (MOUSE_EVENT_LEFT_BUTTON_UP | MOUSE_EVENT_RIGHT_BUTTON_UP),
+    MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT = (MOUSE_EVENT_LEFT_BUTTON_DOWN | MOUSE_EVENT_LEFT_BUTTON_REPEAT),
+    MOUSE_EVENT_RIGHT_BUTTON_DOWN_REPEAT = (MOUSE_EVENT_RIGHT_BUTTON_DOWN | MOUSE_EVENT_RIGHT_BUTTON_REPEAT),
+    MOUSE_EVENT_WHEEL = 0x40    
+};
+
+constexpr inline MouseEvent operator&(MouseEvent lhs, MouseEvent rhs)
+{
+    return static_cast<MouseEvent>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline MouseEvent operator|(MouseEvent lhs, MouseEvent rhs)
+{
+    return static_cast<MouseEvent>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+inline MouseEvent& operator&=(MouseEvent& lhs, MouseEvent rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline MouseEvent& operator|=(MouseEvent& lhs, MouseEvent rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 #define BUTTON_REPEAT_TIME 250
 
@@ -46,7 +71,7 @@ bool _mouse_click_in(int left, int top, int right, int bottom);
 void mouseGetRect(Rect* rect);
 void mouseGetPosition(int* out_x, int* out_y);
 void _mouse_set_position(int x, int y);
-int mouseGetEvent();
+MouseEvent mouseGetEvent();
 bool cursorIsHidden();
 void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons);
 void mouseSetSensitivity(double value);

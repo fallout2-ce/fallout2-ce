@@ -505,7 +505,7 @@ static void showDeath()
                 break;
             }
 
-            while (mouseGetEvent() != 0) {
+            while (mouseGetEvent() != MOUSE_EVENT_NONE) {
                 sharedFpsLimiter.mark();
 
                 inputGetInput();
@@ -584,7 +584,7 @@ static void showDeath()
 
             speechDelete();
 
-            while (mouseGetEvent() != 0) {
+            while (mouseGetEvent() != MOUSE_EVENT_NONE) {
                 sharedFpsLimiter.mark();
 
                 inputGetInput();

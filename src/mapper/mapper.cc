@@ -1294,7 +1294,7 @@ void edit_mapper()
 
         // ---- Mouse event on hex grid ----
         if (keyCode == -2) {
-            int buttons = mouseGetEvent();
+            MouseEvent buttons = mouseGetEvent();
 
             if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
                 constexpr int kToolbarReservedHeight = 100;

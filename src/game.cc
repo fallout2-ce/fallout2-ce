@@ -555,7 +555,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
     }
 
     if (eventCode == -1) {
-        if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0) {
+        if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != MOUSE_EVENT_NONE) {
             int wheelX;
             int wheelY;
             mouseGetWheel(&wheelX, &wheelY);
@@ -580,13 +580,13 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
     }
 
     if (eventCode == -2) {
-        int mouseState = mouseGetEvent();
+        MouseEvent mouseEvent = mouseGetEvent();
         int mouseX;
         int mouseY;
         mouseGetPosition(&mouseX, &mouseY);
 
-        if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
-            if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == 0) {
+        if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
+            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == MOUSE_EVENT_NONE) {
                 if (mouseX == _scr_size.left || mouseX == _scr_size.right
                     || mouseY == _scr_size.top || mouseY == _scr_size.bottom) {
                     _gmouse_clicked_on_edge = true;
@@ -595,12 +595,12 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 }
             }
         } else {
-            if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
                 _gmouse_clicked_on_edge = false;
             }
         }
 
-        _gmouse_handle_event(mouseX, mouseY, mouseState);
+        _gmouse_handle_event(mouseX, mouseY, mouseEvent);
         return 0;
     }
 
@@ -616,13 +616,13 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         break;
     case -2:
         if (1) {
-            int mouseEvent = mouseGetEvent();
+            MouseEvent mouseEvent = mouseGetEvent();
             int mouseX;
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
 
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
-                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == 0) {
+            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
+                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == MOUSE_EVENT_NONE) {
                     if (mouseX == _scr_size.left || mouseX == _scr_size.right
                         || mouseY == _scr_size.top || mouseY == _scr_size.bottom) {
                         _gmouse_clicked_on_edge = true;
@@ -631,7 +631,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                     }
                 }
             } else {
-                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
                     _gmouse_clicked_on_edge = false;
                 }
             }
@@ -1280,7 +1280,7 @@ void showHelp()
                     sharedFpsLimiter.throttle();
                 }
 
-                while (mouseGetEvent() != 0) {
+                while (mouseGetEvent() != MOUSE_EVENT_NONE) {
                     sharedFpsLimiter.mark();
 
                     inputGetInput();

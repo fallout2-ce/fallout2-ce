@@ -354,7 +354,7 @@ int _abortReply(int a1)
     result = 1;
     if (a1) {
         if (_replyWin != -1) {
-            if (!(mouseGetEvent() & 0x10)) {
+            if (!(mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP)) {
                 result = 0;
             } else {
                 mouseGetPosition(&x, &y);

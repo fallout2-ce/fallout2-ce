@@ -76,7 +76,7 @@ static int gMouseCursorHeight;
 static int _raw_y;
 
 // 0x6AC7A0 raw_buttons
-static int _raw_buttons;
+static MouseEvent _raw_buttons;
 
 // 0x6AC7A4 mouse_y
 static int gMouseCursorY;
@@ -88,7 +88,7 @@ static int gMouseCursorX;
 static int _mouse_disabled;
 
 // 0x6AC7B0 mouse_buttons
-static int gMouseEvent;
+static MouseEvent gMouseEvent;
 
 // 0x6AC7B4 mouse_speed
 static unsigned int _mouse_speed;
@@ -621,7 +621,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
     static unsigned int previousLeftButtonTimestamp;
 
     // 0x6AC7EC
-    static int previousEvent;
+    static MouseEvent previousEvent;
 
     if (!gMouseInitialized || gCursorIsHidden) {
         return;
@@ -635,8 +635,8 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
             }
 
             last_buttons = 0;
-            _raw_buttons = 0;
-            gMouseEvent = 0;
+            _raw_buttons = MOUSE_EVENT_NONE;
+            gMouseEvent = MOUSE_EVENT_NONE;
 
             return;
         }
@@ -645,9 +645,9 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
     _mouse_idling = 0;
     last_buttons = buttons;
     previousEvent = gMouseEvent;
-    gMouseEvent = 0;
+    gMouseEvent = MOUSE_EVENT_NONE;
 
-    if ((previousEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) != 0) {
+    if ((previousEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) != MOUSE_EVENT_NONE) {
         if ((buttons & 0x01) != 0) {
             gMouseEvent |= MOUSE_EVENT_LEFT_BUTTON_REPEAT;
 
@@ -665,7 +665,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
         }
     }
 
-    if ((previousEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN_REPEAT) != 0) {
+    if ((previousEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN_REPEAT) != MOUSE_EVENT_NONE) {
         if ((buttons & 0x02) != 0) {
             gMouseEvent |= MOUSE_EVENT_RIGHT_BUTTON_REPEAT;
             if (getTicksSince(previousRightButtonTimestamp) > BUTTON_REPEAT_TIME) {
@@ -781,7 +781,7 @@ static void _mouse_clip()
 }
 
 // 0x4CAAA0
-int mouseGetEvent()
+MouseEvent mouseGetEvent()
 {
     return gMouseEvent;
 }
@@ -799,11 +799,11 @@ void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
     if (!mouseDeviceGetData(&mouseData)) {
         mouseData.x = 0;
         mouseData.y = 0;
-        mouseData.buttons[0] = (gMouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0;
-        mouseData.buttons[1] = (gMouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0;
+        mouseData.buttons[0] = (gMouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE;
+        mouseData.buttons[1] = (gMouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != MOUSE_EVENT_NONE;
     }
 
-    _raw_buttons = 0;
+    _raw_buttons = MOUSE_EVENT_NONE;
     if (mouseDeviceUsesRelativeMode()) {
         _raw_x += mouseData.x;
         _raw_y += mouseData.y;
@@ -866,7 +866,7 @@ void mouseGetWheel(int* x, int* y)
 void convertMouseWheelToArrowKey(int* keyCodePtr)
 {
     if (*keyCodePtr == -1) {
-        if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0) {
+        if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != MOUSE_EVENT_NONE) {
             int wheelX;
             int wheelY;
             mouseGetWheel(&wheelX, &wheelY);
