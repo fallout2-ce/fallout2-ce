@@ -1075,7 +1075,7 @@ static void op_set_self(Program* program)
 // list_begin
 static void op_list_begin(Program* program)
 {
-    int listType = programStackPopInteger(program);
+    ListType listType = programStackPopEnum<ListType>(program);
     int listId = sfallListsCreate(listType);
     programStackPushInteger(program, listId);
 }

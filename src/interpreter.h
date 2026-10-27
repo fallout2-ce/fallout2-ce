@@ -10,6 +10,7 @@
 #include "proto_types.h"
 #include "random.h"
 #include "script_sound.h"
+#include "sfall_lists.h"
 #include "stat_defs.h"
 #include "window_defs.h"
 #include "worldmap.h"
@@ -541,6 +542,17 @@ inline ScriptSoundMode programStackPopEnum(Program* program)
     }
 
     return static_cast<ScriptSoundMode>(mode);
+}
+
+template <>
+inline ListType programStackPopEnum(Program* program)
+{
+    int listType = programStackPopInteger(program);
+    if (!listTypeIsValid(listType)) {
+        programPrintError("invalid list type %d", listType);
+    }
+
+    return static_cast<ListType>(listType);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
