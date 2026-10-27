@@ -24,8 +24,8 @@
 #include "svga.h"
 #include "text_font.h"
 #include "version.h"
-#include "window_manager.h"
 #include "window.h"
+#include "window_manager.h"
 
 #include "platform/git_version.h"
 

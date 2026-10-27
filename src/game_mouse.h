@@ -1,8 +1,8 @@
 #ifndef GAME_MOUSE_H
 #define GAME_MOUSE_H
 
-#include "obj_types.h"
 #include "mouse.h"
+#include "obj_types.h"
 
 namespace fallout {
 

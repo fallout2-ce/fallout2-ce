@@ -72,8 +72,8 @@
 #include "trait.h"
 #include "version.h"
 #include "win32.h"
-#include "window_manager.h"
 #include "window.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 #if __APPLE__
