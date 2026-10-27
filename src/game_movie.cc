@@ -24,6 +24,7 @@
 #include "text_font.h"
 #include "touch.h"
 #include "window_manager.h"
+#include "window.h"
 
 namespace fallout {
 
@@ -235,7 +236,7 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
         mouseShowCursor();
     }
 
-    while (mouseGetEvent() != MOUSE_EVENT_NONE) {
+    while (mouseGetEvent() != MouseButtonEvent::None) {
         _mouse_info();
     }
 
@@ -247,8 +248,8 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
     _zero_vid_mem();
     _movieRun(win, movieFilePath);
 
-    MouseEvent pressed = MOUSE_EVENT_NONE;
-    MouseEvent buttons;
+    MouseButtonEvent pressed = MouseButtonEvent::None;
+    MouseButtonEvent buttons;
     do {
         if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
             break;
@@ -266,7 +267,7 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
         pressed |= buttons;
         // Exit on mouse only after a click cycle: observe left/right down at
         // least once, then wait until both are released.
-    } while (((pressed & MOUSE_EVENT_LEFT_BUTTON_DOWN) == MOUSE_EVENT_NONE && (pressed & MOUSE_EVENT_RIGHT_BUTTON_DOWN) == MOUSE_EVENT_NONE) || (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE || (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != MOUSE_EVENT_NONE);
+    } while (((pressed & MouseButtonEvent::LeftButtonDown) == MouseButtonEvent::None && (pressed & MouseButtonEvent::RightButtonDown) == MouseButtonEvent::None) || (buttons & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None || (buttons & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None);
 
     _movieStop();
     _moviefx_stop();

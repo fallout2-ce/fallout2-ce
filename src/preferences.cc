@@ -1534,7 +1534,7 @@ static void _DoThing(int eventCode)
 
             mouseGetPositionInWindow(gPreferencesWindow, &x, &y);
 
-            if (mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) {
+            if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                 soundPlayFile("ib1lu1x1");
                 _UpdateThing(preferenceIndex);
                 windowRefresh(gPreferencesWindow);

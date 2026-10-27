@@ -1035,7 +1035,7 @@ void win_drag(int win)
 
     _mouse_info();
 
-    while ((mouseGetEvent() & MOUSE_EVENT_ANY_BUTTON_UP) == MOUSE_EVENT_NONE) {
+    while ((mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
         sharedFpsLimiter.mark();
 
         if (dx != 0 || dy != 0) {
@@ -1824,9 +1824,9 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
     *keyCodePtr = -1;
 
     if (_mouse_click_in(window->rect.left, window->rect.top, window->rect.right, window->rect.bottom)) {
-        MouseEvent mouseEvent = mouseGetEvent();
-        if ((window->flags & WINDOW_FLAG_0x40) || (mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) == MOUSE_EVENT_NONE) {
-            if (mouseEvent == MOUSE_EVENT_NONE) {
+        MouseButtonEvent mouseEvent = mouseGetEvent();
+        if ((window->flags & WINDOW_FLAG_0x40) || (mouseEvent & MouseButtonEvent::LeftButtonDown) == MouseButtonEvent::None) {
+            if (mouseEvent == MouseButtonEvent::None) {
                 window->clickedButton = nullptr;
             }
         } else {
@@ -1930,8 +1930,8 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                 rectOffset(&buttonScreenRect, window->rect.left, window->rect.top);
                 if (_button_under_mouse(button, &buttonScreenRect)) {
                     if (!(button->flags & BUTTON_FLAG_DISABLED)) {
-                        if ((mouseEvent & MOUSE_EVENT_ANY_BUTTON_DOWN) != 0) {
-                            if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0 && (button->flags & BUTTON_FLAG_RIGHT_MOUSE_BUTTON_CONFIGURED) == 0) {
+                        if ((mouseEvent & MouseButtonEvent::AnyButtonDown) != MouseButtonEvent::None) {
+                            if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None && (button->flags & BUTTON_FLAG_RIGHT_MOUSE_BUTTON_CONFIGURED) == BUTTON_FLAG_NONE) {
                                 button = nullptr;
                                 break;
                             }
@@ -1951,7 +1951,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                                 button->buttonGroup->currChecked--;
                                             }
 
-                                            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+                                            if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                                                 *keyCodePtr = button->leftMouseUpEventCode;
                                                 cb = button->leftMouseUpProc;
                                             } else {
@@ -1967,7 +1967,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                             break;
                                         }
 
-                                        if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+                                        if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                                             *keyCodePtr = button->leftMouseDownEventCode;
                                             cb = button->leftMouseDownProc;
                                         } else {
@@ -1984,7 +1984,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                     break;
                                 }
 
-                                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+                                if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                                     *keyCodePtr = button->leftMouseDownEventCode;
                                     cb = button->leftMouseDownProc;
                                 } else {
@@ -1998,7 +1998,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                         }
 
                         Button* clickedButton = window->clickedButton;
-                        if (button == clickedButton && (mouseEvent & MOUSE_EVENT_ANY_BUTTON_UP) != 0) {
+                        if (button == clickedButton && (mouseEvent & MouseButtonEvent::AnyButtonUp) != MouseButtonEvent::None) {
                             window->clickedButton = nullptr;
                             window->hoveredButton = clickedButton;
 
@@ -2010,7 +2010,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                                 clickedButton->buttonGroup->currChecked--;
                                             }
 
-                                            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                                            if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                                                 *keyCodePtr = button->leftMouseUpEventCode;
                                                 cb = button->leftMouseUpProc;
                                             } else {
@@ -2027,7 +2027,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                             break;
                                         }
 
-                                        if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                                        if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                                             *keyCodePtr = clickedButton->leftMouseDownEventCode;
                                             cb = clickedButton->leftMouseDownProc;
                                         } else {
@@ -2045,7 +2045,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                                     }
                                 }
 
-                                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                                if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                                     *keyCodePtr = clickedButton->leftMouseUpEventCode;
                                     cb = clickedButton->leftMouseUpProc;
                                 } else {
@@ -2063,7 +2063,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                         }
                     }
 
-                    if (window->hoveredButton == nullptr && mouseEvent == 0) {
+                    if (window->hoveredButton == nullptr && mouseEvent == MouseButtonEvent::None) {
                         window->hoveredButton = button;
                         if (!(button->flags & BUTTON_FLAG_DISABLED)) {
                             *keyCodePtr = button->mouseEnterEventCode;
@@ -2080,16 +2080,16 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
 
         if (button != nullptr) {
             if ((button->flags & BUTTON_DRAG_HANDLE) != BUTTON_FLAG_NONE
-                && (mouseEvent & MOUSE_EVENT_ANY_BUTTON_DOWN) != 0
-                && (mouseEvent & MOUSE_EVENT_ANY_BUTTON_REPEAT) == 0) {
+                && (mouseEvent & MouseButtonEvent::AnyButtonDown) != MouseButtonEvent::None
+                && (mouseEvent & MouseButtonEvent::AnyButtonRepeat) == MouseButtonEvent::None) {
                 win_drag(window->id);
                 _button_draw(button, window, button->normalImage, true, nullptr, true);
             }
         } else if ((window->flags & WINDOW_DRAGGABLE_BY_BACKGROUND) != 0) {
             // Note: unused
-            dragWindowId |= mouseEvent << 8;
-            if ((mouseEvent & MOUSE_EVENT_ANY_BUTTON_DOWN) != 0
-                && (mouseEvent & MOUSE_EVENT_ANY_BUTTON_REPEAT) == 0) {
+            dragWindowId |= static_cast<int>(mouseEvent) << 8;
+            if ((mouseEvent & MouseButtonEvent::AnyButtonDown) != MouseButtonEvent::None
+                && (mouseEvent & MouseButtonEvent::AnyButtonRepeat) == MouseButtonEvent::None) {
                 win_drag(window->id);
             }
         }

@@ -1294,9 +1294,9 @@ void edit_mapper()
 
         // ---- Mouse event on hex grid ----
         if (keyCode == -2) {
-            MouseEvent buttons = mouseGetEvent();
+            MouseButtonEvent buttons = mouseGetEvent();
 
-            if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
+            if ((buttons & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                 constexpr int kToolbarReservedHeight = 100;
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
@@ -1321,7 +1321,7 @@ void edit_mapper()
                     }
                 }
 
-            } else if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+            } else if ((buttons & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
                         windowGetHeight(gIsoWindow) - 1)) {
@@ -1390,7 +1390,7 @@ void edit_mapper()
                 }
             }
 
-            if (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) {
+            if ((buttons & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 // clear toolbar selection
                 if (tool_active != -1) {
                     tool_active = -1;

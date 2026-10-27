@@ -524,11 +524,11 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
                 done = true;
             }
         } else if (keyCode == -2) {
-            MouseEvent mouseEvent = mouseGetEvent();
-            if (moving && (mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) && !overDialog) {
+            MouseButtonEvent mouseEvent = mouseGetEvent();
+            if (moving && (mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None && !overDialog) {
                 editorCommitMove();
                 refreshAll();
-            } else if (moving && (mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN)) {
+            } else if (moving && (mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 editorCancelMove();
                 refreshAll();
             }

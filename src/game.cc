@@ -73,6 +73,7 @@
 #include "version.h"
 #include "win32.h"
 #include "window_manager.h"
+#include "window.h"
 #include "worldmap.h"
 
 #if __APPLE__
@@ -555,7 +556,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
     }
 
     if (eventCode == -1) {
-        if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != MOUSE_EVENT_NONE) {
+        if ((mouseGetEvent() & MouseButtonEvent::Wheel) != MouseButtonEvent::None) {
             int wheelX;
             int wheelY;
             mouseGetWheel(&wheelX, &wheelY);
@@ -580,13 +581,13 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
     }
 
     if (eventCode == -2) {
-        MouseEvent mouseEvent = mouseGetEvent();
+        MouseButtonEvent mouseEvent = mouseGetEvent();
         int mouseX;
         int mouseY;
         mouseGetPosition(&mouseX, &mouseY);
 
-        if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == MOUSE_EVENT_NONE) {
+        if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
+            if ((mouseEvent & MouseButtonEvent::LeftButtonRepeat) == MouseButtonEvent::None) {
                 if (mouseX == _scr_size.left || mouseX == _scr_size.right
                     || mouseY == _scr_size.top || mouseY == _scr_size.bottom) {
                     _gmouse_clicked_on_edge = true;
@@ -595,7 +596,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 }
             }
         } else {
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
+            if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                 _gmouse_clicked_on_edge = false;
             }
         }
@@ -616,13 +617,13 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         break;
     case -2:
         if (1) {
-            MouseEvent mouseEvent = mouseGetEvent();
+            MouseButtonEvent mouseEvent = mouseGetEvent();
             int mouseX;
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
 
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != MOUSE_EVENT_NONE) {
-                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == MOUSE_EVENT_NONE) {
+            if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
+                if ((mouseEvent & MouseButtonEvent::LeftButtonRepeat) == MouseButtonEvent::None) {
                     if (mouseX == _scr_size.left || mouseX == _scr_size.right
                         || mouseY == _scr_size.top || mouseY == _scr_size.bottom) {
                         _gmouse_clicked_on_edge = true;
@@ -631,7 +632,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                     }
                 }
             } else {
-                if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
+                if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                     _gmouse_clicked_on_edge = false;
                 }
             }
@@ -1280,7 +1281,7 @@ void showHelp()
                     sharedFpsLimiter.throttle();
                 }
 
-                while (mouseGetEvent() != MOUSE_EVENT_NONE) {
+                while (mouseGetEvent() != MouseButtonEvent::None) {
                     sharedFpsLimiter.mark();
 
                     inputGetInput();

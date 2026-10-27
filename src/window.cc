@@ -290,14 +290,14 @@ int scriptWindowSetHighlightColor(float r, float g, float b)
 }
 
 // 0x4B62E4
-bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent)
+bool _checkRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent)
 {
     // TODO: Incomplete.
     return false;
 }
 
 // 0x4B6858
-bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent)
+bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent)
 {
     bool rc = _checkRegion(windowIndex, mouseX, mouseY, mouseEvent);
 
@@ -355,7 +355,7 @@ bool scriptWindowRefreshRegions()
                 region->rightProcs[3] = 0;
             }
 
-            MouseEvent mouseEvent = mouseGetEvent();
+            MouseButtonEvent mouseEvent = mouseGetEvent();
             return scriptWindowCheckRegion(windowIndex, mouseX, mouseY, mouseEvent);
         }
     }
@@ -374,7 +374,7 @@ bool _checkAllRegions()
     int mouseY;
     mouseGetPosition(&mouseX, &mouseY);
 
-    MouseEvent mouseEvent = mouseGetEvent();
+    MouseButtonEvent mouseEvent = mouseGetEvent();
     int win = windowGetAtPoint(mouseX, mouseY);
 
     for (int windowIndex = 0; windowIndex < MANAGED_WINDOW_COUNT; windowIndex++) {

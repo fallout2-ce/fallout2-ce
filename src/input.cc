@@ -202,7 +202,7 @@ int inputGetInput()
     _process_bk();
 
     v3 = dequeueInputEvent();
-    if (v3 == -1 && (mouseGetEvent() & (MOUSE_EVENT_RIGHT_BUTTON_UP | MOUSE_EVENT_LEFT_BUTTON_UP | MOUSE_EVENT_LEFT_BUTTON_DOWN | MOUSE_EVENT_RIGHT_BUTTON_DOWN))) {
+    if (v3 == -1 && (mouseGetEvent() & (MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonUp)) != MouseButtonEvent::None) {
         mouseGetPosition(&_input_mx, &_input_my);
         return -2;
     } else {

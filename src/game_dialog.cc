@@ -49,6 +49,7 @@
 #include "tile.h"
 #include "touch.h"
 #include "window_manager.h"
+#include "window.h"
 
 namespace fallout {
 
@@ -4139,7 +4140,7 @@ void partyMemberControlWindowHandleEvents()
                 // CE: Minor improvement - handle on mouse up (just like other
                 // buttons). Also fixed active button area (in original code
                 // it's slightly smaller than the button itself).
-                if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
+                if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                     if (mouseHitTestInWindow(gameDialogWindow, 438, 156, 438 + 109, 156 + 28)) {
                         aiSetDisposition(gGameDialogSpeaker, DISPOSITION_NONE);
                         dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
@@ -4565,7 +4566,7 @@ int _gdCustomSelect(int option)
             } else if (keyCode == KEY_ESCAPE) {
                 done = true;
             } else if (keyCode == -2) {
-                if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != MOUSE_EVENT_NONE) {
+                if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                     // No need to use mouseHitTestInWindow as these values are already
                     // in screen coordinates.
                     if (_mouse_click_in(minX, minY, maxX, maxY)) {

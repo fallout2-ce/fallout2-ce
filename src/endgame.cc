@@ -490,7 +490,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         windowRefresh(gEndgameEndingSlideshowWindow);
     }
 
-    while (mouseGetEvent() != MOUSE_EVENT_NONE) {
+    while (mouseGetEvent() != MouseButtonEvent::None) {
         sharedFpsLimiter.mark();
 
         inputGetInput();
@@ -582,7 +582,7 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
 
         paletteFadeTo(gPaletteBlack);
 
-        while (mouseGetEvent() != MOUSE_EVENT_NONE) {
+        while (mouseGetEvent() != MouseButtonEvent::None) {
             sharedFpsLimiter.mark();
 
             inputGetInput();

@@ -1228,7 +1228,7 @@ static void op_get_mouse_buttons(Program* program)
 {
     // CE: Implementation is slightly different - it does not handle middle
     // mouse button.
-    programStackPushInteger(program, mouse_get_last_buttons());
+    programStackPushInteger(program, static_cast<int>(mouse_get_last_buttons()));
 }
 
 static void op_get_window_under_mouse(Program* program)

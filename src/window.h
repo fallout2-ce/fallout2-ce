@@ -4,14 +4,13 @@
 #include "color.h"
 #include "geometry.h"
 #include "interpreter.h"
+#include "mouse.h"
 #include "region.h"
 #include "window_defs.h"
 #include "window_manager.h"
 
 namespace fallout {
 
-typedef void (*WINDOWDRAWINGPROC)(unsigned char* src, int src_pitch, int _, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
-typedef void WindowDrawingProc2(unsigned char* buf, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, unsigned char a10);
 typedef bool(WindowInputHandler)(int key);
 typedef void(WindowDeleteCallback)(int windowIndex, const char* windowName);
 typedef void(DisplayInWindowCallback)(int windowIndex, const char* windowName, unsigned char* data, int width, int height);
@@ -43,8 +42,8 @@ Color scriptWindowGetTextColor();
 int scriptWindowSetTextColor(float r, float g, float b);
 Color scriptWindowGetHighlightColor();
 int scriptWindowSetHighlightColor(float r, float g, float b);
-bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
-bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
+bool _checkRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent);
+bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent);
 bool scriptWindowRefreshRegions();
 bool _checkAllRegions();
 void scriptWindowAddInputFunc(WindowInputHandler* handler);
