@@ -9,6 +9,7 @@
 #include "object.h"
 #include "proto_types.h"
 #include "random.h"
+#include "script_sound.h"
 #include "stat_defs.h"
 #include "window_defs.h"
 #include "worldmap.h"
@@ -529,6 +530,17 @@ inline Roll programStackPopEnum(Program* program)
     }
 
     return static_cast<Roll>(roll);
+}
+
+template <>
+inline ScriptSoundMode programStackPopEnum(Program* program)
+{
+    int mode = programStackPopInteger(program);
+    if (!scriptSoundModeIsValid(mode)) {
+        programPrintError("invalid script sound mode %d", mode);
+    }
+
+    return static_cast<ScriptSoundMode>(mode);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

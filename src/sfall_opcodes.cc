@@ -1354,7 +1354,7 @@ static void op_disable_aimed_shots(Program* program)
 
 static void op_play_sfall_sound(Program* program)
 {
-    int mode = programStackPopInteger(program);
+    ScriptSoundMode mode = programStackPopEnum<ScriptSoundMode>(program);
     const char* path = programStackPopString(program);
     programStackPushInteger(program, scriptSoundPlay(path, mode));
 }

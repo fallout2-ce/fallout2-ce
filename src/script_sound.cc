@@ -31,7 +31,7 @@ static unsigned int scriptSoundNextSerial = 0;
 static int scriptLoopId = 0;
 static int currentMusicId = 0;
 
-static int scriptSoundGetBaseVolume(int mode)
+static int scriptSoundGetBaseVolume(ScriptSoundMode mode)
 {
     switch (mode) {
     case SCRIPT_SOUND_MODE_MUSIC:
@@ -157,15 +157,15 @@ void scriptSoundInit()
     scriptSoundNextSerial = 0;
 }
 
-int scriptSoundPlay(const char* path, int mode)
+int scriptSoundPlay(const char* path, ScriptSoundMode mode)
 {
-    if (mode < 0 || path == nullptr || path[0] == '\0') {
+    if (mode < SCRIPT_SOUND_MODE_SINGLE || path == nullptr || path[0] == '\0') {
         return 0;
     }
 
     int volumeReduction = (mode & 0x7FFF0000) >> 16;
-    mode &= 0xF;
-    if (mode > SCRIPT_SOUND_MODE_SPEECH) {
+    
+    if (!scriptSoundModeIsValid(mode)) {
         mode = SCRIPT_SOUND_MODE_MUSIC;
     }
 
