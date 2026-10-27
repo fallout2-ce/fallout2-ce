@@ -482,7 +482,7 @@ static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* cont
 
     if (migrated) {
         if (contentConfigEnsureDirectory(contentConfigFilePath)) {
-            if (!configWriteEx(&migratedConfig, contentConfigFilePath, CONFIG_RETAIN_ALL)) {
+            if (!configWriteEx(&migratedConfig, contentConfigFilePath, ConfigFlags::RetainAll)) {
                 debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
             }
         } else {
