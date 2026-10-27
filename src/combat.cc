@@ -20,6 +20,7 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "gamepad.h"
 #include "input.h"
 #include "interface.h"
 #include "item.h"
@@ -1932,6 +1933,9 @@ static Object* gCalledShotCritter;
 // 0x56D374 call_win
 static int gCalledShotWindow;
 
+// True while the called-shot (body-part) selection window is on screen.
+static bool gCalledShotWindowActive = false;
+
 // 0x56D378 combat_elev
 static MapElevation _combat_elev;
 
@@ -2086,6 +2090,7 @@ void combatReset()
     // SFALL
     criticalsReset();
     combat_reset_hit_location_penalty();
+    gamepadClearPendingActions();
 }
 
 // 0x420E14
@@ -2096,6 +2101,7 @@ void combatExit()
 
     // SFALL
     criticalsExit();
+    gamepadClearPendingActions();
 }
 
 // 0x420E24
@@ -3269,6 +3275,8 @@ static int _combat_input()
         }
 
         int keyCode = inputGetInput();
+
+        gamepadProcessPendingActions();
 
         // SFALL: CombatLoopHook.
         sfall_gl_scr_process_main();
@@ -5846,6 +5854,8 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
 
     windowRefresh(gCalledShotWindow);
 
+    gCalledShotWindowActive = true;
+
     bool gameUiWasDisabled = gameUiIsDisabled();
     if (gameUiWasDisabled) {
         gameUiEnable();
@@ -5885,6 +5895,8 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     fontSetCurrent(oldFont);
 
     windowDestroy(gCalledShotWindow);
+
+    gCalledShotWindowActive = false;
 
     if (eventCode == KEY_ESCAPE) {
         return -1;
@@ -6070,6 +6082,42 @@ void _combat_attack_this(Object* target)
     if (calledShotSelectHitLocation(target, &hitLocation, hitMode) != -1) {
         _combat_attack(gDude, target, hitMode, hitLocation);
     }
+}
+
+Object** combatGetCombatList(int* outTotal, int* outCombatants)
+{
+    if (outTotal != nullptr) {
+        *outTotal = _list_total;
+    }
+    if (outCombatants != nullptr) {
+        *outCombatants = _list_com + _list_noncom;
+    }
+    return _combat_list;
+}
+
+bool combatIsTurnRunning()
+{
+    return _combat_turn_running > 0;
+}
+
+bool combatGamepadCalledShotActive()
+{
+    return gCalledShotWindowActive;
+}
+
+int combatSelectCalledShotLocation(Object* target, HitLocation* hitLocation, HitMode hitMode)
+{
+    return calledShotSelectHitLocation(target, hitLocation, hitMode);
+}
+
+void combatExecuteAttack(Object* target, HitLocation hitLocation, HitMode hitMode)
+{
+    _combat_attack(gDude, target, hitMode, hitLocation);
+}
+
+void combatExecuteTurnRun()
+{
+    _combat_turn_run();
 }
 
 // Highlights critters.

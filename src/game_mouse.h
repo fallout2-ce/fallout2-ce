@@ -78,6 +78,7 @@ constexpr inline MouseCursorType operator+(MouseCursorType lhs, MouseCursorType 
 }
 
 extern bool _gmouse_clicked_on_edge;
+extern bool gGameMouseActionMenuActive;
 
 extern Object* gGameMouseBouncingCursor;
 extern Object* gGameMouseHexCursor;
