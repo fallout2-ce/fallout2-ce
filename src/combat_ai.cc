@@ -3036,10 +3036,14 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             if (toHitNoRange < minToHit) {
                 // hit chance is too low even at point blank range (not taking range into account)
                 debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
-                // SFALL: Not fleeing for the rest of combat (see
-                // `CRITTER_MANEUVER_RETARGET`).
-                attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
                 _ai_run_away(attacker, defender);
+                // SFALL: Not fleeing for the rest of combat (see
+                // `CRITTER_MANEUVER_RETARGET`). Not when the target is beyond
+                // its max distance: then it disengages, and `_combat_sequence`
+                // takes out only critters whose maneuver is just that.
+                if ((attacker->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) == CRITTER_MANEUVER_NONE) {
+                    attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
+                }
                 return 0;
             }
 
@@ -3075,10 +3079,14 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 int toHitNoRange = _determine_to_hit_no_range(attacker, defender, HIT_LOCATION_UNCALLED, hitMode, rotations);
                 if (toHitNoRange < minToHit) {
                     debugPrint("%s: FLEEING: Can't possibly Hit Target!", critterGetName(attacker));
-                    // SFALL: Not fleeing for the rest of combat (see
-                    // `CRITTER_MANEUVER_RETARGET`).
-                    attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
                     _ai_run_away(attacker, defender);
+                    // SFALL: Not fleeing for the rest of combat (see
+                    // `CRITTER_MANEUVER_RETARGET`). Not when the target is beyond
+                    // its max distance: then it disengages, and `_combat_sequence`
+                    // takes out only critters whose maneuver is just that.
+                    if ((attacker->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) == CRITTER_MANEUVER_NONE) {
+                        attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_RETARGET;
+                    }
                     return 0;
                 }
 
