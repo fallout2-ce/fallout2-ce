@@ -2303,33 +2303,23 @@ int scriptSaveAll(File* stream)
             return -1;
         }
 
-        if (scriptCount > 0) {
-            ScriptListExtent* scriptExtent = scriptList->head;
-            while (scriptExtent != lastScriptExtent) {
-                if (scriptListExtentWrite(scriptExtent, stream) == -1) {
-                    return -1;
-                }
-                scriptExtent = scriptExtent->next;
+        // The scripts to save are the first [scriptCount] now: each extent
+        // is written with the length of its part of them. The original
+        // wrote the extents before the last one whole, with the not saved
+        // (party members') scripts moved to their end, so their lengths
+        // didn't add up to the count.
+        int remainingScripts = scriptCount;
+        ScriptListExtent* extent = scriptList->head;
+        while (remainingScripts > 0 && extent != nullptr) {
+            int length = extent->length;
+            extent->length = std::min(length, remainingScripts);
+            int rc = scriptListExtentWrite(extent, stream);
+            remainingScripts -= extent->length;
+            extent->length = length;
+            if (rc == -1) {
+                return -1;
             }
-
-            if (lastScriptExtent != nullptr) {
-                int index;
-                for (index = 0; index < lastScriptExtent->length; index++) {
-                    Script* script = &(lastScriptExtent->scripts[index]);
-                    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-                        break;
-                    }
-                }
-
-                if (index > 0) {
-                    int length = lastScriptExtent->length;
-                    lastScriptExtent->length = index;
-                    if (scriptListExtentWrite(lastScriptExtent, stream) == -1) {
-                        return -1;
-                    }
-                    lastScriptExtent->length = length;
-                }
-            }
+            extent = extent->next;
         }
     }
 
@@ -2401,6 +2391,13 @@ static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLeng
 
     if (fileReadInt32(stream, &(scriptExtent->length)) != 0) {
         return -1;
+    }
+
+    // Saves of the original (and of CE before it wrote the lengths right)
+    // have a longer extent when party members' scripts were moved to its
+    // end: they aren't saved, the count leaves them out.
+    if (scriptExtent->length > expectedLength && scriptExtent->length <= SCRIPT_LIST_EXTENT_SIZE) {
+        scriptExtent->length = expectedLength;
     }
 
     if (scriptExtent->length != expectedLength) {
