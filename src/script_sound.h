@@ -17,7 +17,7 @@ constexpr inline bool scriptSoundModeIsValid(int mode)
 
 // Sizes the script channel pool, see `script_channels` in fallout2.cfg.
 void scriptSoundInit();
-int scriptSoundPlay(const char* path, ScriptSoundMode mode);
+int scriptSoundPlay(const char* path, ScriptSoundMode mode, int volumeReduction = 0);
 void scriptSoundStop(int id);
 void scriptSoundReset();
 void scriptSoundExit();

@@ -1354,9 +1354,19 @@ static void op_disable_aimed_shots(Program* program)
 
 static void op_play_sfall_sound(Program* program)
 {
-    ScriptSoundMode mode = programStackPopEnum<ScriptSoundMode>(program);
+    int mode = programStackPopInteger(program);
     const char* path = programStackPopString(program);
-    programStackPushInteger(program, scriptSoundPlay(path, mode));
+
+    int soundId = 0;
+    if (mode >= 0) {
+        int volumeReduction = (mode & 0x7FFF0000) >> 16;
+        ScriptSoundMode soundMode = static_cast<ScriptSoundMode>(mode & 0xF);
+        soundId = scriptSoundPlay(path, soundMode, volumeReduction);
+    } else {
+        programPrintError("play_sfall_sound: invalid script sound mode %d.", mode);
+    }
+
+    programStackPushInteger(program, soundId);
 }
 
 static void op_stop_sfall_sound(Program* program)
@@ -1376,7 +1386,7 @@ static void op_force_encounter_with_flags(Program* program)
 // list_as_array
 static void op_list_as_array(Program* program)
 {
-    int type = programStackPopInteger(program);
+    ListType type = programStackPopEnum<ListType>(program);
     int arrayId = ListAsArray(type);
     programStackPushInteger(program, arrayId);
 }

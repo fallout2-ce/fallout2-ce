@@ -157,13 +157,11 @@ void scriptSoundInit()
     scriptSoundNextSerial = 0;
 }
 
-int scriptSoundPlay(const char* path, ScriptSoundMode mode)
+int scriptSoundPlay(const char* path, ScriptSoundMode mode, int volumeReduction)
 {
-    if (mode < SCRIPT_SOUND_MODE_SINGLE || path == nullptr || path[0] == '\0') {
+    if (path == nullptr || path[0] == '\0') {
         return 0;
     }
-
-    int volumeReduction = (mode & 0x7FFF0000) >> 16;
     
     if (!scriptSoundModeIsValid(mode)) {
         mode = SCRIPT_SOUND_MODE_MUSIC;

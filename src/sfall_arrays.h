@@ -40,7 +40,7 @@ void DeleteAllTempArrays();
 void SetArrayFromExpression(const ProgramValue& key, const ProgramValue& val, Program* program);
 void PopExpressionArray();
 ProgramValue ScanArray(ArrayId arrayId, const ProgramValue& val, Program* program);
-ArrayId ListAsArray(int type);
+ArrayId ListAsArray(ListType type);
 
 ArrayId StringSplit(const char* str, const char* split);
 
