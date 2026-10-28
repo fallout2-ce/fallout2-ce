@@ -480,12 +480,23 @@ int _scriptsCheckGameEvents(GameMovie* moviePtr, int window)
 
     int day = gGameTime / GAME_TIME_TICKS_PER_DAY;
 
+    // A negative timer: that dream never comes. sfall's fork documents
+    // MovieTimer_artimer* "-1 to disable the game event", and mods set it so
+    // (Fallout of Nevada; Fallout: Resurrection's config\game#patch.cfg for
+    // CE). Taken as days, -1 played the dream at once and, its movie not in
+    // the mod, again at every check, each time lowering GVAR_TOWN_REP_ARROYO
+    // and changing the Arroyo areas, which are the mod's own globals and
+    // towns.
+    auto timerReached = [day](int timer) {
+        return timer >= 0 && day >= timer;
+    };
+
     if (gameGetGlobalVar(GVAR_ENEMY_ARROYO)) {
         movie = MOVIE_AFAILED;
         movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::StopMusic;
         endgame = true;
     } else {
-        if (day >= gMovieTimerArtimer4 || gameGetGlobalVar(GVAR_FALLOUT_2) >= 3) {
+        if (timerReached(gMovieTimerArtimer4) || gameGetGlobalVar(GVAR_FALLOUT_2) >= 3) {
             movie = MOVIE_ARTIMER4;
             if (!gameMovieIsSeen(MOVIE_ARTIMER4)) {
                 adjustRep = true;
@@ -493,13 +504,13 @@ int _scriptsCheckGameEvents(GameMovie* moviePtr, int window)
                 wmAreaSetVisibleState(CITY_DESTROYED_ARROYO, CITY_STATE_KNOWN, true);
                 wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, VisitedState::Visited);
             }
-        } else if (day >= gMovieTimerArtimer3 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
+        } else if (timerReached(gMovieTimerArtimer3) && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;
             movie = MOVIE_ARTIMER3;
-        } else if (day >= gMovieTimerArtimer2 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
+        } else if (timerReached(gMovieTimerArtimer2) && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;
             movie = MOVIE_ARTIMER2;
-        } else if (day >= gMovieTimerArtimer1 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
+        } else if (timerReached(gMovieTimerArtimer1) && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;
             movie = MOVIE_ARTIMER1;
         }
