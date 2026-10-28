@@ -1200,7 +1200,7 @@ int endgameDeathEndingExit()
 
 // endgameSetupDeathEnding
 // 0x440BD0 endgameSetupDeathEnding
-void endgameSetupDeathEnding(int reason)
+void endgameSetupDeathEnding(EndgameDeathEndingReason reason)
 {
     if (!gEndgameDeathEndingsLength) {
         debugPrint("\nError: endgameSetupDeathEnding: No endgame death info!");

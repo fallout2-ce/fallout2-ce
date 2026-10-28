@@ -3,13 +3,13 @@
 
 namespace fallout {
 
-typedef enum EndgameDeathEndingReason {
+enum EndgameDeathEndingReason : int {
     // Dude died.
     ENDGAME_DEATH_ENDING_REASON_DEATH = 0,
 
     // 13 years passed.
     ENDGAME_DEATH_ENDING_REASON_TIMEOUT = 2,
-} EndgameDeathEndingReason;
+};
 
 extern char _aEnglish_2[];
 
@@ -18,7 +18,7 @@ void endgamePlayMovie();
 bool endgameShouldPlayMovieAfterSlideshow();
 int endgameDeathEndingInit();
 int endgameDeathEndingExit();
-void endgameSetupDeathEnding(int reason);
+void endgameSetupDeathEnding(EndgameDeathEndingReason reason);
 char* endgameDeathEndingGetFileName();
 
 } // namespace fallout
