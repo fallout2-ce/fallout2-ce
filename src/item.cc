@@ -698,7 +698,10 @@ static bool _item_identical(Object* item1, Object* item2)
         return false;
     }
 
-    if (scriptsIsUniqueObjectId(item1->id) || scriptsIsUniqueObjectId(item2->id)) {
+    // SFALL: Items given unique IDs (`set_unique_id`) don't stack. Only that
+    // range: party members' range is never an item's, and items with such IDs
+    // from older saves stack as in the original.
+    if (item1->id > OBJECT_ID_UNIQUE_START || item2->id > OBJECT_ID_UNIQUE_START) {
         return false;
     }
 
