@@ -18,7 +18,7 @@ enum ListType : int {
     LIST_ALL = 9,
 };
 
-constexpr inline bool listTypeIsValid(int listType) 
+constexpr inline bool listTypeIsValid(int listType)
 {
     return listType >= LIST_CRITTERS && listType <= LIST_SPATIAL || listType == LIST_ALL;
 }

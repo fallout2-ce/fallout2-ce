@@ -162,7 +162,7 @@ int scriptSoundPlay(const char* path, ScriptSoundMode mode, int volumeReduction)
     if (path == nullptr || path[0] == '\0') {
         return 0;
     }
-    
+
     if (!scriptSoundModeIsValid(mode)) {
         mode = SCRIPT_SOUND_MODE_MUSIC;
     }
