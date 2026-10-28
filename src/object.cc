@@ -916,6 +916,8 @@ void _obj_render_post_roof(Rect* rect, MapElevation elevation)
         objectDrawOutline(object, &updatedRect);
     }
 
+    gameMouseRenderLandingMarkerLabel(gObjectsWindowBuffer, gObjectsWindowPitch, &updatedRect);
+
     textObjectsRenderInRect(&updatedRect);
 
     ObjectListNode* objectListNode = gObjectListHead;
@@ -2441,7 +2443,8 @@ bool _obj_occupied(int tile, MapElevation elevation)
     while (objectListNode != nullptr) {
         if (objectListNode->obj->elevation == elevation
             && objectListNode->obj != gGameMouseBouncingCursor
-            && objectListNode->obj != gGameMouseHexCursor) {
+            && objectListNode->obj != gGameMouseHexCursor
+            && objectListNode->obj != gGameMouseLandingMarker) {
             return true;
         }
         objectListNode = objectListNode->next;
