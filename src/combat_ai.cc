@@ -1844,14 +1844,6 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
             }
             return true;
         }
-
-        if (weaponGetAnimationCode(weapon) != WeaponAnimation::None) {
-            if (weaponGetRange(critter, HIT_MODE_RIGHT_WEAPON_PRIMARY) < 3) {
-                inventoryUnequip(critter, HAND_RIGHT);
-            }
-        } else {
-            inventoryUnequip(critter, HAND_RIGHT);
-        }
     }
 
     return false;
