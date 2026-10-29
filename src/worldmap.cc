@@ -7407,24 +7407,31 @@ static int wmAreaFindFirstValidMap(Map* mapIdxPtr, MapElevation* elevationPtr, i
         return -1;
     }
 
+    EntranceInfo* entrance = nullptr;
     for (int index = 0; index < city->entrancesLength; index++) {
-        EntranceInfo* entrance = &(city->entrances[index]);
-        if (entrance->state != 0) {
-            *mapIdxPtr = entrance->map;
-            *elevationPtr = entrance->elevation;
-            *tilePtr = entrance->tile;
-            *rotationPtr = entrance->rotation;
-            return 0;
+        if (city->entrances[index].state != 0) {
+            entrance = &(city->entrances[index]);
+            break;
         }
     }
 
-    EntranceInfo* entrance = &(city->entrances[0]);
-    entrance->state = 1;
+    if (entrance == nullptr) {
+        entrance = &(city->entrances[0]);
+        entrance->state = 1;
+    }
 
     *mapIdxPtr = entrance->map;
-    *elevationPtr = entrance->elevation;
-    *tilePtr = entrance->tile;
-    *rotationPtr = entrance->rotation;
+
+    // CE: An entrance without a tile enters at the map's own start, as the
+    // original did (it only took the map here). Golgotha and the whale
+    // encounter in city.txt have elevation 0 with tile -1, and the map
+    // failed to load with it (an empty map).
+    if (entrance->tile != -1) {
+        *elevationPtr = entrance->elevation;
+        *tilePtr = entrance->tile;
+        *rotationPtr = entrance->rotation;
+    }
+
     return 0;
 }
 
