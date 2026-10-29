@@ -275,8 +275,12 @@ static void programPrintError(const char* format, va_list args)
     }
 }
 
+// Stops the current script (back to `_interpret`'s `setjmp`). Without one
+// (a program being loaded, `programCreateByPath`) it returns, as in the
+// original, so it's not `[[noreturn]]`.
+//
 // 0x4671F0
-[[noreturn]] void programFatalError(const char* format, ...)
+void programFatalError(const char* format, ...)
 {
     va_list argptr;
     va_start(argptr, format);
@@ -286,11 +290,6 @@ static void programPrintError(const char* format, va_list args)
     if (gInterpreterCurrentProgram) {
         longjmp(gInterpreterCurrentProgram->env, 1);
     }
-#ifdef _MSC_VER
-    __assume(0);
-#else
-    __builtin_unreachable();
-#endif
 }
 
 void programPrintError(const char* format, ...)

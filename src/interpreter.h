@@ -228,7 +228,7 @@ extern int _TimeOut;
 char* _interpretMangleName(char* s);
 void _interpretOutputFunc(int (*func)(const char*));
 int _interpretOutput(const char* format, ...);
-[[noreturn]] void programFatalError(const char* str, ...);
+void programFatalError(const char* str, ...);
 void programPrintError(const char* format, ...);
 void interpreterStringRefCountDecrease(Program* program, opcode_t opcode, int value);
 void programFree(Program* program);
