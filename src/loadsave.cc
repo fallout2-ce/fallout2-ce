@@ -117,11 +117,11 @@ enum class LoadSaveSlotState : int {
     UnsupportedVersion,
 };
 
-typedef enum LoadSaveScrollDirection {
-    LOAD_SAVE_SCROLL_DIRECTION_NONE,
-    LOAD_SAVE_SCROLL_DIRECTION_UP,
-    LOAD_SAVE_SCROLL_DIRECTION_DOWN,
-} LoadSaveScrollDirection;
+enum class LoadSaveScrollDirection : int {
+    None,
+    Up,
+    Down,
+};
 
 static void loadSaveMessageListReset();
 
@@ -662,7 +662,7 @@ int lsgSaveGame(LoadSaveMode mode)
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
         bool selectionChanged = false;
-        int scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+        LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
 
         convertMouseWheelToArrowKey(&keyCode);
 
@@ -725,11 +725,11 @@ int lsgSaveGame(LoadSaveMode mode)
                 doubleClickSlot = -1;
                 break;
             case 506:
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_UP;
+                scrollDirection = LoadSaveScrollDirection::Up;
                 break;
 
             case 504:
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_DOWN;
+                scrollDirection = LoadSaveScrollDirection::Down;
                 break;
 
             case KEY_ARROW_RIGHT:
@@ -770,7 +770,7 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 selectionChanged = true;
                 doubleClickSlot = _slot_cursor;
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+                scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
             case KEY_CTRL_Q:
@@ -809,10 +809,10 @@ int lsgSaveGame(LoadSaveMode mode)
             }
 
             selectionChanged = true;
-            scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+            scrollDirection = LoadSaveScrollDirection::None;
         }
 
-        if (scrollDirection) {
+        if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
             int scrollCounter = 0;
@@ -832,7 +832,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         }
                     }
                     // handle scrolling between pages via buttons
-                    if (scrollDirection == LOAD_SAVE_SCROLL_DIRECTION_UP) {
+                    if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
 
                         // If moving up past the first slot of the page, go to the previous page
@@ -846,7 +846,7 @@ int lsgSaveGame(LoadSaveMode mode)
                                 _slot_cursor = 0; // Prevent underflow
                             }
                         }
-                    } else { // LOAD_SAVE_SCROLL_DIRECTION_DOWN
+                    } else { // Down
                         _slot_cursor++;
 
                         // If moving down past the last slot of the page, go to the next page
@@ -1290,7 +1290,7 @@ int lsgLoadGame(LoadSaveMode mode)
         int keyCode = devAutoloadPending ? kLoadSaveActionDone : inputGetInput();
         devAutoloadPending = false;
         bool selectionChanged = false;
-        int scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+        LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
 
         convertMouseWheelToArrowKey(&keyCode);
 
@@ -1353,10 +1353,10 @@ int lsgLoadGame(LoadSaveMode mode)
                 doubleClickSlot = -1;
                 break;
             case 506:
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_UP;
+                scrollDirection = LoadSaveScrollDirection::Up;
                 break;
             case 504:
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_DOWN;
+                scrollDirection = LoadSaveScrollDirection::Down;
                 break;
             case KEY_ARROW_RIGHT:
             case KEY_ARROW_LEFT:
@@ -1396,7 +1396,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 selectionChanged = true;
                 doubleClickSlot = _slot_cursor;
-                scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+                scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
             case KEY_MINUS:
@@ -1429,10 +1429,10 @@ int lsgLoadGame(LoadSaveMode mode)
             }
 
             selectionChanged = true;
-            scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
+            scrollDirection = LoadSaveScrollDirection::None;
         }
 
-        if (scrollDirection != LOAD_SAVE_SCROLL_DIRECTION_NONE) {
+        if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
             int scrollCounter = 0;
@@ -1452,7 +1452,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         }
                     }
                     // handle scrolling between pages via buttons
-                    if (scrollDirection == LOAD_SAVE_SCROLL_DIRECTION_UP) {
+                    if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
 
                         // If moving up past the first slot of the page, go to the previous page
@@ -1466,7 +1466,7 @@ int lsgLoadGame(LoadSaveMode mode)
                                 _slot_cursor = 0; // Don't go under
                             }
                         }
-                    } else { // LOAD_SAVE_SCROLL_DIRECTION_DOWN
+                    } else { // Down
                         soundPlayFile("ib1p1xx1");
                         _slot_cursor++;
 
