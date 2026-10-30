@@ -508,7 +508,7 @@ void _ResetLoadSave()
 
 // SaveGame
 // 0x47B88C
-int lsgSaveGame(int mode)
+int lsgSaveGame(LoadSaveMode mode)
 {
     ScopedGameMode gm(GameMode::kSaveGame);
 
@@ -522,7 +522,7 @@ int lsgSaveGame(int mode)
         _quick_done = true;
     }
 
-    if (mode == LOAD_SAVE_MODE_QUICK && _quick_done) {
+    if (mode == LoadSaveMode::Quick && _quick_done) {
         // SFALL: cycle through first N slots for quicksaving
         if (autoQuickSaveSlots) {
             if (++_slot_cursor >= quickSaveSlots) {
@@ -586,11 +586,11 @@ int lsgSaveGame(int mode)
         return -1;
     }
 
-    touch_set_touchscreen_mode(mode == LOAD_SAVE_MODE_NORMAL);
+    touch_set_touchscreen_mode(mode == LoadSaveMode::Normal);
 
     _quick_done = false;
 
-    int windowType = mode == LOAD_SAVE_MODE_QUICK
+    int windowType = mode == LoadSaveMode::Quick
         ? LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_SAVE_SLOT
         : LOAD_SAVE_WINDOW_TYPE_SAVE_GAME;
     if (lsgWindowInit(windowType) == -1) {
@@ -1067,7 +1067,7 @@ int lsgSaveGame(int mode)
 
     tileWindowRefresh();
 
-    if (mode == LOAD_SAVE_MODE_QUICK) {
+    if (mode == LoadSaveMode::Quick) {
         if (rc == 1) {
             _quick_done = true;
         }
@@ -1118,7 +1118,7 @@ static int _QuickSnapShot()
 
 // LoadGame
 // 0x47C640
-int lsgLoadGame(int mode)
+int lsgLoadGame(LoadSaveMode mode)
 {
     ScopedGameMode gm(GameMode::kLoadGame);
 
@@ -1132,7 +1132,7 @@ int lsgLoadGame(int mode)
     _ls_error_code = 0;
     _patches = settings.system.master_patches_path.c_str();
 
-    if (mode == LOAD_SAVE_MODE_QUICK && _quick_done) {
+    if (mode == LoadSaveMode::Quick && _quick_done) {
         int quickSaveWindowX = (screenGetWidth() - LS_WINDOW_WIDTH) / 2;
         int quickSaveWindowY = (screenGetHeight() - LS_WINDOW_HEIGHT) / 2;
         int window = windowCreate(quickSaveWindowX,
@@ -1188,13 +1188,13 @@ int lsgLoadGame(int mode)
 
     int windowType;
     switch (mode) {
-    case LOAD_SAVE_MODE_FROM_MAIN_MENU:
+    case LoadSaveMode::FromMainMenu:
         windowType = LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU;
         break;
-    case LOAD_SAVE_MODE_NORMAL:
+    case LoadSaveMode::Normal:
         windowType = LOAD_SAVE_WINDOW_TYPE_LOAD_GAME;
         break;
-    case LOAD_SAVE_MODE_QUICK:
+    case LoadSaveMode::Quick:
         windowType = LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_LOAD_SLOT;
         break;
     default:
@@ -1202,7 +1202,7 @@ int lsgLoadGame(int mode)
     }
 
     int devAutoloadSlot = -1;
-    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && gDevLoadGameSlot != -1) {
+    if (mode == LoadSaveMode::FromMainMenu && gDevLoadGameSlot != -1) {
         devAutoloadSlot = gDevLoadGameSlot;
         gDevLoadGameSlot = -1;
     }
@@ -1220,7 +1220,7 @@ int lsgLoadGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         windowRefresh(gLoadSaveWindow);
         renderPresent();
-        if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+        if (mode == LoadSaveMode::FromMainMenu) {
             mainMenuShowSubscreen(true);
         }
         soundPlayFile("iisxxxx1");
@@ -1275,7 +1275,7 @@ int lsgLoadGame(int mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
     renderPresent();
-    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+    if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
     _dbleclkcntr = 24;
@@ -1608,17 +1608,17 @@ int lsgLoadGame(int mode)
         sharedFpsLimiter.throttle();
     }
 
-    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
+    if (mode == LoadSaveMode::FromMainMenu && rc == 0) {
         mainMenuFadeOutForMenuReturn(true);
     }
 
-    lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU
+    lsgWindowFree(mode == LoadSaveMode::FromMainMenu
             ? LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU
             : LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
 
     pipboyMessageListFree();
 
-    if (mode == LOAD_SAVE_MODE_QUICK) {
+    if (mode == LoadSaveMode::Quick) {
         if (rc == 1) {
             _quick_done = true;
         }

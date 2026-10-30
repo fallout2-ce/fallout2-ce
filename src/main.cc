@@ -173,7 +173,7 @@ int falloutMain(int argc, char** argv)
                 if (devLoadGameSlot != -1) {
                     lsgDevSetLoadGameSlot(devLoadGameSlot);
                 }
-                int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                int loadGameRc = lsgLoadGame(LoadSaveMode::FromMainMenu);
                 if (loadGameRc == -1) {
                     debugPrint("\n ** Error running LoadGame()! **\n");
                 }
