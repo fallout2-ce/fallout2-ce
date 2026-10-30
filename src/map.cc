@@ -76,6 +76,10 @@ static int mapHeaderRead(MapHeader* ptr, File* stream);
 static void mapLoadTimerStart();
 static void mapLoadTimerFinish(const char* fileName, int rc);
 
+// Also covers the synchronous explosion pre-pass, as in sfall's OnMapLeave.
+static bool exitScriptsRunning = false;
+static bool restoreSneakOnMapEnter = false;
+
 // 0x50B058
 static char byte_50B058[] = "";
 
@@ -261,6 +265,9 @@ int isoInit()
 // 0x481ED4
 void isoReset()
 {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
     // NOTE: Uninline.
     mapGlobalVariablesFree();
 
@@ -298,6 +305,9 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
     configGetBool(&gContentConfig, CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", &disableSpecialMapIds, false);
 
     if (settings.system.executableIsMapper()) {
@@ -1115,6 +1125,11 @@ err:
         debugPrint("\n   Error: scr_load_all_scripts failed!");
     }
 
+    if (restoreSneakOnMapEnter) {
+        // Consume before enabling sneak, which also schedules its new timer.
+        restoreSneakOnMapEnter = false;
+        dudeEnableState(DUDE_STATE_SNEAKING);
+    }
     scriptsExecMapEnterProc();
     scriptsExecMapUpdateProc();
     tileEnable();
@@ -1563,12 +1578,9 @@ static int _map_save_file(File* stream)
     return 0;
 }
 
-// SFALL: Whether map_exit_p_proc of the map the player leaves runs.
-static bool gMapExitScriptsRunning = false;
-
 bool mapExitScriptsRunning()
 {
-    return gMapExitScriptsRunning;
+    return exitScriptsRunning;
 }
 
 // 0x483C98
@@ -1579,18 +1591,24 @@ int _map_save_in_game(bool isLeavingMap)
     }
 
     animationStop();
+
+    if (isLeavingMap) {
+        // SFALL: Run exit scripts before event cleanup and party preparation so
+        // scripts can still add or remove party members and update their state.
+        exitScriptsRunning = true;
+        queueClearMapExitExplosions();
+        scriptsExecMapExitProc();
+        // SFALL: Capture after exit scripts, before cleanup disables sneaking.
+        restoreSneakOnMapEnter = dudeHasState(DUDE_STATE_SNEAKING);
+        exitScriptsRunning = false;
+        _queue_leaving_map();
+    }
+
     _partyMemberSaveProtos();
 
     if (isLeavingMap) {
-        _queue_leaving_map();
         _partyMemberPrepLoad();
         _partyMemberPrepItemSaveAll();
-
-        // SFALL: Critters waking up while map_exit_p_proc advances the time
-        // stand up at once (see `knockoutEventProcess`).
-        gMapExitScriptsRunning = true;
-        scriptsExecMapExitProc();
-        gMapExitScriptsRunning = false;
 
         if (gMapSid != -1) {
             Script* script;
