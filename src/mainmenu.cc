@@ -59,7 +59,7 @@ constexpr int mainMenuOverlayDimClearIntensity = 0x10000;
 constexpr int mainMenuOverlayDimAnimationSteps = 5;
 constexpr int mainMenuOverlayDimFrameDelay = 18;
 
-typedef enum MainMenuButton {
+enum MainMenuButton : int {
     MAIN_MENU_BUTTON_INTRO,
     MAIN_MENU_BUTTON_NEW_GAME,
     MAIN_MENU_BUTTON_LOAD_GAME,
@@ -67,7 +67,15 @@ typedef enum MainMenuButton {
     MAIN_MENU_BUTTON_CREDITS,
     MAIN_MENU_BUTTON_EXIT,
     MAIN_MENU_BUTTON_COUNT,
-} MainMenuButton;
+    MAIN_MENU_BUTTON_FIRST = MAIN_MENU_BUTTON_INTRO
+};
+
+inline MainMenuButton operator++(MainMenuButton& e, int)
+{
+    MainMenuButton result = e;
+    e = static_cast<MainMenuButton>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum class MenuArt {
     Vanilla,
@@ -455,7 +463,7 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
         blitBuffer2DScaledTrans(mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
     }
 
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
         Point buttonPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_X, MAIN_MENU_BUTTON_Y + index * MAIN_MENU_BUTTON_Y_STEP);
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
             buttonPosition.x + offsets.menuX,
@@ -490,7 +498,7 @@ static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMen
         fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
     }
 
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
         msg.num = mainMenuButtonSpecs[index].labelMessage;
         if (!messageListGetItem(&gMiscMessageList, &msg)) {
             continue;
@@ -523,7 +531,7 @@ int mainMenuWindowInit()
         return 0;
     }
 
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
         gMainMenuButtons[index] = -1;
     }
 
@@ -588,7 +596,7 @@ void mainMenuWindowFree()
 {
     mainMenuDestroySubscreenBackdrop();
 
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
         if (gMainMenuButtons[index] != -1) {
             buttonDestroy(gMainMenuButtons[index]);
             gMainMenuButtons[index] = -1;
@@ -808,7 +816,7 @@ MainMenuOption mainMenuWindowHandleEvents()
 
         int keyCode = inputGetInput();
 
-        for (int buttonIndex = 0; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
+        for (MainMenuButton buttonIndex = MAIN_MENU_BUTTON_FIRST; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
             int buttonKeyCode = mainMenuButtonSpecs[buttonIndex].keyCode;
             if (keyCode == buttonKeyCode || keyCode == toupper(buttonKeyCode)) {
                 // NOTE: Uninline.
@@ -896,7 +904,7 @@ static void main_menu_play_sound(const char* fileName)
 
 static void mainMenuSetButtonsEnabled(bool enabled)
 {
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
         if (gMainMenuButtons[index] == -1) {
             continue;
         }
