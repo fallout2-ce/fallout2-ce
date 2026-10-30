@@ -17,7 +17,7 @@ namespace fallout {
 // (who should check game mode before accessing volatile message lists). CE
 // always exposes persistent standard message lists and additionally exposes
 // some volatile lists for the duration of their UI lifetime:
-enum StandardMessageList {
+enum StandardMessageList : int {
     STANDARD_MESSAGE_LIST_COMBAT,
     STANDARD_MESSAGE_LIST_COMBAT_AI,
     STANDARD_MESSAGE_LIST_SCRNAME,
@@ -42,7 +42,7 @@ enum StandardMessageList {
     STANDARD_MESSAGE_LIST_COUNT,
 };
 
-enum {
+enum ProtoMessageList : int {
     PROTO_MESSAGE_LIST_ITEMS,
     PROTO_MESSAGE_LIST_CRITTERS,
     PROTO_MESSAGE_LIST_SCENERY,
