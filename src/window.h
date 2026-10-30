@@ -5,6 +5,7 @@
 #include "geometry.h"
 #include "interpreter.h"
 #include "mouse.h"
+#include "movie.h"
 #include "region.h"
 #include "window_defs.h"
 #include "window_manager.h"
@@ -121,7 +122,7 @@ bool scriptWindowAddRegionName(const char* regionName);
 bool scriptWindowDeleteRegion(const char* regionName);
 void scriptWindowUpdateAll();
 int scriptWindowMoviePlaying();
-bool scriptWindowSetMovieFlags(int flags);
+bool scriptWindowSetMovieFlags(MovieFlags flags);
 bool scriptWindowPlayMovie(char* filePath);
 bool scriptWindowPlayMovieRect(char* filePath, int x, int y, int w, int h);
 void scriptWindowStopMovie();

@@ -489,20 +489,20 @@ void _movieStop()
 }
 
 // 0x487164 movieSetFlags
-int movieSetFlags(int flags)
+int movieSetFlags(MovieFlags flags)
 {
-    if ((flags & MOVIE_FLAG_DIRECT_CENTERED) != 0) {
+    if ((flags & MovieFlags::DirectCentered) != MovieFlags::None) {
         gMovieFlags |= MOVIE_EXTENDED_FLAG_DIRECT | MOVIE_EXTENDED_FLAG_CENTERED;
     } else {
         gMovieFlags &= ~MOVIE_EXTENDED_FLAG_CENTERED;
-        if ((flags & MOVIE_FLAG_DIRECT) != 0) {
+        if ((flags & MovieFlags::Direct) != MovieFlags::None) {
             gMovieFlags |= MOVIE_EXTENDED_FLAG_DIRECT;
         } else {
             gMovieFlags &= ~MOVIE_EXTENDED_FLAG_DIRECT;
         }
     }
 
-    if ((flags & MOVIE_FLAG_SCALE) != 0) {
+    if ((flags & MovieFlags::Scale) != MovieFlags::None) {
         _movieScaleFlag = 1;
     } else {
         _movieScaleFlag = 0;
@@ -512,7 +512,7 @@ int movieSetFlags(int flags)
         }
     }
 
-    if ((flags & MOVIE_FLAG_SUBTITLES) != 0) {
+    if ((flags & MovieFlags::Subtitles) != MovieFlags::None) {
         gMovieFlags |= MOVIE_EXTENDED_FLAG_SUBTITLES;
     } else {
         gMovieFlags &= ~MOVIE_EXTENDED_FLAG_SUBTITLES;
