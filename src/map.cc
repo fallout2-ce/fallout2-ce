@@ -1579,18 +1579,21 @@ int _map_save_in_game(bool isLeavingMap)
     }
 
     animationStop();
-    _partyMemberSaveProtos();
 
     if (isLeavingMap) {
-        _queue_leaving_map();
-        _partyMemberPrepLoad();
-        _partyMemberPrepItemSaveAll();
-
-        // SFALL: Critters waking up while map_exit_p_proc advances the time
-        // stand up at once (see `knockoutEventProcess`).
+        // SFALL: Run exit scripts before event cleanup and party preparation so
+        // scripts can still add or remove party members and update their state.
         gMapExitScriptsRunning = true;
         scriptsExecMapExitProc();
         gMapExitScriptsRunning = false;
+        _queue_leaving_map();
+    }
+
+    _partyMemberSaveProtos();
+
+    if (isLeavingMap) {
+        _partyMemberPrepLoad();
+        _partyMemberPrepItemSaveAll();
 
         if (gMapSid != -1) {
             Script* script;
