@@ -3374,17 +3374,23 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
 // 0x418574
 void _dude_standup(Object* a1)
 {
-    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+    // SFALL: Fixes for knockout/down issues: the stand up animation only if
+    // the critter is actually in the prone position.
+    AnimationType currentAnim = FrmId(a1).animationType();
+    if (currentAnim == ANIM_FALL_BACK || currentAnim == ANIM_FALL_FRONT) {
+        reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
-    AnimationType anim;
-    if (FrmId(a1).animationType() == ANIM_FALL_BACK) {
-        anim = ANIM_BACK_TO_STANDING;
-    } else {
-        anim = ANIM_PRONE_TO_STANDING;
+        AnimationType anim;
+        if (currentAnim == ANIM_FALL_BACK) {
+            anim = ANIM_BACK_TO_STANDING;
+        } else {
+            anim = ANIM_PRONE_TO_STANDING;
+        }
+
+        animationRegisterAnimate(a1, anim, 0);
+        reg_anim_end();
     }
 
-    animationRegisterAnimate(a1, anim, 0);
-    reg_anim_end();
     a1->data.critter.combat.results &= ~DAM_KNOCKED_DOWN;
 }
 

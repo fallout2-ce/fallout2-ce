@@ -1327,11 +1327,27 @@ int knockoutEventProcess(Object* obj, void* data)
         return 0;
     }
 
+    bool wasKnockedOut = (obj->data.critter.combat.results & DAM_KNOCKED_OUT) != DAM_NONE;
+
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
     obj->data.critter.combat.results |= DAM_KNOCKED_DOWN;
 
     if (isInCombat()) {
         obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
+
+        // SFALL: Fix for critter_state function when a critter in combat
+        // recovers from the knockout state outside its turn.
+        if (wasKnockedOut) {
+            obj->data.critter.combat.results |= DAM_KNOCKOUT_WOKEN;
+        }
+    } else if (mapExitScriptsRunning()) {
+        // SFALL: Fixes for knockout/down issues: the time advanced in
+        // map_exit_p_proc wakes the critter up when the map is left, an
+        // animation would leave it prone: it stands at once.
+        obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
+
+        const FrmId frmId = FrmId(obj, ANIM_STAND, obj->rotation + 1);
+        objectSetFrmId(obj, frmId, nullptr);
     } else {
         _dude_standup(obj);
     }
@@ -1340,22 +1356,20 @@ int knockoutEventProcess(Object* obj, void* data)
 }
 
 // 0x42E460 critter_wake_clear
+//
+// SFALL: Fix for "NPC turns into a container" bug: a critter knocked out
+// when the player leaves its map is knocked down (still prone) and its wake
+// up event is removed; it stands up when the map is loaded again (see
+// `objectLoadAllInternal`). It was made standing without its flags (prone
+// frame cleared, the event kept).
 int knockoutClear(Object* obj, void* data)
 {
-    if (ProtoId(obj).objectType() != OBJ_TYPE_CRITTER) {
-        return 0;
+    if (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER && (obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
+        obj->data.critter.combat.results &= ~DAM_KNOCKED_OUT;
+        obj->data.critter.combat.results |= DAM_KNOCKED_DOWN;
     }
 
-    if ((obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
-        return 0;
-    }
-
-    obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
-
-    const FrmId frmId = FrmId(obj, ANIM_STAND, obj->rotation + 1);
-    objectSetFrmId(obj, frmId, nullptr);
-
-    return 0;
+    return 1;
 }
 
 // 0x42E4C0 critter_set_who_hit_me
