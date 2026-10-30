@@ -2358,10 +2358,28 @@ static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLeng
     }
 
     if (scriptExtent->length != expectedLength) {
-        debugPrint("\nError loading scripts: invalid extent length %d (expected %d).\n",
-            scriptExtent->length,
-            expectedLength);
-        return -1;
+        // Recover the legacy writer's overlong final extent only when every
+        // surplus record explicitly carries NO_SAVE. Other corruption fails.
+        bool recoverable = expectedLength > 0
+            && scriptExtent->length > expectedLength
+            && scriptExtent->length <= SCRIPT_LIST_EXTENT_SIZE;
+        if (recoverable) {
+            for (int index = expectedLength; index < scriptExtent->length; index++) {
+                if ((scriptExtent->scripts[index].flags & SCRIPT_FLAG_NO_SAVE) == SCRIPT_FLAG_NONE) {
+                    recoverable = false;
+                    break;
+                }
+            }
+        }
+        if (!recoverable) {
+            debugPrint("\nError loading scripts: invalid extent length %d (expected %d).\n",
+                scriptExtent->length,
+                expectedLength);
+            return -1;
+        }
+        debugPrint("\nRecovered legacy script extent length %d -> %d (NO_SAVE records only).\n",
+            scriptExtent->length, expectedLength);
+        scriptExtent->length = expectedLength;
     }
 
     int next;
