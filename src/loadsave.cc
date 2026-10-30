@@ -110,12 +110,12 @@ enum class LoadSaveWindowType : int {
     PickQuickLoadSlot,
 };
 
-typedef enum LoadSaveSlotState {
-    SLOT_STATE_EMPTY,
-    SLOT_STATE_OCCUPIED,
-    SLOT_STATE_ERROR,
-    SLOT_STATE_UNSUPPORTED_VERSION,
-} LoadSaveSlotState;
+enum class LoadSaveSlotState : int {
+    Empty,
+    Occupied,
+    Error,
+    UnsupportedVersion,
+};
 
 typedef enum LoadSaveScrollDirection {
     LOAD_SAVE_SCROLL_DIRECTION_NONE,
@@ -307,7 +307,7 @@ static MessageList gLoadSaveMessageList;
 static LoadSaveSlotData _LSData[saveLoadTotalSlots];
 
 // 0x614280 LSstatus
-static int _LSstatus[saveLoadTotalSlots];
+static LoadSaveSlotState _LSstatus[saveLoadTotalSlots];
 static bool gLoadSaveSlotPageLoaded[saveLoadPages];
 
 // 0x6142A8 thumbnail_image
@@ -627,9 +627,9 @@ int lsgSaveGame(LoadSaveMode mode)
     }
 
     switch (_LSstatus[_slot_cursor]) {
-    case SLOT_STATE_EMPTY:
-    case SLOT_STATE_ERROR:
-    case SLOT_STATE_UNSUPPORTED_VERSION:
+    case LoadSaveSlotState::Empty:
+    case LoadSaveSlotState::Error:
+    case LoadSaveSlotState::UnsupportedVersion:
         blitBufferToBuffer(_snapshotBuf,
             LS_PREVIEW_WIDTH - 1,
             LS_PREVIEW_HEIGHT - 1,
@@ -797,7 +797,7 @@ int lsgSaveGame(LoadSaveMode mode)
         }
 
         if (keyCode == kLoadSaveActionDone) {
-            if (_LSstatus[_slot_cursor] == SLOT_STATE_OCCUPIED) {
+            if (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied) {
                 rc = 1;
                 // Save game already exists, overwrite?
                 const char* title = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 131);
@@ -866,8 +866,8 @@ int lsgSaveGame(LoadSaveMode mode)
                     // other switches do.
                     // fixed to match load screen 'thumbnail'/'blank' updating
                     switch (_LSstatus[_slot_cursor]) {
-                    case SLOT_STATE_EMPTY:
-                    case SLOT_STATE_ERROR:
+                    case LoadSaveSlotState::Empty:
+                    case LoadSaveSlotState::Error:
                         blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -913,9 +913,9 @@ int lsgSaveGame(LoadSaveMode mode)
             if (selectionChanged) {
                 // fixed to match load screen 'thumbnail'/'blank' updating
                 switch (_LSstatus[_slot_cursor]) {
-                case SLOT_STATE_EMPTY:
-                case SLOT_STATE_ERROR:
-                case SLOT_STATE_UNSUPPORTED_VERSION:
+                case LoadSaveSlotState::Empty:
+                case LoadSaveSlotState::Error:
+                case LoadSaveSlotState::UnsupportedVersion:
                     blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
                         _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
                         _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -1019,9 +1019,9 @@ int lsgSaveGame(LoadSaveMode mode)
                     }
                     // fixed to match load screen 'thumbnail'/'blank' updating
                     switch (_LSstatus[_slot_cursor]) {
-                    case SLOT_STATE_EMPTY:
-                    case SLOT_STATE_ERROR:
-                    case SLOT_STATE_UNSUPPORTED_VERSION:
+                    case LoadSaveSlotState::Empty:
+                    case LoadSaveSlotState::Error:
+                    case LoadSaveSlotState::UnsupportedVersion:
                         blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -1239,7 +1239,7 @@ int lsgLoadGame(LoadSaveMode mode)
             _slot_cursor = devAutoloadSlot;
             _currentSlotPage = devAutoloadSlot / slotsPerPage;
             loadSaveLoadSlotPage(_currentSlotPage);
-            if (_LSstatus[_slot_cursor] == SLOT_STATE_OCCUPIED) {
+            if (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied) {
                 devAutoloadPending = true;
             } else {
                 debugPrint("LOADSAVE: dev load slot %d is not occupied\n", _slot_cursor + 1);
@@ -1250,9 +1250,9 @@ int lsgLoadGame(LoadSaveMode mode)
     }
 
     switch (_LSstatus[_slot_cursor]) {
-    case SLOT_STATE_EMPTY:
-    case SLOT_STATE_ERROR:
-    case SLOT_STATE_UNSUPPORTED_VERSION:
+    case LoadSaveSlotState::Empty:
+    case LoadSaveSlotState::Error:
+    case LoadSaveSlotState::UnsupportedVersion:
         blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -1422,7 +1422,7 @@ int lsgLoadGame(LoadSaveMode mode)
         }
 
         if (keyCode == kLoadSaveActionDone) {
-            if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY) {
+            if (_LSstatus[_slot_cursor] != LoadSaveSlotState::Empty) {
                 rc = 1;
             } else {
                 rc = -1;
@@ -1484,9 +1484,9 @@ int lsgLoadGame(LoadSaveMode mode)
                     }
 
                     switch (_LSstatus[_slot_cursor]) {
-                    case SLOT_STATE_EMPTY:
-                    case SLOT_STATE_ERROR:
-                    case SLOT_STATE_UNSUPPORTED_VERSION:
+                    case LoadSaveSlotState::Empty:
+                    case LoadSaveSlotState::Error:
+                    case LoadSaveSlotState::UnsupportedVersion:
                         blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
                             _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -1531,9 +1531,9 @@ int lsgLoadGame(LoadSaveMode mode)
         } else {
             if (selectionChanged) {
                 switch (_LSstatus[_slot_cursor]) {
-                case SLOT_STATE_EMPTY:
-                case SLOT_STATE_ERROR:
-                case SLOT_STATE_UNSUPPORTED_VERSION:
+                case LoadSaveSlotState::Empty:
+                case LoadSaveSlotState::Error:
+                case LoadSaveSlotState::UnsupportedVersion:
                     blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getData(),
                         _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getWidth(),
                         _loadsaveFrmImages[LOAD_SAVE_FRM_PREVIEW_COVER].getHeight(),
@@ -1573,7 +1573,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
         if (rc == 1) {
             switch (_LSstatus[_slot_cursor]) {
-            case SLOT_STATE_UNSUPPORTED_VERSION:
+            case LoadSaveSlotState::UnsupportedVersion:
                 soundPlayFile("iisxxxx1");
                 stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -1581,7 +1581,7 @@ int lsgLoadGame(LoadSaveMode mode)
                 showDialogBox(_str0, body, 2, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
                 rc = -1;
                 break;
-            case SLOT_STATE_ERROR:
+            case LoadSaveSlotState::Error:
                 soundPlayFile("iisxxxx1");
                 stringCopy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 stringCopy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -2366,26 +2366,26 @@ static void loadSaveLoadSlotPage(int page)
 
         int fileSize;
         if (dbGetFileSize(_str, &fileSize) != 0) {
-            _LSstatus[index] = SLOT_STATE_EMPTY;
+            _LSstatus[index] = LoadSaveSlotState::Empty;
         } else {
             _flptr = fileOpen(_str, "rb");
 
             if (_flptr == nullptr) {
                 debugPrint("\nLOADSAVE: ** Error opening save  game for reading! **\n");
-                _LSstatus[index] = SLOT_STATE_ERROR;
+                _LSstatus[index] = LoadSaveSlotState::Error;
                 continue;
             }
 
             if (lsgLoadHeaderInSlot(index) == -1) {
                 if (_ls_error_code == 1) {
                     debugPrint("LOADSAVE: ** save file #%d is an older version! **\n", _slot_cursor);
-                    _LSstatus[index] = SLOT_STATE_UNSUPPORTED_VERSION;
+                    _LSstatus[index] = LoadSaveSlotState::UnsupportedVersion;
                 } else {
                     debugPrint("LOADSAVE: ** Save file #%d corrupt! **", index);
-                    _LSstatus[index] = SLOT_STATE_ERROR;
+                    _LSstatus[index] = LoadSaveSlotState::Error;
                 }
             } else {
-                _LSstatus[index] = SLOT_STATE_OCCUPIED;
+                _LSstatus[index] = LoadSaveSlotState::Occupied;
             }
 
             fileClose(_flptr);
@@ -2415,21 +2415,21 @@ static void _ShowSlotList(LoadSaveWindowType windowType)
 
         y += fontGetLineHeight();
         switch (_LSstatus[index]) {
-        case SLOT_STATE_OCCUPIED:
+        case LoadSaveSlotState::Occupied:
             strcpy(_str, _LSData[index].description);
             break;
-        case SLOT_STATE_EMPTY:
+        case LoadSaveSlotState::Empty:
             // - EMPTY -
             text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 111);
             snprintf(_str, sizeof(_str), "       %s", text);
             break;
-        case SLOT_STATE_ERROR:
+        case LoadSaveSlotState::Error:
             // - CORRUPT SAVE FILE -
             text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 112);
             snprintf(_str, sizeof(_str), "%s", text);
             color = COLOR_AMBER;
             break;
-        case SLOT_STATE_UNSUPPORTED_VERSION:
+        case LoadSaveSlotState::UnsupportedVersion:
             // - OLD VERSION -
             text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 113);
             snprintf(_str, sizeof(_str), " %s", text);
@@ -2502,7 +2502,7 @@ static void _DrawInfoBox(int slot)
     Color color = COLOR_GREEN;
 
     switch (_LSstatus[slot]) {
-    case SLOT_STATE_OCCUPIED:
+    case LoadSaveSlotState::Occupied:
         if (1) {
             LoadSaveSlotData* ptr = &(_LSData[slot]);
             // raise this one pixel as well to match above
@@ -2551,18 +2551,18 @@ static void _DrawInfoBox(int slot)
             }
         }
         return;
-    case SLOT_STATE_EMPTY:
+    case LoadSaveSlotState::Empty:
         // Empty.
         text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 114);
         dest = gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 262 + 404;
         break;
-    case SLOT_STATE_ERROR:
+    case LoadSaveSlotState::Error:
         // Error!
         text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 115);
         dest = gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 262 + 404;
         color = COLOR_AMBER;
         break;
-    case SLOT_STATE_UNSUPPORTED_VERSION:
+    case LoadSaveSlotState::UnsupportedVersion:
         // Old version.
         text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 116);
         dest = gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 262 + 400;
@@ -2578,9 +2578,9 @@ static void _DrawInfoBox(int slot)
 // 0x47EC48
 static int _LoadTumbSlot(int slot)
 {
-    if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY
-        && _LSstatus[_slot_cursor] != SLOT_STATE_ERROR
-        && _LSstatus[_slot_cursor] != SLOT_STATE_UNSUPPORTED_VERSION) {
+    if (_LSstatus[_slot_cursor] != LoadSaveSlotState::Empty
+        && _LSstatus[_slot_cursor] != LoadSaveSlotState::Error
+        && _LSstatus[_slot_cursor] != LoadSaveSlotState::UnsupportedVersion) {
         snprintf(_str, sizeof(_str), "%s\\%s%.2d\\%s", "SAVEGAME", "SLOT", _slot_cursor + 1, "SAVE.DAT");
         debugPrint(" Filename %s\n", _str);
 
@@ -2709,7 +2709,7 @@ static int _GetComment(int slot)
     windowRefresh(window);
 
     char description[LOAD_SAVE_DESCRIPTION_LENGTH];
-    if (_LSstatus[_slot_cursor] == SLOT_STATE_OCCUPIED) {
+    if (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied) {
         strncpy(description, _LSData[slot].description, LOAD_SAVE_DESCRIPTION_LENGTH);
     } else {
         memset(description, '\0', LOAD_SAVE_DESCRIPTION_LENGTH);
