@@ -23,14 +23,6 @@ constexpr inline MovieFlags operator|(MovieFlags lhs, MovieFlags rhs)
     return static_cast<MovieFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
 }
 
-typedef enum MovieExtendedFlags {
-    MOVIE_EXTENDED_FLAG_ERROR = 0x01,
-    MOVIE_EXTENDED_FLAG_STOP_REQUESTED = 0x02,
-    MOVIE_EXTENDED_FLAG_DIRECT = 0x04,
-    MOVIE_EXTENDED_FLAG_CENTERED = 0x08,
-    MOVIE_EXTENDED_FLAG_SUBTITLES = 0x10,
-} MovieExtendedFlags;
-
 typedef char* MovieBuildSubtitleFilePathProc(char* movieFilePath);
 typedef void MovieSetPaletteEntriesProc(unsigned char* palette, int start, int end);
 typedef void MovieSetPaletteProc(int frame);
