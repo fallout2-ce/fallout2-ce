@@ -20,13 +20,24 @@ namespace fallout {
 // The maximum number of text objects that can exist at the same time.
 #define TEXT_OBJECTS_MAX_COUNT (200)
 
-typedef enum TextObjectFlags {
-    TEXT_OBJECT_MARKED_FOR_REMOVAL = 0x01,
-    TEXT_OBJECT_UNBOUNDED = 0x02,
-} TextObjectFlags;
+enum class TextObjectFlags : unsigned int {
+    None = 0x00,
+    MarkedForRemoval = 0x01,
+    Unbounded = 0x02,
+};
+
+constexpr inline TextObjectFlags operator&(TextObjectFlags lhs, TextObjectFlags rhs)
+{
+    return static_cast<TextObjectFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline TextObjectFlags operator|(TextObjectFlags lhs, TextObjectFlags rhs)
+{
+    return static_cast<TextObjectFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 typedef struct TextObject {
-    int flags;
+    TextObjectFlags flags;
     Object* owner;
     unsigned int time;
     int linesCount;
@@ -262,7 +273,7 @@ int textObjectAdd(Object* object, char* string, int font, ColorWithFlags color, 
     if (object != nullptr) {
         textObject->tile = object->tile;
     } else {
-        textObject->flags |= TEXT_OBJECT_UNBOUNDED;
+        textObject->flags = textObject->flags | TextObjectFlags::Unbounded;
         textObject->tile = gCenterTile;
     }
 
@@ -337,7 +348,7 @@ static void textObjectsTicker()
         TextObject* textObject = gTextObjects[index];
 
         unsigned int delay = gTextObjectsLineDelay * textObject->linesCount + gTextObjectsBaseDelay;
-        if ((textObject->flags & TEXT_OBJECT_MARKED_FOR_REMOVAL) != 0 || (getTicksBetween(_get_bk_time(), textObject->time) >= delay)) {
+        if ((textObject->flags & TextObjectFlags::MarkedForRemoval) != TextObjectFlags::None || (getTicksBetween(_get_bk_time(), textObject->time) >= delay)) {
             tileToScreenXY(textObject->tile, &(textObject->x), &(textObject->y));
             textObject->x += textObject->sx;
             textObject->y += textObject->sy;
@@ -381,7 +392,7 @@ static void textObjectFindPlacement(TextObject* textObject)
     textObject->x = tileScreenX + 16 - textObject->width / 2;
     textObject->y = tileScreenY;
 
-    if ((textObject->flags & TEXT_OBJECT_UNBOUNDED) == 0) {
+    if ((textObject->flags & TextObjectFlags::Unbounded) == TextObjectFlags::None) {
         textObject->y -= textObject->height + 60;
     }
 
@@ -463,7 +474,7 @@ void textObjectsRemoveByOwner(Object* object)
 {
     for (int index = 0; index < gTextObjectsCount; index++) {
         if (gTextObjects[index]->owner == object) {
-            gTextObjects[index]->flags |= TEXT_OBJECT_MARKED_FOR_REMOVAL;
+            gTextObjects[index]->flags = gTextObjects[index]->flags | TextObjectFlags::MarkedForRemoval;
         }
     }
 }

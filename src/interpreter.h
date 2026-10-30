@@ -9,6 +9,7 @@
 #include "object.h"
 #include "proto_types.h"
 #include "random.h"
+#include "sfall_lists.h"
 #include "stat_defs.h"
 #include "window_defs.h"
 #include "worldmap.h"
@@ -529,6 +530,17 @@ inline Roll programStackPopEnum(Program* program)
     }
 
     return static_cast<Roll>(roll);
+}
+
+template <>
+inline ListType programStackPopEnum(Program* program)
+{
+    int listType = programStackPopInteger(program);
+    if (!listTypeIsValid(listType)) {
+        programPrintError("invalid list type %d", listType);
+    }
+
+    return static_cast<ListType>(listType);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

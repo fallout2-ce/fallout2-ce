@@ -318,7 +318,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
 
     configSetString(config.get(), section, key, value);
 
-    bool saved = configWriteEx(config.get(), path, loaded ? CONFIG_RETAIN_ALL : CONFIG_DEFAULT);
+    bool saved = configWriteEx(config.get(), path, loaded ? ConfigFlags::RetainAll : ConfigFlags::Default);
 
     return saved;
 }

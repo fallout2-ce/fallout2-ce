@@ -17,7 +17,7 @@ typedef struct Nevs {
     char name[32];
     Program* program;
     int proc;
-    int type;
+    NevsType type;
     int hits;
     bool busy;
     void (*callbackProc)(); // unused
@@ -122,7 +122,7 @@ static Nevs* _nevs_find(const char* name)
 }
 
 // 0x4884C8 nevs_addevent
-int _nevs_addevent(const char* name, Program* program, int proc, int type)
+int _nevs_addevent(const char* name, Program* program, int proc, NevsType type)
 {
     Nevs* nevs = _nevs_find(name);
     if (nevs == nullptr) {

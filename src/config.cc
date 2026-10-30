@@ -41,7 +41,7 @@ static std::string configGetTrimmedString(const char* string);
 
 static bool configWriteDb(Config* config, const char* filePath);
 static bool configWriteStandard(Config* config, const char* filePath);
-static bool configWriteSideBySide(Config* config, const char* filePath, int flags);
+static bool configWriteSideBySide(Config* config, const char* filePath, ConfigFlags flags);
 static void configWriteSection(FILE* stream, const char* sectionName, ConfigSection* section, const StringSet* handledKeys);
 
 // Last section key read from .INI file.
@@ -416,20 +416,20 @@ bool configRead(Config* config, const char* filePath, bool isDb)
 // 0x42C324
 bool configWrite(Config* config, const char* filePath, bool isDb)
 {
-    return configWriteEx(config, filePath, isDb ? CONFIG_IS_DB : CONFIG_DEFAULT);
+    return configWriteEx(config, filePath, isDb ? ConfigFlags::IsDatabase : ConfigFlags::Default);
 }
 
-bool configWriteEx(Config* config, const char* filePath, int flags)
+bool configWriteEx(Config* config, const char* filePath, ConfigFlags flags)
 {
     if (config == nullptr || filePath == nullptr) {
         return false;
     }
 
-    if (flags & CONFIG_IS_DB) {
+    if ((flags & ConfigFlags::IsDatabase) != ConfigFlags::Default) {
         return configWriteDb(config, filePath);
     }
 
-    if (flags & (CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER | CONFIG_RETAIN_UNKNOWN)) {
+    if ((flags & (ConfigFlags::RetainComments | ConfigFlags::RetainOrder | ConfigFlags::RetainUnknown)) != ConfigFlags::Default) {
         return configWriteSideBySide(config, filePath, flags);
     }
 
@@ -489,9 +489,9 @@ static void configWriteSection(FILE* stream, const char* sectionName, ConfigSect
     }
 }
 
-static bool configWriteSideBySide(Config* config, const char* filePath, int flags)
+static bool configWriteSideBySide(Config* config, const char* filePath, ConfigFlags flags)
 {
-    bool retainUnknown = (flags & CONFIG_RETAIN_UNKNOWN) != 0;
+    bool retainUnknown = (flags & ConfigFlags::RetainUnknown) != ConfigFlags::Default;
 
     FILE* original = compat_fopen(filePath, "rt");
     if (original == nullptr) {
@@ -539,7 +539,7 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
             if (!currentSectionKnown && !retainUnknown) {
                 continue;
             }
-            if ((flags & CONFIG_RETAIN_COMMENTS) || (*trimmed == '\0')) {
+            if ((flags & ConfigFlags::RetainComments) != ConfigFlags::Default || (*trimmed == '\0')) {
                 pendingLines.emplace_back(line);
             }
             continue;
@@ -609,7 +609,7 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
                 const char* k = key;
                 char* comment = nullptr;
 
-                if (flags & CONFIG_RETAIN_COMMENTS) {
+                if ((flags & ConfigFlags::RetainComments) != ConfigFlags::Default) {
                     *equals = '\0';
                     k = trimmed;
                     if ((comment = strchr(equals + 1, ';')) == nullptr) {
@@ -633,7 +633,7 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
         }
 
         // Unknown line structure - buffer if retaining comments/structure.
-        if ((currentSectionKnown || retainUnknown) && (flags & CONFIG_RETAIN_COMMENTS)) {
+        if ((currentSectionKnown || retainUnknown) && (flags & ConfigFlags::RetainComments) != ConfigFlags::Default) {
             pendingLines.emplace_back(line);
         }
     }
