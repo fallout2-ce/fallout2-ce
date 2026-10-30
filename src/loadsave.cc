@@ -102,13 +102,13 @@ namespace fallout {
 typedef int LoadGameHandler(File* stream);
 typedef int SaveGameHandler(File* stream);
 
-typedef enum LoadSaveWindowType {
-    LOAD_SAVE_WINDOW_TYPE_SAVE_GAME,
-    LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_SAVE_SLOT,
-    LOAD_SAVE_WINDOW_TYPE_LOAD_GAME,
-    LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU,
-    LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_LOAD_SLOT,
-} LoadSaveWindowType;
+enum class LoadSaveWindowType : int {
+    SaveGame,
+    PickQuickSaveSlot,
+    LoadGame,
+    LoadGameFromMainMenu,
+    PickQuickLoadSlot,
+};
 
 typedef enum LoadSaveSlotState {
     SLOT_STATE_EMPTY,
@@ -162,15 +162,15 @@ typedef enum LoadSaveFrm {
 } LoadSaveFrm;
 
 static int _QuickSnapShot();
-static int lsgWindowInit(int windowType);
-static int lsgWindowFree(int windowType);
+static int lsgWindowInit(LoadSaveWindowType windowType);
+static int lsgWindowFree(LoadSaveWindowType windowType);
 static int lsgPerformSaveGame();
 static int lsgLoadGameInSlot(int slot);
 static int lsgSaveHeaderInSlot(int slot);
 static int lsgLoadHeaderInSlot(int slot);
 static int _GetSlotList();
 static void loadSaveLoadSlotPage(int page);
-static void _ShowSlotList(int windowType);
+static void _ShowSlotList(LoadSaveWindowType windowType);
 static void _DrawInfoBox(int slot);
 static int _LoadTumbSlot(int slot);
 static int _GetComment(int slot);
@@ -590,9 +590,9 @@ int lsgSaveGame(LoadSaveMode mode)
 
     _quick_done = false;
 
-    int windowType = mode == LoadSaveMode::Quick
-        ? LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_SAVE_SLOT
-        : LOAD_SAVE_WINDOW_TYPE_SAVE_GAME;
+    LoadSaveWindowType windowType = mode == LoadSaveMode::Quick
+        ? LoadSaveWindowType::PickQuickSaveSlot
+        : LoadSaveWindowType::SaveGame;
     if (lsgWindowInit(windowType) == -1) {
         debugPrint("\nLOADSAVE: ** Error loading save game screen data! **\n");
         return -1;
@@ -621,7 +621,7 @@ int lsgSaveGame(LoadSaveMode mode)
         };
         showDialogBox(_str0, body, 2, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-        lsgWindowFree(0);
+        lsgWindowFree(LoadSaveWindowType::SaveGame);
 
         return -1;
     }
@@ -648,7 +648,7 @@ int lsgSaveGame(LoadSaveMode mode)
         break;
     }
 
-    _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+    _ShowSlotList(LoadSaveWindowType::SaveGame);
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
 
@@ -676,7 +676,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         // Move to the previous page and set cursor to the last slot on that page
                         _currentSlotPage--;
                         _slot_cursor--;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+                        _ShowSlotList(LoadSaveWindowType::SaveGame);
                         windowRefresh(gLoadSaveWindow);
                     } else {
                         // Normal movement within the page
@@ -694,7 +694,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         // Move to the next page and set cursor to the first slot on that page
                         _currentSlotPage++;
                         _slot_cursor++;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+                        _ShowSlotList(LoadSaveWindowType::SaveGame);
                         windowRefresh(gLoadSaveWindow);
                     } else {
                         // Normal movement within the page
@@ -740,7 +740,7 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 int pageDelta = loadSavePageDeltaForInput(keyCode, mouseX, mouseY);
                 if (pageDelta != 0) {
-                    if (loadSaveChangePage(pageDelta, LOAD_SAVE_WINDOW_TYPE_SAVE_GAME)) {
+                    if (loadSaveChangePage(pageDelta, LoadSaveWindowType::SaveGame)) {
                         selectionChanged = true;
                         doubleClickSlot = -1;
                     }
@@ -839,7 +839,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         if (_slot_cursor < _currentSlotPage * 10) {
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
-                                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                                _ShowSlotList(LoadSaveWindowType::LoadGame);
                                 windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
@@ -853,7 +853,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         if (_slot_cursor > (_currentSlotPage * 10) + 9) {
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
-                                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                                _ShowSlotList(LoadSaveWindowType::LoadGame);
                                 windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
@@ -892,7 +892,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         break;
                     }
 
-                    _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+                    _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
                 }
@@ -941,7 +941,7 @@ int lsgSaveGame(LoadSaveMode mode)
                 }
 
                 _DrawInfoBox(_slot_cursor);
-                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+                _ShowSlotList(LoadSaveWindowType::SaveGame);
             }
 
             windowRefresh(gLoadSaveWindow);
@@ -1013,7 +1013,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         };
                         showDialogBox(_str0, body, 2, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-                        lsgWindowFree(0);
+                        lsgWindowFree(LoadSaveWindowType::SaveGame);
 
                         return -1;
                     }
@@ -1046,7 +1046,7 @@ int lsgSaveGame(LoadSaveMode mode)
                         break;
                     }
 
-                    _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+                    _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
                     _dbleclkcntr = 24;
@@ -1061,7 +1061,7 @@ int lsgSaveGame(LoadSaveMode mode)
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    lsgWindowFree(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
+    lsgWindowFree(LoadSaveWindowType::SaveGame);
 
     pipboyMessageListFree();
 
@@ -1186,16 +1186,16 @@ int lsgLoadGame(LoadSaveMode mode)
 
     _quick_done = false;
 
-    int windowType;
+    LoadSaveWindowType windowType;
     switch (mode) {
     case LoadSaveMode::FromMainMenu:
-        windowType = LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU;
+        windowType = LoadSaveWindowType::LoadGameFromMainMenu;
         break;
     case LoadSaveMode::Normal:
-        windowType = LOAD_SAVE_WINDOW_TYPE_LOAD_GAME;
+        windowType = LoadSaveWindowType::LoadGame;
         break;
     case LoadSaveMode::Quick:
-        windowType = LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_LOAD_SLOT;
+        windowType = LoadSaveWindowType::PickQuickLoadSlot;
         break;
     default:
         assert(false && "Should be unreachable");
@@ -1207,7 +1207,7 @@ int lsgLoadGame(LoadSaveMode mode)
         gDevLoadGameSlot = -1;
     }
 
-    touch_set_touchscreen_mode(windowType == LOAD_SAVE_WINDOW_TYPE_LOAD_GAME || windowType == LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU);
+    touch_set_touchscreen_mode(windowType == LoadSaveWindowType::LoadGame || windowType == LoadSaveWindowType::LoadGameFromMainMenu);
 
     if (lsgWindowInit(windowType) == -1) {
         debugPrint("\nLOADSAVE: ** Error loading save game screen data! **\n");
@@ -1271,7 +1271,7 @@ int lsgLoadGame(LoadSaveMode mode)
         break;
     }
 
-    _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+    _ShowSlotList(LoadSaveWindowType::LoadGame);
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
     renderPresent();
@@ -1304,7 +1304,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         // Move to the previous page and set cursor to the last slot on that page
                         _currentSlotPage--;
                         _slot_cursor--;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                        _ShowSlotList(LoadSaveWindowType::LoadGame);
                         windowRefresh(gLoadSaveWindow);
                     } else {
                         // Normal movement within the page
@@ -1322,7 +1322,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         // Move to the next page and set cursor to the first slot on that page
                         _currentSlotPage++;
                         _slot_cursor++;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                        _ShowSlotList(LoadSaveWindowType::LoadGame);
                         windowRefresh(gLoadSaveWindow);
                     } else {
                         // Normal movement within the page
@@ -1366,7 +1366,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 int pageDelta = loadSavePageDeltaForInput(keyCode, mouseX, mouseY);
                 if (pageDelta != 0) {
-                    if (loadSaveChangePage(pageDelta, LOAD_SAVE_WINDOW_TYPE_LOAD_GAME)) {
+                    if (loadSaveChangePage(pageDelta, LoadSaveWindowType::LoadGame)) {
                         selectionChanged = true;
                         doubleClickSlot = -1;
                     }
@@ -1459,7 +1459,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         if (_slot_cursor < _currentSlotPage * 10) {
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
-                                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                                _ShowSlotList(LoadSaveWindowType::LoadGame);
                                 windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
@@ -1474,7 +1474,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         if (_slot_cursor > (_currentSlotPage * 10) + 9) {
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
-                                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                                _ShowSlotList(LoadSaveWindowType::LoadGame);
                                 windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
@@ -1511,7 +1511,7 @@ int lsgLoadGame(LoadSaveMode mode)
                         break;
                     }
 
-                    _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                    _ShowSlotList(LoadSaveWindowType::LoadGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
                 }
@@ -1559,7 +1559,7 @@ int lsgLoadGame(LoadSaveMode mode)
                 }
 
                 _DrawInfoBox(_slot_cursor);
-                _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+                _ShowSlotList(LoadSaveWindowType::LoadGame);
             }
 
             windowRefresh(gLoadSaveWindow);
@@ -1613,8 +1613,8 @@ int lsgLoadGame(LoadSaveMode mode)
     }
 
     lsgWindowFree(mode == LoadSaveMode::FromMainMenu
-            ? LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU
-            : LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
+            ? LoadSaveWindowType::LoadGameFromMainMenu
+            : LoadSaveWindowType::LoadGame);
 
     pipboyMessageListFree();
 
@@ -1638,7 +1638,7 @@ int lsgGetTotalSlotCount()
 }
 
 // 0x47D2E4
-static int lsgWindowInit(int windowType)
+static int lsgWindowInit(LoadSaveWindowType windowType)
 {
     gLoadSaveWindowOldFont = fontGetCurrent();
     fontSetCurrent(103);
@@ -1664,7 +1664,7 @@ static int lsgWindowInit(int windowType)
     _thumbnail_image = _snapshot;
     _snapshotBuf = _snapshot + LS_PREVIEW_SIZE;
 
-    if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
+    if (windowType != LoadSaveWindowType::LoadGameFromMainMenu) {
         gLoadSaveWindowIsoWasEnabled = isoDisable();
     }
 
@@ -1672,7 +1672,7 @@ static int lsgWindowInit(int windowType)
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    if (windowType == LOAD_SAVE_WINDOW_TYPE_SAVE_GAME || windowType == LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_SAVE_SLOT) {
+    if (windowType == LoadSaveWindowType::SaveGame || windowType == LoadSaveWindowType::PickQuickSaveSlot) {
         bool gameMouseWasVisible = gameMouseObjectsIsVisible();
         if (gameMouseWasVisible) {
             gameMouseObjectsHide();
@@ -1710,7 +1710,7 @@ static int lsgWindowInit(int windowType)
             loadSaveMessageListReset();
             fontSetCurrent(gLoadSaveWindowOldFont);
 
-            if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
+            if (windowType != LoadSaveWindowType::LoadGameFromMainMenu) {
                 if (gLoadSaveWindowIsoWasEnabled) {
                     isoEnable();
                 }
@@ -1736,7 +1736,7 @@ static int lsgWindowInit(int windowType)
         loadSaveMessageListReset();
         fontSetCurrent(gLoadSaveWindowOldFont);
 
-        if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
+        if (windowType != LoadSaveWindowType::LoadGameFromMainMenu) {
             if (gLoadSaveWindowIsoWasEnabled) {
                 isoEnable();
             }
@@ -1752,20 +1752,20 @@ static int lsgWindowInit(int windowType)
 
     int messageId;
     switch (windowType) {
-    case LOAD_SAVE_WINDOW_TYPE_SAVE_GAME:
+    case LoadSaveWindowType::SaveGame:
         // SAVE GAME
         messageId = 102;
         break;
-    case LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_SAVE_SLOT:
+    case LoadSaveWindowType::PickQuickSaveSlot:
         // PICK A QUICK SAVE SLOT
         messageId = 103;
         break;
-    case LOAD_SAVE_WINDOW_TYPE_LOAD_GAME:
-    case LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU:
+    case LoadSaveWindowType::LoadGame:
+    case LoadSaveWindowType::LoadGameFromMainMenu:
         // LOAD GAME
         messageId = 100;
         break;
-    case LOAD_SAVE_WINDOW_TYPE_PICK_QUICK_LOAD_SLOT:
+    case LoadSaveWindowType::PickQuickLoadSlot:
         // PICK A QUICK LOAD SLOT
         messageId = 101;
         break;
@@ -1865,7 +1865,7 @@ static int lsgWindowInit(int windowType)
 }
 
 // 0x47D824
-static int lsgWindowFree(int windowType)
+static int lsgWindowFree(LoadSaveWindowType windowType)
 {
     loadSavePersistSelectedSlot();
 
@@ -1879,7 +1879,7 @@ static int lsgWindowFree(int windowType)
 
     internal_free(_snapshot);
 
-    if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
+    if (windowType != LoadSaveWindowType::LoadGameFromMainMenu) {
         if (gLoadSaveWindowIsoWasEnabled) {
             isoEnable();
         }
@@ -2395,7 +2395,7 @@ static void loadSaveLoadSlotPage(int page)
 
 // 0x47E6D8
 
-static void _ShowSlotList(int windowType)
+static void _ShowSlotList(LoadSaveWindowType windowType)
 {
     loadSaveLoadSlotPage(_currentSlotPage);
 
@@ -2409,7 +2409,7 @@ static void _ShowSlotList(int windowType)
 
     for (int index = startIndex; index < endIndex; index++) {
         Color color = index == _slot_cursor ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
-        const char* text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, windowType != 0 ? 110 : 109);
+        const char* text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, windowType != LoadSaveWindowType::SaveGame ? 110 : 109);
         snprintf(_str, sizeof(_str), "[   %s %.2d:   ]", text, index + 1);
         fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * y + 55, _str, LS_WINDOW_WIDTH, LS_WINDOW_WIDTH, color);
 
