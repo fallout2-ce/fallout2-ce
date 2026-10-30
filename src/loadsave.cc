@@ -2111,6 +2111,10 @@ static int lsgLoadGameInSlot(int slot)
         }
     }
 
+    // SFALL: The drug pids of the loaded drug effects (from sfallgv.sav, else
+    // found by the effects).
+    drugEffectEventsRestorePids();
+
     char ceSavePath[COMPAT_MAX_PATH];
     snprintf(ceSavePath, sizeof(ceSavePath), "%s\\SAVEGAME\\SLOT%.2d\\ce.sav", _patches, _slot_cursor + 1);
     ceLoadGameData(ceSavePath);
