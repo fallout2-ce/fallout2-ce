@@ -1125,29 +1125,38 @@ int itemGetQuantity(Object* obj, Object* item)
 // 0x4780E4
 int itemIsQueued(Object* obj)
 {
+    return itemGetQueued(obj) != nullptr;
+}
+
+// SFALL: Fix for being unable to sell used geiger counters or stealth boys:
+// `item_queued` returns the queued item (the object itself or an item in its
+// inventory, containers included), see `barterAttemptTransaction`.
+Object* itemGetQueued(Object* obj)
+{
     if (obj == nullptr) {
-        return false;
+        return nullptr;
     }
 
     if ((obj->flags & OBJECT_QUEUED) != OBJECT_NONE) {
-        return true;
+        return obj;
     }
 
     Inventory* inventory = &(obj->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
         if ((inventoryItem->item->flags & OBJECT_QUEUED) != OBJECT_NONE) {
-            return true;
+            return inventoryItem->item;
         }
 
         if (itemGetType(inventoryItem->item) == ITEM_TYPE_CONTAINER) {
-            if (itemIsQueued(inventoryItem->item)) {
-                return true;
+            Object* queuedItem = itemGetQueued(inventoryItem->item);
+            if (queuedItem != nullptr) {
+                return queuedItem;
             }
         }
     }
 
-    return false;
+    return nullptr;
 }
 
 // 0x478154
@@ -2595,6 +2604,12 @@ int miscItemTurnOff(Object* item)
 {
     Object* owner = objectGetOwner(item);
 
+    // SFALL: Fix for being unable to sell used geiger counters or stealth
+    // boys: a turned off item isn't queued anymore (the flag stayed, and the
+    // barter refused the item as an active one).
+    if (itemCanSellUsedGeiger()) {
+        item->flags &= ~OBJECT_QUEUED;
+    }
     queueRemoveEventsByType(item, EVENT_TYPE_ITEM_TRICKLE);
 
     ProtoId itemProtoId = ProtoId(item);
@@ -3799,6 +3814,15 @@ int explosionGetMaxTargets()
 void explosionSetMaxTargets(int maxTargets)
 {
     gExplosionMaxTargets = maxTargets;
+}
+
+// SFALL: Fix for being unable to sell used geiger counters or stealth boys
+// (`CanSellUsedGeiger`, on by default).
+bool itemCanSellUsedGeiger()
+{
+    bool canSellUsedGeiger;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "can_sell_used_geiger", &canSellUsedGeiger, true);
+    return canSellUsedGeiger;
 }
 
 static void healingItemsInit()
