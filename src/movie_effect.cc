@@ -13,17 +13,17 @@
 
 namespace fallout {
 
-typedef enum MovieEffectType {
-    MOVIE_EFFECT_TYPE_NONE = 0,
-    MOVIE_EFFECT_TYPE_FADE_IN = 1,
-    MOVIE_EFFECT_TYPE_FADE_OUT = 2,
-} MovieEffectFadeType;
+enum class MovieEffectType : unsigned char {
+    None = 0,
+    FadeIn = 1,
+    FadeOut = 2,
+};
 
 typedef struct MovieEffect {
     int startFrame;
     int endFrame;
     int steps;
-    unsigned char fadeType;
+    MovieEffectType fadeType;
     // range 0-63
     unsigned char r;
     // range 0-63
@@ -166,14 +166,14 @@ int movieEffectsLoad(const char* filePath)
             continue;
         }
 
-        int fadeType = MOVIE_EFFECT_TYPE_NONE;
+        MovieEffectType fadeType = MovieEffectType::None;
         if (compat_stricmp(fadeTypeString, "in") == 0) {
-            fadeType = MOVIE_EFFECT_TYPE_FADE_IN;
+            fadeType = MovieEffectType::FadeIn;
         } else if (compat_stricmp(fadeTypeString, "out") == 0) {
-            fadeType = MOVIE_EFFECT_TYPE_FADE_OUT;
+            fadeType = MovieEffectType::FadeOut;
         }
 
-        if (fadeType == MOVIE_EFFECT_TYPE_NONE) {
+        if (fadeType == MovieEffectType::None) {
             continue;
         }
 
@@ -196,7 +196,7 @@ int movieEffectsLoad(const char* filePath)
         movieEffect->startFrame = movieEffectFrameList[index];
         movieEffect->endFrame = movieEffect->startFrame + steps - 1;
         movieEffect->steps = steps;
-        movieEffect->fadeType = fadeType & 0xFF;
+        movieEffect->fadeType = fadeType;
         movieEffect->r = fadeColor[0] & 0xFF;
         movieEffect->g = fadeColor[1] & 0xFF;
         movieEffect->b = fadeColor[2] & 0xFF;
@@ -253,13 +253,13 @@ static void _moviefx_callback_func(int frame)
         unsigned char palette[768];
         int step = frame - movieEffect->startFrame + 1;
 
-        if (movieEffect->fadeType == MOVIE_EFFECT_TYPE_FADE_IN) {
+        if (movieEffect->fadeType == MovieEffectType::FadeIn) {
             for (int index = 0; index < 256; index++) {
                 palette[index * 3] = movieEffect->r - (step * (movieEffect->r - _source_palette[index * 3]) / movieEffect->steps);
                 palette[index * 3 + 1] = movieEffect->g - (step * (movieEffect->g - _source_palette[index * 3 + 1]) / movieEffect->steps);
                 palette[index * 3 + 2] = movieEffect->b - (step * (movieEffect->b - _source_palette[index * 3 + 2]) / movieEffect->steps);
             }
-        } else {
+        } else if (movieEffect->fadeType == MovieEffectType::FadeOut) {
             for (int index = 0; index < 256; index++) {
                 palette[index * 3] = _source_palette[index * 3] - (step * (_source_palette[index * 3] - movieEffect->r) / movieEffect->steps);
                 palette[index * 3 + 1] = _source_palette[index * 3 + 1] - (step * (_source_palette[index * 3 + 1] - movieEffect->g) / movieEffect->steps);

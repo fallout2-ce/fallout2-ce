@@ -9,6 +9,7 @@
 #include "memory_manager.h"
 #include "mouse.h"
 #include "mouse_manager.h"
+#include "movie.h"
 #include "nevs.h"
 #include "select_file_list.h"
 #include "sound.h"
@@ -569,7 +570,7 @@ int intLibCheckMovie(Program* program)
 // 0x462584 op_movieflags
 static void opSetMovieFlags(Program* program)
 {
-    int data = programStackPopInteger(program);
+    MovieFlags data = static_cast<MovieFlags>(programStackPopInteger(program));
 
     if (!scriptWindowSetMovieFlags(data)) {
         programFatalError("Error setting movie flags\n");

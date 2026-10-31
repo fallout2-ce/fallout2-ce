@@ -154,14 +154,14 @@ int showOptions()
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
             case OPTIONS_MENU_BUTTON_SAVE:
-                if (lsgSaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
+                if (lsgSaveGame(LoadSaveMode::Normal) == 1) {
                     rc = 1;
                 }
                 break;
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
             case OPTIONS_MENU_BUTTON_LOAD:
-                if (lsgLoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
+                if (lsgLoadGame(LoadSaveMode::Normal) == 1) {
                     rc = 1;
                 }
                 break;
