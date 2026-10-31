@@ -797,6 +797,21 @@ int interfaceLoad(File* stream)
     intface_init_items();
     interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 
+    const FrmId dudeFrmId = FrmId(gDude);
+    const FrmId frmId = inventoryComputeCritterFrmId(gDude,
+        ProtoId(gDude),
+        critterGetItem2(gDude),
+        critterGetItem1(gDude),
+        critterGetArmor(gDude),
+        interfaceGetCurrentHand(),
+        dudeFrmId.animationType(),
+        dudeFrmId.rotation());
+
+    if (dudeFrmId != frmId) {
+        debugPrint("\nLOADSAVE: Detected dude fid mismatch! Correcting dude fid from %d to %d ...", dudeFrmId.fid(), frmId.fid());
+        objectSetFrmId(gDude, frmId, nullptr);
+    }
+
     if (interfaceBarEndButtonsIsVisible != gInterfaceBarEndButtonsIsVisible) {
         if (interfaceBarEndButtonsIsVisible) {
             interfaceBarEndButtonsShow(false);
