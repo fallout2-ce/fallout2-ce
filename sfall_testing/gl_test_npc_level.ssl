@@ -3,9 +3,18 @@
 #include "define_extra.h"
 #include "test_utils.h"
 
-// Automatic integration test for vanilla Fallout 2 party.txt and prototypes.
-// Load a disposable save where Myron has never joined. Do not save afterward:
-// this test advances his party-level state and prototype through all stages.
+// NPC level integration test. Runs automatically after loading a save.
+// Requires vanilla Fallout 2 party.txt and Myron's four level prototypes, plus
+// a disposable save where Myron has never joined the party.
+//
+// Compile using the modderspack headers (see README.md), then install the .int
+// as scripts/gl_test_npc_level.int in the game folder and load the save.
+// The test creates a temporary Myron and checks PID and case-insensitive name
+// calls, dismissed-member behavior, all four stages' copied stats and skills,
+// healing, and the maximum level, then exits automatically.
+//
+// Do not save afterward: the test changes Myron's prototype and party-level
+// state in memory. Remove the installed test script before normal play.
 #define TEST_PID 16777376
 #define FIRST_STAGE_PID 16777541
 #define STAGE_COUNT 4
