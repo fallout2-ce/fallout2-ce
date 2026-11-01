@@ -54,8 +54,8 @@ bool partyMemberEngineLevelUpEnabled();
 void partyMemberSetEngineLevelUpEnabled(bool enabled);
 bool partyIsAnyoneCanBeHealedByRest();
 int partyGetMaxWoundToHealByRest();
-int partyMemberGetNpcLevel(int pid);
-int partyMemberIncNpcLevel(int pid);
+int partyMemberGetNpcLevel(int pid, const char* name = nullptr);
+int partyMemberIncNpcLevel(int pid, const char* name = nullptr);
 std::vector<Object*> get_all_party_members_objects(bool include_hidden);
 
 } // namespace fallout

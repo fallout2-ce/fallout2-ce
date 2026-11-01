@@ -37,3 +37,18 @@ compile.exe -q -p -l -O2 -d -s -n -I<sfall_headers_id> <script_name.ssl>
 2. Run game, check that game displays message about tests
 
 
+
+### NPC level integration test
+
+`gl_test_npc_level.ssl` runs automatically after loading a save. It requires
+vanilla Fallout 2 `party.txt` and Myron's four level prototypes, plus a disposable
+save where Myron has never joined the party. The test creates a temporary Myron,
+checks PID and case-insensitive name calls, dismissed-member behavior, all four
+stages' copied stats and skills, healing, and the maximum level, then exits.
+Do not save afterward: it changes Myron's prototype and party-level state in
+memory. Remove the installed test script before normal play.
+
+The standalone `tests/npc_level_test.cc` additionally checks one-stage and
+ten-stage definitions, forced-level bookkeeping, subsequent automatic leveling,
+disabled leveling, failed prototype loads, and reset behavior. Its compile
+command is at the top of that file.

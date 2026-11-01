@@ -1743,15 +1743,25 @@ static void op_resize_array(Program* program)
 // get_npc_level
 static void op_get_npc_level(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    programStackPushInteger(program, partyMemberGetNpcLevel(pid));
+    ProgramValue value = programStackPopValue(program);
+    int level = -1;
+    if (value.isString()) {
+        level = partyMemberGetNpcLevel(0, programGetString(program, value.opcode, value.integerValue));
+    } else if (value.isInt()) {
+        level = partyMemberGetNpcLevel(value.integerValue);
+    }
+    programStackPushInteger(program, level);
 }
 
 // inc_npc_level
 static void op_inc_npc_level(Program* program)
 {
-    int pid = programStackPopInteger(program);
-    partyMemberIncNpcLevel(pid);
+    ProgramValue value = programStackPopValue(program);
+    if (value.isString()) {
+        partyMemberIncNpcLevel(0, programGetString(program, value.opcode, value.integerValue));
+    } else if (value.isInt()) {
+        partyMemberIncNpcLevel(value.integerValue);
+    }
 }
 
 // party_member_list
@@ -2539,9 +2549,9 @@ void sfallOpcodesInit()
     // note: this is deprecated; do not implement
     // 0x81a4 - void set_eax_environment(int environment)
 
-    // 0x81a5 - void inc_npc_level(int pid)
+    // 0x81a5 - void inc_npc_level(int pid/string name)
     interpreterRegisterOpcode(0x81A5, op_inc_npc_level);
-    // 0x8241 - int  get_npc_level(int pid)
+    // 0x8241 - int  get_npc_level(int pid/string name)
     interpreterRegisterOpcode(0x8241, op_get_npc_level);
 
     // 0x81a6 - int get_viewport_x()

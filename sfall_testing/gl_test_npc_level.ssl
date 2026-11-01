@@ -1,44 +1,87 @@
 #include "sfall.h"
 #include "define_lite.h"
+#include "define_extra.h"
 #include "test_utils.h"
 
+// Automatic integration test for vanilla Fallout 2 party.txt and prototypes.
+// Load a disposable save where Myron has never joined. Do not save afterward:
+// this test advances his party-level state and prototype through all stages.
+#define TEST_PID 16777376
+#define FIRST_STAGE_PID 16777541
+#define STAGE_COUNT 4
+
 procedure start begin
-    display_msg("Testing NPC level opcodes...");
+    if (not game_loaded) then return;
+    display_msg("Testing NPC level opcodes (vanilla Myron fixture; do not save)...");
 
-    // get_npc_level should return 0 for an unknown/invalid PID
-    variable level := get_npc_level(0);
-    call assertEquals("get_npc_level returns 0 for invalid PID", level, 0);
+    call assertEquals("invalid PID", get_npc_level(0), -1);
+    call assertEquals("negative PID", get_npc_level(-1), -1);
+    call assertEquals("empty name", get_npc_level(""), -1);
+    call assertEquals("unknown name", get_npc_level("__unknown_npc__"), -1);
+    inc_npc_level(0);
+    inc_npc_level("");
+    inc_npc_level("__unknown_npc__");
 
-    // Test with party members if any are present
-    variable critter;
-    variable found_party_member := false;
-    foreach critter in party_member_list(0) begin
-        if (critter == dude_obj) then continue;
-
-        variable pid := obj_pid(critter);
-        variable npc_level := get_npc_level(pid);
-        display_msg(obj_name(critter) + " (PID " + pid + ") level = " + npc_level);
-
-        // Level should be non-negative
-        call assertTrue("NPC level >= 0 for " + obj_name(critter), npc_level >= 0);
-
-        // inc_npc_level and verify it incremented
-        variable old_level := npc_level;
-        inc_npc_level(pid);
-        variable new_level := get_npc_level(pid);
-        display_msg(obj_name(critter) + " level after inc: " + new_level);
-
-        // New level should be old_level or old_level+1
-        // (old_level+1 if there was a valid next level, same if already maxed)
-        call assertTrue("NPC level incremented or maxed for " + obj_name(critter),
-            (new_level == old_level + 1) or (new_level == old_level));
-
-        found_party_member := true;
+    call assertEquals("Myron must be absent before test", get_npc_level(TEST_PID), -1);
+    if (get_npc_level(TEST_PID) != -1) then begin
+        call report_test_results("npc_level");
+        signal_close_game;
+        return;
     end
 
-    if (not found_party_member) then begin
-        display_msg("No party members found - skipping inc/get round-trip test");
+    variable npc := create_object_sid(TEST_PID, tile_num(dude_obj), elevation(dude_obj), -1);
+    call assertTrue("created test NPC", npc != 0);
+    if (npc == 0) then begin
+        call report_test_results("npc_level");
+        signal_close_game;
+        return;
     end
+    variable name := string_tolower(obj_name(npc));
+    inc_npc_level(TEST_PID);
+    inc_npc_level(name);
+    party_add(npc);
+    call assertEquals("absent increments did not alter initial level", get_npc_level(TEST_PID), 0);
+    call assertEquals("case-insensitive name lookup", get_npc_level(name), 0);
 
+    variable stage, offset;
+    for (stage := 0; stage < STAGE_COUNT; stage++) begin
+        if (stage % 2 == 0) then inc_npc_level(TEST_PID);
+        else inc_npc_level(name);
+        call assertEquals("exact level after stage " + stage, get_npc_level(TEST_PID), stage + 1);
+        call assertEquals("name lookup after stage " + stage, get_npc_level(name), stage + 1);
+
+        // Compare every stat and skill copied by the engine, rather than
+        // allowing an unchanged level to pass as a possible maximum.
+        for (offset := PROTO_CR_BASE_STATS; offset < PROTO_CR_BASE_STATS + 33 * 4; offset += 4) begin
+            call assertEquals("base stat " + stage + ":" + offset,
+                get_proto_data(TEST_PID, offset), get_proto_data(FIRST_STAGE_PID + stage, offset));
+        end
+        for (offset := PROTO_CR_BONUS_STATS; offset < PROTO_CR_BONUS_STATS + 33 * 4; offset += 4) begin
+            call assertEquals("bonus stat " + stage + ":" + offset,
+                get_proto_data(TEST_PID, offset), get_proto_data(FIRST_STAGE_PID + stage, offset));
+        end
+        for (offset := PROTO_CR_SKILLS; offset < PROTO_CR_SKILLS + 18 * 4; offset += 4) begin
+            call assertEquals("skill " + stage + ":" + offset,
+                get_proto_data(TEST_PID, offset), get_proto_data(FIRST_STAGE_PID + stage, offset));
+        end
+        call assertEquals("fully healed after stage " + stage,
+            get_critter_stat(npc, STAT_current_hp), get_critter_stat(npc, STAT_max_hp));
+
+        if (stage == 0) then begin
+            party_remove(npc);
+            call assertEquals("dismissed PID", get_npc_level(TEST_PID), -1);
+            call assertEquals("dismissed name", get_npc_level(name), -1);
+            inc_npc_level(TEST_PID);
+            inc_npc_level(name);
+            party_add(npc);
+            call assertEquals("dismissed increments did not alter level", get_npc_level(TEST_PID), 1);
+        end
+    end
+    inc_npc_level(TEST_PID);
+    inc_npc_level(name);
+    call assertEquals("maximum level unchanged", get_npc_level(TEST_PID), STAGE_COUNT);
+    party_remove(npc);
+    destroy_object(npc);
     call report_test_results("npc_level");
+    signal_close_game;
 end
