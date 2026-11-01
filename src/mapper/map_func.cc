@@ -690,8 +690,8 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
 
     // Look for an existing duplicate (same tile + same fid) before placing.
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-        obj != nullptr;
-        obj = objectFindNextAtElevation()) {
+         obj != nullptr;
+         obj = objectFindNextAtElevation()) {
         if (obj->tile == dstTile
             && obj->fid == srcFid
             && obj != gGameMouseBouncingCursor
@@ -785,8 +785,8 @@ void copyObject(int filterType)
             if (tile == -1) continue;
 
             for (Object* obj = objectFindFirstAtElevation(elevation);
-                obj != nullptr;
-                obj = objectFindNextAtElevation()) {
+                 obj != nullptr;
+                 obj = objectFindNextAtElevation()) {
                 if (obj->tile != tile
                     || obj == gDude
                     || obj == gGameMouseBouncingCursor
@@ -963,8 +963,8 @@ void eraseObject()
                     // Find topmost (last-rendered) object at gElevation under the mouse.
                     Object* hit = nullptr;
                     for (Object* obj = objectFindFirstAtElevation(gElevation);
-                        obj != nullptr;
-                        obj = objectFindNextAtElevation()) {
+                         obj != nullptr;
+                         obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
                         if (!ProtoId(obj).valid()) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
@@ -1050,8 +1050,8 @@ static void mapper_shift_map_once(int dx, int dy)
     };
     std::vector<Snap> snap;
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-        obj != nullptr;
-        obj = objectFindNextAtElevation()) {
+         obj != nullptr;
+         obj = objectFindNextAtElevation()) {
         if (obj->tile < 0 || obj->tile >= kShiftMapTiles) continue;
         if (obj == gDude) continue;
         if (obj == gGameMouseBouncingCursor) continue;
