@@ -575,11 +575,16 @@ int scriptsNewObjectId()
         }
     } while (ptr);
 
-    if (gObjectIdCounter >= 18000) {
-        debugPrint("\n    ERROR: new_obj_id() !!!! Picked PLAYER ID!!!!");
+    // SFALL: Skip party members' IDs ((pid & 0xFFFFFF) + 18000). The original
+    // only reports picking one; the new object could then share its ID with a
+    // party member, and items with IDs in that range don't stack.
+    if (gObjectIdCounter >= OBJECT_ID_PLAYER && gObjectIdCounter < OBJECT_ID_PARTY_MEMBER_END) {
+        gObjectIdCounter = OBJECT_ID_PARTY_MEMBER_END - 1;
+        return scriptsNewObjectId();
     }
 
-    gObjectIdCounter++;
+    // SFALL: The original increments the counter once more here, returning an
+    // ID that wasn't checked against the existing objects.
 
     return gObjectIdCounter;
 }
