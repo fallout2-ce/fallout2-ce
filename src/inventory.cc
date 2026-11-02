@@ -383,7 +383,7 @@ static void _container_enter(int keyCode, int inventoryWindowType);
 static void _container_exit(int keyCode, int inventoryWindowType);
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity);
 static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon);
-static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode, Object* ammoOwner = nullptr, Object* weaponOwner = nullptr, bool weaponIsInInventory = true);
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* owner, Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
 static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
@@ -1457,9 +1457,8 @@ static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex)
         return false;
     }
 
-    Object* ammoOwner = _target_stack[_target_curr_stack];
     int keyCode = 2000 + slotIndex;
-    return _drop_ammo_into_weapon(weapon, ammo, nullptr, quantity, keyCode, ammoOwner, partyBaseTarget, false) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
+    return _drop_ammo_into_weapon(partyBaseTarget, weapon, ammo, nullptr, quantity, keyCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item)
@@ -2929,7 +2928,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
                         itemIndex = 0;
                     }
                 } else {
-                    if (_drop_ammo_into_weapon(targetItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS) {
+                    if (_drop_ammo_into_weapon(_inven_dude, targetItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS) {
                         itemIndex = 0;
                     }
                 }
@@ -2954,9 +2953,9 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         }
 
     } else if (!pickUpFromSlot && immediate && itemGetType(item) == ITEM_TYPE_AMMO) {
-        InventoryAmmoMoveResult ammoMoveResult = _drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode);
+        InventoryAmmoMoveResult ammoMoveResult = _drop_ammo_into_weapon(_inven_dude, gInventoryLeftHandItem, item, itemSlot, count, buttonCode);
         if (ammoMoveResult == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
-            ammoMoveResult = _drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode);
+            ammoMoveResult = _drop_ammo_into_weapon(_inven_dude, gInventoryRightHandItem, item, itemSlot, count, buttonCode);
         }
     } else if (!pickUpFromSlot && immediate && itemGetType(item) != ITEM_TYPE_ARMOR) {
         // ctrl-click non-armor to quick-equip:
@@ -2974,7 +2973,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             _drop_into_container(gInventoryLeftHandItem, item, itemIndex, itemSlot, count);
         } else if (gInventoryLeftHandItem == nullptr) {
             _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
-        } else if (_drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
+        } else if (_drop_ammo_into_weapon(_inven_dude, gInventoryLeftHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
             _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         }
 
@@ -2984,7 +2983,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             _drop_into_container(gInventoryRightHandItem, item, itemIndex, itemSlot, count);
         } else if (gInventoryRightHandItem == nullptr) {
             _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
-        } else if (_drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
+        } else if (_drop_ammo_into_weapon(_inven_dude, gInventoryRightHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
             _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
         }
 
@@ -6214,21 +6213,18 @@ static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon)
 }
 
 // 0x47650C drop ammo into weapon
-static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode, Object* ammoOwner, Object* weaponOwner, bool weaponIsInInventory)
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* owner, Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
+    if (owner == nullptr) {
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+    }
+
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (itemGetType(ammo) != ITEM_TYPE_AMMO) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
-    }
-
-    if (ammoOwner == nullptr) {
-        ammoOwner = _inven_dude;
-    }
-    if (weaponOwner == nullptr) {
-        weaponOwner = _inven_dude;
     }
 
     if (ProtoId(weapon) == ItemProtoTypeId::SolarScorcher) {
@@ -6268,7 +6264,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     Object* sourceItem = ammo;
     bool isReloaded = false;
-    int rc = weaponIsInInventory ? itemRemoveQuietly(weaponOwner, weapon, 1) : 0;
+    int rc = itemRemoveQuietly(owner, weapon, 1);
     std::vector<Object*> unloadedAmmo;
     if (replaceAmmo) {
         Object* oldAmmo;
@@ -6283,7 +6279,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
             if (ammoItemSlot != nullptr) {
                 *ammoItemSlot = nullptr;
             } else {
-                itemRemoveQuietly(ammoOwner, sourceItem, 1);
+                itemRemoveQuietly(owner, sourceItem, 1);
             }
 
             objectDestroy(sourceItem);
@@ -6301,12 +6297,12 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         }
     }
 
-    if (weaponIsInInventory && rc != -1) {
-        itemAdd(weaponOwner, weapon, 1);
+    if (rc != -1) {
+        itemAdd(owner, weapon, 1);
     }
 
     for (Object* oldAmmo : unloadedAmmo) {
-        itemAdd(weaponOwner, oldAmmo, 1);
+        itemAdd(owner, oldAmmo, 1);
     }
 
     if (!isReloaded) {
