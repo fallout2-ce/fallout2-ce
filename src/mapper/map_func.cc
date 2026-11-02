@@ -80,7 +80,7 @@ void place_entrance_hex()
     while (inputGetInput() != -2) {
     }
 
-    if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+    if ((mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
         if (_mouse_click_in(0, 0, _scr_size.right - _scr_size.left, _scr_size.bottom - _scr_size.top - 100)) {
             mouseGetPosition(&x, &y);
 
@@ -109,7 +109,7 @@ void pick_region(Rect* rect)
     while (true) {
         sharedFpsLimiter.mark();
         bool got = inputGetInput() == -2
-            && (mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0;
+            && (mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None;
         renderPresent();
         sharedFpsLimiter.throttle();
         if (got) break;
@@ -122,7 +122,7 @@ void pick_region(Rect* rect)
     temp.bottom = y;
     *rect = temp;
 
-    while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
+    while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
         sharedFpsLimiter.mark();
         inputGetInput();
 
@@ -373,8 +373,8 @@ int pickHex()
         int keyCode = inputGetInput();
 
         if (keyCode == -2) {
-            int buttons = mouseGetEvent();
-            if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+            MouseButtonEvent buttons = mouseGetEvent();
+            if ((buttons & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 int isoRight = windowGetWidth(gIsoWindow) - 1;
                 int isoBottom = windowGetHeight(gIsoWindow) - 1;
                 if (_mouse_click_in(0, kIsoMarginTop, isoRight, isoBottom)) {
@@ -600,8 +600,8 @@ static void mp_run_placement_loop(PlaceFn place)
         bool exit = false;
 
         if (keyCode == -2) {
-            int mouseEvent = mouseGetEvent();
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            MouseButtonEvent mouseEvent = mouseGetEvent();
+            if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 int ix, iy;
                 get_input_position(&ix, &iy);
                 if (_mouse_click_in(0, 0,
@@ -610,7 +610,7 @@ static void mp_run_placement_loop(PlaceFn place)
                     place(ix, iy);
                     tileWindowRefresh();
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 exit = true;
             }
         }
@@ -953,8 +953,8 @@ void eraseObject()
         bool exit = false;
 
         if (keyCode == -2) {
-            int mouseEvent = mouseGetEvent();
-            if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            MouseButtonEvent mouseEvent = mouseGetEvent();
+            if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (!_mouse_click_in(0, 0,
                         _scr_size.right - _scr_size.left,
                         _scr_size.bottom - _scr_size.top - 100)) {
@@ -991,7 +991,7 @@ void eraseObject()
                         }
                     }
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 exit = true;
             }
         }
@@ -1147,7 +1147,7 @@ void mapper_shift_map()
         bool done = false;
 
         if (keyCode == -2) {
-            if ((mouseGetEvent() & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            if ((mouseGetEvent() & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 done = true;
             }
         } else {

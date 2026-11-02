@@ -823,7 +823,7 @@ ProgramValue ScanArray(ArrayId arrayId, const ProgramValue& val, Program* progra
     return arr->ScanArray(val, program);
 }
 
-ArrayId ListAsArray(int type)
+ArrayId ListAsArray(ListType type)
 {
     std::vector<Object*> objects;
     sfall_lists_fill(type, objects);

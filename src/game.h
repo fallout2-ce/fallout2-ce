@@ -5,6 +5,7 @@
 #include "message.h"
 #include "skilldex.h"
 #include "touch.h"
+#include "window_manager.h"
 
 namespace fallout {
 
@@ -26,14 +27,15 @@ enum GameQuitRequest : int {
 
 extern int* gGameGlobalVars;
 extern int gGameGlobalVarsLength;
-extern const char* asc_5186C8;
+extern const char* gGameMsgPath;
 extern GameQuitRequest _game_user_wants_to_quit;
 
 extern MessageList gMiscMessageList;
+extern MessageList gCeMessageList;
 
 extern bool gGameLoaded;
 
-int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int flags, int argc, char** argv);
+int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, WindowManagerInitFlags flags, int argc, char** argv);
 void gameReset();
 void gameExit();
 int gameHandleKey(int eventCode, bool isInCombatMode);

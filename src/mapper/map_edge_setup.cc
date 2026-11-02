@@ -524,11 +524,11 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
                 done = true;
             }
         } else if (keyCode == -2) {
-            int buttons = mouseGetEvent();
-            if (moving && (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) && !overDialog) {
+            MouseButtonEvent mouseEvent = mouseGetEvent();
+            if (moving && (mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None && !overDialog) {
                 editorCommitMove();
                 refreshAll();
-            } else if (moving && (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN)) {
+            } else if (moving && (mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 editorCancelMove();
                 refreshAll();
             }
@@ -649,16 +649,16 @@ void mapEdgeSetupDialog()
     const int lineHeight = fontGetLineHeight();
     auto centeredX = [&](const char* text) { return (kDialogWidth - fontGetStringWidth(text)) / 2; };
 
-    _win_register_text_button(win, 12, 58, -1, -1, -1, kEvAddRect, "Add Rect", 0);
-    _win_register_text_button(win, 120, 58, -1, -1, -1, kEvDelRect, "Delete Rect", 0);
-    _win_register_text_button(win, 12, 86, -1, -1, -1, kEvPrevRect, "<<", 0);
-    _win_register_text_button(win, 180, 86, -1, -1, -1, kEvNextRect, ">>", 0);
-    _win_register_text_button(win, 96, 108, -1, -1, -1, kEvSideTop, "Top", 0);
-    _win_register_text_button(win, 90, 190, -1, -1, -1, kEvSideBottom, "Bottom", 0);
-    _win_register_text_button(win, 12, 148, -1, -1, -1, kEvSideLeft, "Left", 0);
-    _win_register_text_button(win, 174, 148, -1, -1, -1, kEvSideRight, "Right", 0);
-    _win_register_text_button(win, 12, 222, -1, -1, -1, kEvCancel, "Cancel", 0);
-    _win_register_text_button(win, 160, 222, -1, -1, -1, kEvSave, "Save", 0);
+    _win_register_text_button(win, 12, 58, -1, -1, -1, kEvAddRect, "Add Rect", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 120, 58, -1, -1, -1, kEvDelRect, "Delete Rect", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 12, 86, -1, -1, -1, kEvPrevRect, "<<", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 180, 86, -1, -1, -1, kEvNextRect, ">>", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 96, 108, -1, -1, -1, kEvSideTop, "Top", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 90, 190, -1, -1, -1, kEvSideBottom, "Bottom", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 12, 148, -1, -1, -1, kEvSideLeft, "Left", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 174, 148, -1, -1, -1, kEvSideRight, "Right", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 12, 222, -1, -1, -1, kEvCancel, "Cancel", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 160, 222, -1, -1, -1, kEvSave, "Save", BUTTON_FLAG_NONE);
 
     // Repaints only the parts that change with editor state, then blits the window.
     auto render = [&]() {
@@ -748,19 +748,19 @@ void mapEdgeSquareSetupDialog()
     windowDrawText(win, "All Objects", 0, 12, 62, _colorTable[kClipAllColor] | DRAW_TEXT_FLAG_NONE);
     windowDrawText(win, "Low Objects", 0, 12, 74, _colorTable[kClipLowColor] | DRAW_TEXT_FLAG_NONE);
 
-    _win_register_text_button(win, 113, 64, -1, -1, -1, kEvDefaultReset, "Default Reset", 0);
+    _win_register_text_button(win, 113, 64, -1, -1, -1, kEvDefaultReset, "Default Reset", BUTTON_FLAG_NONE);
 
-    _win_register_text_button(win, 51, 114, -1, -1, -1, kEvSideTop, "mv", 0);
-    _win_register_text_button(win, 88, 137, -1, -1, -1, kEvClipTop, "clp", 0);
-    _win_register_text_button(win, 43, 167, -1, -1, -1, kEvSideLeft, "mv", 0);
-    _win_register_text_button(win, 78, 156, -1, -1, -1, kEvClipLeft, "clp", 0);
-    _win_register_text_button(win, 166, 131, -1, -1, -1, kEvSideRight, "mv", 0);
-    _win_register_text_button(win, 125, 143, -1, -1, -1, kEvClipRight, "clp", 0);
-    _win_register_text_button(win, 138, 184, -1, -1, -1, kEvSideBottom, "mv", 0);
-    _win_register_text_button(win, 114, 161, -1, -1, -1, kEvClipBottom, "clp", 0);
+    _win_register_text_button(win, 51, 114, -1, -1, -1, kEvSideTop, "mv", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 88, 137, -1, -1, -1, kEvClipTop, "clp", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 43, 167, -1, -1, -1, kEvSideLeft, "mv", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 78, 156, -1, -1, -1, kEvClipLeft, "clp", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 166, 131, -1, -1, -1, kEvSideRight, "mv", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 125, 143, -1, -1, -1, kEvClipRight, "clp", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 138, 184, -1, -1, -1, kEvSideBottom, "mv", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 114, 161, -1, -1, -1, kEvClipBottom, "clp", BUTTON_FLAG_NONE);
 
-    _win_register_text_button(win, 30, 224, -1, -1, -1, kEvCancel, "Cancel", 0);
-    _win_register_text_button(win, 143, 224, -1, -1, -1, kEvSave, "Save", 0);
+    _win_register_text_button(win, 30, 224, -1, -1, -1, kEvCancel, "Cancel", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 143, 224, -1, -1, -1, kEvSave, "Save", BUTTON_FLAG_NONE);
 
     auto render = [&]() {
         // Skewed diagram: fixed edges colored by clip mode (green while moving). Repainted

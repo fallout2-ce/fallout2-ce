@@ -308,7 +308,7 @@ namespace {
         assert(sfallConfig != nullptr && migratedConfig != nullptr);
 
         bool migrated = false;
-        for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+        for (GameMovie index = MOVIE_FIRST; index < GAME_MOVIE_MAX_COUNT; index++) {
             char sfallKey[16];
             snprintf(sfallKey, sizeof(sfallKey), "Movie%d", index + 1);
 
@@ -482,7 +482,7 @@ static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* cont
 
     if (migrated) {
         if (contentConfigEnsureDirectory(contentConfigFilePath)) {
-            if (!configWriteEx(&migratedConfig, contentConfigFilePath, CONFIG_RETAIN_ALL)) {
+            if (!configWriteEx(&migratedConfig, contentConfigFilePath, ConfigFlags::RetainAll)) {
                 debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
             }
         } else {

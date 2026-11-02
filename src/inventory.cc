@@ -353,7 +353,7 @@ static void _display_inventory(int stackOffset, int draggedSlotIndex, int invent
 static void _display_target_inventory(int stackOffset, int dragSlotIndex, Inventory* inventory, int inventoryWindowType);
 static void _display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool isDragged);
 static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight);
-static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, int mouseEvent);
+static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, MouseButtonEvent mouseEvent);
 static void _display_body(const FrmId& frmId, int inventoryWindowType);
 static int inventoryCommonInit();
 static void inventoryCommonFree();
@@ -1114,7 +1114,7 @@ static void inventoryScrollerPage(const InventoryScroller& scroller, int directi
     inventoryScrollerJumpTo(scroller, *scroller.offsetPtr + direction * scroller.visibleSlots);
 }
 
-static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, int mouseEvent)
+static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, MouseButtonEvent mouseEvent)
 {
     if (scroller.keyUp != -1 && keyCode == scroller.keyUp) {
         inventoryScrollerScroll(scroller, -1);
@@ -1129,7 +1129,7 @@ static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int 
     } else if (scroller.keyEnd != -1 && keyCode == scroller.keyEnd) {
         inventoryScrollerJumpTo(scroller, scroller.totalItems - scroller.visibleSlots);
     }
-    if ((mouseEvent & MOUSE_EVENT_WHEEL) == 0) {
+    if ((mouseEvent & MouseButtonEvent::Wheel) == MouseButtonEvent::None) {
         return;
     }
     if (!mouseHitTestInWindow(gInventoryWindow, scroller.hitRect.left, scroller.hitRect.top, scroller.hitRect.right, scroller.hitRect.bottom)) {
@@ -1595,7 +1595,7 @@ static int inventoryMessageListInit()
     if (!messageListInit(&gInventoryMessageList))
         return -1;
 
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "inventry.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "inventry.msg");
     if (!messageListLoad(&gInventoryMessageList, path))
         return -1;
 
@@ -1669,7 +1669,7 @@ void inventoryOpen()
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
-        int mouseEvent = mouseGetEvent();
+        MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
         Rect normalRect = { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight };
         InventoryScroller normalScroller {
@@ -1711,7 +1711,7 @@ void inventoryOpen()
         } else {
             inventoryScrollerHandleInput(normalScroller, keyCode, mouseEvent);
 
-            if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_HAND) {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
                 } else if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
@@ -1719,7 +1719,7 @@ void inventoryOpen()
                     inventoryRenderSummary();
                     windowRefresh(gInventoryWindow);
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if ((keyCode >= 1000 && keyCode < 1000 + inventoryLayout.visibleSlots) || keyCode == INVENTORY_HAND_RIGHT_KEY || keyCode == INVENTORY_HAND_LEFT_KEY || keyCode == INVENTORY_ARMOR_KEY) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_NORMAL);
@@ -1831,7 +1831,7 @@ static bool _setup_inventory(int inventoryWindowType)
         windowGetRect(gInventoryBarterBackgroundWindow, &bgWindowRect);
         int tradeWindowX = bgWindowRect.left + INVENTORY_TRADE_WINDOW_X;
         int tradeWindowY = bgWindowRect.top + INVENTORY_TRADE_WINDOW_Y;
-        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, static_cast<ColorWithFlags>(257), 0);
+        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, static_cast<ColorWithFlags>(257), WINDOW_NONE);
         gInventoryWindowMaxX = tradeWindowX + INVENTORY_TRADE_WINDOW_WIDTH;
         gInventoryWindowMaxY = tradeWindowY + tradeWindowHeight;
 
@@ -2164,7 +2164,7 @@ static void _exit_inventory(bool shouldEnableIso)
             Object* critter = attack.extras[index];
             if (critter != gDude
                 && critter->data.critter.combat.team != gDude->data.critter.combat.team
-                && statRoll(critter, STAT_PERCEPTION, 0, nullptr) >= ROLL_SUCCESS) {
+                && rollIsSuccess(statRoll(critter, STAT_PERCEPTION, 0, nullptr))) {
                 critterSetWhoHitMe(critter, gDude);
 
                 if (watcher == nullptr) {
@@ -3169,7 +3169,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
         _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
 
         int keyCode = inputGetInput();
-        int mouseEvent = mouseGetEvent();
+        MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_USE_ITEM_ON, nullptr };
         InventoryScroller useItemOnScroller {
             { INVENTORY_SCROLLER_X, INVENTORY_SCROLLER_Y, INVENTORY_SCROLLER_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_SCROLLER_Y },
@@ -3194,13 +3194,13 @@ void inventoryOpenUseItemOn(Object* targetObj)
         default:
             inventoryScrollerHandleInput(useItemOnScroller, keyCode, mouseEvent);
 
-            if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_HAND) {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
                 } else {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (keyCode >= 1000 && keyCode < 1000 + gInventorySlotsCount) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
@@ -4431,7 +4431,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     ItemType itemType = itemGetType(item);
 
-    int mouseState;
+    MouseButtonEvent mouseEvent;
     do {
         sharedFpsLimiter.mark();
 
@@ -4441,8 +4441,8 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
         }
 
-        mouseState = mouseGetEvent();
-        if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+        mouseEvent = mouseGetEvent();
+        if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
             if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL) {
                 objectLookAtFunc(_stack[0], item, gInventoryPrintItemDescriptionHandler);
             } else {
@@ -4454,7 +4454,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
         renderPresent();
         sharedFpsLimiter.throttle();
-    } while ((mouseState & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) != MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT);
+    } while ((mouseEvent & MouseButtonEvent::LeftButtonDownRepeat) != MouseButtonEvent::LeftButtonDownRepeat);
 
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_BLANK);
 
@@ -4555,7 +4555,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     int menuItemIndex = 0;
     int previousMouseY = y;
-    while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
+    while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
         sharedFpsLimiter.mark();
 
         inputGetInput();
@@ -4943,7 +4943,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
 
         int keyCode = inputGetInput();
-        int mouseEvent = mouseGetEvent();
+        MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, nullptr };
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, _target_pud };
         InventoryScroller lootInventoryScroller {
@@ -5051,13 +5051,13 @@ int inventoryOpenLooting(Object* looter, Object* target)
             inventoryScrollerHandleInput(lootInventoryScroller, keyCode, mouseEvent);
             inventoryScrollerHandleInput(lootTargetScroller, keyCode, mouseEvent);
 
-            if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_HAND) {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
                 } else {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (keyCode >= 1000 && keyCode < 1000 + gInventorySlotsCount) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
@@ -5503,7 +5503,7 @@ static void _drag_item_loop(Object* item, bool immediate)
 
         renderPresent();
         sharedFpsLimiter.throttle();
-    } while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0);
+    } while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None);
 
     if (itemInventoryFrmImage.isLocked()) {
         itemInventoryFrmImage.unlock();
@@ -5823,7 +5823,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
         }
 
         keyCode = inputGetInput();
-        int mouseEvent = mouseGetEvent();
+        MouseButtonEvent mouseEvent = mouseGetEvent();
         barterClampTableOffsets();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, nullptr };
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, _target_pud };
@@ -5945,13 +5945,13 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
             inventoryScrollerHandleInput(tradeTargetScroller, keyCode, mouseEvent);
             inventoryScrollerHandleInput(tradeBartererTableScroller, keyCode, mouseEvent);
 
-            if ((mouseEvent & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
+            if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_HAND) {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
                 } else {
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
                 }
-            } else if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
+            } else if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (keyCode >= 1000 && keyCode <= 1000 + gInventorySlotsCount) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_TRADE);
@@ -6269,7 +6269,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
-    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
+    const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Ready, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
     soundPlayFile(sfx);
 
     return INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
@@ -6378,11 +6378,11 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
             isTyping = false;
             if (value < max) {
                 if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-                    if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0) {
+                    if ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                         getTicks();
 
                         unsigned int delay = 100;
-                        while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0) {
+                        while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                             sharedFpsLimiter.mark();
 
                             if (value < max) {
@@ -6416,11 +6416,11 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
             isTyping = false;
             if (value > min) {
                 if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-                    if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0) {
+                    if ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                         getTicks();
 
                         unsigned int delay = 100;
-                        while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0) {
+                        while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                             sharedFpsLimiter.mark();
 
                             if (value > min) {

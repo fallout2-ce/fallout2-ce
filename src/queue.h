@@ -80,6 +80,7 @@ int queueProcessEvents();
 void queueClear();
 void queueClearByEventType(EventType eventType, QueueEventHandler* fn);
 unsigned int queueGetNextEventTime();
+void queueClearMapExitExplosions();
 void _queue_leaving_map();
 bool queueIsEmpty();
 void* queueFindFirstEvent(Object* owner, EventType eventType);

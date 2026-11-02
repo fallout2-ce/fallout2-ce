@@ -1,20 +1,23 @@
 #ifndef FALLOUT_MAINMENU_H_
 #define FALLOUT_MAINMENU_H_
 
+#include "window_manager.h"
+
 namespace fallout {
 
-typedef enum MainMenuOption {
-    MAIN_MENU_INTRO,
-    MAIN_MENU_NEW_GAME,
-    MAIN_MENU_LOAD_GAME,
-    MAIN_MENU_SCREENSAVER,
-    MAIN_MENU_TIMEOUT,
-    MAIN_MENU_CREDITS,
-    MAIN_MENU_QUOTES,
-    MAIN_MENU_EXIT,
-    MAIN_MENU_SELFRUN,
-    MAIN_MENU_OPTIONS,
-} MainMenuOption;
+enum MainMenuOption : int {
+    Invalid = -1,
+    Intro,
+    NewGame,
+    LoadGame,
+    ScreenSaver,
+    Timeout,
+    Credits,
+    Quotes,
+    Exit,
+    SelfRun,
+    Options,
+};
 
 int mainMenuWindowInit();
 void mainMenuWindowFree();
@@ -23,12 +26,12 @@ void mainMenuWindowUnhide(bool animate);
 void mainMenuBeginSubscreen();
 void mainMenuCancelSubscreen();
 void mainMenuFinishSubscreen();
-int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags);
+WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags overlayFlags);
 void mainMenuShowSubscreen(bool animate);
 void mainMenuFadeOutForMenuReturn(bool animate);
 void mainMenuFadeOutForGameStart(bool animate);
 int _main_menu_is_enabled();
-int mainMenuWindowHandleEvents();
+MainMenuOption mainMenuWindowHandleEvents();
 void mainMenuRequestExit();
 
 } // namespace fallout

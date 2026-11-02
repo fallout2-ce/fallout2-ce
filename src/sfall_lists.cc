@@ -9,7 +9,7 @@ namespace fallout {
 
 // Due to bad design of |ListType| it's |LIST_ITEMS| and |LIST_CRITTERS| do not
 // match |OBJ_TYPE_CRITTER| and |OBJ_TYPE_ITEM|.
-static constexpr int kObjectTypeToListType[] = {
+static constexpr ListType kObjectTypeToListType[] = {
     /*    OBJ_TYPE_ITEM */ LIST_ITEMS,
     /* OBJ_TYPE_CRITTER */ LIST_CRITTERS,
     /* OBJ_TYPE_SCENERY */ LIST_SCENERY,
@@ -60,7 +60,7 @@ void sfallListsExit()
     }
 }
 
-int sfallListsCreate(int listType)
+int sfallListsCreate(ListType listType)
 {
     int listId = _state->nextListId++;
     List& list = _state->lists[listId];
@@ -91,7 +91,7 @@ void sfallListsDestroy(int listId)
     }
 }
 
-void sfall_lists_fill(int type, std::vector<Object*>& objects)
+void sfall_lists_fill(ListType type, std::vector<Object*>& objects)
 {
     if (type == LIST_TILES) {
         // For unknown reason this list type is not implemented in Sfall.

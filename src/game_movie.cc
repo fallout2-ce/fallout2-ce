@@ -23,6 +23,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
+#include "window.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -148,9 +149,9 @@ int gameMoviesSave(File* stream)
 
 // gmovie_play
 // 0x44E690 gmovie_play
-int gameMoviePlay(int movie, int flags)
+int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
 {
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || movieFileNames[movie].empty()) {
+    if (!gameMovieExtendedIsValid(movie) || movieFileNames[movie].empty()) {
         debugPrint("\ngmovie_play() - Error: Invalid movie %d\n", movie);
         return -1;
     }
@@ -171,7 +172,7 @@ int gameMoviePlay(int movie, int flags)
         return -1;
     }
 
-    if ((flags & GAME_MOVIE_FADE_IN) != 0) {
+    if ((flags & GameMovieFlags::FadeIn) != GameMovieFlags::None) {
         paletteFadeTo(gPaletteBlack);
         gGameMovieFaded = true;
     }
@@ -187,22 +188,22 @@ int gameMoviePlay(int movie, int flags)
         return -1;
     }
 
-    if ((flags & GAME_MOVIE_STOP_MUSIC) != 0) {
+    if ((flags & GameMovieFlags::StopMusic) != GameMovieFlags::None) {
         backgroundSoundDelete();
-    } else if ((flags & GAME_MOVIE_PAUSE_MUSIC) != 0) {
+    } else if ((flags & GameMovieFlags::PauseMusic) != GameMovieFlags::None) {
         backgroundSoundPause();
     }
 
     windowRefresh(win);
 
     bool subtitlesEnabled = settings.preferences.subtitles;
-    int movieFlags = MOVIE_FLAG_DIRECT_CENTERED;
+    MovieFlags movieFlags = MovieFlags::DirectCentered;
     if (subtitlesEnabled) {
         char* subtitlesFilePath = gameMovieBuildSubtitlesFilePath(movieFilePath);
 
         int subtitlesFileSize;
         if (dbGetFileSize(subtitlesFilePath, &subtitlesFileSize) == 0) {
-            movieFlags = MOVIE_FLAG_DIRECT_CENTERED | MOVIE_FLAG_SUBTITLES;
+            movieFlags = MovieFlags::DirectCentered | MovieFlags::Subtitles;
         } else {
             subtitlesEnabled = false;
         }
@@ -214,7 +215,7 @@ int gameMoviePlay(int movie, int flags)
     int oldFont;
     if (subtitlesEnabled) {
         const char* subtitlesPaletteFilePath;
-        if (movie < MOVIE_COUNT && gMoviePaletteFilePaths[movie] != nullptr) {
+        if (gameMovieIsValid(movie) && gMoviePaletteFilePaths[movie] != nullptr) {
             subtitlesPaletteFilePath = gMoviePaletteFilePaths[movie];
         } else {
             subtitlesPaletteFilePath = "art\\cuts\\subtitle.pal";
@@ -235,7 +236,7 @@ int gameMoviePlay(int movie, int flags)
         mouseShowCursor();
     }
 
-    while (mouseGetEvent() != 0) {
+    while (mouseGetEvent() != MouseButtonEvent::None) {
         _mouse_info();
     }
 
@@ -247,8 +248,8 @@ int gameMoviePlay(int movie, int flags)
     _zero_vid_mem();
     _movieRun(win, movieFilePath);
 
-    int pressed = 0;
-    int buttons;
+    MouseButtonEvent pressed = MouseButtonEvent::None;
+    MouseButtonEvent buttons;
     do {
         if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
             break;
@@ -266,7 +267,7 @@ int gameMoviePlay(int movie, int flags)
         pressed |= buttons;
         // Exit on mouse only after a click cycle: observe left/right down at
         // least once, then wait until both are released.
-    } while (((pressed & 1) == 0 && (pressed & 2) == 0) || (buttons & 1) != 0 || (buttons & 2) != 0);
+    } while (((pressed & MouseButtonEvent::LeftButtonDown) == MouseButtonEvent::None && (pressed & MouseButtonEvent::RightButtonDown) == MouseButtonEvent::None) || (buttons & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None || (buttons & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None);
 
     _movieStop();
     _moviefx_stop();
@@ -300,11 +301,11 @@ int gameMoviePlay(int movie, int flags)
     // 640x480). This leads to everything outside this rect to remain black.
     windowRefreshAll(&_scr_size);
 
-    if ((flags & GAME_MOVIE_PAUSE_MUSIC) != 0) {
+    if ((flags & GameMovieFlags::PauseMusic) != GameMovieFlags::None) {
         backgroundSoundResume();
     }
 
-    if ((flags & GAME_MOVIE_FADE_OUT) != 0) {
+    if ((flags & GameMovieFlags::FadeOut) != GameMovieFlags::None) {
         if (!subtitlesEnabled) {
             colorPaletteLoad("color.pal");
         }
@@ -317,18 +318,18 @@ int gameMoviePlay(int movie, int flags)
     return 0;
 }
 
-const char* gameMovieGetDefaultFileName(int movie)
+const char* gameMovieGetDefaultFileName(GameMovie movie)
 {
-    if (movie < 0 || movie >= MOVIE_COUNT) {
+    if (!gameMovieIsValid(movie)) {
         return nullptr;
     }
 
     return movieDefaultFileNames[movie];
 }
 
-bool gameMovieSetPath(int movie, const char* fileName)
+bool gameMovieSetPath(GameMovie movie, const char* fileName)
 {
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || !gameMovieIsValidFileName(fileName)) {
+    if (!gameMovieExtendedIsValid(movie) || !gameMovieIsValidFileName(fileName)) {
         return false;
     }
 
@@ -336,9 +337,9 @@ bool gameMovieSetPath(int movie, const char* fileName)
     return true;
 }
 
-void gameMovieMarkSeen(int movie)
+void gameMovieMarkSeen(GameMovie movie)
 {
-    if (movie >= 0 && movie < MOVIE_COUNT) {
+    if (gameMovieIsValid(movie)) {
         gGameMoviesSeen[movie] = 1;
     }
 }
@@ -353,9 +354,9 @@ void gameMovieFadeOut()
 }
 
 // 0x44EB04 gmovie_has_been_played
-bool gameMovieIsSeen(int movie)
+bool gameMovieIsSeen(GameMovie movie)
 {
-    if (movie < 0 || movie >= MOVIE_COUNT) {
+    if (!gameMovieIsValid(movie)) {
         return false;
     }
 
@@ -421,7 +422,7 @@ static void gameMovieInitFileNames()
         fileName.clear();
     }
 
-    for (int index = 0; index < MOVIE_COUNT; index++) {
+    for (int index = MOVIE_FIRST; index < MOVIE_COUNT; index++) {
         movieFileNames[index] = movieDefaultFileNames[index];
     }
 }
@@ -436,7 +437,7 @@ static bool gameMovieIsValidFileName(const char* fileName)
 static void gameMovieLoadConfigFileNames()
 {
     char key[16];
-    for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+    for (GameMovie index = MOVIE_FIRST; index < GAME_MOVIE_MAX_COUNT; index++) {
         snprintf(key, sizeof(key), "movie%d", index + 1);
 
         char* fileName;

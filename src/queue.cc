@@ -536,6 +536,14 @@ static int explosionFailureEventProcess(Object* obj, void* data)
     return explosionProcess(obj, true);
 }
 
+// SFALL: Resolve pending explosives without animation before exit scripts can
+// advance time and process their timers.
+void queueClearMapExitExplosions()
+{
+    queueClearByEventType(EVENT_TYPE_EXPLOSION, explosionExit);
+    queueClearByEventType(EVENT_TYPE_EXPLOSION_FAILURE, explosionExit);
+}
+
 // 0x4A2920 queue_leaving_map
 void _queue_leaving_map()
 {

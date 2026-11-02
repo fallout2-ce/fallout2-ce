@@ -444,7 +444,7 @@ int audioWrite(int handle, const void* buf, unsigned int size)
 }
 
 // 0x41A7D4
-int audioInit(AudioQueryCompressedFunc* func)
+SoundError audioInit(AudioQueryCompressedFunc* func)
 {
     queryCompressedFunc = func;
     gAudioList = nullptr;

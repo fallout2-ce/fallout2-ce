@@ -598,7 +598,7 @@ static void opRollVsSkill(Program* program)
     Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int roll = ROLL_CRITICAL_FAILURE;
+    Roll roll = Roll::CriticalFailure;
     if (object != nullptr) {
         if (ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
             int sid = scriptGetSid(program);
@@ -612,7 +612,7 @@ static void opRollVsSkill(Program* program)
         scriptPredefinedError(program, "roll_vs_skill", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
 
-    programStackPushInteger(program, roll);
+    programStackPushInteger(program, static_cast<int>(roll));
 }
 
 // skill_contest
@@ -637,7 +637,7 @@ static void opDoCheck(Program* program)
     Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int roll = 0;
+    Roll roll = Roll::CriticalFailure;
     if (object != nullptr) {
         int sid = scriptGetSid(program);
 
@@ -662,24 +662,24 @@ static void opDoCheck(Program* program)
         scriptPredefinedError(program, "do_check", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
 
-    programStackPushInteger(program, roll);
+    programStackPushInteger(program, static_cast<int>(roll));
 }
 
 // is_success
 // 0x4549A8 op_is_success
 static void opSuccess(Program* program)
 {
-    int data = programStackPopInteger(program);
+    Roll roll = programStackPopEnum<Roll>(program);
 
     int result = -1;
 
-    switch (data) {
-    case ROLL_CRITICAL_FAILURE:
-    case ROLL_FAILURE:
+    switch (roll) {
+    case Roll::CriticalFailure:
+    case Roll::Failure:
         result = 0;
         break;
-    case ROLL_SUCCESS:
-    case ROLL_CRITICAL_SUCCESS:
+    case Roll::Success:
+    case Roll::CriticalSuccess:
         result = 1;
         break;
     }
@@ -691,17 +691,17 @@ static void opSuccess(Program* program)
 // 0x454A44 op_is_critical
 static void opCritical(Program* program)
 {
-    int data = programStackPopInteger(program);
+    Roll roll = programStackPopEnum<Roll>(program);
 
     int result = -1;
 
-    switch (data) {
-    case ROLL_CRITICAL_FAILURE:
-    case ROLL_CRITICAL_SUCCESS:
+    switch (roll) {
+    case Roll::CriticalFailure:
+    case Roll::CriticalSuccess:
         result = 1;
         break;
-    case ROLL_FAILURE:
-    case ROLL_SUCCESS:
+    case Roll::Failure:
+    case Roll::Success:
         result = 0;
         break;
     }
@@ -2781,6 +2781,13 @@ static void opGetCritterState(Program* program)
                 state = CRITTER_STATE_PRONE;
             }
 
+            // SFALL: Fix for critter_state function when a critter in combat
+            // recovers from the knockout state outside its turn: it's prone
+            // until its turn.
+            if ((critter->data.critter.combat.results & DAM_KNOCKOUT_WOKEN) != DAM_NONE) {
+                state = CRITTER_STATE_PRONE;
+            }
+
             state |= (critter->data.critter.combat.results & DAM_CRIP);
         } else {
             if (!critterIsDead(critter)) {
@@ -3001,9 +3008,40 @@ static void opGetProtoData(Program* program)
     int member = programStackPopInteger(program);
     const ProtoId protoId = programStackPopProtoId(program);
 
+    Proto* proto;
+    if (protoGetProto(protoId, &proto) == -1) {
+        scriptError("\nScript Error: op_proto_data: Could not get proto by pid %d!", protoId.pid());
+        programStackPushInteger(program, 0);
+        return;
+    }
+
     ProtoDataMemberValue value;
     value.integerValue = 0;
-    int valueType = protoGetDataMember(protoId, member, &value);
+    ProtoDataMemberType valueType;
+
+    ObjectType objType = protoId.objectType();
+    switch (objType) {
+    case OBJ_TYPE_ITEM:
+        valueType = protoGetItemDataMember(proto, static_cast<ItemDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_CRITTER:
+        valueType = protoGetCritterDataMember(proto, static_cast<CritterDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_SCENERY:
+        valueType = protoGetSceneryDataMember(proto, static_cast<SceneryDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_WALL:
+        valueType = protoGetWallDataMember(proto, static_cast<WallDataMember>(member), &value);
+        break;
+    case OBJ_TYPE_MISC:
+        valueType = protoGetMiscDataMember(proto, static_cast<MiscDataMember>(member), &value);
+        break;
+    default:
+        scriptError("\nScript Error: op_proto_data: unsupported object type %d!", objType);
+        valueType = PROTO_DATA_MEMBER_TYPE_INT;
+        break;
+    }
+
     switch (valueType) {
     case PROTO_DATA_MEMBER_TYPE_INT:
         programStackPushInteger(program, value.integerValue);
@@ -3011,7 +3049,8 @@ static void opGetProtoData(Program* program)
     case PROTO_DATA_MEMBER_TYPE_STRING:
         programStackPushString(program, value.stringValue);
         break;
-    default:
+    case PROTO_DATA_MEMBER_TYPE_INVALID:
+        scriptError("\nScript Error: op_proto_data: invalid data member %d for object type %d!", member, objType);
         programStackPushInteger(program, 0);
         break;
     }
@@ -3642,31 +3681,31 @@ static void opRegAnimObjectRunToTile(Program* program)
 static void opPlayGameMovie(Program* program)
 {
     // 0x453F9C
-    static const unsigned short flags[MOVIE_COUNT] = {
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
-        GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC,
+    static const GameMovieFlags flags[MOVIE_COUNT] = {
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
+        GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic,
     };
 
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
-    int movie = programStackPopInteger(program);
-    int movieFlags = GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC;
-    if (movie >= 0 && movie < MOVIE_COUNT) {
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
+    GameMovieFlags movieFlags = GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic;
+    if (gameMovieIsValid(movie)) {
         movieFlags = flags[movie];
     }
 
@@ -4445,7 +4484,7 @@ static void opSfxBuildWeaponName(Program* program)
     Object* target = static_cast<Object*>(programStackPopPointer(program));
     HitMode hitMode = programStackPopEnum<HitMode>(program);
     Object* weapon = static_cast<Object*>(programStackPopPointer(program));
-    int weaponSfxType = programStackPopInteger(program);
+    WeaponSoundEffect weaponSfxType = programStackPopEnum<WeaponSoundEffect>(program);
 
     char soundEffectName[16];
     strcpy(soundEffectName, sfxBuildWeaponName(weaponSfxType, weapon, hitMode, target));
@@ -4456,8 +4495,8 @@ static void opSfxBuildWeaponName(Program* program)
 // 0x45BD7C op_sfx_build_scenery_name
 static void opSfxBuildSceneryName(Program* program)
 {
-    int actionType = programStackPopInteger(program);
-    int action = programStackPopInteger(program);
+    SoundEffectActionType actionType = programStackPopEnum<SoundEffectActionType>(program);
+    ScenerySoundEffect action = programStackPopEnum<ScenerySoundEffect>(program);
     char* baseName = programStackPopString(program);
 
     char soundEffectName[16];
@@ -4469,7 +4508,7 @@ static void opSfxBuildSceneryName(Program* program)
 // 0x45BE58 op_sfx_build_open_name
 static void opSfxBuildOpenName(Program* program)
 {
-    int action = programStackPopInteger(program);
+    ScenerySoundEffect action = programStackPopEnum<ScenerySoundEffect>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object != nullptr) {

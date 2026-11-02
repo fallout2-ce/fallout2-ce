@@ -7,6 +7,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "file_find.h"
 #include "item.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -36,15 +37,32 @@ void sfallLoadMods()
 
         File* stream = fileOpen(loadOrderFilepath, "wt");
         if (stream != nullptr) {
-            char** fileList;
-            int fileListLength = fileNameListInit("mods\\*.dat", &fileList);
+            // SFALL: the .dat files and folders of the mods folder (sfall
+            // loads folders named *.dat too), sorted.
+            std::vector<std::string> mods;
+            char pattern[COMPAT_MAX_PATH];
+            compat_makepath(pattern, nullptr, modsPath, "*.dat", nullptr);
+            compat_windows_path_to_native(pattern);
+            DirectoryFileFindData findData;
+            if (fileFindFirst(pattern, &findData)) {
+                do {
+                    std::string name = fileFindGetName(&findData);
+                    // A longer extension the pattern lets through (Windows
+                    // matches "*.dat" with short names of "*.data").
+                    size_t dot = name.find_last_of('.');
+                    if (dot != std::string::npos && name.length() - dot <= 4) {
+                        mods.push_back(name);
+                    }
+                } while (fileFindNext(&findData));
+                findFindClose(&findData);
+            }
+            std::sort(mods.begin(), mods.end());
 
-            for (int index = 0; index < fileListLength; index++) {
-                fileWriteString(fileList[index], stream);
+            for (const std::string& mod : mods) {
+                fileWriteString(mod.c_str(), stream);
                 fileWriteString("\n", stream);
             }
             fileClose(stream);
-            fileNameListFree(&fileList, 0);
         }
     }
 

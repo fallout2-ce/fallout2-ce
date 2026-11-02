@@ -838,7 +838,7 @@ int mapper_edit_init(int argc, char** argv)
         screenWidth,
         100,
         static_cast<ColorWithFlags>(256),
-        0);
+        WINDOW_NONE);
 
     tool_buf = windowGetBuffer(tool_win);
 
@@ -846,34 +846,34 @@ int mapper_edit_init(int argc, char** argv)
 
     blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 101, 18, 23, lbmBufWidth, l_up, 18);
     blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 101, 18, 23, lbmBufWidth, l_down, 18);
-    buttonCreate(tool_win, 101, 26, 18, 23, -1, -1, kBtnScrollLeft, -1, l_up, l_down, nullptr, 0);
+    buttonCreate(tool_win, 101, 26, 18, 23, -1, -1, kBtnScrollLeft, -1, l_up, l_down, nullptr, BUTTON_FLAG_NONE);
 
     blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 622, 18, 23, lbmBufWidth, r_up, 18);
     blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 622, 18, 23, lbmBufWidth, r_down, 18);
-    buttonCreate(tool_win, _scr_size.right - 18, 26, 18, 23, -1, -1, kBtnScrollRight, -1, r_up, r_down, nullptr, 0);
+    buttonCreate(tool_win, _scr_size.right - 18, 26, 18, 23, -1, -1, kBtnScrollRight, -1, r_up, r_down, nullptr, BUTTON_FLAG_NONE);
 
     blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 101, 18, 23, lbmBufWidth, shift_l_up, 18);
     blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 101, 18, 23, lbmBufWidth, shift_l_down, 18);
-    buttonCreate(tool_win, 101, 1, 18, 23, -1, -1, kBtnScrollPageLeft, -1, shift_l_up, shift_l_down, nullptr, 0);
+    buttonCreate(tool_win, 101, 1, 18, 23, -1, -1, kBtnScrollPageLeft, -1, shift_l_up, shift_l_down, nullptr, BUTTON_FLAG_NONE);
 
     blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 622, 18, 23, lbmBufWidth, shift_r_up, 18);
     blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 622, 18, 23, lbmBufWidth, shift_r_down, 18);
-    buttonCreate(tool_win, _scr_size.right - 18, 1, 18, 23, -1, -1, kBtnScrollPageRight, -1, shift_r_up, shift_r_down, nullptr, 0);
+    buttonCreate(tool_win, _scr_size.right - 18, 1, 18, 23, -1, -1, kBtnScrollPageRight, -1, shift_r_up, shift_r_down, nullptr, BUTTON_FLAG_NONE);
 
     for (index = 0; index < max_art_buttons; index++) {
-        int btn = buttonCreate(tool_win, index * (art_scale_width + 1) + 121, 1, art_scale_width, art_scale_height, index + max_art_buttons + 161, 58, 160 + index, -1, nullptr, nullptr, nullptr, 0);
+        int btn = buttonCreate(tool_win, index * (art_scale_width + 1) + 121, 1, art_scale_width, art_scale_height, index + max_art_buttons + 161, 58, 160 + index, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
         buttonSetRightMouseCallbacks(btn, 160 + index, -1, nullptr, nullptr);
     }
 
     // ELEVATION INC
     blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 1, 18, 23, lbmBufWidth, einc_up, 18);
     blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 1, 18, 23, lbmBufWidth, einc_down, 18);
-    buttonCreate(tool_win, 1, 51, 18, 23, -1, -1, kBtnElevUp, -1, einc_up, einc_down, nullptr, 0);
+    buttonCreate(tool_win, 1, 51, 18, 23, -1, -1, kBtnElevUp, -1, einc_up, einc_down, nullptr, BUTTON_FLAG_NONE);
 
     // ELEVATION DEC
     blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 1, 18, 23, lbmBufWidth, edec_up, 18);
     blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 1, 18, 23, lbmBufWidth, edec_down, 18);
-    buttonCreate(tool_win, 1, 76, 18, 23, -1, -1, kBtnElevDown, -1, edec_up, edec_down, nullptr, 0);
+    buttonCreate(tool_win, 1, 76, 18, 23, -1, -1, kBtnElevDown, -1, edec_up, edec_down, nullptr, BUTTON_FLAG_NONE);
 
     // ELEVATION
     for (index = 0; index < 4; index++) {
@@ -932,12 +932,12 @@ int mapper_edit_init(int argc, char** argv)
     // HEIGHT INC
     blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_up, 18);
     blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_down, 18);
-    buttonCreate(tool_win, 251, 51, 18, 23, -1, -1, kBtnRotateRight, -1, height_inc_up, height_inc_down, nullptr, 0);
+    buttonCreate(tool_win, 251, 51, 18, 23, -1, -1, kBtnRotateRight, -1, height_inc_up, height_inc_down, nullptr, BUTTON_FLAG_NONE);
 
     // HEIGHT DEC
     blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_up, 18);
     blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_down, 18);
-    buttonCreate(tool_win, 251, 76, 18, 23, -1, -1, kBtnRotateLeft, -1, height_dec_up, height_dec_down, nullptr, 0);
+    buttonCreate(tool_win, 251, 76, 18, 23, -1, -1, kBtnRotateLeft, -1, height_dec_up, height_dec_down, nullptr, BUTTON_FLAG_NONE);
 
     // ARROWS
     for (index = 0; index < ROTATION_COUNT; index++) {
@@ -966,22 +966,22 @@ int mapper_edit_init(int argc, char** argv)
     // COPY
     blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 325, 49, 19, lbmBufWidth, copy_up, 49);
     blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 325, 49, 19, lbmBufWidth, copy_down, 49);
-    copy_bid = buttonCreate(tool_win, 325, 55, 49, 19, -1, -1, kBtnCopy, -1, copy_up, copy_down, nullptr, 0);
+    copy_bid = buttonCreate(tool_win, 325, 55, 49, 19, -1, -1, kBtnCopy, -1, copy_up, copy_down, nullptr, BUTTON_FLAG_NONE);
 
     // PASTE
     blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 325, 49, 19, lbmBufWidth, paste_up, 49);
     blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 325, 49, 19, lbmBufWidth, paste_down, 49);
-    paste_bid = buttonCreate(tool_win, 325, 77, 49, 19, -1, -1, kBtnPaste, -1, paste_up, paste_down, nullptr, 0);
+    paste_bid = buttonCreate(tool_win, 325, 77, 49, 19, -1, -1, kBtnPaste, -1, paste_up, paste_down, nullptr, BUTTON_FLAG_NONE);
 
     // EDIT
     blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 378, 49, 19, lbmBufWidth, edit_up, 49);
     blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 378, 49, 19, lbmBufWidth, edit_down, 49);
-    edit_bid = buttonCreate(tool_win, 378, 55, 49, 19, -1, -1, kBtnEdit, -1, edit_up, edit_down, nullptr, 0);
+    edit_bid = buttonCreate(tool_win, 378, 55, 49, 19, -1, -1, kBtnEdit, -1, edit_up, edit_down, nullptr, BUTTON_FLAG_NONE);
 
     // DELETE
     blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 378, 49, 19, lbmBufWidth, delete_up, 49);
     blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 378, 49, 19, lbmBufWidth, delete_down, 49);
-    delete_bid = buttonCreate(tool_win, 378, 77, 49, 19, -1, -1, kBtnDelete, -1, delete_up, delete_down, nullptr, 0);
+    delete_bid = buttonCreate(tool_win, 378, 77, 49, 19, -1, -1, kBtnDelete, -1, delete_up, delete_down, nullptr, BUTTON_FLAG_NONE);
 
     draw_mode = false;
 
@@ -1294,9 +1294,9 @@ void edit_mapper()
 
         // ---- Mouse event on hex grid ----
         if (keyCode == -2) {
-            int buttons = mouseGetEvent();
+            MouseButtonEvent buttons = mouseGetEvent();
 
-            if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
+            if ((buttons & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
                 constexpr int kToolbarReservedHeight = 100;
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
@@ -1321,7 +1321,7 @@ void edit_mapper()
                     }
                 }
 
-            } else if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+            } else if ((buttons & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
                         windowGetHeight(gIsoWindow) - 1)) {
@@ -1390,7 +1390,7 @@ void edit_mapper()
                 }
             }
 
-            if (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) {
+            if ((buttons & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
                 // clear toolbar selection
                 if (tool_active != -1) {
                     tool_active = -1;

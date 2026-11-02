@@ -9,7 +9,7 @@
 
 namespace fallout {
 
-typedef enum ItemDataMember {
+enum ItemDataMember : int {
     ITEM_DATA_MEMBER_PID = 0,
     ITEM_DATA_MEMBER_NAME = 1,
     ITEM_DATA_MEMBER_DESCRIPTION = 2,
@@ -26,9 +26,9 @@ typedef enum ItemDataMember {
     ITEM_DATA_MEMBER_COST = 14,
     ITEM_DATA_MEMBER_INVENTORY_FID = 15,
     ITEM_DATA_MEMBER_WEAPON_RANGE = 555,
-} ItemDataMember;
+};
 
-typedef enum CritterDataMember {
+enum CritterDataMember : int {
     CRITTER_DATA_MEMBER_PID = 0,
     CRITTER_DATA_MEMBER_NAME = 1,
     CRITTER_DATA_MEMBER_DESCRIPTION = 2,
@@ -41,9 +41,9 @@ typedef enum CritterDataMember {
     CRITTER_DATA_MEMBER_DATA = 9,
     CRITTER_DATA_MEMBER_HEAD_FID = 10,
     CRITTER_DATA_MEMBER_BODY_TYPE = 11,
-} CritterDataMember;
+};
 
-typedef enum SceneryDataMember {
+enum SceneryDataMember : int {
     SCENERY_DATA_MEMBER_PID = 0,
     SCENERY_DATA_MEMBER_NAME = 1,
     SCENERY_DATA_MEMBER_DESCRIPTION = 2,
@@ -56,9 +56,9 @@ typedef enum SceneryDataMember {
     SCENERY_DATA_MEMBER_TYPE = 9,
     SCENERY_DATA_MEMBER_DATA = 10,
     SCENERY_DATA_MEMBER_MATERIAL = 11,
-} SceneryDataMember;
+};
 
-typedef enum WallDataMember {
+enum WallDataMember : int {
     WALL_DATA_MEMBER_PID = 0,
     WALL_DATA_MEMBER_NAME = 1,
     WALL_DATA_MEMBER_DESCRIPTION = 2,
@@ -69,9 +69,9 @@ typedef enum WallDataMember {
     WALL_DATA_MEMBER_EXTENDED_FLAGS = 7,
     WALL_DATA_MEMBER_SID = 8,
     WALL_DATA_MEMBER_MATERIAL = 9,
-} WallDataMember;
+};
 
-typedef enum MiscDataMember {
+enum MiscDataMember : int {
     MISC_DATA_MEMBER_PID = 0,
     MISC_DATA_MEMBER_NAME = 1,
     MISC_DATA_MEMBER_DESCRIPTION = 2,
@@ -80,22 +80,18 @@ typedef enum MiscDataMember {
     MISC_DATA_MEMBER_LIGHT_INTENSITY = 5,
     MISC_DATA_MEMBER_FLAGS = 6,
     MISC_DATA_MEMBER_EXTENDED_FLAGS = 7,
-} MiscDataMember;
+};
 
-typedef enum ProtoDataMemberType {
+enum ProtoDataMemberType : int {
+    PROTO_DATA_MEMBER_TYPE_INVALID = -1,
     PROTO_DATA_MEMBER_TYPE_INT = 1,
     PROTO_DATA_MEMBER_TYPE_STRING = 2,
-} ProtoDataMemberType;
+};
 
 typedef union ProtoDataMemberValue {
     int integerValue;
     char* stringValue;
 } ProtoDataMemberValue;
-
-typedef enum PrototypeMessage {
-    PROTOTYPE_MESSAGE_NAME,
-    PROTOTYPE_MESSAGE_DESCRIPTION,
-} PrototypeMesage;
 
 extern char _cd_path_base[COMPAT_MAX_PATH];
 
@@ -110,7 +106,6 @@ bool _proto_action_can_use(const ProtoId& protoId);
 bool _proto_action_can_use_on(const ProtoId& protoId);
 bool _proto_action_can_talk_to(const ProtoId& protoId);
 int _proto_action_can_pickup(const ProtoId& protoId);
-char* protoGetMessage(const ProtoId& protoId, int message);
 char* protoGetName(const ProtoId& protoId);
 char* protoGetDescription(const ProtoId& protoId);
 int proto_item_init(Proto* proto, const ProtoId& protoId);
@@ -129,7 +124,11 @@ int proto_tile_init(Proto* proto, const ProtoId& protoId);
 int proto_misc_init(Proto* proto, const ProtoId& protoId);
 int proto_copy_proto(const ProtoId& srcProtoId, const ProtoId& dstProtoId);
 bool proto_is_subtype(Proto* proto, int subtype);
-int protoGetDataMember(const ProtoId& protoId, int member, ProtoDataMemberValue* value);
+ProtoDataMemberType protoGetItemDataMember(Proto* proto, ItemDataMember member, ProtoDataMemberValue* value);
+ProtoDataMemberType protoGetCritterDataMember(Proto* proto, CritterDataMember member, ProtoDataMemberValue* value);
+ProtoDataMemberType protoGetSceneryDataMember(Proto* proto, SceneryDataMember member, ProtoDataMemberValue* value);
+ProtoDataMemberType protoGetWallDataMember(Proto* proto, WallDataMember member, ProtoDataMemberValue* value);
+ProtoDataMemberType protoGetMiscDataMember(Proto* proto, MiscDataMember member, ProtoDataMemberValue* value);
 int protoInit();
 void protoReset();
 void protoExit();

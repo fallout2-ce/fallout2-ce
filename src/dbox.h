@@ -2,6 +2,7 @@
 #define DBOX_H
 
 #include "color.h"
+#include "window_manager.h"
 
 namespace fallout {
 
@@ -21,7 +22,7 @@ inline int showDialogBox(const char* title, const char** body, int bodyLength, i
     return showDialogBox(title, body, bodyLength, x, y, titleColor | DRAW_TEXT_FLAG_NONE, secondaryButtonText, bodyColor | DRAW_TEXT_FLAG_NONE, flags);
 }
 
-const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText, int flags);
+const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText, WindowFlags flags);
 const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText);
 
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);

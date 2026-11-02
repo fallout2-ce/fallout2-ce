@@ -3,6 +3,7 @@
 
 #include "combat_defs.h"
 #include "db.h"
+#include "game_movie.h"
 #include "interpreter.h"
 #include "obj_types.h"
 
@@ -267,13 +268,14 @@ void gameTimeAddSeconds(int seconds);
 void gameTimeSetTime(unsigned int time);
 int gameTimeScheduleUpdateEvent();
 int gameTimeEventProcess(Object* obj, void* data);
-int _scriptsCheckGameEvents(int* moviePtr, int window);
+int _scriptsCheckGameEvents(GameMovie* moviePtr, int window);
 int mapUpdateEventProcess(Object* obj, void* data);
 int scriptsNewObjectId();
 bool scriptsIsUniqueObjectId(int objectId);
 int scriptsNewUniqueObjectId();
 int scriptsSetUniqueObjectId(Object* object);
 void scriptsSyncObjectId(Object* object);
+bool scriptIsSavable(const Script* script);
 int scriptsGetUniqueObjectIdCounter();
 void scriptsResetUniqueObjectIdCounter();
 void scriptsRestoreUniqueObjectIdCounter(int savedCounter);

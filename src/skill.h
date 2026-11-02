@@ -5,6 +5,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
+#include "random.h"
 #include "skill_defs.h"
 
 namespace fallout {
@@ -36,7 +37,7 @@ int skillAddForce(Object* critter, Skill skill);
 int skillsGetCost(int skillValue);
 int skillSub(Object* critter, Skill skill);
 int skillSubForce(Object* critter, Skill skill);
-int skillRoll(Object* critter, Skill skill, int modifier, int* howMuch);
+Roll skillRoll(Object* critter, Skill skill, int modifier, int* howMuch);
 char* skillGetName(Skill skill);
 char* skillGetDescription(Skill skill);
 char* skillGetAttributes(Skill skill);
