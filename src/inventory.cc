@@ -4741,8 +4741,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             break;
         }
         case ITEM_TYPE_WEAPON:
-        case ITEM_TYPE_MISC:
-        {
+        case ITEM_TYPE_MISC: {
             if (itemSlot == nullptr) {
                 itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UseObj);
             }
