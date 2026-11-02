@@ -1,6 +1,7 @@
 #ifndef GAME_MOUSE_H
 #define GAME_MOUSE_H
 
+#include "mouse.h"
 #include "obj_types.h"
 
 namespace fallout {
@@ -94,7 +95,7 @@ int _gmouse_is_scrolling();
 bool _gmouse_get_click_to_scroll();
 void _gmouse_set_click_to_scroll(bool value);
 void gameMouseRefresh();
-void _gmouse_handle_event(int mouseX, int mouseY, int mouseState);
+void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent);
 int gameMouseSetCursor(MouseCursorType cursor);
 MouseCursorType gameMouseGetCursor();
 Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, MapElevation elevation);

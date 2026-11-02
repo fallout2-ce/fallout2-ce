@@ -159,7 +159,7 @@ int statsInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "stat.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "stat.msg");
 
     if (!messageListLoad(&gStatsMessageList, path)) {
         return -1;
@@ -926,7 +926,7 @@ SkillDexFrmId statGetFrmId(Stat stat)
 // `NULL` if you're not interested in this value.
 //
 // 0x4AFA78
-int statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
+Roll statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
 {
     int value = critterGetStat(critter, stat) + modifier;
     int chance = randomBetween(PRIMARY_STAT_MIN, PRIMARY_STAT_MAX);
@@ -936,10 +936,10 @@ int statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
     }
 
     if (chance <= value) {
-        return ROLL_SUCCESS;
+        return Roll::Success;
     }
 
-    return ROLL_FAILURE;
+    return Roll::Failure;
 }
 
 // 0x4AFAA8

@@ -960,7 +960,7 @@ bool gameMouseClickOnInterfaceBar()
 }
 
 // 0x44BFA8 gmouse_handle_event
-void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
+void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
 {
     if (!gGameMouseInitialized) {
         return;
@@ -988,19 +988,19 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
     }
 
     // Check if we should block mouse button up events for inventoryOpenUseItemOn inventory window
-    if (gBlockMouseUpEvent && (mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+    if (gBlockMouseUpEvent && (mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
         gBlockMouseUpEvent = false;
         return;
     }
 
-    if ((mouseState & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
-        if ((mouseState & MOUSE_EVENT_RIGHT_BUTTON_REPEAT) == 0 && (gGameMouseHexCursor->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
+    if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
+        if ((mouseEvent & MouseButtonEvent::RightButtonRepeat) == MouseButtonEvent::None && (gGameMouseHexCursor->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
             gameMouseCycleMode();
         }
         return;
     }
 
-    if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+    if ((mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
         if (gGameMouseMode == GAME_MOUSE_MODE_MOVE) {
             int actionPoints;
             if (isInCombat()) {
@@ -1151,7 +1151,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         }
     }
 
-    if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) == MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT && gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
+    if ((mouseEvent & MouseButtonEvent::LeftButtonDownRepeat) == MouseButtonEvent::LeftButtonDownRepeat && gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
         Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
@@ -1224,7 +1224,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 
                     int newMouseY = mouseY;
                     int actionIndex = 0;
-                    while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
+                    while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
                         sharedFpsLimiter.mark();
 
                         inputGetInput();
@@ -2601,7 +2601,7 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
     // TODO: reconcile with other site where _gmouse_clicked_on_edge is set to true
     if (_gmouse_click_to_scroll) {
         bool atEdge = flags != 0;
-        bool leftHeld = (mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0;
+        bool leftHeld = (mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None;
         _gmouse_clicked_on_edge = atEdge && leftHeld;
         if (!_gmouse_clicked_on_edge) {
             return -1;

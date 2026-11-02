@@ -1,5 +1,6 @@
 #include "dbox.h"
 
+#include <functional>
 #include <stdio.h>
 #include <string>
 #include <string_view>
@@ -14,6 +15,7 @@
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
+#include "geometry.h"
 #include "input.h"
 #include "kb.h"
 #include "message.h"
@@ -26,11 +28,19 @@
 
 namespace fallout {
 
+static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
+
 namespace {
     namespace dbox {
-        struct Point {
-            int x, y;
-        };
+        namespace btnId {
+            constexpr int done = 500;
+            constexpr int cancel = 501;
+            constexpr int fileList = 502;
+            constexpr int scrollDown = 503; // Down arrow hold
+            constexpr int scrollDownArrow = 504; // Down arrow click
+            constexpr int scrollUp = 505; // Up arrow hold
+            constexpr int scrollUpArrow = 506; // Up arrow click
+        } // namespace btnId
 
         int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
         {
@@ -80,28 +90,6 @@ namespace {
         namespace file {
             constexpr size_t dialogFrmCount = 7;
 
-            // 0x510900 flgids
-            constexpr InterfaceFrmId kLoadFileDialogFrmIds[dialogFrmCount] = {
-                InterfaceFrameId::LoadBox,
-                InterfaceFrameId::LittleRedButtonUp,
-                InterfaceFrameId::LittleRedButtonDown,
-                InterfaceFrameId::CharacterEditorDownArrowOff,
-                InterfaceFrameId::CharacterEditorDownArrowOn,
-                InterfaceFrameId::CharacterEditorUpArrowOff,
-                InterfaceFrameId::CharacterEditorUpArrowOn,
-            };
-
-            // 0x51091C flgids2
-            constexpr InterfaceFrmId kSaveFileDialogFrmIds[dialogFrmCount] = {
-                InterfaceFrameId::SaveBox,
-                InterfaceFrameId::LittleRedButtonUp,
-                InterfaceFrameId::LittleRedButtonDown,
-                InterfaceFrameId::CharacterEditorDownArrowOff,
-                InterfaceFrameId::CharacterEditorDownArrowOn,
-                InterfaceFrameId::CharacterEditorUpArrowOff,
-                InterfaceFrameId::CharacterEditorUpArrowOn,
-            };
-
             struct DialogFrms {
                 FrmImage background;
                 FrmImage buttonNormal;
@@ -110,6 +98,21 @@ namespace {
                 FrmImage scrollDownPressed;
                 FrmImage scrollUpNormal;
                 FrmImage scrollUpPressed;
+            };
+
+            struct ModeConfig {
+                InterfaceFrmId frmIds[dialogFrmCount];
+
+                Point doneButton;
+                Point doneLabel;
+                Point cancelButton;
+                Point cancelLabel;
+            };
+
+            struct Context {
+                UniqueWindow window;
+                unsigned char* windowBuffer;
+                MessageList messageList;
             };
 
             bool loadImages(DialogFrms& images, const InterfaceFrmId* frmIds)
@@ -144,20 +147,6 @@ namespace {
             };
             constexpr ListRect list { 55, 49, 190, 124 };
 
-            namespace load {
-                constexpr Point doneButton { 58, 187 };
-                constexpr Point doneLabel { 79, 187 };
-                constexpr Point cancelButton { 163, 187 };
-                constexpr Point cancelLabel { 182, 187 };
-            } // namespace load
-
-            namespace save {
-                constexpr Point doneButton { 58, 214 };
-                constexpr Point doneLabel { 79, 213 };
-                constexpr Point cancelButton { 163, 214 };
-                constexpr Point cancelLabel { 182, 213 };
-            } // namespace save
-
             int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
                 const FrmImage& upFrm, const FrmImage& downFrm)
             {
@@ -169,23 +158,9 @@ namespace {
                 return btn;
             }
 
-            struct ModeConfig {
-                Point doneButton;
-                Point doneLabel;
-                Point cancelButton;
-                Point cancelLabel;
-            };
-
-            struct Context {
-                UniqueWindow window;
-                unsigned char* windowBuffer;
-                MessageList messageList;
-            };
-
-            bool initInterface(Context& ctx, DialogFrms& frms, const InterfaceFrmId* frmIds, const ModeConfig& cfg,
-                const char* title, int& x, int& y)
+            bool initInterface(Context& ctx, DialogFrms& frms, const ModeConfig& cfg, const char* title, int& x, int& y)
             {
-                if (!loadImages(frms, frmIds)) return false;
+                if (!loadImages(frms, cfg.frmIds)) return false;
 
                 int bgWidth = frms.background.getWidth(), bgHeight = frms.background.getHeight();
                 x += (screenGetWidth() - 640) / 2, y += (screenGetHeight() - 480) / 2;
@@ -200,7 +175,7 @@ namespace {
                 if (!messageListInit(&ctx.messageList)) return false;
 
                 char path[COMPAT_MAX_PATH];
-                snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
+                snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "DBOX.MSG");
                 if (!messageListLoad(&ctx.messageList, path)) return false;
 
                 fontSetCurrent(103);
@@ -211,21 +186,174 @@ namespace {
                 const char* cancelText = getmsg(&ctx.messageList, &messageListItem, 103);
                 fontDrawText(ctx.windowBuffer + bgWidth * cfg.cancelLabel.y + cfg.cancelLabel.x, cancelText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
 
-                int doneBtn = createRedButton(ctx.window.get(), cfg.doneButton, 500, frms.buttonNormal, frms.buttonPressed);
-                int cancelBtn = createRedButton(ctx.window.get(), cfg.cancelButton, 501, frms.buttonNormal, frms.buttonPressed);
+                int doneBtn = createRedButton(ctx.window.get(), cfg.doneButton, btnId::done, frms.buttonNormal, frms.buttonPressed);
+                int cancelBtn = createRedButton(ctx.window.get(), cfg.cancelButton, btnId::cancel, frms.buttonNormal, frms.buttonPressed);
 
-                int scrollUpBtn = createScrollButton(ctx.window.get(), scrollButton, 505, -1, 505, 506, frms.scrollUpNormal, frms.scrollUpPressed);
+                int scrollUpBtn = createScrollButton(ctx.window.get(), scrollButton,
+                    btnId::scrollUp, -1, btnId::scrollUp, btnId::scrollUpArrow, frms.scrollUpNormal, frms.scrollUpPressed);
 
                 Point scrollDownPos { scrollButton.x, scrollButton.y + frms.scrollUpPressed.getHeight() };
-                int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos, 503, -1, 503, 504, frms.scrollDownNormal, frms.scrollDownPressed);
+                int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos,
+                    btnId::scrollDown, -1, btnId::scrollDown, btnId::scrollDownArrow, frms.scrollDownNormal, frms.scrollDownPressed);
 
-                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, 502, nullptr, nullptr, nullptr, 0);
+                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, btnId::fileList, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
 
                 if (title != nullptr) {
                     fontDrawText(ctx.windowBuffer + bgWidth * file::title.y + file::title.x, title, bgWidth, bgWidth, COLOR_DARK_YELLOW);
                 }
 
                 return true;
+            }
+
+            namespace scrollDirection {
+                constexpr int none = 0;
+                constexpr int up = 1;
+                constexpr int down = 2;
+            } // namespace scrollDirection
+
+            struct ScrollState {
+                int& selectedFileIndex;
+                int& pageOffset;
+                int maxPageOffset;
+                int fileListLength;
+                int& doubleClickSelectedFileIndex;
+                int& doubleClickTimer;
+                int& scrollCounter;
+                bool& isScrolling;
+                int bgWidth;
+                bool isScrollable;
+            };
+
+            void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
+                int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
+            {
+                if (scrollDirection != scrollDirection::none) {
+                    unsigned int scrollDelay = 4;
+                    s.doubleClickSelectedFileIndex = -2;
+
+                    while (1) {
+                        unsigned int scrollTick = getTicks();
+                        s.scrollCounter += 1;
+
+                        if ((!s.isScrolling && s.scrollCounter == 1) || (s.isScrolling && s.scrollCounter > 14.4)) {
+                            s.isScrolling = true;
+
+                            if (s.scrollCounter > 14.4) {
+                                scrollDelay += 1;
+                                if (scrollDelay > 24) scrollDelay = 24;
+                            }
+
+                            if (scrollDirection == scrollDirection::up) {
+                                s.pageOffset--;
+                                if (s.pageOffset < 0) {
+                                    s.selectedFileIndex--;
+                                    if (s.selectedFileIndex < 0) s.selectedFileIndex = 0;
+                                    s.pageOffset = 0;
+                                }
+                            } else {
+                                if (s.isScrollable) {
+                                    s.pageOffset++;
+                                    if (s.pageOffset > s.maxPageOffset) {
+                                        s.selectedFileIndex++;
+                                        if (s.selectedFileIndex >= lineCount) s.selectedFileIndex = lineCount - 1;
+                                        s.pageOffset = s.maxPageOffset;
+                                    }
+                                } else {
+                                    s.selectedFileIndex++;
+                                    if (s.selectedFileIndex > s.maxPageOffset) s.selectedFileIndex = s.maxPageOffset;
+                                }
+                            }
+
+                            fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, s.fileListLength, s.selectedFileIndex, s.bgWidth);
+                            windowRefresh(windowId);
+                        }
+
+                        if (onStep) onStep();
+
+                        unsigned int delay = (s.scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
+                        delay_ms(delay - (getTicks() - scrollTick));
+
+                        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                            rc = 1;
+                            break;
+                        }
+
+                        int keyCode = inputGetInput();
+                        if (keyCode == btnId::scrollUp || keyCode == btnId::scrollDown) break;
+
+                        renderPresent();
+                    }
+                } else {
+                    windowRefresh(windowId);
+
+                    if (onStep) onStep();
+
+                    s.doubleClickTimer--;
+                    if (s.doubleClickTimer == 0) {
+                        s.doubleClickTimer = doubleClickDelay;
+                        s.doubleClickSelectedFileIndex = -2;
+                    }
+
+                    delay_ms(1000 / 24 - (getTicks() - tick));
+                }
+            }
+
+            struct NavigationState {
+                int& selectedFileIndex;
+                int& pageOffset;
+                int maxPageOffset;
+                bool isScrollable;
+                int bgWidth;
+                int& doubleClickSelectedFileIndex;
+            };
+
+            bool handleKeyboardNavigation(int keyCode, NavigationState& s, unsigned char* windowBuffer, char** fileList, int fileListLength)
+            {
+                bool handled = true;
+
+                switch (keyCode) {
+                case KEY_ARROW_UP:
+                    s.pageOffset--;
+                    if (s.pageOffset < 0) {
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex - 1, 0, fileListLength);
+                        s.pageOffset = 0;
+                    }
+                    break;
+                case KEY_ARROW_DOWN:
+                    if (s.isScrollable) {
+                        s.pageOffset++;
+                        if (s.pageOffset > s.maxPageOffset) {
+                            s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, lineCount - 1);
+                            s.pageOffset = s.maxPageOffset;
+                        }
+                    } else {
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, s.maxPageOffset);
+                    }
+                    break;
+                case KEY_HOME:
+                    s.selectedFileIndex = 0;
+                    s.pageOffset = 0;
+                    break;
+                case KEY_END:
+                    if (s.isScrollable) {
+                        s.selectedFileIndex = lineCount - 1;
+                        s.pageOffset = s.maxPageOffset;
+                    } else {
+                        s.selectedFileIndex = s.maxPageOffset;
+                        s.pageOffset = 0;
+                    }
+                    break;
+                default:
+                    handled = false;
+                    break;
+                }
+
+                if (handled) {
+                    s.doubleClickSelectedFileIndex = -2;
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                }
+
+                return handled;
             }
         } // namespace file
 
@@ -267,14 +395,6 @@ namespace {
         } // namespace alert
     } // namespace dbox
 } // namespace
-
-typedef enum FileDialogScrollDirection {
-    FILE_DIALOG_SCROLL_DIRECTION_NONE,
-    FILE_DIALOG_SCROLL_DIRECTION_UP,
-    FILE_DIALOG_SCROLL_DIRECTION_DOWN,
-} FileDialogScrollDirection;
-
-static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
 // CE: extracted from character_editor.cc
 // TODO: see if it could be used for `showSaveFileDialog`
@@ -363,7 +483,7 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return rc;
 }
 
-const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, int flags)
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)
 {
     using namespace fallout::dbox;
 
@@ -391,12 +511,12 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
             doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
     }
 
-    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, 500, frms.buttonUp, frms.buttonDown);
+    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, btnId::done, frms.buttonUp, frms.buttonDown);
 
     windowRefresh(window.get());
 
     std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
-    int status = _get_input_str(window.get(), 500, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
+    int status = _get_input_str(window.get(), btnId::done, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
 
     if (status == 0 && !editableText.empty()) {
         result = std::move(editableText);
@@ -473,7 +593,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     if (hasPrimaryButton || hasSecondaryButton) {
         if (!alert::loadImages(frms) || !messageListInit(&messageList)) return -1;
 
-        std::string path = std::string(asc_5186C8) + "DBOX.MSG";
+        std::string path = std::string(gGameMsgPath) + "DBOX.MSG";
         if (!messageListLoad(&messageList, path.c_str())) {
             messageListFree(&messageList);
             return -1;
@@ -499,8 +619,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     messageListItem.text, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            dbox::Point btnPos = { doneBoxX + 13, config.doneY + 4 };
-            int btn = createRedButton(window.get(), btnPos, 500, frms.buttonUp, frms.buttonDown);
+            Point btnPos = { doneBoxX + 13, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, btnId::done, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -523,8 +643,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                     secondaryButtonText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            dbox::Point btnPos = { buttonXOffset, config.doneY + 4 };
-            int btn = createRedButton(window.get(), btnPos, 501, frms.buttonUp, frms.buttonDown);
+            Point btnPos = { buttonXOffset, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, btnId::cancel, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
@@ -619,12 +739,12 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
         int keyCode = inputGetInput();
 
-        if (keyCode == 500) { // First button (Done/Yes)
+        if (keyCode == btnId::done) { // First button (Done/Yes)
             rc = 1;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 1;
-        } else if (keyCode == KEY_ESCAPE || keyCode == 501) { // Second button (NO) or ESC
+        } else if (keyCode == KEY_ESCAPE || keyCode == btnId::cancel) { // Second button (NO) or ESC
             rc = 0;
         } else {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
@@ -651,6 +771,26 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     return rc;
 }
 
+namespace {
+    namespace dbox::file::load {
+        constexpr dbox::file::ModeConfig kDialogConfig {
+            {
+                // 0x510900 flgids
+                InterfaceFrameId::LoadBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 187 }, { 79, 187 }, // doneButton, doneLabel
+            { 163, 187 }, { 182, 187 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
 // 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
@@ -660,22 +800,14 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0, pageOffset = 0;
-    int maxPageOffset = fileListLength - (file::lineCount + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = std::max(0, fileListLength - 1);
-    }
-
-    constexpr file::ModeConfig saveConfig {
-        file::load::doneButton,
-        file::load::doneLabel,
-        file::load::cancelButton,
-        file::load::cancelLabel
-    };
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kLoadFileDialogFrmIds, saveConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::load::kDialogConfig, title, x, y)) {
         return -1;
     }
 
@@ -695,22 +827,22 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             if (fileListLength != 0) {
                 strncpy(dest, fileList[selectedFileIndex + pageOffset], 16);
                 rc = 0;
             } else {
                 rc = 1;
             }
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
-        } else if (keyCode == 502 && fileListLength != 0) {
+        } else if (keyCode == btnId::fileList && fileListLength != 0) {
             int mouseX;
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
@@ -737,142 +869,23 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
             doubleClickSelectedFileIndex = selectedFileIndex;
             fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-        } else if (keyCode == 506) {
-            scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_UP;
-        } else if (keyCode == 504) {
-            scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+        } else if (keyCode == btnId::scrollUpArrow) {
+            scrollDirection = file::scrollDirection::up;
+        } else if (keyCode == btnId::scrollDownArrow) {
+            scrollDirection = file::scrollDirection::down;
         } else {
-            switch (keyCode) {
-            case KEY_ARROW_UP:
-                pageOffset--;
-                if (pageOffset < 0) {
-                    selectedFileIndex--;
-                    if (selectedFileIndex < 0) {
-                        selectedFileIndex = 0;
-                    }
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_ARROW_DOWN:
-                if (isScrollable) {
-                    pageOffset++;
-                    // FIXME: Should be >= maxPageOffset (as in save dialog).
-                    // Otherwise out of bounds index is considered selected.
-                    if (pageOffset > maxPageOffset) {
-                        selectedFileIndex++;
-                        // FIXME: Should be >= FILE_DIALOG_LINE_COUNT (as in
-                        // save dialog). Otherwise out of bounds index is
-                        // considered selected.
-                        if (selectedFileIndex > file::lineCount) {
-                            selectedFileIndex = file::lineCount - 1;
-                        }
-                        pageOffset = maxPageOffset;
-                    }
-                } else {
-                    selectedFileIndex++;
-                    if (selectedFileIndex > maxPageOffset) {
-                        selectedFileIndex = maxPageOffset;
-                    }
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_HOME:
-                selectedFileIndex = 0;
-                pageOffset = 0;
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_END:
-                if (isScrollable) {
-                    selectedFileIndex = file::lineCount - 1;
-                    pageOffset = maxPageOffset;
-                } else {
-                    selectedFileIndex = maxPageOffset;
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            }
+            file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
+                isScrollable, bgWidth, doubleClickSelectedFileIndex };
+            file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
         }
 
-        if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
-            unsigned int scrollDelay = 4;
-            doubleClickSelectedFileIndex = -2;
-            while (1) {
-                unsigned int scrollTick = getTicks();
-                scrollCounter += 1;
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
-                    isScrolling = true;
+        file::ScrollState scrollState {
+            selectedFileIndex, pageOffset, maxPageOffset, fileListLength,
+            doubleClickSelectedFileIndex, doubleClickTimer, scrollCounter,
+            isScrolling, bgWidth, isScrollable
+        };
 
-                    if (scrollCounter > 14.4) {
-                        scrollDelay += 1;
-                        if (scrollDelay > 24) {
-                            scrollDelay = 24;
-                        }
-                    }
-
-                    if (scrollDirection == FILE_DIALOG_SCROLL_DIRECTION_UP) {
-                        pageOffset--;
-                        if (pageOffset < 0) {
-                            selectedFileIndex--;
-                            if (selectedFileIndex < 0) {
-                                selectedFileIndex = 0;
-                            }
-                            pageOffset = 0;
-                        }
-                    } else {
-                        if (isScrollable) {
-                            pageOffset++;
-                            if (pageOffset > maxPageOffset) {
-                                selectedFileIndex++;
-                                if (selectedFileIndex >= file::lineCount) {
-                                    selectedFileIndex = file::lineCount - 1;
-                                }
-                                pageOffset = maxPageOffset;
-                            }
-                        } else {
-                            selectedFileIndex++;
-                            if (selectedFileIndex > maxPageOffset) {
-                                selectedFileIndex = maxPageOffset;
-                            }
-                        }
-                    }
-
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    windowRefresh(ctx.window.get());
-                }
-
-                unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-
-                delay_ms(delay - (getTicks() - scrollTick));
-
-                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                    rc = 1;
-                    break;
-                }
-
-                int keyCode = inputGetInput();
-                if (keyCode == 505 || keyCode == 503) {
-                    break;
-                }
-
-                renderPresent();
-            }
-        } else {
-            windowRefresh(ctx.window.get());
-
-            doubleClickTimer--;
-            if (doubleClickTimer == 0) {
-                doubleClickTimer = file::doubleClickDelay;
-                doubleClickSelectedFileIndex = -2;
-            }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
-        }
+        file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc);
 
         if (_game_user_wants_to_quit) {
             rc = 1;
@@ -887,31 +900,43 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
+namespace {
+    namespace dbox::file::save {
+        constexpr dbox::file::ModeConfig kDialogConfig {
+            {
+                // 0x51091C flgids2
+                InterfaceFrameId::SaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 214 }, { 79, 213 }, // doneButton, doneLabel
+            { 163, 214 }, { 182, 213 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
 // 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
     using namespace fallout::dbox;
     ScopedFont mainFont(103);
 
-    bool isScrollable = (fileListLength > file::lineCount);
+    const bool isScrollable = (fileListLength > file::lineCount);
 
     int selectedFileIndex = 0, pageOffset = 0;
-    int maxPageOffset = fileListLength - (file::lineCount + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = std::max(0, fileListLength - 1);
-    }
-
-    constexpr file::ModeConfig saveConfig {
-        file::save::doneButton,
-        file::save::doneLabel,
-        file::save::cancelButton,
-        file::save::cancelLabel
-    };
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
     file::DialogFrms frms;
     file::Context ctx;
 
-    if (!file::initInterface(ctx, frms, file::kSaveFileDialogFrmIds, saveConfig, title, x, y)) {
+    if (!file::initInterface(ctx, frms, file::save::kDialogConfig, title, x, y)) {
         return -1;
     }
 
@@ -963,18 +988,18 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 0;
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
         } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && fileNameCopyLength > 0) {
             bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
@@ -984,7 +1009,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             fileNameCopyLength--;
             windowRefresh(ctx.window.get());
         } else if (keyCode < KEY_FIRST_INPUT_CHARACTER || keyCode > KEY_LAST_INPUT_CHARACTER || fileNameCopyLength >= 8) {
-            if (keyCode == 502 && fileListLength != 0) {
+            if (keyCode == btnId::fileList && fileListLength != 0) {
                 int mouseX;
                 int mouseY;
                 mouseGetPosition(&mouseX, &mouseY);
@@ -1036,61 +1061,14 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
                     fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
                 }
-            } else if (keyCode == 506) {
-                scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_UP;
-            } else if (keyCode == 504) {
-                scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+            } else if (keyCode == btnId::scrollUpArrow) {
+                scrollDirection = file::scrollDirection::up;
+            } else if (keyCode == btnId::scrollDownArrow) {
+                scrollDirection = file::scrollDirection::down;
             } else {
-                switch (keyCode) {
-                case KEY_ARROW_UP:
-                    pageOffset--;
-                    if (pageOffset < 0) {
-                        selectedFileIndex--;
-                        if (selectedFileIndex < 0) {
-                            selectedFileIndex = 0;
-                        }
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_ARROW_DOWN:
-                    if (isScrollable) {
-                        pageOffset++;
-                        if (pageOffset >= maxPageOffset) {
-                            selectedFileIndex++;
-                            if (selectedFileIndex >= file::lineCount) {
-                                selectedFileIndex = file::lineCount - 1;
-                            }
-                            pageOffset = maxPageOffset;
-                        }
-                    } else {
-                        selectedFileIndex++;
-                        if (selectedFileIndex > maxPageOffset) {
-                            selectedFileIndex = maxPageOffset;
-                        }
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_HOME:
-                    selectedFileIndex = 0;
-                    pageOffset = 0;
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_END:
-                    if (isScrollable) {
-                        selectedFileIndex = 11;
-                        pageOffset = maxPageOffset;
-                    } else {
-                        selectedFileIndex = maxPageOffset;
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                }
+                file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset, isScrollable,
+                    bgWidth, doubleClickSelectedFileIndex };
+                file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
             }
         } else if (_isdoschar(keyCode)) {
             bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
@@ -1104,106 +1082,23 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             windowRefresh(ctx.window.get());
         }
 
-        if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
-            unsigned int scrollDelay = 4;
-            doubleClickSelectedFileIndex = -2;
-            while (1) {
-                unsigned int scrollTick = getTicks();
-                scrollCounter += 1;
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
-                    isScrolling = true;
+        file::ScrollState scrollState {
+            selectedFileIndex, pageOffset, maxPageOffset, fileListLength,
+            doubleClickSelectedFileIndex, doubleClickTimer, scrollCounter,
+            isScrolling, bgWidth, isScrollable
+        };
 
-                    if (scrollCounter > 14.4) {
-                        scrollDelay += 1;
-                        if (scrollDelay > 24) {
-                            scrollDelay = 24;
-                        }
-                    }
-
-                    if (scrollDirection == FILE_DIALOG_SCROLL_DIRECTION_UP) {
-                        pageOffset--;
-                        if (pageOffset < 0) {
-                            selectedFileIndex--;
-                            if (selectedFileIndex < 0) {
-                                selectedFileIndex = 0;
-                            }
-                            pageOffset = 0;
-                        }
-                    } else {
-                        if (isScrollable) {
-                            pageOffset++;
-                            if (pageOffset > maxPageOffset) {
-                                selectedFileIndex++;
-                                if (selectedFileIndex >= file::lineCount) {
-                                    selectedFileIndex = file::lineCount - 1;
-                                }
-                                pageOffset = maxPageOffset;
-                            }
-                        } else {
-                            selectedFileIndex++;
-                            if (selectedFileIndex > maxPageOffset) {
-                                selectedFileIndex = maxPageOffset;
-                            }
-                        }
-                    }
-
-                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
-                    windowRefresh(ctx.window.get());
-                }
-
-                // NOTE: Original code is slightly different. For unknown reason
-                // entire blinking stuff is placed into two different branches,
-                // which only differs by amount of delay. Probably result of
-                // using large blinking macro as there are no traces of inlined
-                // function.
-                blinkingCounter -= 1;
-                if (blinkingCounter == 0) {
-                    blinkingCounter = 3;
-
-                    Color color = blink ? Color(100) : COLOR_GREEN;
-                    blink = !blink;
-
-                    bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, bgWidth, color);
-                }
-
-                // FIXME: Missing windowRefresh makes blinking useless.
-
-                unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-                delay_ms(delay - (getTicks() - scrollTick));
-
-                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                    rc = 1;
-                    break;
-                }
-
-                int key = inputGetInput();
-                if (key == 505 || key == 503) {
-                    break;
-                }
-
-                renderPresent();
-            }
-        } else {
+        auto handleCursorBlink = [&]() {
             blinkingCounter -= 1;
             if (blinkingCounter == 0) {
                 blinkingCounter = 3;
-
                 Color color = blink ? Color(100) : COLOR_GREEN;
                 blink = !blink;
-
                 bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, bgWidth, color);
             }
+        };
 
-            windowRefresh(ctx.window.get());
-
-            doubleClickTimer--;
-            if (doubleClickTimer == 0) {
-                doubleClickTimer = file::doubleClickDelay;
-                doubleClickSelectedFileIndex = -2;
-            }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
-        }
+        file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc, handleCursorBlink);
 
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 1;

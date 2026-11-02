@@ -96,9 +96,9 @@ int falloutMain(int argc, char** argv)
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies = settings.ui.skip_opening_movies;
     if (skipOpeningMovies < 1) {
-        gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
-        gameMoviePlay(MOVIE_INTRO, 0);
-        gameMoviePlay(MOVIE_CREDITS, 0);
+        gameMoviePlay(MOVIE_IPLOGO, GameMovieFlags::FadeIn);
+        gameMoviePlay(MOVIE_INTRO, GameMovieFlags::None);
+        gameMoviePlay(MOVIE_CREDITS, GameMovieFlags::None);
     } else {
         // If the splash is shown but opening movies are skipped, fade it out
         // before the main menu starts its normal fade-in.
@@ -110,33 +110,33 @@ int falloutMain(int argc, char** argv)
         while (!done) {
             keyboardReset();
             if (!backgoundSoundIsPlaying()) {
-                _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
+                _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GameSoundReadLimitMode::LimitBefore);
             }
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
             int devLoadGameSlot = commandLineDevLoadGameSlot;
-            int mainMenuRc;
+            MainMenuOption mainMenuRc;
             if (devLoadGameSlot != -1) {
                 commandLineDevLoadGameSlot = -1;
-                mainMenuRc = MAIN_MENU_LOAD_GAME;
+                mainMenuRc = MainMenuOption::LoadGame;
             } else {
                 mainMenuRc = mainMenuWindowHandleEvents();
             }
             mouseHideCursor();
 
             switch (mainMenuRc) {
-            case MAIN_MENU_INTRO:
+            case MainMenuOption::Intro:
                 mainMenuWindowHide(true);
-                gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_STOP_MUSIC);
-                gameMoviePlay(MOVIE_CREDITS, 0);
+                gameMoviePlay(MOVIE_INTRO, GameMovieFlags::StopMusic);
+                gameMoviePlay(MOVIE_CREDITS, GameMovieFlags::None);
                 break;
-            case MAIN_MENU_NEW_GAME: {
+            case MainMenuOption::NewGame: {
                 mainMenuBeginSubscreen();
                 if (characterSelectorOpen() == 2) {
                     mainMenuFinishSubscreen();
 
-                    gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
+                    gameMoviePlay(MOVIE_ELDER, GameMovieFlags::StopMusic);
                     randomSeedPrerandom(-1);
 
                     // SFALL: Call "before start" event
@@ -164,7 +164,7 @@ int falloutMain(int argc, char** argv)
                 }
                 break;
             }
-            case MAIN_MENU_LOAD_GAME: {
+            case MainMenuOption::LoadGame: {
                 mainMenuBeginSubscreen();
 
                 // NOTE: Uninline.
@@ -173,7 +173,7 @@ int falloutMain(int argc, char** argv)
                 if (devLoadGameSlot != -1) {
                     lsgDevSetLoadGameSlot(devLoadGameSlot);
                 }
-                int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                int loadGameRc = lsgLoadGame(LoadSaveMode::FromMainMenu);
                 if (loadGameRc == -1) {
                     debugPrint("\n ** Error running LoadGame()! **\n");
                 }
@@ -191,38 +191,38 @@ int falloutMain(int argc, char** argv)
                 }
                 break;
             }
-            case MAIN_MENU_TIMEOUT:
+            case MainMenuOption::Timeout:
                 debugPrint("Main menu timed-out\n");
                 // FALLTHROUGH
-            case MAIN_MENU_SCREENSAVER:
+            case MainMenuOption::ScreenSaver:
                 mainMenuWindowHide(true);
-                gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
+                gameMoviePlay(MOVIE_INTRO, GameMovieFlags::PauseMusic);
                 break;
-            case MAIN_MENU_OPTIONS: {
+            case MainMenuOption::Options: {
                 mainMenuBeginSubscreen();
                 doPreferences(true);
                 mainMenuCancelSubscreen();
                 break;
             }
-            case MAIN_MENU_CREDITS:
+            case MainMenuOption::Credits:
                 mainMenuWindowHide(true);
                 creditsOpen("credits.txt", InterfaceFrameId::Invalid, false);
                 break;
-            case MAIN_MENU_QUOTES:
+            case MainMenuOption::Quotes:
                 // NOTE: There is a strange cmp at 0x480C50. Both operands are
                 // zero, set before the loop and do not modify afterwards. For
                 // clarity this condition is omitted.
                 mainMenuWindowHide(true);
                 creditsOpen("quotes.txt", InterfaceFrameId::Invalid, true);
                 break;
-            case MAIN_MENU_EXIT:
-            case -1:
+            case MainMenuOption::Exit:
+            case MainMenuOption::Invalid:
                 done = true;
                 mainMenuWindowHide(true);
                 mainMenuWindowFree();
                 backgroundSoundDelete();
                 break;
-            case MAIN_MENU_SELFRUN:
+            case MainMenuOption::SelfRun:
                 break;
             }
         }
@@ -505,7 +505,7 @@ static void showDeath()
                 break;
             }
 
-            while (mouseGetEvent() != 0) {
+            while (mouseGetEvent() != MouseButtonEvent::None) {
                 sharedFpsLimiter.mark();
 
                 inputGetInput();
@@ -557,7 +557,7 @@ static void showDeath()
             speechSetEndCallback(_main_death_voiceover_callback);
 
             unsigned int delay;
-            if (speechLoad(deathFileName, GSOUND_LOAD_NO_PLAY, GSOUND_STREAM, GSOUND_NO_LOOP) == -1) {
+            if (speechLoad(deathFileName, GameSoundReadLimitMode::LoadNoPlay, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop) == -1) {
                 delay = 3000;
             } else {
                 delay = UINT_MAX;
@@ -584,7 +584,7 @@ static void showDeath()
 
             speechDelete();
 
-            while (mouseGetEvent() != 0) {
+            while (mouseGetEvent() != MouseButtonEvent::None) {
                 sharedFpsLimiter.mark();
 
                 inputGetInput();

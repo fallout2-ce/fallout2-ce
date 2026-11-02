@@ -9,11 +9,11 @@ typedef char*(MouseManagerNameMangler)(char* fileName);
 typedef int(MouseManagerRateProvider)();
 typedef int(MouseManagerTimeProvider)();
 
-typedef enum MouseManagerMouseType {
+enum MouseManagerMouseType : int {
     MOUSE_MANAGER_MOUSE_TYPE_NONE,
     MOUSE_MANAGER_MOUSE_TYPE_STATIC,
     MOUSE_MANAGER_MOUSE_TYPE_ANIMATED,
-} MouseManagerMouseType;
+};
 
 typedef struct MouseManagerStaticData {
     unsigned char* data;
@@ -44,7 +44,7 @@ typedef struct MouseManagerCacheEntry {
         MouseManagerStaticData* staticData;
         MouseManagerAnimatedData* animatedData;
     };
-    int type;
+    MouseManagerMouseType type;
     unsigned char palette[256 * 3];
     int ref;
     char fileName[32];
@@ -67,9 +67,9 @@ int mouseManagerRateProviderDefaultImpl();
 int mouseManagerTimeProviderDefaultImpl();
 void mouseManagerSetNameMangler(MouseManagerNameMangler* func);
 void mouseManagerFreeCacheEntry(MouseManagerCacheEntry* entry);
-int mouseManagerInsertCacheEntry(void** data, int type, unsigned char* palette, const char* fileName);
+int mouseManagerInsertCacheEntry(void** data, MouseManagerMouseType type, unsigned char* palette, const char* fileName);
 void mouseManagerFlushCache();
-MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigned char** palettePtr, int* a3, int* a4, int* widthPtr, int* heightPtr, int* typePtr);
+MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigned char** palettePtr, int* a3, int* a4, int* widthPtr, int* heightPtr, MouseManagerMouseType* typePtr);
 void mouseManagerInit();
 void mouseManagerExit();
 void mouseManagerUpdate();

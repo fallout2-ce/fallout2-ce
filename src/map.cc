@@ -76,6 +76,10 @@ static int mapHeaderRead(MapHeader* ptr, File* stream);
 static void mapLoadTimerStart();
 static void mapLoadTimerFinish(const char* fileName, int rc);
 
+// Also covers the synchronous explosion pre-pass, as in sfall's OnMapLeave.
+static bool exitScriptsRunning = false;
+static bool restoreSneakOnMapEnter = false;
+
 // 0x50B058
 static char byte_50B058[] = "";
 
@@ -192,7 +196,7 @@ int isoInit()
     // NOTE: Uninline.
     square_init();
 
-    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), 10);
+    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
     if (gIsoWindow == -1) {
         debugPrint("win_add failed in iso_init\n");
         return -1;
@@ -261,6 +265,9 @@ int isoInit()
 // 0x481ED4
 void isoReset()
 {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
     // NOTE: Uninline.
     mapGlobalVariablesFree();
 
@@ -298,6 +305,9 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
     configGetBool(&gContentConfig, CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", &disableSpecialMapIds, false);
 
     if (settings.system.executableIsMapper()) {
@@ -306,7 +316,7 @@ void mapInit()
 
     if (messageListInit(&gMapMessageList)) {
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%smap.msg", asc_5186C8);
+        snprintf(path, sizeof(path), "%smap.msg", gGameMsgPath);
 
         if (!messageListLoad(&gMapMessageList, path)) {
             debugPrint("\nError loading map_msg_file!");
@@ -1115,6 +1125,11 @@ err:
         debugPrint("\n   Error: scr_load_all_scripts failed!");
     }
 
+    if (restoreSneakOnMapEnter) {
+        // Consume before enabling sneak, which also schedules its new timer.
+        restoreSneakOnMapEnter = false;
+        dudeEnableState(DUDE_STATE_SNEAKING);
+    }
     scriptsExecMapEnterProc();
     scriptsExecMapUpdateProc();
     tileEnable();
@@ -1180,9 +1195,11 @@ int mapLoadSaved(char* fileName)
             objectUnjamAll();
         }
 
+        // NOTE: The original fails the load here, and `mapLoadByName` loads
+        // the .MAP instead: the map as new. The saved map loads, the bodies
+        // the aging couldn't replace stay for the next visit.
         if (_map_age_dead_critters() == -1) {
             debugPrint("\nError: Critter aging failed on map load!");
-            return -1;
         }
     }
 
@@ -1234,10 +1251,12 @@ static int _map_age_dead_critters()
         return 0;
     }
 
+    // NOTE: The original (0x483334) replaces dead bodies by blood stains
+    // after 6 days and also removes the blood stains after 14 days.
     int agingType;
-    if (hoursSinceLastVisit > 21 * 24) {
+    if (hoursSinceLastVisit > 14 * 24) {
         agingType = 2;
-    } else if (hoursSinceLastVisit > 14 * 24) {
+    } else if (hoursSinceLastVisit > 6 * 24) {
         agingType = 1;
     } else {
         return 0;
@@ -1331,7 +1350,13 @@ static int replaceDeadCritter(Object* critter)
         }
     }
 
-    return objectSetFrame(blood, frame, nullptr);
+    // NOTE: The original (0x483545) ignores obj_set_frame's result. A multihex
+    // body's frame (6 to 9) can be past the stain art's last one (8), then the
+    // stain keeps its first frame. Failing here failed the critter aging, and
+    // with it the saved map's load: the map was loaded as new.
+    objectSetFrame(blood, frame, nullptr);
+
+    return 0;
 }
 
 // 0x48358C
@@ -1553,6 +1578,11 @@ static int _map_save_file(File* stream)
     return 0;
 }
 
+bool mapExitScriptsRunning()
+{
+    return exitScriptsRunning;
+}
+
 // 0x483C98
 int _map_save_in_game(bool isLeavingMap)
 {
@@ -1561,13 +1591,24 @@ int _map_save_in_game(bool isLeavingMap)
     }
 
     animationStop();
+
+    if (isLeavingMap) {
+        // SFALL: Run exit scripts before event cleanup and party preparation so
+        // scripts can still add or remove party members and update their state.
+        exitScriptsRunning = true;
+        queueClearMapExitExplosions();
+        scriptsExecMapExitProc();
+        // SFALL: Capture after exit scripts, before cleanup disables sneaking.
+        restoreSneakOnMapEnter = dudeHasState(DUDE_STATE_SNEAKING);
+        exitScriptsRunning = false;
+        _queue_leaving_map();
+    }
+
     _partyMemberSaveProtos();
 
     if (isLeavingMap) {
-        _queue_leaving_map();
         _partyMemberPrepLoad();
         _partyMemberPrepItemSaveAll();
-        scriptsExecMapExitProc();
 
         if (gMapSid != -1) {
             Script* script;

@@ -14,7 +14,7 @@ long audioSeek(int handle, long offset, int origin);
 long audioGetSize(int handle);
 long audioTell(int handle);
 int audioWrite(int handle, const void* buf, unsigned int size);
-int audioInit(AudioQueryCompressedFunc* func);
+SoundError audioInit(AudioQueryCompressedFunc* func);
 void audioExit();
 
 } // namespace fallout

@@ -31,7 +31,7 @@ static unsigned int scriptSoundNextSerial = 0;
 static int scriptLoopId = 0;
 static int currentMusicId = 0;
 
-static int scriptSoundGetBaseVolume(int mode)
+static int scriptSoundGetBaseVolume(ScriptSoundMode mode)
 {
     switch (mode) {
     case SCRIPT_SOUND_MODE_MUSIC:
@@ -69,7 +69,7 @@ static ScriptSoundSlot* scriptSoundFindLoopingSlotById(int id)
     return nullptr;
 }
 
-static void scriptSoundSlotCallback(void* userData, int event)
+static void scriptSoundSlotCallback(void* userData, SoundCallbackEvent event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
         static_cast<ScriptSoundSlot*>(userData)->sound = nullptr;
@@ -79,9 +79,9 @@ static void scriptSoundSlotCallback(void* userData, int event)
 static Sound* scriptSoundCreate(const char* path, bool looping, int volume, ScriptSoundSlot* slot)
 {
     GameSoundLoadOptions loadOptions = {
-        GSOUND_LIMIT_AFTER,
-        GSOUND_STREAM,
-        looping ? GSOUND_LOOP : GSOUND_NO_LOOP,
+        GameSoundReadLimitMode::LimitAfter,
+        GameSoundStorageType::Stream,
+        looping ? GameSoundLoopingMode::Loop : GameSoundLoopingMode::NoLoop,
         0,
         scriptSoundSlotCallback,
         slot,
@@ -94,8 +94,7 @@ static Sound* scriptSoundCreate(const char* path, bool looping, int volume, Scri
 
     soundSetVolume(sound, scriptSoundClampVolume(volume));
 
-    int rc;
-    rc = soundPlay(sound);
+    SoundError rc = soundPlay(sound);
     if (rc != SOUND_NO_ERROR) {
         soundDelete(sound);
         return nullptr;
@@ -125,7 +124,7 @@ static void scriptSoundStopSlot(ScriptSoundSlot* slot, bool restoreBackground)
     }
 
     if (shouldRestoreBackground) {
-        backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter);
     }
 }
 
@@ -158,15 +157,13 @@ void scriptSoundInit()
     scriptSoundNextSerial = 0;
 }
 
-int scriptSoundPlay(const char* path, int mode)
+int scriptSoundPlay(const char* path, ScriptSoundMode mode, int volumeReduction)
 {
-    if (mode < 0 || path == nullptr || path[0] == '\0') {
+    if (path == nullptr || path[0] == '\0') {
         return 0;
     }
 
-    int volumeReduction = (mode & 0x7FFF0000) >> 16;
-    mode &= 0xF;
-    if (mode > SCRIPT_SOUND_MODE_SPEECH) {
+    if (!scriptSoundModeIsValid(mode)) {
         mode = SCRIPT_SOUND_MODE_MUSIC;
     }
 
@@ -188,7 +185,7 @@ int scriptSoundPlay(const char* path, int mode)
     Sound* sound = slot != nullptr ? scriptSoundCreate(path, looping, volume, slot) : nullptr;
     if (sound == nullptr) {
         if (mode == SCRIPT_SOUND_MODE_MUSIC) {
-            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+            backgroundSoundRestart(GameSoundReadLimitMode::LimitAfter);
         }
         debugPrint("scriptSoundPlay: failed to play %s\n", path);
         return 0;

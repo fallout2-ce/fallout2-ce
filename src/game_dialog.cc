@@ -48,6 +48,7 @@
 #include "text_object.h"
 #include "tile.h"
 #include "touch.h"
+#include "window.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -869,7 +870,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Cannot see there ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");
@@ -885,7 +886,7 @@ void gameDialogEnter(Object* speaker, int mode)
                     displayMonitorAddMessage(messageListItem.text);
                     debugPrint("Too far ");
                 } else {
-                    debugPrint(messageListItem.text);
+                    debugPrint("%s", messageListItem.text);
                 }
             } else {
                 debugPrint("\nError: gdialog: Can't find message!");
@@ -1153,7 +1154,7 @@ int _gdialogExitFromScript()
     }
 
     if (gameDialogOldMusicVolume == -1) {
-        backgroundSoundRestart(GSOUND_LIMIT_BEFORE);
+        backgroundSoundRestart(GameSoundReadLimitMode::LimitBefore);
     } else {
         backgroundSoundSetVolume(gameDialogOldMusicVolume);
     }
@@ -1939,7 +1940,7 @@ int _gdProcessInit()
     }
 
     // Top part of the reply window - scroll up.
-    upBtn = buttonCreate(gameDialogReplyWindow, 1, 1, 377, 28, -1, -1, KEY_ARROW_UP, -1, nullptr, nullptr, nullptr, 32);
+    upBtn = buttonCreate(gameDialogReplyWindow, 1, 1, 377, 28, -1, -1, KEY_ARROW_UP, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_TRANSPARENT);
     if (upBtn == -1) {
         goto err_1;
     }
@@ -1948,7 +1949,7 @@ int _gdProcessInit()
     buttonSetMouseCallbacks(upBtn, _reply_arrow_up, _reply_arrow_restore, nullptr, nullptr);
 
     // Bottom part of the reply window - scroll down.
-    downBtn = buttonCreate(gameDialogReplyWindow, 1, 29, 377, 28, -1, -1, KEY_ARROW_DOWN, -1, nullptr, nullptr, nullptr, 32);
+    downBtn = buttonCreate(gameDialogReplyWindow, 1, 29, 377, 28, -1, -1, KEY_ARROW_DOWN, -1, nullptr, nullptr, nullptr, BUTTON_FLAG_TRANSPARENT);
     if (downBtn == -1) {
         goto err_1;
     }
@@ -2578,7 +2579,7 @@ void _gdProcessUpdate()
             dialogOptionEntry->bottom = _optionRect.top;
             _optionRect.top += 2;
 
-            dialogOptionEntry->btn = buttonCreate(gameDialogOptionsWindow, 2, y, width, _optionRect.top - y - 4, 1200 + index, 1300 + index, -1, 49 + index, nullptr, nullptr, nullptr, 0);
+            dialogOptionEntry->btn = buttonCreate(gameDialogOptionsWindow, 2, y, width, _optionRect.top - y - 4, 1200 + index, 1300 + index, -1, 49 + index, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
             if (dialogOptionEntry->btn != -1) {
                 buttonSetCallbacks(dialogOptionEntry->btn, _gsound_red_butt_press, _gsound_red_butt_release);
             } else {
@@ -4139,7 +4140,7 @@ void partyMemberControlWindowHandleEvents()
                 // CE: Minor improvement - handle on mouse up (just like other
                 // buttons). Also fixed active button area (in original code
                 // it's slightly smaller than the button itself).
-                if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                     if (mouseHitTestInWindow(gameDialogWindow, 438, 156, 438 + 109, 156 + 28)) {
                         aiSetDisposition(gGameDialogSpeaker, DISPOSITION_NONE);
                         dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
@@ -4565,7 +4566,7 @@ int _gdCustomSelect(int option)
             } else if (keyCode == KEY_ESCAPE) {
                 done = true;
             } else if (keyCode == -2) {
-                if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+                if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
                     // No need to use mouseHitTestInWindow as these values are already
                     // in screen coordinates.
                     if (_mouse_click_in(minX, minY, maxX, maxY)) {

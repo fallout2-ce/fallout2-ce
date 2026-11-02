@@ -13,7 +13,7 @@
 namespace fallout {
 
 static int _roll_reset_();
-static int randomTranslateRoll(int delta, int criticalSuccessModifier);
+static Roll randomTranslateRoll(int delta, int criticalSuccessModifier);
 static int getRandom(int max);
 static int randomInt32();
 static void randomSeedPrerandomInternal(int seed);
@@ -83,10 +83,10 @@ int randomLoad(File* stream)
 // Rolls d% against [difficulty].
 //
 // 0x4A3000 roll_check
-int randomRoll(int difficulty, int criticalSuccessModifier, int* howMuchPtr)
+Roll randomRoll(int difficulty, int criticalSuccessModifier, int* howMuchPtr)
 {
     int delta = difficulty - randomBetween(1, 100);
-    int result = randomTranslateRoll(delta, criticalSuccessModifier);
+    Roll result = randomTranslateRoll(delta, criticalSuccessModifier);
 
     if (howMuchPtr != nullptr) {
         *howMuchPtr = delta;
@@ -99,27 +99,27 @@ int randomRoll(int difficulty, int criticalSuccessModifier, int* howMuchPtr)
 // criticals (starting from day 2).
 //
 // 0x4A3030 roll_check_critical
-static int randomTranslateRoll(int delta, int criticalSuccessModifier)
+static Roll randomTranslateRoll(int delta, int criticalSuccessModifier)
 {
     unsigned int gameTime = gameTimeGetTime();
 
-    int roll;
+    Roll roll;
     if (delta < 0) {
-        roll = ROLL_FAILURE;
+        roll = Roll::Failure;
 
         if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% to become critical failure.
             if (randomBetween(1, 100) <= -delta / 10) {
-                roll = ROLL_CRITICAL_FAILURE;
+                roll = Roll::CriticalFailure;
             }
         }
     } else {
-        roll = ROLL_SUCCESS;
+        roll = Roll::Success;
 
         if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% + modifier to become critical success.
             if (randomBetween(1, 100) <= delta / 10 + criticalSuccessModifier) {
-                roll = ROLL_CRITICAL_SUCCESS;
+                roll = Roll::CriticalSuccess;
             }
         }
     }
