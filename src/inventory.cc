@@ -4464,10 +4464,16 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int y;
     mouseGetPosition(&x, &y);
 
+    bool isPartyMemberLootInventory = inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
+        && owner != gDude
+        && objectIsPartyMember(owner);
+
     int actionMenuItemsLength;
     const GameMouseActionMenuItem* actionMenuItems;
     if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
-        if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL && objectGetOwner(item) != gDude) {
+        if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL
+            && objectGetOwner(item) != gDude
+            && !isPartyMemberLootInventory) {
             actionMenuItemsLength = 3;
             actionMenuItems = _act_weap2;
         } else {
@@ -4475,7 +4481,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             actionMenuItems = _act_weap;
         }
     } else {
-        if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL) {
+        if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL && !isPartyMemberLootInventory) {
             // SFALL: Fix crash when trying to open bag/backpack on the table
             // in the bartering interface.
             Object* owner = objectGetOwner(item);
@@ -4501,7 +4507,10 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 actionMenuItemsLength = 3;
                 actionMenuItems = _act_no_use;
             } else {
-                if (_obj_action_can_use(item) || _proto_action_can_use_on(item)) {
+                bool checkItemUsability = !isPartyMemberLootInventory
+                    || itemType == ITEM_TYPE_DRUG
+                    || itemType == ITEM_TYPE_CONTAINER;
+                if (checkItemUsability && (_obj_action_can_use(item) || _proto_action_can_use_on(item))) {
                     actionMenuItemsLength = 4;
                     actionMenuItems = _act_use;
                 } else {
@@ -4688,8 +4697,9 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         case ITEM_TYPE_CONTAINER:
             _container_enter(keyCode, inventoryWindowType);
             break;
-        case ITEM_TYPE_DRUG:
-            if (drugItemTakeDrug(_stack[0], item)) {
+        case ITEM_TYPE_DRUG: {
+            Object* critter = isPartyMemberLootInventory ? owner : _stack[0];
+            if (drugItemTakeDrug(critter, item) == USE_ITEM_RESULT_REMOVE) {
                 if (itemSlot != nullptr) {
                     *itemSlot = nullptr;
                 } else {
@@ -4701,8 +4711,10 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             }
             interfaceRenderHitPoints(true);
             break;
+        }
         case ITEM_TYPE_WEAPON:
         case ITEM_TYPE_MISC:
+        {
             if (itemSlot == nullptr) {
                 itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UseObj);
             }
@@ -4726,6 +4738,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                     itemAdd(owner, item, 1);
                 }
             }
+        }
         default:
             break;
         }
