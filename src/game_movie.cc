@@ -197,13 +197,13 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
     windowRefresh(win);
 
     bool subtitlesEnabled = settings.preferences.subtitles;
-    int movieFlags = MOVIE_FLAG_DIRECT_CENTERED;
+    MovieFlags movieFlags = MovieFlags::DirectCentered;
     if (subtitlesEnabled) {
         char* subtitlesFilePath = gameMovieBuildSubtitlesFilePath(movieFilePath);
 
         int subtitlesFileSize;
         if (dbGetFileSize(subtitlesFilePath, &subtitlesFileSize) == 0) {
-            movieFlags = MOVIE_FLAG_DIRECT_CENTERED | MOVIE_FLAG_SUBTITLES;
+            movieFlags = MovieFlags::DirectCentered | MovieFlags::Subtitles;
         } else {
             subtitlesEnabled = false;
         }

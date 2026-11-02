@@ -81,7 +81,7 @@ jobs:
   ios:
     name: iOS
 
-    runs-on: macos-14
+    runs-on: macos-15
     needs: [ce-dat]
     permissions:
       contents: write
@@ -223,7 +223,7 @@ jobs:
   macos:
     name: macOS
 
-    runs-on: macos-11
+    runs-on: macos-15
     permissions:
       contents: write
 

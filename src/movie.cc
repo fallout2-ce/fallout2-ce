@@ -23,6 +23,42 @@
 
 namespace fallout {
 
+enum class MovieExtendedFlags : unsigned int {
+    None = 0x00,
+    Error = 0x01,
+    StopRequested = 0x02,
+    Direct = 0x04,
+    Centered = 0x08,
+    Subtitles = 0x10,
+};
+
+constexpr inline MovieExtendedFlags operator&(MovieExtendedFlags lhs, MovieExtendedFlags rhs)
+{
+    return static_cast<MovieExtendedFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline MovieExtendedFlags operator|(MovieExtendedFlags lhs, MovieExtendedFlags rhs)
+{
+    return static_cast<MovieExtendedFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline MovieExtendedFlags operator~(MovieExtendedFlags rhs)
+{
+    return static_cast<MovieExtendedFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline MovieExtendedFlags& operator&=(MovieExtendedFlags& lhs, MovieExtendedFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline MovieExtendedFlags& operator|=(MovieExtendedFlags& lhs, MovieExtendedFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
 typedef struct MovieSubtitleListNode {
     int num;
     char* text;
@@ -185,7 +221,7 @@ static SDL_Rect movieOutputRect;
 static MovieSubtitleListNode* gMovieSubtitleHead;
 
 // 0x638E78 movieFlags
-static unsigned int gMovieFlags;
+static MovieExtendedFlags gMovieFlags;
 
 // 0x638E80 movieSubRectFlag
 static bool _movieSubRectFlag;
@@ -217,7 +253,7 @@ static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight)
     int availableY = _movieY;
     int availableWidth = _movieW;
     int availableHeight = _movieH;
-    bool centered = (gMovieFlags & MOVIE_EXTENDED_FLAG_CENTERED) != 0;
+    bool centered = (gMovieFlags & MovieExtendedFlags::Centered) != MovieExtendedFlags::None;
 
     if (!settings.ui.movie_aspect_fit) {
         if (!centered) {
@@ -238,7 +274,7 @@ static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight)
     }
 
     int subtitleReserve = 0;
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_SUBTITLES) != 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Subtitles) != MovieExtendedFlags::None) {
         subtitleReserve = _subtitleH + 4;
     }
 
@@ -305,7 +341,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     } else {
         // we're scaling, so use an SDL overlay to render
         if (!movieDirectOverlayEnsureTexture(src_width, src_height)) {
-            gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
+            gMovieFlags |= MovieExtendedFlags::Error;
             return;
         }
 
@@ -351,7 +387,7 @@ int _movieScaleSubRect(int win, unsigned char* data, int width, int height, int 
     int windowWidth = windowGetWidth(win);
     unsigned char* windowBuffer = windowGetBuffer(win) + windowWidth * _movieY + _movieX;
     if (width * 4 / 3 > _movieW) {
-        gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
+        gMovieFlags |= MovieExtendedFlags::Error;
         return 0;
     }
 
@@ -386,7 +422,7 @@ int _movieScaleWindow(int win, unsigned char* data, int width, int height, int p
 {
     int windowWidth = windowGetWidth(win);
     if (width != 3 * windowWidth / 4) {
-        gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
+        gMovieFlags |= MovieExtendedFlags::Error;
         return 0;
     }
 
@@ -470,7 +506,7 @@ static void _cleanupMovie(bool shouldEndMovie)
     _running = 0;
     _movieSubRectFlag = 0;
     _movieScaleFlag = 0;
-    gMovieFlags = 0;
+    gMovieFlags = MovieExtendedFlags::None;
     gMovieWindow = -1;
 }
 
@@ -484,38 +520,38 @@ void movieExit()
 void _movieStop()
 {
     if (_running) {
-        gMovieFlags |= MOVIE_EXTENDED_FLAG_STOP_REQUESTED;
+        gMovieFlags |= MovieExtendedFlags::StopRequested;
     }
 }
 
 // 0x487164 movieSetFlags
-int movieSetFlags(int flags)
+int movieSetFlags(MovieFlags flags)
 {
-    if ((flags & MOVIE_FLAG_DIRECT_CENTERED) != 0) {
-        gMovieFlags |= MOVIE_EXTENDED_FLAG_DIRECT | MOVIE_EXTENDED_FLAG_CENTERED;
+    if ((flags & MovieFlags::DirectCentered) != MovieFlags::None) {
+        gMovieFlags |= MovieExtendedFlags::Direct | MovieExtendedFlags::Centered;
     } else {
-        gMovieFlags &= ~MOVIE_EXTENDED_FLAG_CENTERED;
-        if ((flags & MOVIE_FLAG_DIRECT) != 0) {
-            gMovieFlags |= MOVIE_EXTENDED_FLAG_DIRECT;
+        gMovieFlags &= ~MovieExtendedFlags::Centered;
+        if ((flags & MovieFlags::Direct) != MovieFlags::None) {
+            gMovieFlags |= MovieExtendedFlags::Direct;
         } else {
-            gMovieFlags &= ~MOVIE_EXTENDED_FLAG_DIRECT;
+            gMovieFlags &= ~MovieExtendedFlags::Direct;
         }
     }
 
-    if ((flags & MOVIE_FLAG_SCALE) != 0) {
+    if ((flags & MovieFlags::Scale) != MovieFlags::None) {
         _movieScaleFlag = 1;
     } else {
         _movieScaleFlag = 0;
 
-        if ((gMovieFlags & MOVIE_EXTENDED_FLAG_DIRECT) == 0) {
-            gMovieFlags &= ~MOVIE_EXTENDED_FLAG_CENTERED;
+        if ((gMovieFlags & MovieExtendedFlags::Direct) == MovieExtendedFlags::None) {
+            gMovieFlags &= ~MovieExtendedFlags::Centered;
         }
     }
 
-    if ((flags & MOVIE_FLAG_SUBTITLES) != 0) {
-        gMovieFlags |= MOVIE_EXTENDED_FLAG_SUBTITLES;
+    if ((flags & MovieFlags::Subtitles) != MovieFlags::None) {
+        gMovieFlags |= MovieExtendedFlags::Subtitles;
     } else {
-        gMovieFlags &= ~MOVIE_EXTENDED_FLAG_SUBTITLES;
+        gMovieFlags &= ~MovieExtendedFlags::Subtitles;
     }
 
     return 0;
@@ -561,7 +597,7 @@ static void movieLoadSubtitles(char* filePath)
     File* stream = fileOpen(path, "r");
     if (stream == nullptr) {
         debugPrint("Couldn't open subtitle file %s\n", path);
-        gMovieFlags &= ~MOVIE_EXTENDED_FLAG_SUBTITLES;
+        gMovieFlags &= ~MovieExtendedFlags::Subtitles;
         return;
     }
 
@@ -622,7 +658,7 @@ static void movieRenderSubtitles()
         return;
     }
 
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_SUBTITLES) == 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Subtitles) == MovieExtendedFlags::None) {
         return;
     }
 
@@ -630,7 +666,7 @@ static void movieRenderSubtitles()
     int subtitleW = _subtitleW;
     int movieY = _movieY;
     int movieHeight = _movieH;
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_DIRECT) != 0 && movieOutputRect.w > 0 && movieOutputRect.h > 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Direct) != MovieExtendedFlags::None && movieOutputRect.w > 0 && movieOutputRect.h > 0) {
         subtitleX = movieOutputRect.x;
         subtitleW = movieOutputRect.w;
         movieY = movieOutputRect.y;
@@ -703,14 +739,14 @@ static int _movieStart(int win, char* filePath)
 
     gMovieWindow = win;
     _running = 1;
-    gMovieFlags &= ~MOVIE_EXTENDED_FLAG_ERROR;
+    gMovieFlags &= ~MovieExtendedFlags::Error;
     movieOutputRect = { 0, 0, 0, 0 };
 
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_SUBTITLES) != 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Subtitles) != MovieExtendedFlags::None) {
         movieLoadSubtitles(filePath);
     }
 
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_DIRECT) != 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Direct) != MovieExtendedFlags::None) {
         debugPrint("Direct ");
         windowGetRect(gMovieWindow, &gMovieWindowRect);
         debugPrint("Playing at (%d, %d)  ", _movieX + gMovieWindowRect.left, _movieY + gMovieWindowRect.top);
@@ -794,13 +830,13 @@ void _movieUpdate()
         return;
     }
 
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_STOP_REQUESTED) != 0) {
+    if ((gMovieFlags & MovieExtendedFlags::StopRequested) != MovieExtendedFlags::None) {
         debugPrint("Movie aborted\n");
         _cleanupMovie(true);
         return;
     }
 
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_ERROR) != 0) {
+    if ((gMovieFlags & MovieExtendedFlags::Error) != MovieExtendedFlags::None) {
         debugPrint("Movie error\n");
         _cleanupMovie(true);
         return;

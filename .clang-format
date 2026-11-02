@@ -1,3 +1,4 @@
+# Use clang-format 18 via fix_formatting.sh, matching CI.
 BasedOnStyle: WebKit
 AllowShortIfStatementsOnASingleLine: WithoutElse
 FixNamespaceComments: true

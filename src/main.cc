@@ -116,22 +116,22 @@ int falloutMain(int argc, char** argv)
 
             mouseShowCursor();
             int devLoadGameSlot = commandLineDevLoadGameSlot;
-            int mainMenuRc;
+            MainMenuOption mainMenuRc;
             if (devLoadGameSlot != -1) {
                 commandLineDevLoadGameSlot = -1;
-                mainMenuRc = MAIN_MENU_LOAD_GAME;
+                mainMenuRc = MainMenuOption::LoadGame;
             } else {
                 mainMenuRc = mainMenuWindowHandleEvents();
             }
             mouseHideCursor();
 
             switch (mainMenuRc) {
-            case MAIN_MENU_INTRO:
+            case MainMenuOption::Intro:
                 mainMenuWindowHide(true);
                 gameMoviePlay(MOVIE_INTRO, GameMovieFlags::StopMusic);
                 gameMoviePlay(MOVIE_CREDITS, GameMovieFlags::None);
                 break;
-            case MAIN_MENU_NEW_GAME: {
+            case MainMenuOption::NewGame: {
                 mainMenuBeginSubscreen();
                 if (characterSelectorOpen() == 2) {
                     mainMenuFinishSubscreen();
@@ -164,7 +164,7 @@ int falloutMain(int argc, char** argv)
                 }
                 break;
             }
-            case MAIN_MENU_LOAD_GAME: {
+            case MainMenuOption::LoadGame: {
                 mainMenuBeginSubscreen();
 
                 // NOTE: Uninline.
@@ -173,7 +173,7 @@ int falloutMain(int argc, char** argv)
                 if (devLoadGameSlot != -1) {
                     lsgDevSetLoadGameSlot(devLoadGameSlot);
                 }
-                int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                int loadGameRc = lsgLoadGame(LoadSaveMode::FromMainMenu);
                 if (loadGameRc == -1) {
                     debugPrint("\n ** Error running LoadGame()! **\n");
                 }
@@ -191,38 +191,38 @@ int falloutMain(int argc, char** argv)
                 }
                 break;
             }
-            case MAIN_MENU_TIMEOUT:
+            case MainMenuOption::Timeout:
                 debugPrint("Main menu timed-out\n");
                 // FALLTHROUGH
-            case MAIN_MENU_SCREENSAVER:
+            case MainMenuOption::ScreenSaver:
                 mainMenuWindowHide(true);
                 gameMoviePlay(MOVIE_INTRO, GameMovieFlags::PauseMusic);
                 break;
-            case MAIN_MENU_OPTIONS: {
+            case MainMenuOption::Options: {
                 mainMenuBeginSubscreen();
                 doPreferences(true);
                 mainMenuCancelSubscreen();
                 break;
             }
-            case MAIN_MENU_CREDITS:
+            case MainMenuOption::Credits:
                 mainMenuWindowHide(true);
                 creditsOpen("credits.txt", InterfaceFrameId::Invalid, false);
                 break;
-            case MAIN_MENU_QUOTES:
+            case MainMenuOption::Quotes:
                 // NOTE: There is a strange cmp at 0x480C50. Both operands are
                 // zero, set before the loop and do not modify afterwards. For
                 // clarity this condition is omitted.
                 mainMenuWindowHide(true);
                 creditsOpen("quotes.txt", InterfaceFrameId::Invalid, true);
                 break;
-            case MAIN_MENU_EXIT:
-            case -1:
+            case MainMenuOption::Exit:
+            case MainMenuOption::Invalid:
                 done = true;
                 mainMenuWindowHide(true);
                 mainMenuWindowFree();
                 backgroundSoundDelete();
                 break;
-            case MAIN_MENU_SELFRUN:
+            case MainMenuOption::SelfRun:
                 break;
             }
         }

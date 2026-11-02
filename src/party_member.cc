@@ -22,6 +22,7 @@
 #include "memory.h"
 #include "message.h"
 #include "object.h"
+#include "platform_compat.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "queue.h"
@@ -1467,7 +1468,7 @@ int partyMemberGetCurrentLevel(Object* object)
 
 // partyMemberIncLevels
 // 0x495B60 partyMemberIncLevels
-int _partyMemberIncLevels()
+static int partyMemberIncLevels(Object* forcedMember)
 {
     int i;
     PartyMemberListItem* listItem;
@@ -1487,6 +1488,9 @@ int _partyMemberIncLevels()
     for (i = 1; i < gPartyMembersLength; i++) {
         listItem = &(gPartyMembers[i]);
         obj = listItem->object;
+        if (obj == nullptr || (forcedMember != nullptr && obj != forcedMember)) {
+            continue;
+        }
 
         if (partyMemberGetDescription(obj, &memberDescription) == -1) {
             // SFALL: NPC level fix.
@@ -1504,6 +1508,7 @@ int _partyMemberIncLevels()
             continue;
         }
 
+        memberIndex = -1;
         for (j = 1; j < gPartyMemberDescriptionsLength; j++) {
             if (gPartyMemberProtoIds[j] == ProtoId(obj)) {
                 memberIndex = j;
@@ -1514,13 +1519,13 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        if (pcGetStat(PC_STAT_LEVEL) < memberDescription->level_minimum) {
+        if (forcedMember == nullptr && pcGetStat(PC_STAT_LEVEL) < memberDescription->level_minimum) {
             continue;
         }
 
         levelUpInfo = &(_partyMemberLevelUpInfoList[memberIndex]);
 
-        if (levelUpInfo->level >= memberDescription->level_pids_num) {
+        if (levelUpInfo->level < 0 || levelUpInfo->level >= memberDescription->level_pids_num) {
             continue;
         }
 
@@ -1534,14 +1539,14 @@ int _partyMemberIncLevels()
         // If levelMod is 0 (so we got 5, 10, etc. levels in the example above), probability is 100% (no roll).
         // If previous level up occured "early" (due to probability roll), then we skip until we get to levelMod = 0, to begin the next cycle.
 
-        if (levelUpInfo->isEarly != 0) {
+        if (forcedMember == nullptr && levelUpInfo->isEarly != 0) {
             if (levelMod == 0) {
                 levelUpInfo->isEarly = 0;
             }
             continue;
         }
 
-        if (levelMod != 0 && randomBetween(0, 100) > 100 * levelMod / memberDescription->level_up_every) {
+        if (forcedMember == nullptr && levelMod != 0 && randomBetween(0, 100) > 100 * levelMod / memberDescription->level_up_every) {
             continue;
         }
 
@@ -1576,6 +1581,11 @@ int _partyMemberIncLevels()
     }
 
     return 0;
+}
+
+int _partyMemberIncLevels()
+{
+    return partyMemberIncLevels(nullptr);
 }
 
 bool partyMemberEngineLevelUpEnabled()
@@ -1712,6 +1722,59 @@ int partyGetMaxWoundToHealByRest()
     }
 
     return maxWound;
+}
+
+// Both opcodes accept a PID or a legacy, case-insensitive NPC name.
+static Object* partyMemberFindNpc(int pid, const char* name, bool includePlayer)
+{
+    if (pid == kPartyMemberLookupByName && (name == nullptr || name[0] == '\0')) {
+        return nullptr;
+    }
+
+    for (int index = includePlayer ? 0 : 1; index < gPartyMembersLength; index++) {
+        Object* object = gPartyMembers[index].object;
+        if (object == nullptr) {
+            continue;
+        }
+        if (pid != kPartyMemberLookupByName) {
+            if (ProtoId(object) == ProtoId(pid)) {
+                return object;
+            }
+        } else if (compat_stricmp(critterGetName(object), name) == 0) {
+            return object;
+        }
+    }
+    return nullptr;
+}
+
+int partyMemberGetNpcLevel(int pid, const char* name)
+{
+    Object* object = partyMemberFindNpc(pid, name, true);
+    if (object == nullptr) {
+        debugPrint("Warning: get_npc_level: party member not found (pid=%d, name=\"%s\")\n", pid, name != nullptr ? name : "");
+        return -1;
+    }
+
+    for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberProtoIds[index] == ProtoId(object)) {
+            return _partyMemberLevelUpInfoList[index].level;
+        }
+    }
+    return -1;
+}
+
+int partyMemberIncNpcLevel(int pid, const char* name)
+{
+    Object* object = partyMemberFindNpc(pid, name, false);
+    if (object == nullptr) {
+        debugPrint("Warning: inc_npc_level: party member not found (pid=%d, name=\"%s\")\n", pid, name != nullptr ? name : "");
+        return -1;
+    }
+
+    // sfall uses the normal engine path, bypassing the minimum player level,
+    // early-level suppression and random roll, but retaining the level cap,
+    // level_up_every == 0 guard, counters, equipment handling and messages.
+    return partyMemberIncLevels(object);
 }
 
 std::vector<Object*> get_all_party_members_objects(bool include_hidden)
