@@ -1751,6 +1751,7 @@ int partyMemberGetNpcLevel(int pid, const char* name)
 {
     Object* object = partyMemberFindNpc(pid, name, true);
     if (object == nullptr) {
+        debugPrint("Warning: get_npc_level: party member not found (pid=%d, name=\"%s\")\n", pid, name != nullptr ? name : "");
         return -1;
     }
 
@@ -1766,6 +1767,7 @@ int partyMemberIncNpcLevel(int pid, const char* name)
 {
     Object* object = partyMemberFindNpc(pid, name, false);
     if (object == nullptr) {
+        debugPrint("Warning: inc_npc_level: party member not found (pid=%d, name=\"%s\")\n", pid, name != nullptr ? name : "");
         return -1;
     }
 
