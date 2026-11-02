@@ -383,7 +383,7 @@ static void _container_enter(int keyCode, int inventoryWindowType);
 static void _container_exit(int keyCode, int inventoryWindowType);
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity);
 static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon);
-static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode, Object* ammoOwner = nullptr, Object* weaponOwner = nullptr, bool weaponIsInInventory = true);
 static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
@@ -407,6 +407,7 @@ static void renderPartySlots();
 static void createPartySlotButtons();
 static void handlePartySlotPickup(InvenSlot slot);
 static bool tryEquipPartyItem(Object* item, bool fromLeftPane);
+static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex, bool fromLeftPane);
 static bool tryUnequipPartyItem(InvenSlot slot);
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item);
 static FrmId buildPartyDisplayFrmId();
@@ -1438,6 +1439,27 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
 
     refreshPartyEquippedAfterAction();
     return rc == 0;
+}
+
+static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex, bool fromLeftPane)
+{
+    if (!hasPartySlots() || !partySlotFrmImage.isLocked() || ammo == nullptr || itemGetType(ammo) != ITEM_TYPE_AMMO) {
+        return false;
+    }
+
+    Object* weapon = getPartySlotItem(InvenSlot::RightHand);
+    if (weapon == nullptr) {
+        return false;
+    }
+
+    Rect rect = getPartySlotRect(InvenSlot::RightHand);
+    if (!mouseHitTestInWindow(gInventoryWindow, rect.left, rect.top, rect.right + 1, rect.bottom + 1)) {
+        return false;
+    }
+
+    Object* ammoOwner = fromLeftPane ? _stack[_curr_stack] : _target_stack[_target_curr_stack];
+    int keyCode = (fromLeftPane ? 1000 : 2000) + slotIndex;
+    return _drop_ammo_into_weapon(weapon, ammo, nullptr, quantity, keyCode, ammoOwner, partyBaseTarget, false) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item)
@@ -5271,7 +5293,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
 
     if (isPlanting) {
-        if (!immediate && tryEquipPartyItem(item, true)) {
+        if (!immediate && tryReloadPartyWeapon(item, quantity, slotIndex, true)) {
+            result = INVENTORY_MOVE_RESULT_SUCCESS;
+        } else if (!immediate && tryEquipPartyItem(item, true)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
         } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
             int quantityToMove = quantity;
@@ -5300,7 +5324,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
         }
     } else {
-        if (!immediate && tryEquipPartyItem(item, false)) {
+        if (!immediate && tryReloadPartyWeapon(item, quantity, slotIndex, false)) {
+            result = INVENTORY_MOVE_RESULT_SUCCESS;
+        } else if (!immediate && tryEquipPartyItem(item, false)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
         } else if (immediate || inventoryLootMouseHitTestScroller(false)) {
             int quantityToMove = quantity;
@@ -6190,7 +6216,7 @@ static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon)
 }
 
 // 0x47650C drop ammo into weapon
-static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode, Object* ammoOwner, Object* weaponOwner, bool weaponIsInInventory)
 {
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
@@ -6198,6 +6224,13 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     if (itemGetType(ammo) != ITEM_TYPE_AMMO) {
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+    }
+
+    if (ammoOwner == nullptr) {
+        ammoOwner = _inven_dude;
+    }
+    if (weaponOwner == nullptr) {
+        weaponOwner = _inven_dude;
     }
 
     if (ProtoId(weapon) == ItemProtoTypeId::SolarScorcher) {
@@ -6237,7 +6270,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     Object* sourceItem = ammo;
     bool isReloaded = false;
-    int rc = itemRemoveQuietly(_inven_dude, weapon, 1);
+    int rc = weaponIsInInventory ? itemRemoveQuietly(weaponOwner, weapon, 1) : 0;
     std::vector<Object*> unloadedAmmo;
     if (replaceAmmo) {
         Object* oldAmmo;
@@ -6252,7 +6285,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
             if (ammoItemSlot != nullptr) {
                 *ammoItemSlot = nullptr;
             } else {
-                itemRemoveQuietly(_inven_dude, sourceItem, 1);
+                itemRemoveQuietly(ammoOwner, sourceItem, 1);
             }
 
             objectDestroy(sourceItem);
@@ -6270,12 +6303,12 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         }
     }
 
-    if (rc != -1) {
-        itemAdd(_inven_dude, weapon, 1);
+    if (weaponIsInInventory && rc != -1) {
+        itemAdd(weaponOwner, weapon, 1);
     }
 
     for (Object* oldAmmo : unloadedAmmo) {
-        itemAdd(_inven_dude, oldAmmo, 1);
+        itemAdd(weaponOwner, oldAmmo, 1);
     }
 
     if (!isReloaded) {
