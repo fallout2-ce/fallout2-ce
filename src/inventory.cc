@@ -4492,7 +4492,14 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int actionMenuItemsLength;
     const GameMouseActionMenuItem* actionMenuItems;
     if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
-        if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL
+        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
+            && _gIsSteal
+            && objectGetOwner(item) != gDude
+            && !isPartyMemberLootInventory) {
+            // Don't allow unloading weapons while stealing from a live critter.
+            actionMenuItemsLength = 2;
+            actionMenuItems = _act_nothing;
+        } else if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL
             && objectGetOwner(item) != gDude
             && !isPartyMemberLootInventory) {
             actionMenuItemsLength = 3;
