@@ -1727,7 +1727,7 @@ int partyGetMaxWoundToHealByRest()
 // Both opcodes accept a PID or a legacy, case-insensitive NPC name.
 static Object* partyMemberFindNpc(int pid, const char* name, bool includePlayer)
 {
-    if (pid == 0 && (name == nullptr || name[0] == '\0')) {
+    if (pid == kPartyMemberLookupByName && (name == nullptr || name[0] == '\0')) {
         return nullptr;
     }
 
@@ -1736,7 +1736,7 @@ static Object* partyMemberFindNpc(int pid, const char* name, bool includePlayer)
         if (object == nullptr) {
             continue;
         }
-        if (pid != 0) {
+        if (pid != kPartyMemberLookupByName) {
             if (ProtoId(object) == ProtoId(pid)) {
                 return object;
             }

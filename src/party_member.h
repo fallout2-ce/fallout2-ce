@@ -13,6 +13,8 @@
 
 namespace fallout {
 
+constexpr int kPartyMemberLookupByName = 0;
+
 extern int gPartyMemberDescriptionsLength;
 extern std::vector<ProtoId> gPartyMemberProtoIds;
 

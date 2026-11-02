@@ -1746,7 +1746,7 @@ static void op_get_npc_level(Program* program)
     ProgramValue value = programStackPopValue(program);
     int level = -1;
     if (value.isString()) {
-        level = partyMemberGetNpcLevel(0, programGetString(program, value.opcode, value.integerValue));
+        level = partyMemberGetNpcLevel(kPartyMemberLookupByName, programGetString(program, value.opcode, value.integerValue));
     } else if (value.isInt()) {
         level = partyMemberGetNpcLevel(value.integerValue);
     }
@@ -1758,7 +1758,7 @@ static void op_inc_npc_level(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
     if (value.isString()) {
-        partyMemberIncNpcLevel(0, programGetString(program, value.opcode, value.integerValue));
+        partyMemberIncNpcLevel(kPartyMemberLookupByName, programGetString(program, value.opcode, value.integerValue));
     } else if (value.isInt()) {
         partyMemberIncNpcLevel(value.integerValue);
     }
