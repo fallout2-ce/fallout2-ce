@@ -797,6 +797,21 @@ int interfaceLoad(File* stream)
     intface_init_items();
     interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 
+    // The loaded dude FID can retain a weapon animation from before equipment was restored.
+    Object* activeItem;
+    if (interfaceGetActiveItem(&activeItem) == 0) {
+        WeaponAnimation weaponAnimation = WeaponAnimation::None;
+        if (itemGetType(activeItem) == ITEM_TYPE_WEAPON) {
+            weaponAnimation = weaponGetAnimationCode(activeItem);
+        }
+
+        const FrmId dudeFrmId = gDude;
+        if (dudeFrmId.weaponAnimation() != weaponAnimation) {
+            debugPrint("\nLOADSAVE: Detected dude weapon animation mismatch! Correcting weapon animation from %d to %d ...", static_cast<int>(dudeFrmId.weaponAnimation()), static_cast<int>(weaponAnimation));
+            objectSetFrmId(gDude, CritterFrmId(dudeFrmId.frameId<CritterFrameId>(), dudeFrmId.animationType(), weaponAnimation, dudeFrmId.rotation()), nullptr);
+        }
+    }
+
     if (interfaceBarEndButtonsIsVisible != gInterfaceBarEndButtonsIsVisible) {
         if (interfaceBarEndButtonsIsVisible) {
             interfaceBarEndButtonsShow(false);
