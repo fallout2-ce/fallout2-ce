@@ -407,7 +407,7 @@ static void renderPartySlots();
 static void createPartySlotButtons();
 static void handlePartySlotPickup(InvenSlot slot);
 static bool tryEquipPartyItem(Object* item, bool fromLeftPane);
-static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex, bool fromLeftPane);
+static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex);
 static bool tryUnequipPartyItem(InvenSlot slot);
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item);
 static FrmId buildPartyDisplayFrmId();
@@ -1441,7 +1441,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
     return rc == 0;
 }
 
-static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex, bool fromLeftPane)
+static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex)
 {
     if (!hasPartySlots() || !partySlotFrmImage.isLocked() || ammo == nullptr || itemGetType(ammo) != ITEM_TYPE_AMMO) {
         return false;
@@ -1457,8 +1457,8 @@ static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex, bool
         return false;
     }
 
-    Object* ammoOwner = fromLeftPane ? _stack[_curr_stack] : _target_stack[_target_curr_stack];
-    int keyCode = (fromLeftPane ? 1000 : 2000) + slotIndex;
+    Object* ammoOwner = _target_stack[_target_curr_stack];
+    int keyCode = 2000 + slotIndex;
     return _drop_ammo_into_weapon(weapon, ammo, nullptr, quantity, keyCode, ammoOwner, partyBaseTarget, false) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
@@ -5293,9 +5293,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
 
     if (isPlanting) {
-        if (!immediate && tryReloadPartyWeapon(item, quantity, slotIndex, true)) {
-            result = INVENTORY_MOVE_RESULT_SUCCESS;
-        } else if (!immediate && tryEquipPartyItem(item, true)) {
+        if (!immediate && tryEquipPartyItem(item, true)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
         } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
             int quantityToMove = quantity;
@@ -5324,7 +5322,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
         }
     } else {
-        if (!immediate && tryReloadPartyWeapon(item, quantity, slotIndex, false)) {
+        if (!immediate && tryReloadPartyWeapon(item, quantity, slotIndex)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
         } else if (!immediate && tryEquipPartyItem(item, false)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
