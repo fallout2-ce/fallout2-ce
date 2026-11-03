@@ -476,6 +476,34 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
     return 0;
 }
 
+// Stores original calculated ISO borders:
+// 0 -> min_x, 1 -> min_y, 2 -> max_x, 3 -> max_y
+static int tileIsoBorders[4];
+
+// tileSetCenter might change calculated borders set by tileSetBorder
+static bool tileIsoBordersAdjusted = false;
+
+// Checks if tile_x, tile_y are inside ISO borders
+static bool tileIsInsideIsoBorders(int tile_x, int tile_y)
+{
+    if (!gTileBorderInitialized) return false;
+
+    return (tile_x >= tileIsoBorders[0] && tile_x <= tileIsoBorders[2] && tile_y >= tileIsoBorders[1] && tile_y <= tileIsoBorders[3]);
+}
+
+// Restores initial borders
+static void tileResetIsoBorders()
+{
+    if (!gTileBorderInitialized) return;
+
+    gTileBorderMinX = tileIsoBorders[0];
+    gTileBorderMinY = tileIsoBorders[1];
+    gTileBorderMaxX = tileIsoBorders[2];
+    gTileBorderMaxY = tileIsoBorders[3];
+
+    tileIsoBordersAdjusted = false;
+}
+
 // 0x4B11E4 tile_set_border
 static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, int hexGridHeight)
 {
@@ -498,6 +526,12 @@ static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, i
     if ((gTileBorderMaxX & 1) == 0) {
         gTileBorderMinX--;
     }
+
+    // Store original ISO borders
+    tileIsoBorders[0] = gTileBorderMinX;
+    tileIsoBorders[1] = gTileBorderMinY;
+    tileIsoBorders[2] = gTileBorderMaxX;
+    tileIsoBorders[3] = gTileBorderMaxY;
 
     gTileBorderInitialized = true;
 }
@@ -639,6 +673,22 @@ int tileSetCenter(int tile, int flags)
     if (_tile_y & 1) {
         _square_offy -= 12;
         _square_offx -= 16;
+    }
+
+    // Restores adjusted borders
+    if (tileIsoBordersAdjusted && tileIsInsideIsoBorders(tile_x, tile_y)) {
+        tileResetIsoBorders();
+    }
+
+    // The only way a code below should be able to execute for tile outside `tileSetBorder`
+    // is if gTileScrollBlocking is disabled (which is done by opMoveTo when setting location).
+    if (!tileIsInsideIsoBorders(tile_x, tile_y)) {
+        if (tile_x < gTileBorderMinX) gTileBorderMinX = tile_x - 1;
+        if (tile_y < gTileBorderMinY) gTileBorderMinY = tile_y - 1;
+        if (tile_x > gTileBorderMaxX) gTileBorderMaxX = tile_x + 1;
+        if (tile_y > gTileBorderMaxY) gTileBorderMaxY = tile_y + 1;
+
+        tileIsoBordersAdjusted = true;
     }
 
     gCenterTile = tile;
