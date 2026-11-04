@@ -298,6 +298,10 @@ enum CritterManeuver : int {
     CRITTER_MANEUVER_ENGAGING = 0x01,
     CRITTER_MANEUVER_DISENGAGING = 0x02,
     CRITTER_MANUEVER_FLEEING = 0x04,
+
+    // SFALL: Set when the critter runs away from a target it can't possibly
+    // hit; its next turn looks for a target again instead of fleeing on.
+    CRITTER_MANEUVER_RETARGET = 0x08,
 };
 
 constexpr inline CritterManeuver operator&(CritterManeuver lhs, CritterManeuver rhs)
@@ -353,6 +357,11 @@ enum Dam : int {
     DAM_CRIP_RANDOM = 0x200000,
     DAM_BACKWASH = 0x400000,
     DAM_PERFORM_REVERSE = 0x800000,
+
+    // SFALL: A critter knocked out in combat woke up outside its turn: it's
+    // still prone until its turn (or the end of combat). Internal, cleared
+    // at its turn and at the end of combat (sfall's value).
+    DAM_KNOCKOUT_WOKEN = 0x40000000,
     DAM_CRIP_LEG_ANY = DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_ANY = DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP = DAM_CRIP_LEG_ANY | DAM_CRIP_ARM_ANY | DAM_BLIND,

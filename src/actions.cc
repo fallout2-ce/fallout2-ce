@@ -488,7 +488,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
             animationRegisterSetFrmId(weapon, MiscFrameId::RocketExplosion, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
 
-            sfx_name = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, defender);
+            sfx_name = sfxBuildWeaponName(WeaponSoundEffect::Hit, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, defender);
             animationRegisterPlaySoundEffect(weapon, sfx_name, 0);
 
             animationRegisterHideObjectForced(weapon);
@@ -660,7 +660,7 @@ int _action_melee(Attack* attack, AnimationType anim)
     animationRegisterRotateToTile(attack->attacker, attack->defender->tile);
 
     if (anim != ANIM_THROW_PUNCH && anim != ANIM_KICK_LEG) {
-        sfx_name = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_ATTACK, attack->weapon, attack->hitMode, attack->defender);
+        sfx_name = sfxBuildWeaponName(WeaponSoundEffect::Attack, attack->weapon, attack->hitMode, attack->defender);
     } else {
         sfx_name = sfxBuildCharName(attack->attacker, anim, CharacterSoundEffect::Unused);
     }
@@ -672,7 +672,7 @@ int _action_melee(Attack* attack, AnimationType anim)
     if (attack->attackerFlags & 0x0300) {
         animationRegisterPlaySoundEffect(attack->attacker, sfx_name_temp, 0);
         if (anim != ANIM_THROW_PUNCH && anim != ANIM_KICK_LEG) {
-            sfx_name = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, attack->weapon, attack->hitMode, attack->defender);
+            sfx_name = sfxBuildWeaponName(WeaponSoundEffect::Hit, attack->weapon, attack->hitMode, attack->defender);
         } else {
             sfx_name = sfxBuildCharName(attack->attacker, anim, CharacterSoundEffect::Contact);
         }
@@ -775,7 +775,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
     const char* sfx;
     if ((FrmId(attack->attacker).weaponAnimation()) != WeaponAnimation::None) {
-        sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_ATTACK, weapon, attack->hitMode, attack->defender);
+        sfx = sfxBuildWeaponName(WeaponSoundEffect::Attack, weapon, attack->hitMode, attack->defender);
     } else {
         sfx = sfxBuildCharName(attack->attacker, anim, CharacterSoundEffect::Unused);
     }
@@ -844,7 +844,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                 animationRegisterUnsetFlag(projectile, OBJECT_HIDDEN, delay);
 
-                const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_AMMO_FLYING, weapon, attack->hitMode, attack->defender);
+                const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::AmmoFlying, weapon, attack->hitMode, attack->defender);
                 animationRegisterPlaySoundEffect(projectile, sfx, 0);
 
                 int explosionCenterTile;
@@ -890,7 +890,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                         animationRegisterSetFrmId(projectile, explosionFrmId, -1);
 
-                        const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, attack->hitMode, attack->defender);
+                        const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Hit, weapon, attack->hitMode, attack->defender);
                         animationRegisterPlaySoundEffect(projectile, sfx, 0);
 
                         // SFALL
@@ -941,7 +941,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                 }
 
                 if (!l56) {
-                    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, attack->hitMode, attack->defender);
+                    const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Hit, weapon, attack->hitMode, attack->defender);
                     animationRegisterPlaySoundEffect(weapon, sfx, delay);
                 }
 

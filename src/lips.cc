@@ -36,7 +36,7 @@ bool gLipsPhonemeChanged = true;
 LipsData gLipsData = {
     2,
     22528,
-    0,
+    LipsFlags::None,
     nullptr,
     -1,
     nullptr,
@@ -99,12 +99,12 @@ void lipsTicker()
 
     if (gLipsData.sound == nullptr || gLipsData.markers == nullptr
         || markerIndex < 0 || markerIndex >= gLipsData.markerCount) {
-        gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+        gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
         gLipsCurrentPhoneme = 0;
         markerIndex = 0;
     }
 
-    if ((gLipsData.flags & LIPS_FLAG_PLAYING) != 0) {
+    if ((gLipsData.flags & LipsFlags::Playing) != LipsFlags::None) {
         int audioPosition = 0;
         _soundGetPosition(gLipsData.sound, &audioPosition);
 
@@ -117,11 +117,11 @@ void lipsTicker()
                 markerIndex = 0;
                 gLipsCurrentPhoneme = lipsGetPhoneme(0);
 
-                if ((gLipsData.flags & LIPS_FLAG_LOOPING) == 0) {
+                if ((gLipsData.flags & LipsFlags::Looping) == LipsFlags::None) {
                     _head_marker_current = 0;
                     soundStop(gLipsData.sound);
                     markerIndex = _head_marker_current;
-                    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+                    gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
                 }
 
                 break;
@@ -145,11 +145,11 @@ void lipsTicker()
                 markerIndex = 0;
                 gLipsCurrentPhoneme = lipsGetPhoneme(0);
 
-                if ((gLipsData.flags & LIPS_FLAG_LOOPING) == 0) {
+                if ((gLipsData.flags & LipsFlags::Looping) == LipsFlags::None) {
                     _head_marker_current = 0;
                     soundStop(gLipsData.sound);
                     markerIndex = _head_marker_current;
-                    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+                    gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
                 }
             }
         }
@@ -168,7 +168,7 @@ void lipsTicker()
 // 0x47AC2C lips_play_speech
 int lipsStart()
 {
-    gLipsData.flags &= ~LIPS_FLAG_PLAYING;
+    gLipsData.flags &= ~LipsFlags::Playing;
     _head_marker_current = 0;
 
     if (gLipsData.sound == nullptr || gLipsData.markers == nullptr || gLipsData.markerCount <= 0) {
@@ -198,7 +198,7 @@ int lipsStart()
         return -1;
     }
 
-    gLipsData.flags |= LIPS_FLAG_PLAYING;
+    gLipsData.flags |= LipsFlags::Playing;
 
     int speechVolume = speechGetVolume();
     soundSetVolume(gLipsData.sound, (int)(speechVolume * 0.69));
@@ -210,7 +210,7 @@ int lipsStart()
         _head_marker_current = 0;
 
         soundStop(gLipsData.sound);
-        gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+        gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
         return -1;
     }
 
@@ -227,7 +227,7 @@ static int lipsReadV1(LipsData* lipsData, File* stream)
 
     if (fileReadInt32(stream, &(lipsData->version)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_4)) == -1) return -1;
-    if (fileReadInt32(stream, &(lipsData->flags)) == -1) return -1;
+    if (fileReadUInt32Enum<LipsFlags>(stream, &(lipsData->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(sound)) == -1) return -1;
     if (fileReadInt32(stream, &(lipsData->field_10)) == -1) return -1;
     if (fileReadInt32(stream, &(field_14)) == -1) return -1;
@@ -326,7 +326,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
             debugPrint("\nLoading current save-file version (2)");
 
             if (fileReadInt32(stream, &(gLipsData.field_4)) == -1) return -1;
-            if (fileReadInt32(stream, &(gLipsData.flags)) == -1) return -1;
+            if (fileReadUInt32Enum<LipsFlags>(stream, &(gLipsData.flags)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.field_10)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.field_1C)) == -1) return -1;
             if (fileReadInt32(stream, &(gLipsData.phonemeCount)) == -1) return -1;
@@ -515,7 +515,7 @@ static int _lips_make_speech()
 int lipsFree()
 {
     _head_marker_current = 0;
-    gLipsData.flags &= ~(LIPS_FLAG_LOOPING | LIPS_FLAG_PLAYING);
+    gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
     gLipsCurrentPhoneme = 0;
     lipsPreviousPhoneme = 0;
     gLipsPhonemeChanged = true;
@@ -530,7 +530,7 @@ int lipsFree()
 
         soundStop(gLipsData.sound);
 
-        gLipsData.flags &= ~0x03;
+        gLipsData.flags &= ~(LipsFlags::Looping | LipsFlags::Playing);
 
         soundDelete(gLipsData.sound);
 

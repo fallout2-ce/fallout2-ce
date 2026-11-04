@@ -591,8 +591,24 @@ static int objectLoadAllInternal(File* stream)
 
             _obj_insert(objectListNode);
 
-            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) && ProtoId(objectListNode->obj).objectType() == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
-                objectListNode->obj->flags &= ~OBJECT_NO_REMOVE;
+            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) != 0) {
+                if (ProtoId(objectListNode->obj).objectType() == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
+                    objectListNode->obj->flags &= ~OBJECT_NO_REMOVE;
+                }
+            } else if (ProtoId(objectListNode->obj).objectType() == OBJ_TYPE_CRITTER) {
+                // SFALL: Fix for "NPC turns into a container" bug: a critter
+                // out of combat loses the turn it would lose and the woken
+                // mark, and stands up if it's knocked down (a knocked out one
+                // has its wake up event).
+                CritterCombatData* combatData = &(objectListNode->obj->data.critter.combat);
+                if ((combatData->maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE
+                    && (combatData->results & DAM_DEAD) == DAM_NONE) {
+                    combatData->results &= ~(DAM_KNOCKOUT_WOKEN | DAM_LOSE_TURN);
+                    if ((combatData->results & DAM_KNOCKED_OUT) == DAM_NONE
+                        && (combatData->results & DAM_KNOCKED_DOWN) != DAM_NONE) {
+                        knockoutEventProcess(objectListNode->obj, nullptr);
+                    }
+                }
             }
 
             Inventory* inventory = &(objectListNode->obj->data.inventory);

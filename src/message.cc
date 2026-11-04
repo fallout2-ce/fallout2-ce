@@ -47,6 +47,7 @@ static bool _message_find(MessageList* msg, int num, int* out_index);
 static bool _message_add(MessageList* msg, MessageListItem* new_entry);
 static bool _message_parse_number(int* out_num, const char* str);
 static int _message_load_field(File* file, char* str);
+static bool messageListLoadFile(MessageList* messageList, File* stream, const char* path);
 
 static MessageList* messageListRepositoryLoad(const char* path);
 
@@ -214,17 +215,6 @@ bool messageListFree(MessageList* messageList)
 // 0x484AA4 message_load
 bool messageListLoad(MessageList* messageList, const char* path)
 {
-    char localized_path[COMPAT_MAX_PATH];
-    File* file_ptr;
-    char num[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
-    char audio[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
-    char text[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
-    int rc;
-    bool success;
-    MessageListItem entry;
-
-    success = false;
-
     if (messageList == nullptr) {
         return false;
     }
@@ -233,21 +223,66 @@ bool messageListLoad(MessageList* messageList, const char* path)
         return false;
     }
 
+    char localized_path[COMPAT_MAX_PATH];
     snprintf(localized_path, sizeof(localized_path), "%s\\%s\\%s", "text", settings.system.language.c_str(), path);
 
-    file_ptr = fileOpen(localized_path, "rt");
+    File* file_ptr = fileOpen(localized_path, "rt");
+    bool isEnglish = compat_stricmp(settings.system.language.c_str(), ENGLISH) == 0;
 
     // SFALL: Fallback to english if requested localization does not exist.
     if (file_ptr == nullptr) {
-        if (compat_stricmp(settings.system.language.c_str(), ENGLISH) != 0) {
+        if (!isEnglish) {
             snprintf(localized_path, sizeof(localized_path), "%s\\%s\\%s", "text", ENGLISH, path);
             file_ptr = fileOpen(localized_path, "rt");
+            isEnglish = true;
         }
     }
 
     if (file_ptr == nullptr) {
         return false;
     }
+
+    if (!messageListLoadFile(messageList, file_ptr, localized_path)) {
+        return false;
+    }
+
+    // SFALL: Use English for missing message IDs, preserving localized entries
+    // (including empty text). Merge before callers apply text filters.
+    if (!isEnglish) {
+        snprintf(localized_path, sizeof(localized_path), "%s\\%s\\%s", "text", ENGLISH, path);
+        file_ptr = fileOpen(localized_path, "rt");
+        if (file_ptr != nullptr) {
+            MessageList fallback;
+            messageListInit(&fallback);
+            bool success = true;
+            if (messageListLoadFile(&fallback, file_ptr, localized_path)) {
+                for (int index = 0; index < fallback.entries_num; index++) {
+                    MessageListItem* entry = &fallback.entries[index];
+                    int localizedIndex;
+                    if (!_message_find(messageList, entry->num, &localizedIndex)
+                        && !_message_add(messageList, entry)) {
+                        success = false;
+                        break;
+                    }
+                }
+            }
+            messageListFree(&fallback);
+            return success;
+        }
+    }
+
+    return true;
+}
+
+// Takes ownership of the open stream, including on parse errors.
+static bool messageListLoadFile(MessageList* messageList, File* file_ptr, const char* localized_path)
+{
+    char num[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
+    char audio[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
+    char text[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
+    int rc;
+    bool success = false;
+    MessageListItem entry;
 
     entry.num = 0;
     entry.audio = audio;

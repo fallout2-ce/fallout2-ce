@@ -196,7 +196,7 @@ namespace {
                 int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos,
                     btnId::scrollDown, -1, btnId::scrollDown, btnId::scrollDownArrow, frms.scrollDownNormal, frms.scrollDownPressed);
 
-                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, btnId::fileList, nullptr, nullptr, nullptr, 0);
+                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, btnId::fileList, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
 
                 if (title != nullptr) {
                     fontDrawText(ctx.windowBuffer + bgWidth * file::title.y + file::title.x, title, bgWidth, bgWidth, COLOR_DARK_YELLOW);
@@ -483,7 +483,7 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return rc;
 }
 
-const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, int flags)
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)
 {
     using namespace fallout::dbox;
 

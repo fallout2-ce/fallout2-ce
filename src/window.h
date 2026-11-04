@@ -4,13 +4,14 @@
 #include "color.h"
 #include "geometry.h"
 #include "interpreter.h"
+#include "mouse.h"
+#include "movie.h"
 #include "region.h"
 #include "window_defs.h"
+#include "window_manager.h"
 
 namespace fallout {
 
-typedef void (*WINDOWDRAWINGPROC)(unsigned char* src, int src_pitch, int _, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
-typedef void WindowDrawingProc2(unsigned char* buf, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, unsigned char a10);
 typedef bool(WindowInputHandler)(int key);
 typedef void(WindowDeleteCallback)(int windowIndex, const char* windowName);
 typedef void(DisplayInWindowCallback)(int windowIndex, const char* windowName, unsigned char* data, int width, int height);
@@ -42,8 +43,8 @@ Color scriptWindowGetTextColor();
 int scriptWindowSetTextColor(float r, float g, float b);
 Color scriptWindowGetHighlightColor();
 int scriptWindowSetHighlightColor(float r, float g, float b);
-bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
-bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
+bool _checkRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent);
+bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, MouseButtonEvent mouseEvent);
 bool scriptWindowRefreshRegions();
 bool _checkAllRegions();
 void scriptWindowAddInputFunc(WindowInputHandler* handler);
@@ -69,7 +70,7 @@ bool scriptWindowDraw();
 bool scriptWindowDelete(const char* windowName);
 int scriptWindowResize(const char* windowName, int x, int y, int width, int height);
 int scriptWindowScale(const char* windowName, int x, int y, int width, int height);
-int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, int flags);
+int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, WindowFlags flags);
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
@@ -96,11 +97,11 @@ bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int
 int windowGetXres();
 int windowGetYres();
 void _removeProgramReferences_3(Program* program);
-void windowInit(int resolution, int flags);
+void windowInit(int resolution, WindowManagerInitFlags flags);
 void windowClose();
 bool scriptWindowDeleteButton(const char* buttonName);
 bool scriptWindowSetButtonFlag(const char* buttonName, int value);
-bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, int flags);
+bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, ButtonFlags flags);
 bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, char* normalFileName, char* hoverFileName);
 bool scriptWindowAddButtonProc(const char* buttonName, Program* program, int mouseEnterProc, int mouseExitProc, int mouseDownProc, int mouseUpProc);
 bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, int rightMouseDownProc, int rightMouseUpProc);
@@ -121,7 +122,7 @@ bool scriptWindowAddRegionName(const char* regionName);
 bool scriptWindowDeleteRegion(const char* regionName);
 void scriptWindowUpdateAll();
 int scriptWindowMoviePlaying();
-bool scriptWindowSetMovieFlags(int flags);
+bool scriptWindowSetMovieFlags(MovieFlags flags);
 bool scriptWindowPlayMovie(char* filePath);
 bool scriptWindowPlayMovieRect(char* filePath, int x, int y, int w, int h);
 void scriptWindowStopMovie();
@@ -130,8 +131,8 @@ void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned
 void _fillBuf3x3(unsigned char* src, int srcWidth, int srcHeight, unsigned char* dest, int destWidth, int destHeight);
 
 bool scriptWindowShowNamed(const char* name);
-bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled);
-bool scriptWindowSetNamedFlag(const char* name, int bitFlag, bool enabled);
+bool scriptWindowSetFlag(int windowId, WindowFlags bitFlag, bool enabled);
+bool scriptWindowSetNamedFlag(const char* name, WindowFlags bitFlag, bool enabled);
 
 } // namespace fallout
 

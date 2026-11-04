@@ -8,6 +8,7 @@
 #include "platform_compat.h"
 #include "svga.h"
 #include "text_font.h"
+#include "window.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -354,7 +355,7 @@ int _abortReply(int a1)
     result = 1;
     if (a1) {
         if (_replyWin != -1) {
-            if (!(mouseGetEvent() & 0x10)) {
+            if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
                 result = 0;
             } else {
                 mouseGetPosition(&x, &y);

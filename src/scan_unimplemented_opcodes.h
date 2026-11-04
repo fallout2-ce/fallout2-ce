@@ -23,6 +23,7 @@ std::map<fallout::opcode_t, std::set<std::string>> unknown_opcodes;
 std::map<std::string, std::set<std::string>> sus_strings;
 std::map<int, std::set<std::string>> unknown_hooks;
 std::map<fallout::opcode_t, std::map<std::string, std::set<std::string>>> offset_requests;
+std::map<std::string, std::set<std::string>> scan_errors;
 
 int checked_files = 0;
 
@@ -494,6 +495,7 @@ void check_int_data(
         const size_t opcodePos = i;
         auto opcode = fallout::stackReadInt16(data, i);
         if (!((opcode >> 8) & 0x80)) {
+            scan_errors[fName].insert("ERROR: Wrong opcode " + toHexString(opcode) + " at pos=" + toHexString(i));
             printf("ERROR: Wrong opcode %x in file %s at pos=0x%lx\n", opcode, fName.c_str(), i);
             return;
         };
@@ -513,8 +515,9 @@ void check_int_data(
                     unknown_hooks[hookId].insert(fName);
                 }
             } else {
+                scan_errors[fName].insert("ERROR: Unknown usage of register_hook at pos=" + toHexString(i));
                 printf("ERROR: Unknown usage of register_hook in file %s at pos=0x%lx\n", fName.c_str(), i);
-                exit(1);
+                return;
             }
         } else if (opcodeIndex == 0x262 || opcodeIndex == 0x27d) { // register_hook_proc / register_hook_proc_spec
             if (
@@ -524,8 +527,9 @@ void check_int_data(
                     unknown_hooks[hookId].insert(fName);
                 }
             } else {
+                scan_errors[fName].insert("ERROR: Unknown usage of register_hook_proc at pos=" + toHexString(i));
                 printf("ERROR: Unknown usage of register_hook_proc in file %s at pos=0x%lx\n", fName.c_str(), i);
-                exit(1);
+                return;
             }
         }
 
@@ -615,8 +619,9 @@ void check_file(std::string fName)
 {
     fallout::File* stream = fallout::fileOpen(fName.c_str(), "rb");
     if (stream == NULL) {
+        scan_errors[fName].insert("ERROR: Could not open script");
         printf("Error opening %s\n", fName.c_str());
-        exit(1);
+        return;
     }
 
     check_file_stream(stream, fName);
@@ -656,6 +661,7 @@ void check_database(std::string dbFileName)
             // std::cout << "    - This is script, checking..." << std::endl;
             fallout::DFile* dfile = fallout::dfileOpen(db, db->entries[i].path, "rb");
             if (dfile == NULL) {
+                scan_errors[dbFileName + " -> " + entryPath].insert("ERROR: Could not open script");
                 std::cout << "    - Error opening script file, skipping" << std::endl;
                 continue;
             }
@@ -724,6 +730,7 @@ void checkScriptsOpcodes()
     sus_strings.clear();
     unknown_hooks.clear();
     offset_requests.clear();
+    scan_errors.clear();
 
     checked_files = 0;
 
@@ -775,10 +782,19 @@ void checkScriptsOpcodes()
         }
     }
 
-    if (unknown_opcodes.size() == 0 && sus_strings.size() == 0 && unknown_hooks.size() == 0 && offset_requests.size() == 0) {
+    if (unknown_opcodes.size() == 0 && sus_strings.size() == 0 && unknown_hooks.size() == 0 && offset_requests.size() == 0 && scan_errors.empty()) {
         printf("Everything is ok, all opcodes are known and no sus strings. Checked %i files\n", checked_files);
     } else {
         printf("\n\nChecked %i files and found those:\n", checked_files);
+        if (!scan_errors.empty()) {
+            printf("Incomplete scans: %zu files\n", scan_errors.size());
+            for (const auto& [fName, errors] : scan_errors) {
+                printf("%s:\n", fName.c_str());
+                for (const auto& error : errors) {
+                    printf("  - %s\n", error.c_str());
+                }
+            }
+        }
         // TODO: Sort
         for (auto iter : unknown_opcodes) {
             auto& opcode = iter.first;
@@ -818,7 +834,7 @@ void checkScriptsOpcodes()
 
         printf("\nSame but per-file:\n");
         // TODO: Sort
-        std::map<std::string, std::set<std::string>> files;
+        std::map<std::string, std::set<std::string>> files = scan_errors;
         for (auto iter : unknown_opcodes) {
             auto& opcode = iter.first;
             for (auto fName : iter.second) {

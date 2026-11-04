@@ -229,7 +229,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
         KEY_ARROW_UP,
         -1,
         "\x18",
-        0);
+        BUTTON_FLAG_NONE);
 
     _win_register_text_button(win,
         windowWidth - 25,
@@ -239,7 +239,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
         KEY_ARROW_DOWN,
         -1,
         "\x19",
-        0);
+        BUTTON_FLAG_NONE);
 
     _win_register_text_button(win,
         windowWidth / 2 - 32,
@@ -249,7 +249,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
         -1,
         KEY_ESCAPE,
         "Done",
-        0);
+        BUTTON_FLAG_NONE);
 
     int scrollbarX = windowWidth - 21;
     int scrollbarY = listViewY + fontGetLineHeight() + 7;
@@ -275,7 +275,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
         nullptr,
         nullptr,
         nullptr,
-        0);
+        BUTTON_FLAG_NONE);
 
     bufferDrawRectShadowed(windowBuffer,
         windowWidth,
@@ -309,7 +309,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
             nullptr,
             nullptr,
             nullptr,
-            0);
+            BUTTON_FLAG_NONE);
     }
 
     buttonCreate(win,
@@ -600,7 +600,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
         -1,
         KEY_RETURN,
         "Done",
-        0);
+        BUTTON_FLAG_NONE);
 
     _win_register_text_button(win,
         windowWidth / 2 + 8,
@@ -610,7 +610,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
         -1,
         KEY_ESCAPE,
         "Cancel",
-        0);
+        BUTTON_FLAG_NONE);
 
     windowRefresh(win);
 
@@ -668,7 +668,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
         -1,
         'y',
         "Yes",
-        0);
+        BUTTON_FLAG_NONE);
     _win_register_text_button(win,
         width / 2 + 16,
         height - fontGetLineHeight() - 14,
@@ -677,7 +677,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
         -1,
         'n',
         "No",
-        0);
+        BUTTON_FLAG_NONE);
     windowRefresh(win);
 
     // NOTE: Original code is slightly different but does the same thing.
@@ -752,7 +752,7 @@ int _win_msg(const char* string, int x, int y, ColorWithFlags color)
         -1,
         KEY_ESCAPE,
         "Done",
-        0);
+        BUTTON_FLAG_NONE);
 
     windowRefresh(win);
 
@@ -874,7 +874,7 @@ int _win_debug(const char* string)
             -1,
             -1,
             "Close",
-            0);
+            BUTTON_FLAG_NONE);
         buttonSetMouseCallbacks(btn, nullptr, nullptr, nullptr, _win_debug_delete);
 
         buttonCreate(_wd,
@@ -1023,7 +1023,7 @@ int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, 
         nullptr,
         nullptr,
         nullptr,
-        0);
+        BUTTON_FLAG_NONE);
     if (btn == -1) {
         return -1;
     }
@@ -1285,7 +1285,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
         -1,
         KEY_RETURN,
         "Done",
-        0);
+        BUTTON_FLAG_NONE);
 
     _win_register_text_button(win,
         width / 2 + 16,
@@ -1295,7 +1295,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
         -1,
         KEY_ESCAPE,
         "Cancel",
-        0);
+        BUTTON_FLAG_NONE);
 
     char hint[80];
 
@@ -1414,9 +1414,9 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             }
         }
 
-        if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0
-            || ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0
-                && (mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == 0)) {
+        if ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None
+            || ((mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None
+                && (mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) == MouseButtonEvent::None)) {
             if (_mouse_click_in(rect->left, rect->top + 8, rect->right, rect->bottom - 9)) {
                 rc = focusedIndex;
             } else {
@@ -1805,7 +1805,7 @@ int win_timed_msg(const char* msg, ColorWithFlags color)
         nullptr,
         nullptr,
         nullptr,
-        0);
+        BUTTON_FLAG_NONE);
     buttonSetMouseCallbacks(btn, nullptr, nullptr, nullptr, tm_click_response);
 
     windowRefresh(win);

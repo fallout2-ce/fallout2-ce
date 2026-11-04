@@ -7,6 +7,7 @@
 #include "interpreter.h"
 #include "interpreter_extra.h"
 #include "queue.h"
+#include "random.h"
 #include "scripts.h"
 #include "skill_defs.h"
 #include "worldmap.h"
@@ -368,7 +369,7 @@ PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, P
 int scriptHooks_CalcApCost(Object* critter, HitMode hitMode, bool aiming, int actionPoints, Object* weapon);
 int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
-int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll);
+Roll scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, Roll roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType* anim);
 UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Skill skill);
 int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus);

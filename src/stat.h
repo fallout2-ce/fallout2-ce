@@ -5,6 +5,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
+#include "random.h"
 #include "stat_defs.h"
 
 namespace fallout {
@@ -48,7 +49,7 @@ int pcGetExperienceForLevel(int level);
 char* pcStatGetName(PcStat pcStat);
 char* pcStatGetDescription(PcStat pcStat);
 SkillDexFrmId statGetFrmId(Stat stat);
-int statRoll(Object* critter, Stat stat, int modifier, int* howMuch);
+Roll statRoll(Object* critter, Stat stat, int modifier, int* howMuch);
 int pcAddExperience(int xp, int* xpGained = nullptr);
 int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained = nullptr);
 int pcSetExperience(int xp);

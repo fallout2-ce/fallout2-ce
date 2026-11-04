@@ -91,7 +91,6 @@ static int _scr_header_load();
 static void scriptsCloseNearbyElevatorDoors();
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition);
 static int scriptWrite(Script* scr, File* stream);
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLength, File* stream);
 static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
@@ -576,11 +575,16 @@ int scriptsNewObjectId()
         }
     } while (ptr);
 
-    if (gObjectIdCounter >= 18000) {
-        debugPrint("\n    ERROR: new_obj_id() !!!! Picked PLAYER ID!!!!");
+    // SFALL: Skip party members' IDs ((pid & 0xFFFFFF) + 18000). The original
+    // only reports picking one; the new object could then share its ID with a
+    // party member, and items with IDs in that range don't stack.
+    if (gObjectIdCounter >= OBJECT_ID_PLAYER && gObjectIdCounter < OBJECT_ID_PARTY_MEMBER_END) {
+        gObjectIdCounter = OBJECT_ID_PARTY_MEMBER_END - 1;
+        return scriptsNewObjectId();
     }
 
-    gObjectIdCounter++;
+    // SFALL: The original increments the counter once more here, returning an
+    // ID that wasn't checked against the existing objects.
 
     return gObjectIdCounter;
 }
@@ -645,6 +649,19 @@ void scriptsSyncObjectId(Object* object)
     if (scriptGetScript(object->sid, &script) != -1) {
         script->ownerId = object->id;
     }
+}
+
+bool scriptIsSavable(const Script* script)
+{
+    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
+        return false;
+    }
+
+    if (script->owner != nullptr && !objectIsSavable(script->owner)) {
+        return false;
+    }
+
+    return true;
 }
 
 // 0x4A390C src_find_sid_from_program
@@ -2219,117 +2236,59 @@ static int scriptWrite(Script* scr, File* stream)
     return 0;
 }
 
-// 0x4A5704
-static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
-{
-    for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
-        Script* script = &(scriptExtent->scripts[index]);
-        if (scriptWrite(script, stream) != 0) {
-            return -1;
-        }
-    }
-
-    if (fileWriteInt32(stream, scriptExtent->length) != 0) {
-        return -1;
-    }
-
-    // NOTE: Original code writes `scriptExtent->next` pointer which is meaningless.
-    if (fileWriteInt32(stream, 0) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 // 0x4A5768
 int scriptSaveAll(File* stream)
 {
     for (ScriptType scriptType = SCRIPT_TYPE_FIRST; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
         ScriptList* scriptList = &(gScriptLists[scriptType]);
 
-        int scriptCount = scriptList->length * SCRIPT_LIST_EXTENT_SIZE;
-        if (scriptList->tail != nullptr) {
-            scriptCount += scriptList->tail->length - SCRIPT_LIST_EXTENT_SIZE;
-        }
+        std::vector<Script*> savableScripts;
 
         ScriptListExtent* scriptExtent = scriptList->head;
-        ScriptListExtent* lastScriptExtent = nullptr;
         while (scriptExtent != nullptr) {
             for (int index = 0; index < scriptExtent->length; index++) {
                 Script* script = &(scriptExtent->scripts[index]);
-
-                lastScriptExtent = scriptList->tail;
-                if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-                    scriptCount--;
-
-                    int backwardsIndex = lastScriptExtent->length - 1;
-                    if (lastScriptExtent == scriptExtent && backwardsIndex <= index) {
-                        break;
-                    }
-
-                    while (lastScriptExtent != scriptExtent || backwardsIndex > index) {
-                        Script* backwardsScript = &(lastScriptExtent->scripts[backwardsIndex]);
-                        if ((backwardsScript->flags & SCRIPT_FLAG_NO_SAVE) == SCRIPT_FLAG_NONE) {
-                            break;
-                        }
-
-                        backwardsIndex--;
-
-                        if (backwardsIndex < 0) {
-                            ScriptListExtent* previousScriptExtent = scriptList->head;
-                            while (previousScriptExtent->next != lastScriptExtent) {
-                                previousScriptExtent = previousScriptExtent->next;
-                            }
-
-                            lastScriptExtent = previousScriptExtent;
-                            backwardsIndex = lastScriptExtent->length - 1;
-                        }
-                    }
-
-                    if (lastScriptExtent != scriptExtent || backwardsIndex > index) {
-                        Script temp;
-                        memcpy(&temp, script, sizeof(Script));
-                        memcpy(script, &(lastScriptExtent->scripts[backwardsIndex]), sizeof(Script));
-                        memcpy(&(lastScriptExtent->scripts[backwardsIndex]), &temp, sizeof(Script));
-
-                        scriptCount++;
-                    }
+                if (scriptIsSavable(script)) {
+                    savableScripts.push_back(script);
                 }
             }
             scriptExtent = scriptExtent->next;
         }
 
+        int scriptCount = static_cast<int>(savableScripts.size());
         if (fileWriteInt32(stream, scriptCount) == -1) {
             return -1;
         }
 
-        if (scriptCount > 0) {
-            ScriptListExtent* scriptExtent = scriptList->head;
-            while (scriptExtent != lastScriptExtent) {
-                if (scriptListExtentWrite(scriptExtent, stream) == -1) {
+        int totalSaved = 0;
+        while (totalSaved < scriptCount) {
+            int remaining = scriptCount - totalSaved;
+            int currentExtentLength = (remaining > SCRIPT_LIST_EXTENT_SIZE) ? SCRIPT_LIST_EXTENT_SIZE : remaining;
+
+            // Write 16 scripts (SCRIPT_LIST_EXTENT_SIZE).
+            // If we ran out of valid scripts, we pad it with the last valid one
+            // (original code behavior when writing an incomplete tail extent).
+            for (int i = 0; i < SCRIPT_LIST_EXTENT_SIZE; i++) {
+                int scriptIndex = totalSaved + i;
+
+                if (scriptIndex >= scriptCount) {
+                    scriptIndex = scriptCount - 1;
+                }
+
+                if (scriptWrite(savableScripts[scriptIndex], stream) == -1) {
                     return -1;
                 }
-                scriptExtent = scriptExtent->next;
             }
 
-            if (lastScriptExtent != nullptr) {
-                int index;
-                for (index = 0; index < lastScriptExtent->length; index++) {
-                    Script* script = &(lastScriptExtent->scripts[index]);
-                    if ((script->flags & SCRIPT_FLAG_NO_SAVE) != SCRIPT_FLAG_NONE) {
-                        break;
-                    }
-                }
-
-                if (index > 0) {
-                    int length = lastScriptExtent->length;
-                    lastScriptExtent->length = index;
-                    if (scriptListExtentWrite(lastScriptExtent, stream) == -1) {
-                        return -1;
-                    }
-                    lastScriptExtent->length = length;
-                }
+            if (fileWriteInt32(stream, currentExtentLength) == -1) {
+                return -1;
             }
+
+            if (fileWriteInt32(stream, 0) == -1) {
+                return -1;
+            }
+
+            totalSaved += currentExtentLength;
         }
     }
 
@@ -2404,10 +2363,28 @@ static int scriptListExtentRead(ScriptListExtent* scriptExtent, int expectedLeng
     }
 
     if (scriptExtent->length != expectedLength) {
-        debugPrint("\nError loading scripts: invalid extent length %d (expected %d).\n",
-            scriptExtent->length,
-            expectedLength);
-        return -1;
+        // Recover the legacy writer's overlong final extent only when every
+        // surplus record explicitly carries NO_SAVE. Other corruption fails.
+        bool recoverable = expectedLength > 0
+            && scriptExtent->length > expectedLength
+            && scriptExtent->length <= SCRIPT_LIST_EXTENT_SIZE;
+        if (recoverable) {
+            for (int index = expectedLength; index < scriptExtent->length; index++) {
+                if ((scriptExtent->scripts[index].flags & SCRIPT_FLAG_NO_SAVE) == SCRIPT_FLAG_NONE) {
+                    recoverable = false;
+                    break;
+                }
+            }
+        }
+        if (!recoverable) {
+            debugPrint("\nError loading scripts: invalid extent length %d (expected %d).\n",
+                scriptExtent->length,
+                expectedLength);
+            return -1;
+        }
+        debugPrint("\nRecovered legacy script extent length %d -> %d (NO_SAVE records only).\n",
+            scriptExtent->length, expectedLength);
+        scriptExtent->length = expectedLength;
     }
 
     int next;
@@ -3253,7 +3230,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
             } else if (gameDialogWindowActive()) {
                 // Dialogue without a talking head, so just play the line
                 // without lip-sync instead of dropping it.
-                speechLoad(messageListItem.audio, GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
+                speechLoad(messageListItem.audio, GameSoundReadLimitMode::LimitAfter, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop);
             } else {
                 // Outside dialogue (float_msg barks, timed events...), so use
                 // the float channels and let lines from different speakers

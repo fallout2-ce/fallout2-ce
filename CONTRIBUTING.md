@@ -59,6 +59,22 @@ cmake --build out/build/linux-x64-debug --target fallout2-ce
 
 TODO: add Visual Studio build instructions. This will likely need a Visual Studio generator or preset plus the MSVC toolchain and Windows SDK.
 
+## Code formatting
+
+C++ files under `src/` use **clang-format 18** with the rules in `.clang-format`.
+Other major versions can produce different output with the same configuration.
+Both CI's format check and automatic formatting use the same Docker helper:
+
+```sh
+./fix_formatting.sh          # Format src/ in place
+./fix_formatting.sh --check  # Check formatting; fail on differences
+./fix_formatting.sh --version
+```
+
+Install and start Docker before running the helper (Docker Desktop on Windows,
+using Git Bash). It runs `silkeh/clang:18`, so no local LLVM installation is needed.
+The `skip-formatting` PR label keeps the CI check advisory.
+
 ## `.dat` CLI Tool
 
 There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files. It supports both Fallout 2 and Fallout 1 archives.
