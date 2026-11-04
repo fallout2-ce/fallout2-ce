@@ -934,6 +934,11 @@ void gameMouseRefresh()
             }
         }
 
+        // With Ctrl held the move stops at the marker, so only the marker shows AP.
+        if (landingTile != -1 && gameMouseLandingMarkerReservedActionPoints != -1) {
+            formattedActionPoints[0] = '\0';
+        }
+
         if (gameMouseRenderActionPoints(formattedActionPoints, color) == 0) {
             Rect tmp;
             objectGetRect(gGameMouseHexCursor, &tmp);
