@@ -51,6 +51,18 @@ procedure start begin
     call assertEquals("string_format7 hello world", string_format7("%s%s%s%s%s %s%s!", "H", "e", "l", "l", "o", "Wo","rld"), "Hello World!");
     call assertEquals("string_format7 auto hello world", string_format("%s%s%s%s%s %s%s!", "H", "e", "l", "l", "o", "Wo","rld"), "Hello World!");
 
+    call assertEquals("string_format escaped percent", string_format("100%% %s", "done"), "100% done");
+    call assertEquals("string_format width", string_format("%04d", 12), "0012");
+    call assertEquals("string_format precision", string_format("%.2f", 1.25), "1.25");
+    call assertEquals("string_format star width rejected", string_format("%*s", "text"), "Error");
+    call assertEquals("string_format star precision rejected", string_format("%.*s", "text"), "Error");
+    call assertEquals("string_format positional argument rejected", string_format("%2$s", "text"), "Error");
+    call assertEquals("string_format excessive width rejected", string_format("%999999999999999999999sX", "text"), "Error");
+    call assertEquals("string_format integer as float rejected", string_format("%f", 1), "Error");
+    call assertEquals("string_format float as integer rejected", string_format("%d", 1.25), "Error");
+    call assertEquals("string_format string as integer rejected", string_format("%d", "text"), "Error");
+    call assertEquals("string_format percent n stays numeric", string_format("%n", 42), "42");
+
     call assertEquals("formatted string length 1024", strlen(sprintf(REPEAT_1024, 1)), 1024);
 
     call assertEquals("formatted string length 5119", strlen(
