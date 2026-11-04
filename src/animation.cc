@@ -3069,7 +3069,7 @@ static void _object_anim_compact()
 }
 
 // Returns the AP a combat move keeps for an attack with the current weapon
-// mode while Ctrl is held, or -1 when Ctrl is up.
+// mode while Ctrl is held, or -1 when Ctrl is up or no attack is selected.
 int dudeMoveGetReservedActionPoints()
 {
     if (!gPressedPhysicalKeys[SDL_SCANCODE_RCTRL] && !gPressedPhysicalKeys[SDL_SCANCODE_LCTRL]) {
@@ -3078,7 +3078,9 @@ int dudeMoveGetReservedActionPoints()
 
     HitMode hitMode;
     bool aiming;
-    interfaceGetCurrentHitMode(&hitMode, &aiming);
+    if (interfaceGetCurrentHitMode(&hitMode, &aiming) != 0) {
+        return -1;
+    }
 
     return itemGetActionPointCost(gDude, hitMode, aiming);
 }
