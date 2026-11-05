@@ -1,6 +1,7 @@
 #ifndef GAME_MOUSE_H
 #define GAME_MOUSE_H
 
+#include "geometry.h"
 #include "mouse.h"
 #include "obj_types.h"
 
@@ -82,6 +83,7 @@ extern bool _gmouse_clicked_on_edge;
 
 extern Object* gGameMouseBouncingCursor;
 extern Object* gGameMouseHexCursor;
+extern Object* gGameMouseLandingMarker;
 
 int gameMouseInit();
 int gameMouseReset();
@@ -116,6 +118,7 @@ void gameMouseLoadItemHighlight();
 void _gmouse_remove_item_outline(Object* object);
 
 void gameMouseRefreshImmediately();
+void gameMouseRenderLandingMarkerLabel(unsigned char* buffer, int pitch, const Rect* rect);
 Object* gmouse_get_outlined_object();
 
 } // namespace fallout

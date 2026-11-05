@@ -5612,7 +5612,19 @@ int characterEditorGetPerkSelectionLevel()
         return currentLevel;
     }
 
-    return std::min(characterEditorOwedPerkLevels.front(), currentLevel);
+    int level = std::min(characterEditorOwedPerkLevels.front(), currentLevel);
+
+    // CE: A level that offers no perk at all would keep the perk owed for
+    // good, and every perk owed after it. No perk is available below level 3,
+    // so it happens with a perk every level (sfall's `set_perk_freq`), also
+    // with perks taken or stats too low. Such a perk is chosen at the next
+    // level that offers one, up to the current level.
+    Perk perks[PERK_COUNT];
+    while (level < currentLevel && perkGetAvailablePerks(gDude, level, perks) == 0) {
+        level++;
+    }
+
+    return level;
 }
 
 const std::vector<int>& characterEditorGetOwedPerkLevels()
