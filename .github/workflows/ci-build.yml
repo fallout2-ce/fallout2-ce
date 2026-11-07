@@ -247,6 +247,8 @@ jobs:
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp out/build/linux-${{ matrix.arch }}-release/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          # Strip debug information and symbols from the packaged executable.
+          objcopy --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
@@ -317,6 +319,12 @@ jobs:
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp build/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          # armhf is cross-compiled and needs the matching binutils tool.
+          objcopy_tool=objcopy
+          if [ "${{ matrix.arch }}" = "armhf" ]; then
+            objcopy_tool=arm-linux-gnueabihf-objcopy
+          fi
+          "$objcopy_tool" --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
