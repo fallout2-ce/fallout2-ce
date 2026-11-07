@@ -1957,9 +1957,7 @@ static bool _setup_inventory(int inventoryWindowType)
             InterfaceFrameId::DialogUpButtonDown);
         if (gInventoryScrollUpButton != -1) {
             buttonSetDisabledFrm(gInventoryScrollUpButton,
-                InterfaceFrameId::DialogUpButtonUp,
-                InterfaceFrameId::DialogUpButtonUp,
-                InterfaceFrameId::DialogUpButtonUp);
+                "di_upds.png", "di_upds.png", "di_upds.png");
         }
 
         // Right inventory up button.
@@ -1970,9 +1968,7 @@ static bool _setup_inventory(int inventoryWindowType)
             InterfaceFrameId::DialogUpButtonDown);
         if (gSecondaryInventoryScrollUpButton != -1) {
             buttonSetDisabledFrm(gSecondaryInventoryScrollUpButton,
-                InterfaceFrameId::DialogUpButtonUp,
-                InterfaceFrameId::DialogUpButtonUp,
-                InterfaceFrameId::DialogUpButtonUp);
+                "di_upds.png", "di_upds.png", "di_upds.png");
         }
     } else {
         int scrollUpX = isNormalWindow                          ? inventoryLayout.scrollButtonX
@@ -2018,9 +2014,7 @@ static bool _setup_inventory(int inventoryWindowType)
             InterfaceFrameId::DialogDownButtonDown);
         if (gInventoryScrollDownButton != -1) {
             buttonSetDisabledFrm(gInventoryScrollDownButton,
-                InterfaceFrameId::DialogDownButtonUp,
-                InterfaceFrameId::DialogDownButtonUp,
-                InterfaceFrameId::DialogDownButtonUp);
+                "di_dnds.png", "di_dnds.png", "di_dnds.png");
         }
 
         // Right inventory down button
@@ -2031,9 +2025,7 @@ static bool _setup_inventory(int inventoryWindowType)
             InterfaceFrameId::DialogDownButtonDown);
         if (gSecondaryInventoryScrollDownButton != -1) {
             buttonSetDisabledFrm(gSecondaryInventoryScrollDownButton,
-                InterfaceFrameId::DialogDownButtonUp,
-                InterfaceFrameId::DialogDownButtonUp,
-                InterfaceFrameId::DialogDownButtonUp);
+                "di_dnds.png", "di_dnds.png", "di_dnds.png");
         }
 
         // Invisible button representing left character.
