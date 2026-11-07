@@ -99,6 +99,10 @@ android {
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=c++_static'
+                // CI can optimize native code while keeping debug signing and app ID.
+                if (project.hasProperty('nativeBuildType')) {
+                    arguments "-DCMAKE_BUILD_TYPE=${project.property('nativeBuildType')}"
+                }
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
 
                 // TODO: Remove once format issues are resolved.

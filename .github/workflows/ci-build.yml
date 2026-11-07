@@ -97,7 +97,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: os/android/app/.cxx
-          key: android-cmake-v101
+          key: android-cmake-v102
 
       - name: Setup signing config
         if: env.KEYSTORE_FILE_BASE64 != '' && env.KEYSTORE_PROPERTIES_FILE_BASE64 != ''
@@ -112,7 +112,7 @@ jobs:
       - name: Build
         run: |
           cd os/android
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -PnativeBuildType=RelWithDebInfo
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
@@ -156,7 +156,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: ios-cmake-v101
+          key: ios-cmake-v102
 
       - name: Configure
         run: |
@@ -164,12 +164,12 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build --preset ios-debug
+          cmake --build --preset ios-release
 
       - name: Pack
         run: |
           cd out/build/ios
-          cpack -C Debug
+          cpack -C RelWithDebInfo
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
@@ -349,7 +349,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: macos-cmake-v101
+          key: macos-cmake-v102
 
       - name: Configure
         run: |
@@ -357,12 +357,12 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build --preset macos-debug
+          cmake --build --preset macos-release
 
       - name: Pack
         run: |
           cd out/build/macos
-          cpack -C Debug
+          cpack -C RelWithDebInfo
 
       - name: Upload
         uses: actions/upload-artifact@v4
