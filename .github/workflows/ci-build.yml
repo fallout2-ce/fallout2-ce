@@ -227,15 +227,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: linux-${{ matrix.arch }}-cmake-v101
+          key: linux-${{ matrix.arch }}-relwithdebinfo-cmake-v102
 
       - name: Configure
         run: |
-          cmake --preset linux-${{ matrix.arch }}-debug
+          cmake --preset linux-${{ matrix.arch }}-release
 
       - name: Build
         run: |
-          cmake --build --preset linux-${{ matrix.arch }}-debug
+          cmake --build --preset linux-${{ matrix.arch }}-release
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
@@ -246,7 +246,7 @@ jobs:
       - name: Package
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
-          cp out/build/linux-${{ matrix.arch }}-debug/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          cp out/build/linux-${{ matrix.arch }}-release/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
@@ -293,7 +293,7 @@ jobs:
         run: |
           cmake \
             -B build \
-            -D CMAKE_BUILD_TYPE=Debug \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo \
             -D FALLOUT_VENDORED=OFF \
             -D CMAKE_SYSTEM_PROCESSOR=arm \
             -D CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
@@ -302,7 +302,7 @@ jobs:
 
       - name: Configure (arm64)
         if: matrix.arch == 'arm64'
-        run: cmake -B build -D CMAKE_BUILD_TYPE=Debug -D FALLOUT_VENDORED=OFF
+        run: cmake -B build -D CMAKE_BUILD_TYPE=RelWithDebInfo -D FALLOUT_VENDORED=OFF
 
       - name: Build
         run: cmake --build build
