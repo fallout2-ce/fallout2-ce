@@ -247,8 +247,8 @@ jobs:
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp out/build/linux-${{ matrix.arch }}-release/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
-          # Keep debug information embedded for crash analysis, but compress it on disk.
-          objcopy --compress-debug-sections=zlib out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          # Strip debug information and symbols from the packaged executable.
+          objcopy --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
@@ -324,7 +324,7 @@ jobs:
           if [ "${{ matrix.arch }}" = "armhf" ]; then
             objcopy_tool=arm-linux-gnueabihf-objcopy
           fi
-          "$objcopy_tool" --compress-debug-sections=zlib out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          "$objcopy_tool" --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
