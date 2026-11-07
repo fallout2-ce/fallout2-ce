@@ -156,20 +156,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: ios-cmake-v102
+          key: ios-cmake-v101
 
       - name: Configure
         run: |
-          cmake --preset ios -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+          cmake --preset ios
 
       - name: Build
         run: |
-          cmake --build --preset ios-release
+          cmake --build --preset ios-debug
 
       - name: Pack
         run: |
           cd out/build/ios
-          cpack -C RelWithDebInfo
+          cpack -C Debug
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
