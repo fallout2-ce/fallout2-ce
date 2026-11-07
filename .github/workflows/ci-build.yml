@@ -160,7 +160,7 @@ jobs:
 
       - name: Configure
         run: |
-          cmake --preset ios
+          cmake --preset ios -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
 
       - name: Build
         run: |
