@@ -599,6 +599,10 @@ int dfileSeek(DFile* stream, long offset, int origin)
             // FIXME: I'm not sure what this assignment means. This field is
             // only meaningful when reading compressed streams.
             stream->compressedBytesRead = offsetFromBeginning;
+
+            // The position the stream is at now: the next seek counts from it,
+            // reads stop at the entry's end by it.
+            stream->position = offsetFromBeginning;
         }
 
         stream->flags &= ~(DFILE_HAS_UNGETC | DFILE_EOF);
