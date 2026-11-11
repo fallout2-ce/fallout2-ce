@@ -33,7 +33,7 @@ jobs:
           sudo apt install cppcheck
 
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: cppcheck
         run: cppcheck --std=c++17 src/
@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Show clang-format version
         run: ./fix_formatting.sh --version
@@ -84,17 +84,17 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 11
           cache: gradle
 
       - name: Cache cmake build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: os/android/app/.cxx
           key: android-cmake-v102
@@ -115,7 +115,7 @@ jobs:
           ./gradlew assembleDebug -PnativeBuildType=RelWithDebInfo
 
       - name: Download ce.dat
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ce-dat
           path: out/dist
@@ -130,7 +130,7 @@ jobs:
           zip -r fallout2-ce-android-debug.zip fallout2-ce-android-debug
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fallout2-ce-android-debug
           path: out/dist/fallout2-ce-android-debug.zip
@@ -150,10 +150,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cache cmake build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: out
           key: ios-cmake-v101
@@ -172,7 +172,7 @@ jobs:
           cpack -C Debug
 
       - name: Download ce.dat
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ce-dat
           path: out/dist
@@ -187,7 +187,7 @@ jobs:
           zip -r fallout2-ce-ios.zip fallout2-ce-ios
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fallout2-ce-ios
           path: out/dist/fallout2-ce-ios.zip
@@ -214,7 +214,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Dependencies (x86)
         if: matrix.arch == 'x86'
@@ -237,7 +237,7 @@ jobs:
           sudo apt install libsdl2-dev zlib1g-dev
 
       - name: Cache cmake build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: out
           key: linux-${{ matrix.arch }}-relwithdebinfo-cmake-v102
@@ -251,7 +251,7 @@ jobs:
           cmake --build --preset linux-${{ matrix.arch }}-release
 
       - name: Download ce.dat
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ce-dat
           path: out/dist
@@ -272,7 +272,7 @@ jobs:
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fallout2-ce-linux-${{ matrix.arch }}
           path: out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz
@@ -285,10 +285,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cache cmake build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: out
           key: macos-cmake-v102
@@ -307,7 +307,7 @@ jobs:
           cpack -C RelWithDebInfo
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fallout2-ce-macos
           path: out/build/macos/Fallout II Community Edition.dmg
@@ -330,7 +330,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Visual Studio 2022 Build Tools with v141_xp
         if: matrix.arch == 'x86'
@@ -339,7 +339,7 @@ jobs:
           choco install visualstudio2022buildtools -y --package-parameters="'--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.v141.x86.x64 --add Microsoft.VisualStudio.Component.VC.v141.xp --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.10240 --add Microsoft.VisualStudio.ComponentGroup.NativeDesktop.WinXP --add Microsoft.VisualStudio.Component.WinXP'"
 
       - name: Cache cmake build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: out
           key: windows-${{ matrix.arch }}-cmake-v104
@@ -363,7 +363,7 @@ jobs:
           && cmake --build --preset windows-${{ matrix.arch }}-release --parallel
 
       - name: Download ce.dat
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ce-dat
           path: out/dist
@@ -378,7 +378,7 @@ jobs:
           7z a fallout2-ce-windows-${{ matrix.arch }}.zip fallout2-ce-windows-${{ matrix.arch }}
 
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fallout2-ce-windows-${{ matrix.arch }}
           path: out/dist/fallout2-ce-windows-${{ matrix.arch }}.zip
@@ -394,13 +394,13 @@ jobs:
     steps:
       - name: Fetch artifacts
         if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v8.0.2
         with:
           path: artifacts/
 
       - name: Remove old release
         if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-        uses: dev-drprasad/delete-tag-and-release@v0.2.1
+        uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
           delete_release: true
           tag_name: continious
@@ -449,7 +449,7 @@ jobs:
 
       - name: Upload new release
         if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v3.0.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: artifacts/*
