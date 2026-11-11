@@ -32,7 +32,8 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 namespace {
     namespace dbox {
         // Original blinking frequency: 3 frames (24 FPS) = 125 ms
-        constexpr unsigned int blinkIntervalMs = (1000 / 24) * 3;
+        constexpr unsigned int baseFrameMs = 1000 / 24;
+        constexpr unsigned int blinkIntervalMs = baseFrameMs * 3;
 
         namespace btnId {
             constexpr int done = 500;
@@ -229,7 +230,6 @@ namespace {
             void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
                 int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
             {
-                constexpr unsigned int BASE_FRAME_MS = 1000 / 24;
                 static unsigned int lastDoubleClickCheck = getTicks();
 
                 if (scrollDirection != scrollDirection::none) {
@@ -246,7 +246,7 @@ namespace {
 
                         // 14.4 ticks(24 fps) = 600 ms
                         bool isAutoScrolling = (now - scrollStartTime) > 600;
-                        unsigned int stepIntervalMs = isAutoScrolling ? (1000 / scrollDelay) : BASE_FRAME_MS;
+                        unsigned int stepIntervalMs = isAutoScrolling ? (1000 / scrollDelay) : baseFrameMs;
 
                         if (!firstStepDone || (isAutoScrolling && (now - lastStepTime) >= stepIntervalMs)) {
                             firstStepDone = true;
@@ -299,7 +299,7 @@ namespace {
                 } else {
                     if (onStep) onStep();
 
-                    unsigned int doubleClickTimeoutMs = static_cast<unsigned int>(doubleClickDelay) * BASE_FRAME_MS;
+                    unsigned int doubleClickTimeoutMs = static_cast<unsigned int>(doubleClickDelay) * baseFrameMs;
                     if (tick - lastDoubleClickCheck >= doubleClickTimeoutMs) {
                         lastDoubleClickCheck = tick;
                         s.doubleClickSelectedFileIndex = -2;
