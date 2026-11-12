@@ -5857,6 +5857,43 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     bool isoWasEnabled = _setup_inventory(INVENTORY_WINDOW_TYPE_TRADE);
 
+    // Party member navigation arrows — own window on top of trade overlay
+    int barterPartyArrowWindow = -1;
+    if (partyTargets.size() > 1) {
+        Rect bgRect;
+        windowGetRect(gInventoryBarterBackgroundWindow, &bgRect);
+        const int arrowWinWidth = 50;
+        const int arrowWinHeight = 20;
+        const int arrowWinX = bgRect.left + (INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH - arrowWinWidth) / 2;
+        // Position centered, near the bottom of the barter sub-window (above TRADE/TALK buttons)
+        const int arrowWinY = bgRect.top + windowGetHeight(gInventoryBarterBackgroundWindow) - 56;
+
+        barterPartyArrowWindow = windowCreate(arrowWinX, arrowWinY, arrowWinWidth, arrowWinHeight,
+            static_cast<ColorWithFlags>(256), WINDOW_MOVE_ON_TOP | WINDOW_TRANSPARENT);
+
+        if (barterPartyArrowWindow != -1) {
+            auto makeBarterArrow = [&](int x, int y, int keyCode) {
+                int upFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_UP;
+                int downFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN;
+                if (keyCode == KEY_ARROW_RIGHT) {
+                    upFrmId = INVENTORY_ARROW_FRM_RIGHT_ARROW_UP;
+                    downFrmId = INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN;
+                }
+                int btn = buttonCreateWithFrm(barterPartyArrowWindow,
+                    x, y, -1, -1, -1, keyCode,
+                    kInventoryArrowFrmIds[upFrmId],
+                    kInventoryArrowFrmIds[downFrmId]);
+                if (btn != -1) {
+                    buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+                }
+            };
+
+            makeBarterArrow(5, 0, KEY_ARROW_LEFT);
+            makeBarterArrow(25, 0, KEY_ARROW_RIGHT);
+            windowRefresh(barterPartyArrowWindow);
+        }
+    }
+
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
     _display_inventory(_stack_offset[0], -1, INVENTORY_WINDOW_TYPE_TRADE);
     _display_body(FrmId(barterer), INVENTORY_WINDOW_TYPE_TRADE);
@@ -5970,7 +6007,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
         if (keyCode == KEY_LOWERCASE_T || barterReactionModifier <= -30) {
             // T == return to talk
             itemMoveAll(bartererTable, barterer);
-            itemMoveAll(playerTable, gDude);
+            itemMoveAll(playerTable, _inven_dude);
             gameDialogEndBarter();
             break;
         } else if (keyCode == KEY_LOWERCASE_M) {
@@ -5992,15 +6029,26 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
                     }
                 }
             }
-        } else if (keyCode == KEY_ARROW_LEFT) {
+        } else if (keyCode == KEY_ARROW_LEFT || keyCode == KEY_ARROW_RIGHT) {
             if (partyTargets.size() > 1) {
-                partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
+                // Return items from the player's offer table back to current party member
+                // before switching to a different one.
+                if (playerTable->data.inventory.length > 0) {
+                    itemMoveAll(playerTable, _inven_dude);
+                    gPlayerTableOffset = 0;
+                }
+
+                if (keyCode == KEY_ARROW_LEFT) {
+                    partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
+                } else {
+                    partyTargetIndex = (partyTargetIndex < (int)partyTargets.size() - 1) ? partyTargetIndex + 1 : 0;
+                }
+
                 inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], barterer, INVENTORY_WINDOW_TYPE_TRADE);
-            }
-        } else if (keyCode == KEY_ARROW_RIGHT) {
-            if (partyTargets.size() > 1) {
-                partyTargetIndex = (partyTargetIndex < (int)partyTargets.size() - 1) ? partyTargetIndex + 1 : 0;
-                inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], barterer, INVENTORY_WINDOW_TYPE_TRADE);
+
+                // Refresh barter tables and background window (portrait is drawn there)
+                barterDisplayTables(win, playerTable, bartererTable, -1);
+                windowRefresh(gInventoryBarterBackgroundWindow);
             }
         } else if (keyCode >= 2500 && keyCode <= 2501) {
             _container_exit(keyCode, INVENTORY_WINDOW_TYPE_TRADE);
@@ -6115,6 +6163,11 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     }
 
     gInventoryWindowDudeFrmId = savedDudeFrmId;
+
+    if (barterPartyArrowWindow != -1) {
+        windowDestroy(barterPartyArrowWindow);
+    }
+
     _exit_inventory(isoWasEnabled);
     _inven_dude = playerObj;
 
