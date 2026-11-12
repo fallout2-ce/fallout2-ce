@@ -2099,9 +2099,20 @@ static int lsgLoadGameInSlot(int slot)
     MapDirErase(_str, "BAK");
     _proto_dude_update_gender();
 
+    if (!messageListInit(&gLoadSaveMessageList)) {
+        return -1;
+    }
+
+    char msgListPath[COMPAT_MAX_PATH];
+    snprintf(msgListPath, sizeof(msgListPath), "%s\\%s", gGameMsgPath, "LSGAME.MSG");
+    if (!messageListLoad(&gLoadSaveMessageList, msgListPath)) {
+        return -1;
+    }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
+
     // Game Loaded.
     gLoadSaveMessageListItem.num = 141;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem) == 1) {
+    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
         displayMonitorAddMessage(gLoadSaveMessageListItem.text);
     } else {
         debugPrint("\nError: Couldn't find LoadSave Message!");
