@@ -19,7 +19,7 @@ struct TextInputOptions {
     int doneKeyCode = -1;
     int cancelKeyCode = -1;
     int cancelReturnCode = 0; // 0 for dbox.cc, -1 for loadsave.cc
-    bool playReturnSound = true;   // true for dbox.cc, false for loadsave.cc
+    bool playReturnSound = true; // true for dbox.cc, false for loadsave.cc
     bool clearOnFirstBackspace = false; // false for dbox.cc, true for loadsave.cc
 };
 
