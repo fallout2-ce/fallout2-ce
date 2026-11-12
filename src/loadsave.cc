@@ -2118,6 +2118,8 @@ static int lsgLoadGameInSlot(int slot)
         debugPrint("\nError: Couldn't find LoadSave Message!");
     }
 
+    loadSaveMessageListReset();
+
     _loadingGame = false;
 
     // SFALL: Start global scripts.
