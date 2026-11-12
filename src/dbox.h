@@ -1,6 +1,8 @@
 #ifndef DBOX_H
 #define DBOX_H
 
+#include <string>
+
 #include "color.h"
 #include "window_manager.h"
 
