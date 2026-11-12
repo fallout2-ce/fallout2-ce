@@ -11,7 +11,6 @@
 #include "character_editor.h"
 #include "color.h"
 #include "debug.h"
-#include "delay.h"
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
@@ -32,6 +31,10 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 
 namespace {
     namespace dbox {
+        // Original blinking frequency: 3 frames (24 FPS) = 125 ms
+        constexpr unsigned int baseFrameMs = 1000 / 24;
+        constexpr unsigned int blinkIntervalMs = baseFrameMs * 3;
+
         namespace btnId {
             constexpr int done = 500;
             constexpr int cancel = 501;
@@ -227,18 +230,30 @@ namespace {
             void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
                 int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
             {
+                static unsigned int lastDoubleClickCheck = getTicks();
+
                 if (scrollDirection != scrollDirection::none) {
                     unsigned int scrollDelay = 4;
                     s.doubleClickSelectedFileIndex = -2;
 
-                    while (1) {
-                        unsigned int scrollTick = getTicks();
-                        s.scrollCounter += 1;
+                    unsigned int scrollStartTime = getTicks();
+                    unsigned int lastStepTime = scrollStartTime;
+                    bool firstStepDone = false;
 
-                        if ((!s.isScrolling && s.scrollCounter == 1) || (s.isScrolling && s.scrollCounter > 14.4)) {
+                    while (1) {
+                        sharedFpsLimiter.mark();
+                        unsigned int now = getTicks();
+
+                        // 14.4 ticks(24 fps) = 600 ms
+                        bool isAutoScrolling = (now - scrollStartTime) > 600;
+                        unsigned int stepIntervalMs = isAutoScrolling ? (1000 / scrollDelay) : baseFrameMs;
+
+                        if (!firstStepDone || (isAutoScrolling && (now - lastStepTime) >= stepIntervalMs)) {
+                            firstStepDone = true;
+                            lastStepTime = now;
                             s.isScrolling = true;
 
-                            if (s.scrollCounter > 14.4) {
+                            if (isAutoScrolling) {
                                 scrollDelay += 1;
                                 if (scrollDelay > 24) scrollDelay = 24;
                             }
@@ -270,9 +285,6 @@ namespace {
 
                         if (onStep) onStep();
 
-                        unsigned int delay = (s.scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-                        delay_ms(delay - (getTicks() - scrollTick));
-
                         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                             rc = 1;
                             break;
@@ -282,19 +294,16 @@ namespace {
                         if (keyCode == btnId::scrollUp || keyCode == btnId::scrollDown) break;
 
                         renderPresent();
+                        sharedFpsLimiter.throttle();
                     }
                 } else {
-                    windowRefresh(windowId);
-
                     if (onStep) onStep();
 
-                    s.doubleClickTimer--;
-                    if (s.doubleClickTimer == 0) {
-                        s.doubleClickTimer = doubleClickDelay;
+                    unsigned int doubleClickTimeoutMs = static_cast<unsigned int>(doubleClickDelay) * baseFrameMs;
+                    if (tick - lastDoubleClickCheck >= doubleClickTimeoutMs) {
+                        lastDoubleClickCheck = tick;
                         s.doubleClickSelectedFileIndex = -2;
                     }
-
-                    delay_ms(1000 / 24 - (getTicks() - tick));
                 }
             }
 
@@ -408,8 +417,16 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     if (maxLength > 255) maxLength = 255;
 
     std::string copy = text + " ";
-
     int lastDrawnWidth = fontGetStringWidth(copy.c_str());
+
+    unsigned int lastBlinkTime = getTicks();
+    bool blink = false;
+
+    auto drawCursor = [&](bool visible) {
+        Color color = visible ? static_cast<Color>(textColor & COLOR_LAST) : backgroundColor;
+        int currentTextWidth = fontGetStringWidth(copy.c_str());
+        bufferFill(windowBuffer + windowWidth * y + x + currentTextWidth - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
+    };
 
     auto redrawText = [&]() {
         int newWidth = fontGetStringWidth(copy.c_str());
@@ -417,6 +434,8 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
         bufferFill(windowBuffer + windowWidth * y + x, clearWidth, lineHeight, windowWidth, backgroundColor);
         fontDrawText(windowBuffer + windowWidth * y + x, copy.c_str(), windowWidth, windowWidth, textColor);
+
+        drawCursor(blink);
         windowRefresh(win);
 
         lastDrawnWidth = newWidth;
@@ -425,13 +444,10 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
     beginTextInput();
 
-    int blinkingCounter = 3;
-    bool blink = false;
     int rc = 1;
 
     while (rc == 1) {
         sharedFpsLimiter.mark();
-        unsigned int frameTime = getTicks();
 
         int keyCode = inputGetInput();
         if (keyCode == cancelKeyCode) {
@@ -450,30 +466,21 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
             }
             // Input
             else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
-                if ((flags & 0x01) != 0 && !_isdoschar(keyCode)) {
-                    continue;
+                if ((flags & 0x01) == 0 || _isdoschar(keyCode)) {
+                    text.push_back(static_cast<char>(keyCode & 0xFF));
+                    copy = text + " ";
+                    redrawText();
                 }
-
-                text.push_back(static_cast<char>(keyCode & 0xFF));
-                copy = text + " ";
-                redrawText();
             }
         }
 
-        blinkingCounter -= 1;
-        if (blinkingCounter == 0) {
-            blinkingCounter = 3;
-
-            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
+        unsigned int now = getTicks();
+        if (now - lastBlinkTime >= dbox::blinkIntervalMs) {
+            lastBlinkTime = now;
             blink = !blink;
-
-            int currentTextWidth = fontGetStringWidth(copy.c_str());
-            bufferFill(windowBuffer + windowWidth * y + x + currentTextWidth - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
+            drawCursor(blink);
+            windowRefresh(win);
         }
-
-        windowRefresh(win);
-
-        delay_ms(1000 / 24 - (getTicks() - frameTime));
 
         renderPresent();
         sharedFpsLimiter.throttle();
@@ -876,6 +883,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         } else {
             file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
                 isScrollable, bgWidth, doubleClickSelectedFileIndex };
+
             file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
         }
 
@@ -886,6 +894,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         };
 
         file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc);
+        windowRefresh(ctx.window.get());
 
         if (_game_user_wants_to_quit) {
             rc = 1;
@@ -976,7 +985,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     beginTextInput();
 
-    int blinkingCounter = 3;
+    unsigned int lastBlinkTime = getTicks();
     bool blink = false;
 
     int doubleClickSelectedFileIndex = -2;
@@ -1060,6 +1069,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
                     fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
                     fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
+
+                    windowRefresh(ctx.window.get());
                 }
             } else if (keyCode == btnId::scrollUpArrow) {
                 scrollDirection = file::scrollDirection::up;
@@ -1069,6 +1080,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset, isScrollable,
                     bgWidth, doubleClickSelectedFileIndex };
                 file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
+
+                windowRefresh(ctx.window.get());
             }
         } else if (_isdoschar(keyCode)) {
             bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
@@ -1089,12 +1102,13 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         };
 
         auto handleCursorBlink = [&]() {
-            blinkingCounter -= 1;
-            if (blinkingCounter == 0) {
-                blinkingCounter = 3;
+            unsigned int now = getTicks();
+            if (now - lastBlinkTime >= dbox::blinkIntervalMs) {
+                lastBlinkTime = now;
                 Color color = blink ? Color(100) : COLOR_GREEN;
                 blink = !blink;
                 bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, bgWidth, color);
+                windowRefresh(ctx.window.get());
             }
         };
 
