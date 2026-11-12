@@ -883,6 +883,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         } else {
             file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
                 isScrollable, bgWidth, doubleClickSelectedFileIndex };
+
             file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
         }
 
@@ -893,6 +894,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         };
 
         file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc);
+        windowRefresh(ctx.window.get());
 
         if (_game_user_wants_to_quit) {
             rc = 1;
