@@ -1989,11 +1989,13 @@ static int lsgPerformSaveGame()
     do_save_idbfs_loadsave();
 #endif
 
-    gLoadSaveMessageListItem.num = 140;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 140;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
 
     backgroundSoundResume();
@@ -2095,30 +2097,15 @@ static int lsgLoadGameInSlot(int slot)
     snprintf(ceSavePath, sizeof(ceSavePath), "%s\\SAVEGAME\\SLOT%.2d\\ce.sav", _patches, _slot_cursor + 1);
     ceLoadGameData(ceSavePath);
 
-    snprintf(_str, sizeof(_str), "%s\\", "MAPS");
-    MapDirErase(_str, "BAK");
-    _proto_dude_update_gender();
-
-    if (!messageListInit(&gLoadSaveMessageList)) {
-        return -1;
-    }
-
-    char msgListPath[COMPAT_MAX_PATH];
-    snprintf(msgListPath, sizeof(msgListPath), "%s\\%s", gGameMsgPath, "LSGAME.MSG");
-    if (!messageListLoad(&gLoadSaveMessageList, msgListPath)) {
-        return -1;
-    }
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
-
     // Game Loaded.
-    gLoadSaveMessageListItem.num = 141;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 141;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
-
-    loadSaveMessageListReset();
 
     _loadingGame = false;
 
