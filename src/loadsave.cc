@@ -1133,25 +1133,11 @@ int lsgLoadGame(LoadSaveMode mode)
     _patches = settings.system.master_patches_path.c_str();
 
     if (mode == LoadSaveMode::Quick && _quick_done) {
-        int quickSaveWindowX = (screenGetWidth() - LS_WINDOW_WIDTH) / 2;
-        int quickSaveWindowY = (screenGetHeight() - LS_WINDOW_HEIGHT) / 2;
-        int window = windowCreate(quickSaveWindowX,
-            quickSaveWindowY,
-            LS_WINDOW_WIDTH,
-            LS_WINDOW_HEIGHT,
-            static_cast<ColorWithFlags>(256),
-            WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
-        if (window != -1) {
-            unsigned char* windowBuffer = windowGetBuffer(window);
-            bufferFill(windowBuffer, LS_WINDOW_WIDTH, LS_WINDOW_HEIGHT, LS_WINDOW_WIDTH, COLOR_BLACK);
-            windowRefresh(window);
-            renderPresent();
-        }
+        // NOTE: Original game created a black window here to black out the screen
+        //  before quick-loading. Since the screen is faded out almost immediately
+        //  afterward during the load sequence anyway, it was removed
 
         if (lsgLoadGameInSlot(_slot_cursor) != -1) {
-            if (window != -1) {
-                windowDestroy(window);
-            }
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             return 1;
         }
@@ -1166,10 +1152,6 @@ int lsgLoadGame(LoadSaveMode mode)
             return -1;
         }
         messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
-
-        if (window != -1) {
-            windowDestroy(window);
-        }
 
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         soundPlayFile("iisxxxx1");
@@ -2009,11 +1991,13 @@ static int lsgPerformSaveGame()
     do_save_idbfs_loadsave();
 #endif
 
-    gLoadSaveMessageListItem.num = 140;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 140;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
 
     backgroundSoundResume();
@@ -2120,11 +2104,13 @@ static int lsgLoadGameInSlot(int slot)
     _proto_dude_update_gender();
 
     // Game Loaded.
-    gLoadSaveMessageListItem.num = 141;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem) == 1) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 141;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
 
     _loadingGame = false;
@@ -2734,104 +2720,18 @@ static int _GetComment(int slot)
 // 0x47F084
 static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
 {
-    int cursorWidth = fontGetStringWidth("_") - 4;
-    int windowWidth = windowGetWidth(win);
-    int lineHeight = fontGetLineHeight();
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    if (maxLength > 255) {
-        maxLength = 255;
-    }
+    std::string text(description);
 
-    char text[256];
-    strcpy(text, description);
+    TextInputOptions options;
+    options.doneKeyCode = doneKeyCode;
+    options.cancelKeyCode = cancelKeyCode;
+    options.cancelReturnCode = -1;
+    options.playReturnSound = false;
+    options.clearOnFirstBackspace = true;
 
-    size_t textLength = strlen(text);
-    text[textLength] = ' ';
-    text[textLength + 1] = '\0';
-
-    int nameWidth = fontGetStringWidth(text);
-
-    bufferFill(windowBuffer + windowWidth * y + x, nameWidth, lineHeight, windowWidth, backgroundColor);
-    fontDrawText(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
-
-    windowRefresh(win);
-    renderPresent();
-
-    beginTextInput();
-
-    int blinkCounter = 3;
-    bool blink = false;
-
-    int v1 = 0;
-
-    int rc = 1;
-    while (rc == 1) {
-        sharedFpsLimiter.mark();
-
-        int tick = getTicks();
-
-        int keyCode = inputGetInput();
-        if ((keyCode & 0x80000000) == 0) {
-            v1++;
-        }
-
-        if (keyCode == doneKeyCode || keyCode == KEY_RETURN) {
-            rc = 0;
-        } else if (keyCode == cancelKeyCode || keyCode == KEY_ESCAPE) {
-            rc = -1;
-        } else {
-            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && textLength > 0) {
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(text), lineHeight, windowWidth, backgroundColor);
-
-                // TODO: Probably incorrect, needs testing.
-                if (v1 == 1) {
-                    textLength = 1;
-                }
-
-                text[textLength - 1] = ' ';
-                text[textLength] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
-                textLength--;
-            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && textLength < maxLength) {
-                if ((flags & 0x01) != 0) {
-                    if (!_isdoschar(keyCode)) {
-                        break;
-                    }
-                }
-
-                bufferFill(windowBuffer + windowWidth * y + x, fontGetStringWidth(text), lineHeight, windowWidth, backgroundColor);
-
-                text[textLength] = keyCode & 0xFF;
-                text[textLength + 1] = ' ';
-                text[textLength + 2] = '\0';
-                fontDrawText(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
-                textLength++;
-
-                windowRefresh(win);
-            }
-        }
-
-        blinkCounter -= 1;
-        if (blinkCounter == 0) {
-            blinkCounter = 3;
-            blink = !blink;
-
-            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
-            bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(text) - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
-            windowRefresh(win);
-        }
-
-        delay_ms(1000 / 24 - (getTicks() - tick));
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    }
-
-    endTextInput();
-
+    int rc = runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
     if (rc == 0) {
-        text[textLength] = '\0';
-        strcpy(description, text);
+        strcpy(description, text.c_str());
     }
 
     return rc;

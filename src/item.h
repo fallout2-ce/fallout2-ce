@@ -73,6 +73,8 @@ Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode);
 int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming);
 int itemGetQuantity(Object* obj, Object* item);
 int itemIsQueued(Object* obj);
+Object* itemGetQueued(Object* obj);
+bool itemCanSellUsedGeiger();
 Object* itemReplace(Object* owner, Object* itemToReplace, ObjectFlags flags);
 bool itemIsHidden(Object* obj);
 AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);

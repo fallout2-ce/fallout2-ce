@@ -97,7 +97,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: os/android/app/.cxx
-          key: android-cmake-v101
+          key: android-cmake-v102
 
       - name: Setup signing config
         if: env.KEYSTORE_FILE_BASE64 != '' && env.KEYSTORE_PROPERTIES_FILE_BASE64 != ''
@@ -112,7 +112,7 @@ jobs:
       - name: Build
         run: |
           cd os/android
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -PnativeBuildType=RelWithDebInfo
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
@@ -227,15 +227,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: linux-${{ matrix.arch }}-cmake-v101
+          key: linux-${{ matrix.arch }}-relwithdebinfo-cmake-v102
 
       - name: Configure
         run: |
-          cmake --preset linux-${{ matrix.arch }}-debug
+          cmake --preset linux-${{ matrix.arch }}-release
 
       - name: Build
         run: |
-          cmake --build --preset linux-${{ matrix.arch }}-debug
+          cmake --build --preset linux-${{ matrix.arch }}-release
 
       - name: Download ce.dat
         uses: actions/download-artifact@v4
@@ -246,7 +246,9 @@ jobs:
       - name: Package
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
-          cp out/build/linux-${{ matrix.arch }}-debug/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          cp out/build/linux-${{ matrix.arch }}-release/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          # Strip debug information and symbols from the packaged executable.
+          objcopy --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
@@ -293,7 +295,7 @@ jobs:
         run: |
           cmake \
             -B build \
-            -D CMAKE_BUILD_TYPE=Debug \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo \
             -D FALLOUT_VENDORED=OFF \
             -D CMAKE_SYSTEM_PROCESSOR=arm \
             -D CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
@@ -302,7 +304,7 @@ jobs:
 
       - name: Configure (arm64)
         if: matrix.arch == 'arm64'
-        run: cmake -B build -D CMAKE_BUILD_TYPE=Debug -D FALLOUT_VENDORED=OFF
+        run: cmake -B build -D CMAKE_BUILD_TYPE=RelWithDebInfo -D FALLOUT_VENDORED=OFF
 
       - name: Build
         run: cmake --build build
@@ -317,6 +319,12 @@ jobs:
         run: |
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp build/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          # armhf is cross-compiled and needs the matching binutils tool.
+          objcopy_tool=objcopy
+          if [ "${{ matrix.arch }}" = "armhf" ]; then
+            objcopy_tool=arm-linux-gnueabihf-objcopy
+          fi
+          "$objcopy_tool" --strip-all out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
           cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
@@ -341,7 +349,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: macos-cmake-v101
+          key: macos-cmake-v102
 
       - name: Configure
         run: |
@@ -349,12 +357,12 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build --preset macos-debug
+          cmake --build --preset macos-release
 
       - name: Pack
         run: |
           cd out/build/macos
-          cpack -C Debug
+          cpack -C RelWithDebInfo
 
       - name: Upload
         uses: actions/upload-artifact@v4

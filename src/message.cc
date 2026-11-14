@@ -174,10 +174,13 @@ void badwordsExit()
 // 0x48494C message_init
 bool messageListInit(MessageList* messageList)
 {
-    if (messageList != nullptr) {
-        messageList->entries_num = 0;
-        messageList->entries = nullptr;
+    if (messageList == nullptr) {
+        return false;
     }
+
+    messageList->entries_num = 0;
+    messageList->entries = nullptr;
+
     return true;
 }
 

@@ -6,7 +6,8 @@ def sdlJavaBindingsDir = file('src/main/java/org/libsdl/app')
 
 def findFetchedSdlJavaBindingsDir = { String variantName ->
     String variantCap = variantName.capitalize()
-    File intermediatesVariantDir = file("build/intermediates/cxx/${variantCap}")
+    String nativeBuildType = project.findProperty('nativeBuildType') ?: variantCap
+    File intermediatesVariantDir = file("build/intermediates/cxx/${nativeBuildType}")
     if (!intermediatesVariantDir.isDirectory()) {
         throw new GradleException("SDL sync check failed: missing active CXX intermediates under ${intermediatesVariantDir}. Run externalNativeBuild${variantCap} first.")
     }
@@ -23,7 +24,7 @@ def findFetchedSdlJavaBindingsDir = { String variantName ->
         )
     }
 
-    File fetchedDir = file(".cxx/${variantCap}/${activeHashDirs[0].name}/arm64-v8a/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app")
+    File fetchedDir = file(".cxx/${nativeBuildType}/${activeHashDirs[0].name}/arm64-v8a/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app")
 
     if (!fetchedDir.isDirectory()) {
         throw new GradleException("SDL sync check failed: could not locate fetched SDL Java bindings under ${fetchedDir}.")
@@ -99,6 +100,10 @@ android {
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=c++_static'
+                // CI can optimize native code while keeping debug signing and app ID.
+                if (project.hasProperty('nativeBuildType')) {
+                    arguments "-DCMAKE_BUILD_TYPE=${project.property('nativeBuildType')}"
+                }
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
 
                 // TODO: Remove once format issues are resolved.
