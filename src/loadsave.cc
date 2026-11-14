@@ -320,7 +320,8 @@ static unsigned char* _snapshotBuf;
 static MessageListItem gLoadSaveMessageListItem;
 
 // 0x6142C0 dbleclkcntr
-static int _dbleclkcntr;
+static int doubleClickTick;
+static int doubleClickDelayMs = 1000;
 
 // 0x6142C4 lsgwin
 static int gLoadSaveWindow;
@@ -652,7 +653,7 @@ int lsgSaveGame(LoadSaveMode mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
 
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
     int doubleClickSlot = -1;
@@ -946,13 +947,10 @@ int lsgSaveGame(LoadSaveMode mode)
 
             windowRefresh(gLoadSaveWindow);
 
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
         }
 
         if (rc == 1) {
@@ -1049,7 +1047,8 @@ int lsgSaveGame(LoadSaveMode mode)
                     _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
-                    _dbleclkcntr = 24;
+
+                    doubleClickTick = getTicks();
                 }
             }
         }
@@ -1260,7 +1259,7 @@ int lsgLoadGame(LoadSaveMode mode)
     if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
 
@@ -1546,9 +1545,9 @@ int lsgLoadGame(LoadSaveMode mode)
 
             windowRefresh(gLoadSaveWindow);
 
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            doubleClickTick = getTicks();
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
         }
