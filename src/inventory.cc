@@ -4487,11 +4487,21 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     bool isPartyMemberLootInventory = inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
         && owner != gDude
-        && objectIsPartyMember(owner);
+        && objectIsPartyMember(owner)
+        && critterIsActive(owner);
 
     int actionMenuItemsLength;
     const GameMouseActionMenuItem* actionMenuItems;
-    if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
+    if (keyCode == PARTY_WEAPON_SLOT_KEY || keyCode == PARTY_ARMOR_SLOT_KEY) {
+        // Party member equipped items cannot be dropped from the slots.
+        if (keyCode == PARTY_WEAPON_SLOT_KEY && itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
+            actionMenuItemsLength = 3;
+            actionMenuItems = _act_weap2;
+        } else {
+            actionMenuItemsLength = 2;
+            actionMenuItems = _act_nothing;
+        }
+    } else if (itemType == ITEM_TYPE_WEAPON && weaponCanBeUnloaded(item)) {
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
             && _gIsSteal
             && objectGetOwner(item) != gDude
@@ -4765,6 +4775,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                     itemAdd(owner, item, 1);
                 }
             }
+            break;
         }
         default:
             break;
