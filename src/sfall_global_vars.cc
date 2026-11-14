@@ -99,7 +99,10 @@ bool sfall_gl_vars_store(const char* key, int value)
         return false;
     }
 
-    uint64_t numericKey = *(reinterpret_cast<const uint64_t*>(key));
+    // CE: The key's bytes may be at any address (script strings, literals):
+    // read them unaligned, as an 8-byte load faults there on 32-bit ARM.
+    uint64_t numericKey;
+    memcpy(&numericKey, key, sizeof(numericKey));
     return sfall_gl_vars_store(numericKey, value);
 }
 
@@ -114,7 +117,10 @@ bool sfall_gl_vars_fetch(const char* key, int& value)
         return false;
     }
 
-    uint64_t numericKey = *(reinterpret_cast<const uint64_t*>(key));
+    // CE: The key's bytes may be at any address (script strings, literals):
+    // read them unaligned, as an 8-byte load faults there on 32-bit ARM.
+    uint64_t numericKey;
+    memcpy(&numericKey, key, sizeof(numericKey));
     return sfall_gl_vars_fetch(numericKey, value);
 }
 
