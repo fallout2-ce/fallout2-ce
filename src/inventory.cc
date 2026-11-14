@@ -487,6 +487,8 @@ static const InventoryWindowDescription gInventoryWindowDescriptions[INVENTORY_W
 
 // 0x5190E0 dropped_explosive
 static bool _dropped_explosive = false;
+// Object the armed explosive was dropped from; its position is the explosion origin.
+static Object* _dropped_explosive_owner = nullptr;
 
 // 0x5190E4 inven_scroll_up_bid
 static int gInventoryScrollUpButton = -1;
@@ -1785,6 +1787,7 @@ void inventoryOpen()
 static bool _setup_inventory(int inventoryWindowType)
 {
     _dropped_explosive = 0;
+    _dropped_explosive_owner = nullptr;
     _curr_stack = 0;
     _stack_offset[0] = 0;
     gInventorySlotsCount = 6;
@@ -2175,9 +2178,10 @@ static void _exit_inventory(bool shouldEnableIso)
 
     if (_dropped_explosive) {
         Attack attack;
-        attackInit(&attack, gDude, nullptr, HIT_MODE_PUNCH, HIT_LOCATION_TORSO);
+        Object* dropExplosiveOwner = _dropped_explosive_owner != nullptr ? _dropped_explosive_owner : gDude;
+        attackInit(&attack, dropExplosiveOwner, nullptr, HIT_MODE_PUNCH, HIT_LOCATION_TORSO);
         attack.attackerFlags = DAM_HIT;
-        attack.tile = gDude->tile;
+        attack.tile = dropExplosiveOwner->tile;
         _compute_explosion_on_extras(&attack, 0, 0, 1);
 
         Object* watcher = nullptr;
@@ -2210,6 +2214,7 @@ static void _exit_inventory(bool shouldEnableIso)
         }
 
         _dropped_explosive = false;
+        _dropped_explosive_owner = nullptr;
     }
 }
 
@@ -4702,6 +4707,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         } else if (explosiveIsActiveExplosive(item)) {
             if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
                 _dropped_explosive = 1;
+                _dropped_explosive_owner = owner;
                 objectDrop(owner, item);
             }
         } else {
