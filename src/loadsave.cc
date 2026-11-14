@@ -1133,25 +1133,11 @@ int lsgLoadGame(LoadSaveMode mode)
     _patches = settings.system.master_patches_path.c_str();
 
     if (mode == LoadSaveMode::Quick && _quick_done) {
-        int quickSaveWindowX = (screenGetWidth() - LS_WINDOW_WIDTH) / 2;
-        int quickSaveWindowY = (screenGetHeight() - LS_WINDOW_HEIGHT) / 2;
-        int window = windowCreate(quickSaveWindowX,
-            quickSaveWindowY,
-            LS_WINDOW_WIDTH,
-            LS_WINDOW_HEIGHT,
-            static_cast<ColorWithFlags>(256),
-            WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
-        if (window != -1) {
-            unsigned char* windowBuffer = windowGetBuffer(window);
-            bufferFill(windowBuffer, LS_WINDOW_WIDTH, LS_WINDOW_HEIGHT, LS_WINDOW_WIDTH, COLOR_BLACK);
-            windowRefresh(window);
-            renderPresent();
-        }
+        // NOTE: Original game created a black window here to black out the screen
+        //  before quick-loading. Since the screen is faded out almost immediately
+        //  afterward during the load sequence anyway, it was removed
 
         if (lsgLoadGameInSlot(_slot_cursor) != -1) {
-            if (window != -1) {
-                windowDestroy(window);
-            }
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             return 1;
         }
@@ -1166,10 +1152,6 @@ int lsgLoadGame(LoadSaveMode mode)
             return -1;
         }
         messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
-
-        if (window != -1) {
-            windowDestroy(window);
-        }
 
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         soundPlayFile("iisxxxx1");
@@ -2009,11 +1991,13 @@ static int lsgPerformSaveGame()
     do_save_idbfs_loadsave();
 #endif
 
-    gLoadSaveMessageListItem.num = 140;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 140;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
 
     backgroundSoundResume();
@@ -2120,11 +2104,13 @@ static int lsgLoadGameInSlot(int slot)
     _proto_dude_update_gender();
 
     // Game Loaded.
-    gLoadSaveMessageListItem.num = 141;
-    if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem) == 1) {
-        displayMonitorAddMessage(gLoadSaveMessageListItem.text);
-    } else {
-        debugPrint("\nError: Couldn't find LoadSave Message!");
+    if (!_quick_done) {
+        gLoadSaveMessageListItem.num = 141;
+        if (messageListGetItem(&gLoadSaveMessageList, &gLoadSaveMessageListItem)) {
+            displayMonitorAddMessage(gLoadSaveMessageListItem.text);
+        } else {
+            debugPrint("\nError: Couldn't find LoadSave Message!");
+        }
     }
 
     _loadingGame = false;
