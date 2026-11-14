@@ -9,9 +9,9 @@ Popular total conversion mods are supported:
  * [Fallout: Sonora](https://github.com/NovaRain/Fallout-Sonora-English): Full Support.
  * [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project): Full Support.
  * Fallout of Nevada: Supported with minor tweaks needed.
- * [Olympus 2207](https://olympus2207.com), Resurrection, Yesterday: partially work but not fully supported.
+ * [Olympus 2207](https://steamcommunity.com/sharedfiles/filedetails/?id=2509613179), Resurrection, Yesterday: partially work but not fully supported.
 
-CE has broad (though not total) compatibility with [Sfall](https://github.com/sfall-team/sfall) scripting extensions.  Many traditional Fallout mods work out of the box, including NPC Armor, Party Orders, FO2Tweaks (we recommend v14.5+), Talking Heads, and many others.
+CE has broad (though not total) compatibility with [Sfall](https://github.com/sfall-team/sfall) scripting extensions.  Many traditional Fallout mods work out of the box, including NPC Armor, Party Orders, FO2Tweaks (we recommend v14.5+), Talking Heads, VOCK, and many others.
 
 ## Installation — [Download Latest CE Release](https://github.com/fallout2-ce/fallout2-ce/releases)
 
@@ -63,7 +63,7 @@ For detailed instructions on how to play on Mac, Linux, iOS, or Android, see the
   </tr>
 </table>
 
-There are also dozens of small things that just work a little better than they did in the original.  Better pathfinding, fewer graphics glitches, less finicky weapon stacking, and much more.
+There are also dozens of small things that just work a little better than they did in the original.  Better pathfinding, fewer graphics glitches, less finicky weapon stacking, picking up items hidden behind scenery, and much more.
 
 ## Configuration
 
