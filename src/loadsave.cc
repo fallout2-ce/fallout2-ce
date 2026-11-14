@@ -850,7 +850,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Prevent underflow
@@ -864,7 +863,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -946,9 +944,10 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::SaveGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
 
             if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
                 doubleClickTick = getTicks();
@@ -1454,7 +1453,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Don't go under
@@ -1469,7 +1467,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -1548,9 +1545,10 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::LoadGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
 
             doubleClickTick = getTicks();
             if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
