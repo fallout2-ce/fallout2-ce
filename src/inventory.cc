@@ -2575,7 +2575,19 @@ static void _display_body(const FrmId& frmId, int inventoryWindowType)
 
         int frame = 0;
         if (index == 1) {
-            frame = artGetFrameCount(art) - 1;
+            Object* target = _target_stack[_target_curr_stack];
+            bool standingCritterLoot = fid.objectType() == OBJ_TYPE_CRITTER
+                && fid.animationType() == ANIM_STAND
+                && ProtoId(target).objectType() == OBJ_TYPE_CRITTER
+                && target != nullptr
+                && (target->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) == 0;
+
+            // Living looted critters use the same standing frame as the player;
+            // other targets need the last frame for poses like corpses or open containers.
+            bool useFirstFrame = standingCritterLoot && inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT;
+            if (!useFirstFrame) {
+                frame = artGetFrameCount(art) - 1;
+            }
         }
 
         Rotation rotation = rotations[index];
