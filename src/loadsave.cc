@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <time.h>
 
 #include <algorithm>
@@ -2594,7 +2594,6 @@ static int _LoadTumbSlot(int slot)
     return 0;
 }
 
-// 0x47ED5C
 static int _GetComment(int slot)
 {
     // Maintain original position in original resolution, otherwise center it.
@@ -2604,117 +2603,31 @@ static int _GetComment(int slot)
     int commentWindowY = screenGetHeight() != 480
         ? (screenGetHeight() - _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight()) / 2
         : LS_COMMENT_WINDOW_Y;
-    int window = windowCreate(commentWindowX,
+
+    std::string doneText = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 104);
+    std::string cancelText = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 105);
+    std::string title = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 130);
+
+    const char* currentDescription = (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied)
+        ? _LSData[slot].description
+        : "";
+
+    const char* newDescription = showDescriptionInputDialog(
+        title.data(),
+        currentDescription,
+        LOAD_SAVE_DESCRIPTION_LENGTH - 1,
+        commentWindowX,
         commentWindowY,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight(),
-        static_cast<ColorWithFlags>(256),
-        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (window == -1) {
-        return -1;
-    }
+        doneText.data(),
+        cancelText.data());
 
-    unsigned char* windowBuffer = windowGetBuffer(window);
-    memcpy(windowBuffer,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData(),
-        static_cast<size_t>(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight()) * _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth());
-
-    fontSetCurrent(103);
-
-    const char* msg;
-
-    // DONE
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 104);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 57 + 56,
-        msg,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    // CANCEL
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 105);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 57 + 181,
-        msg,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    // DESCRIPTION
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 130);
-
-    char title[260];
-    stringCopy(title, msg);
-
-    int width = fontGetStringWidth(title);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 7 + (_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() - width) / 2,
-        title,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    fontSetCurrent(101);
-
-    int btn;
-
-    // DONE
-    btn = buttonCreate(window,
-        34,
-        58,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        507,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_NORMAL].getData(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (btn != -1) {
-        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    // CANCEL
-    btn = buttonCreate(window,
-        160,
-        58,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        508,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_NORMAL].getData(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (btn != -1) {
-        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    windowRefresh(window);
-
-    char description[LOAD_SAVE_DESCRIPTION_LENGTH];
-    if (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied) {
-        strncpy(description, _LSData[slot].description, LOAD_SAVE_DESCRIPTION_LENGTH);
-    } else {
-        memset(description, '\0', LOAD_SAVE_DESCRIPTION_LENGTH);
-    }
-
-    int rc;
-
-    Color backgroundColor = static_cast<Color>(*(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24) & COLOR_LAST);
-    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0) == 0) {
-        strncpy(_LSData[slot].description, description, LOAD_SAVE_DESCRIPTION_LENGTH);
+    if (newDescription != nullptr) {
+        strncpy(_LSData[slot].description, newDescription, LOAD_SAVE_DESCRIPTION_LENGTH);
         _LSData[slot].description[LOAD_SAVE_DESCRIPTION_LENGTH - 1] = '\0';
-        rc = 1;
-    } else {
-        rc = 0;
+        return 1;
     }
 
-    windowDestroy(window);
-
-    return rc;
+    return 0;
 }
 
 // 0x47F084
