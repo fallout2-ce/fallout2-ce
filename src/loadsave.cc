@@ -20,7 +20,6 @@
 #include "db.h"
 #include "dbox.h"
 #include "debug.h"
-#include "delay.h"
 #include "display_monitor.h"
 #include "draw.h"
 #include "file_utils.h"
@@ -816,22 +815,32 @@ int lsgSaveGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -896,12 +905,6 @@ int lsgSaveGame(LoadSaveMode mode)
                     _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
-                }
-
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
                 }
 
                 keyCode = inputGetInput();
@@ -1416,22 +1419,32 @@ int lsgLoadGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -1495,12 +1508,6 @@ int lsgLoadGame(LoadSaveMode mode)
                     _ShowSlotList(LoadSaveWindowType::LoadGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
-                }
-
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
                 }
 
                 keyCode = inputGetInput();
