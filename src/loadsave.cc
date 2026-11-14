@@ -1133,9 +1133,9 @@ int lsgLoadGame(LoadSaveMode mode)
     _patches = settings.system.master_patches_path.c_str();
 
     if (mode == LoadSaveMode::Quick && _quick_done) {
-        //NOTE: Original game created a black window here to black out the screen
-        // before quick-loading. Since the screen is faded out almost immediately
-        // afterward during the load sequence anyway, it was removed
+        // NOTE: Original game created a black window here to black out the screen
+        //  before quick-loading. Since the screen is faded out almost immediately
+        //  afterward during the load sequence anyway, it was removed
 
         if (lsgLoadGameInSlot(_slot_cursor) != -1) {
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
