@@ -1472,7 +1472,7 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
 
 static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex)
 {
-    if (!hasPartySlots() || !partySlotFrmImage.isLocked() || ammo == nullptr || itemGetType(ammo) != ITEM_TYPE_AMMO) {
+    if (!hasPartySlots() || !partySlotFrmImage.isLocked() || !critterIsActive(partyBaseTarget) || ammo == nullptr || itemGetType(ammo) != ITEM_TYPE_AMMO) {
         return false;
     }
 
