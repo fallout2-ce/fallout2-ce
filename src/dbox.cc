@@ -405,16 +405,18 @@ namespace {
     } // namespace dbox
 } // namespace
 
-// CE: extracted from character_editor.cc
-// TODO: see if it could be used for `showSaveFileDialog`
-static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
+int runTextInput(int win, std::string& text, int maxLength, int x, int y,
+    ColorWithFlags textColor, Color backgroundColor, int flags,
+    const TextInputOptions& options)
 {
     int cursorWidth = fontGetStringWidth("_") - 4;
     int windowWidth = windowGetWidth(win);
     int lineHeight = fontGetLineHeight();
     unsigned char* windowBuffer = windowGetBuffer(win);
 
-    if (maxLength > 255) maxLength = 255;
+    if (maxLength > 255) {
+        maxLength = 255;
+    }
 
     std::string copy = text + " ";
     int lastDrawnWidth = fontGetStringWidth(copy.c_str());
@@ -440,32 +442,44 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
         lastDrawnWidth = newWidth;
     };
+
     redrawText();
+    renderPresent();
 
     beginTextInput();
 
+    int keyPressCount = 0;
     int rc = 1;
 
     while (rc == 1) {
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
-        if (keyCode == cancelKeyCode) {
+        if (keyCode != -1 && (keyCode & 0x80000000) == 0) {
+            keyPressCount++;
+        }
+
+        if (options.doneKeyCode != -1 && keyCode == options.doneKeyCode) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
-            soundPlayFile("ib1p1xx1");
+            if (options.playReturnSound) {
+                soundPlayFile("ib1p1xx1");
+            }
             rc = 0;
+        } else if (options.cancelKeyCode != -1 && keyCode == options.cancelKeyCode) {
+            rc = options.cancelReturnCode;
         } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = -1;
         } else {
-            // BACKSPACE / DELETE
             if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && !text.empty()) {
-                text.pop_back();
+                if (options.clearOnFirstBackspace && keyPressCount == 1) {
+                    text.clear();
+                } else {
+                    text.pop_back();
+                }
                 copy = text + " ";
                 redrawText();
-            }
-            // Input
-            else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
+            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
                 if ((flags & 0x01) == 0 || _isdoschar(keyCode)) {
                     text.push_back(static_cast<char>(keyCode & 0xFF));
                     copy = text + " ";
@@ -488,6 +502,19 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
 
     endTextInput();
     return rc;
+}
+
+// CE: extracted from character_editor.cc
+// TODO: see if it could be used for `showSaveFileDialog`
+static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
+{
+    TextInputOptions options;
+    options.cancelKeyCode = cancelKeyCode;
+    options.cancelReturnCode = 0;
+    options.playReturnSound = true;
+    options.clearOnFirstBackspace = false;
+
+    return runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
 }
 
 const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)

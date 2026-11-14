@@ -1,6 +1,8 @@
 #ifndef DBOX_H
 #define DBOX_H
 
+#include <string>
+
 #include "color.h"
 #include "window_manager.h"
 
@@ -14,6 +16,18 @@ typedef enum DialogBoxOptions {
     DIALOG_BOX_YES_NO = 0x10,
     DIALOG_BOX_NO_BUTTONS = 0x20, // sfall: CLEAN
 } DialogBoxOptions;
+
+struct TextInputOptions {
+    int doneKeyCode = -1;
+    int cancelKeyCode = -1;
+    int cancelReturnCode = 0; // 0 for dbox.cc, -1 for loadsave.cc
+    bool playReturnSound = true; // true for dbox.cc, false for loadsave.cc
+    bool clearOnFirstBackspace = false; // false for dbox.cc, true for loadsave.cc
+};
+
+int runTextInput(int win, std::string& text, int maxLength, int x, int y,
+    ColorWithFlags textColor, Color backgroundColor, int flags,
+    const TextInputOptions& options);
 
 int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, ColorWithFlags titleColor, const char* secondaryButtonText, ColorWithFlags bodyColor, int flags);
 
