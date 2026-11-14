@@ -64,6 +64,7 @@ int interfaceBarSwapHands(bool animated);
 int interfaceGetItemActions(InterfaceItemAction* leftItemAction, InterfaceItemAction* rightItemAction);
 int interfaceCycleItemAction();
 void _intface_use_item();
+int interfaceGamepadReload();
 Hand interfaceGetCurrentHand();
 int interfaceGetActiveItem(Object** itemPtr);
 int _intface_update_ammo_lights();

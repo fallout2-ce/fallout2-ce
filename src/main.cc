@@ -20,6 +20,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "gamepad.h"
 #include "input.h"
 #include "kb.h"
 #include "loadsave.h"
@@ -421,6 +422,9 @@ static void mainLoop()
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
+
+        gamepadProcessPendingActions();
+        gamepadWorldMove();
 
         // SFALL: MainLoopHook.
         sfall_gl_scr_process_main();
