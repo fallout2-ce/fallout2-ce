@@ -766,10 +766,13 @@ int lsgSaveGame(LoadSaveMode mode)
                 if (clickedSlot == doubleClickSlot) {
                     keyCode = kLoadSaveActionDone;
                     soundPlayFile("ib1p1xx1");
+                    doubleClickSlot = -1;
+                } else {
+                    doubleClickSlot = _slot_cursor;
+                    doubleClickTick = getTicks();
                 }
 
                 selectionChanged = true;
-                doubleClickSlot = _slot_cursor;
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
@@ -947,7 +950,6 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 windowRefresh(gLoadSaveWindow);
             }
-
 
             if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
                 doubleClickTick = getTicks();
@@ -1379,6 +1381,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 selectionChanged = true;
                 doubleClickSlot = _slot_cursor;
+                doubleClickTick = getTicks();
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
