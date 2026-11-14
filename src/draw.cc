@@ -403,6 +403,10 @@ static int scaledCeilDiv(int value, int numerator, int denominator)
 // 0x4D387C
 void bufferFill(unsigned char* buf, int width, int height, int pitch, Color value)
 {
+    if (buf == nullptr || width <= 0 || height <= 0) {
+        return;
+    }
+
     int y;
 
     for (y = 0; y < height; y++) {
