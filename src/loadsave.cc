@@ -1133,7 +1133,9 @@ int lsgLoadGame(LoadSaveMode mode)
     _patches = settings.system.master_patches_path.c_str();
 
     if (mode == LoadSaveMode::Quick && _quick_done) {
-        gameMouseSetCursor(MOUSE_CURSOR_WAIT_PLANET);
+        // NOTE: Original game created a 640x480 black window here during quick load.
+        // On modern hardware and high resolutions, this just flashes a centered black box,
+        // so it has been removed.
 
         if (lsgLoadGameInSlot(_slot_cursor) != -1) {
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
@@ -2096,6 +2098,10 @@ static int lsgLoadGameInSlot(int slot)
     char ceSavePath[COMPAT_MAX_PATH];
     snprintf(ceSavePath, sizeof(ceSavePath), "%s\\SAVEGAME\\SLOT%.2d\\ce.sav", _patches, _slot_cursor + 1);
     ceLoadGameData(ceSavePath);
+
+    snprintf(_str, sizeof(_str), "%s\\", "MAPS");
+    MapDirErase(_str, "BAK");
+    _proto_dude_update_gender();
 
     // Game Loaded.
     if (!_quick_done) {
