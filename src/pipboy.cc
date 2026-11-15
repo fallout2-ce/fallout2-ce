@@ -249,21 +249,21 @@ static inline void pipboyDrawText(const char* text, PipboyTextOptions flags, Col
 
 static int _save_pipboy(File* stream);
 static void pipboyWindowHandleStatus(int userInput);
-static void pipboyWindowRenderQuestLocationList(int a1);
-static void pipboyWindowQuestList(int a1);
+static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation);
+static void pipboyWindowQuestList(int selectedLocationIndex);
 static void pipboyRenderHolodiskText();
 static void pipboyPlayHolodiskAudio();
-static int pipboyWindowRenderHolodiskList(int a1);
+static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry);
 static int _qscmp(const void* a1, const void* a2);
-static void pipboyWindowHandleAutomaps(int a1);
-static int _PrintAMelevList(int a1);
-static int _PrintAMList(int a1);
+static void pipboyWindowHandleAutomaps(int userInput);
+static int _PrintAMelevList(int selectedMap);
+static int _PrintAMList(int selectedLocation);
 static void pipboyHandleVideoArchive(int eventCode);
 static int pipboyRenderVideoArchive(int selectedEntry);
 static void pipboyHandleAlarmClock(int eventCode);
-static void pipboyWindowRenderRestOptions(int a1);
+static void pipboyWindowRenderRestOptions(int selectedRestOption);
 static void pipboyDrawHitPoints();
-static void pipboyWindowCreateButtons(int a1, int a2, bool a3);
+static void pipboyWindowCreateButtons(int start, int count, bool createBottomNavigationButton);
 static void pipboyWindowDestroyButtons();
 static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration = PIPBOY_REST_DURATION_DEFAULT);
 static bool _Check4Health(int minutes);
@@ -2183,7 +2183,7 @@ static void pipboyHandleAlarmClock(int eventCode)
 }
 
 // 0x4996B4
-static void pipboyWindowRenderRestOptions(int a1)
+static void pipboyWindowRenderRestOptions(int selectedRestOption)
 {
     const char* text;
 
@@ -2215,7 +2215,7 @@ static void pipboyWindowRenderRestOptions(int a1)
         // ...
         // 315 - Rest until party is healed
         text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, pipboyRestDurationBaseMessageId + option - 1);
-        Color color = option == a1 ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = option == selectedRestOption ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
 
         pipboyDrawText(text, PipboyTextOptions::None, color);
 
@@ -2250,7 +2250,7 @@ static void pipboyDrawHitPoints()
 }
 
 // 0x4998C0
-static void pipboyWindowCreateButtons(int start, int count, bool a3)
+static void pipboyWindowCreateButtons(int start, int count, bool createBottomNavigationButton)
 {
     fontSetCurrent(101);
 
@@ -2273,7 +2273,7 @@ static void pipboyWindowCreateButtons(int start, int count, bool a3)
         }
     }
 
-    if (a3) {
+    if (createBottomNavigationButton) {
         _button = buttonCreate(gPipboyWindow, 254, height * gPipboyLinesCount + PIPBOY_WINDOW_CONTENT_VIEW_Y, 350, height, -1, -1, -1, 528, nullptr, nullptr, nullptr, BUTTON_FLAG_TRANSPARENT);
     }
 }
