@@ -70,7 +70,6 @@ typedef enum ExplosionMetarule {
 static constexpr int kVersionMajor = 4;
 static constexpr int kVersionMinor = 3;
 static constexpr int kVersionPatch = 4;
-static constexpr int kSfallPathBufferSize = 3200; // matches rotation path size in animation.cc
 
 static void op_art_exists(Program* program)
 {
@@ -1943,10 +1942,7 @@ static void op_make_path(Program* program)
     // sfall only requires an empty destination tile when the source object is a critter.
     int requireEmptyDest = ProtoId(object).objectType() == OBJ_TYPE_CRITTER;
 
-    // XXX: pathfinderFindPath does not accept a destination buffer length. Use the
-    // same capacity as the engine's AnimationSad::rotations storage so this
-    // wrapper is not the limiting factor.  Sfall uses 800 here
-    unsigned char rotations[kSfallPathBufferSize];
+    unsigned char rotations[kPathfinderMaxPathLength];
     int pathLength = pathfinderFindPath(object, object->tile, dest, rotations, requireEmptyDest, get_blocking_func(type));
     ResizeArray(arrayId, pathLength);
     for (int index = 0; index < pathLength; index++) {
