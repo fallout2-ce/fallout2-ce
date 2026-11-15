@@ -149,7 +149,7 @@ constexpr inline PipboyTextOptions operator|(PipboyTextOptions lhs, PipboyTextOp
     return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
 }
 
-typedef enum PipboyRestDuration {
+enum PipboyRestDuration : int {
     PIPBOY_REST_DURATION_TEN_MINUTES,
     PIPBOY_REST_DURATION_THIRTY_MINUTES,
     PIPBOY_REST_DURATION_ONE_HOUR,
@@ -166,7 +166,8 @@ typedef enum PipboyRestDuration {
     PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED,
     PIPBOY_REST_DURATION_COUNT,
     PIPBOY_REST_DURATION_COUNT_WITHOUT_PARTY = PIPBOY_REST_DURATION_COUNT - 1,
-} PipboyRestDuration;
+    PIPBOY_REST_DURATION_DEFAULT = PIPBOY_REST_DURATION_TEN_MINUTES
+};
 
 static constexpr int PIPBOY_REST_DURATION_WAKE_HOUR_COUNT = PIPBOY_REST_DURATION_UNTIL_MIDNIGHT - PIPBOY_REST_DURATION_UNTIL_MORNING + 1;
 static constexpr int kDefaultPipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT] = {
@@ -264,7 +265,7 @@ static void pipboyWindowRenderRestOptions(int a1);
 static void pipboyDrawHitPoints();
 static void pipboyWindowCreateButtons(int a1, int a2, bool a3);
 static void pipboyWindowDestroyButtons();
-static bool pipboyRest(int hours, int minutes, int kind);
+static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration = PIPBOY_REST_DURATION_DEFAULT);
 static bool _Check4Health(int minutes);
 static bool _AddHealth();
 static void _ClacTime(int* hours, int* minutes, int wakeUpHour);
@@ -2138,16 +2139,16 @@ static void pipboyHandleAlarmClock(int eventCode)
 
         pipboyWindowRenderRestOptions(eventCode - 3);
 
-        int duration = eventCode - 4;
+        PipboyRestDuration duration = static_cast<PipboyRestDuration>(eventCode - 4);
         int minutes = 0;
         int hours = 0;
 
         switch (duration) {
         case PIPBOY_REST_DURATION_TEN_MINUTES:
-            pipboyRest(0, 10, 0);
+            pipboyRest(0, 10);
             break;
         case PIPBOY_REST_DURATION_THIRTY_MINUTES:
-            pipboyRest(0, 30, 0);
+            pipboyRest(0, 30);
             break;
         case PIPBOY_REST_DURATION_ONE_HOUR:
         case PIPBOY_REST_DURATION_TWO_HOURS:
@@ -2155,7 +2156,7 @@ static void pipboyHandleAlarmClock(int eventCode)
         case PIPBOY_REST_DURATION_FOUR_HOURS:
         case PIPBOY_REST_DURATION_FIVE_HOURS:
         case PIPBOY_REST_DURATION_SIX_HOURS:
-            pipboyRest(duration - 1, 0, 0);
+            pipboyRest(duration - 1, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_MORNING:
         case PIPBOY_REST_DURATION_UNTIL_NOON:
@@ -2163,7 +2164,7 @@ static void pipboyHandleAlarmClock(int eventCode)
         case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT: {
             int wakeUpHour = pipboyRestOptionWakeHour(duration);
             _ClacTime(&hours, &minutes, wakeUpHour);
-            if (pipboyRest(hours, minutes, 0) == 0 && wakeUpHour == 0) {
+            if (pipboyRest(hours, minutes) == 0 && wakeUpHour == 0) {
                 pipboyDrawNumber(0, 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
                 windowRefresh(gPipboyWindow);
             }
@@ -2321,7 +2322,7 @@ static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventT
 }
 
 // 0x499A24
-static bool pipboyRest(int hours, int minutes, int duration)
+static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
 {
     struct RestDepthGuard {
         RestDepthGuard() { pipboyRestDepth++; }
@@ -2333,7 +2334,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
     bool rc = false;
     unsigned int lastRestTimerGameTime = gameTimeGetTime();
 
-    if (duration == 0) {
+    if (duration == PIPBOY_REST_DURATION_DEFAULT) {
         int hoursInMinutes = hours * 60;
         double totalRestMinutes = (double)hoursInMinutes + (double)minutes;
         double totalRestAnimationDuration = totalRestMinutes * (1.0 / 1440.0) * 3.5 + 0.25;
@@ -2487,10 +2488,10 @@ static bool pipboyRest(int hours, int minutes, int duration)
             int hoursToHeal = (int)((double)hpToHeal / (double)healingRate * 3.0);
             while (!rc && hoursToHeal != 0) {
                 if (hoursToHeal <= 24) {
-                    rc = pipboyRest(hoursToHeal, 0, 0);
+                    rc = pipboyRest(hoursToHeal, 0);
                     hoursToHeal = 0;
                 } else {
-                    rc = pipboyRest(24, 0, 0);
+                    rc = pipboyRest(24, 0);
                     hoursToHeal -= 24;
                 }
             }
@@ -2521,7 +2522,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     }
                 }
 
-                rc = pipboyRest(3, 0, 0);
+                rc = pipboyRest(3, 0);
             }
         } else {
             // No one needs healing.
