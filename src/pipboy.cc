@@ -82,7 +82,7 @@ const int PIPBOY_AUTOMAP_LINES = 19;
 const int PIPBOY_AUTOMAP_SUB_LINES = 5;
 const int PIPBOY_STATUS_QUESTLIST_LINES = 12;
 
-typedef enum Holiday {
+enum Holiday : int {
     HOLIDAY_NEW_YEAR,
     HOLIDAY_VALENTINES_DAY,
     HOLIDAY_FOOLS_DAY,
@@ -90,44 +90,64 @@ typedef enum Holiday {
     HOLIDAY_INDEPENDENCE_DAY,
     HOLIDAY_HALLOWEEN,
     HOLIDAY_THANKSGIVING_DAY,
-    HOLIDAY_CRISTMAS,
+    HOLIDAY_CHRISTMAS,
     HOLIDAY_COUNT,
-} Holiday;
+    HOLIDAY_FIRST = HOLIDAY_NEW_YEAR
+};
+
+inline Holiday operator++(Holiday& e, int)
+{
+    Holiday result = e;
+    e = static_cast<Holiday>(static_cast<int>(e) + 1);
+    return result;
+}
 
 // Options used to render Pipboy texts.
-typedef enum PipboyTextOptions {
+enum class PipboyTextOptions : unsigned int {
+    None = 0x00,
+
     // Specifies that text should be rendered in the center of the Pipboy
     // monitor.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_CENTER = 0x02,
+    AlignmentCenter = 0x02,
 
     // Specifies that text should be rendered in the beginning of the right
     // column in two-column layout.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN = 0x04,
+    AlignmentRightColumn = 0x04,
 
     // Specifies that text should be rendered in the center of the left column.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER = 0x10,
+    AlignmentLeftColumnCenter = 0x10,
 
     // Specifies that text should be rendered in the center of the right
     // column.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER = 0x20,
+    AlignmentRightColumnCenter = 0x20,
 
     // Specifies that text should rendered with underline.
-    PIPBOY_TEXT_STYLE_UNDERLINE = 0x08,
+    Underline = 0x08,
 
     // Specifies that text should rendered with strike-through line.
-    PIPBOY_TEXT_STYLE_STRIKE_THROUGH = 0x40,
+    StrikeThrough = 0x40,
 
     // Specifies that text should be rendered with no (minimal) indentation.
-    PIPBOY_TEXT_NO_INDENT = 0x80,
-} PipboyTextOptions;
+    NoIndent = 0x80,
+};
+
+constexpr inline PipboyTextOptions operator&(PipboyTextOptions lhs, PipboyTextOptions rhs)
+{
+    return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline PipboyTextOptions operator|(PipboyTextOptions lhs, PipboyTextOptions rhs)
+{
+    return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 typedef enum PipboyRestDuration {
     PIPBOY_REST_DURATION_TEN_MINUTES,
@@ -214,14 +234,14 @@ typedef struct PipboyBomb {
 
 typedef void PipboyRenderProc(int a1);
 
-static int pipboyWindowInit(int intent);
+static PipboyOpenIntent pipboyWindowInit(PipboyOpenIntent intent);
 static void pipboyWindowFree();
 static void _pip_init_();
 static void pipboyDrawNumber(int value, int digits, int x, int y);
 static void pipboyDrawDate();
 
-static void pipboyDrawText(const char* text, int flags, ColorWithFlags color);
-static inline void pipboyDrawText(const char* text, int flags, Color color)
+static void pipboyDrawText(const char* text, PipboyTextOptions flags, ColorWithFlags color);
+static inline void pipboyDrawText(const char* text, PipboyTextOptions flags, Color color)
 {
     pipboyDrawText(text, flags, color | DRAW_TEXT_FLAG_NONE);
 }
@@ -482,7 +502,7 @@ static void renderNavigationButtons(int _view_page, int totalPages, bool isSubPa
         // Single-page layout: Show a centered "Back" button only in sub-page mode
         if (isSubPage) {
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_CENTER, COLOR_GREEN);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentCenter, COLOR_GREEN);
         }
         return; // no button if not subpage (default behavior)
     }
@@ -490,36 +510,36 @@ static void renderNavigationButtons(int _view_page, int totalPages, bool isSubPa
     if (isSubPage) {
         // Sub-page navigation (Back always on left, Done/More on right)
         const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-        pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, COLOR_GREEN);
+        pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_GREEN);
 
         const char* text2 = (_view_page >= totalPages - 1)
             ? getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 214) // Done
             : getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200); // More
-        pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, COLOR_GREEN);
+        pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_GREEN);
 
     } else {
         // Main-page navigation (Back only appears after first page, More only before last)
         if (_view_page > 0) {
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, COLOR_GREEN);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_GREEN);
         } else {
             // 'greyed out' buttons - not clickable - just for style
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, COLOR_LIGHT_GREEN_2);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_LIGHT_GREEN_2);
         }
         if (_view_page < totalPages - 1) {
             const char* text2 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200);
-            pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, COLOR_GREEN);
+            pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_GREEN);
         } else {
             // 'greyed out' buttons - not clickable - just for style
             const char* text2 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200);
-            pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, COLOR_LIGHT_GREEN_2);
+            pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_LIGHT_GREEN_2);
         }
     }
 }
 
 // 0x497004
-int pipboyOpen(int intent)
+int pipboyOpen(PipboyOpenIntent intent)
 {
     if (!wmMapPipboyActive() && !pipboy_available_at_game_start) {
         // You aren't wearing the pipboy!
@@ -529,7 +549,7 @@ int pipboyOpen(int intent)
     }
 
     intent = pipboyWindowInit(intent);
-    if (intent == -1) {
+    if (intent == PipboyOpenIntent::Invalid) {
         return -1;
     }
 
@@ -546,9 +566,9 @@ int pipboyOpen(int intent)
 
         int keyCode = inputGetInput();
 
-        if (intent == PIPBOY_OPEN_INTENT_REST) {
+        if (intent == PipboyOpenIntent::Rest) {
             keyCode = 504;
-            intent = PIPBOY_OPEN_INTENT_UNSPECIFIED;
+            intent = PipboyOpenIntent::Unspecified;
         }
 
         mouseGetPositionInWindow(gPipboyWindow, &gPipboyMouseX, &gPipboyMouseY);
@@ -641,7 +661,7 @@ void pipboyMessageListFree()
 }
 
 // 0x497228
-static int pipboyWindowInit(int intent)
+static PipboyOpenIntent pipboyWindowInit(PipboyOpenIntent intent)
 {
     gPipboyWindowIsoWasEnabled = isoDisable();
 
@@ -668,11 +688,11 @@ static int pipboyWindowInit(int intent)
     _hot_back_line = 0;
 
     if (holodiskInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     if (pipboyMessageListInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     int index;
@@ -689,7 +709,7 @@ static int pipboyWindowInit(int intent)
             _pipboyFrmImages[index].unlock();
         }
 
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     int pipboyWindowX = (screenGetWidth() - PIPBOY_WINDOW_WIDTH) / 2;
@@ -700,7 +720,7 @@ static int pipboyWindowInit(int intent)
         for (int index = 0; index < PIPBOY_FRM_COUNT; index++) {
             _pipboyFrmImages[index].unlock();
         }
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     gPipboyWindowBuffer = windowGetBuffer(gPipboyWindow);
@@ -754,7 +774,7 @@ static int pipboyWindowInit(int intent)
         y += yOffsets[index];
     }
 
-    if (intent == PIPBOY_OPEN_INTENT_REST) {
+    if (intent == PipboyOpenIntent::Rest) {
         if (!critterCanDudeRest()) {
             blitBufferToBufferTrans(
                 _pipboyFrmImages[PIPBOY_FRM_LOGO].getData(),
@@ -769,26 +789,23 @@ static int pipboyWindowInit(int intent)
             int year;
             gameTimeGetDate(&month, &day, &year);
 
-            int holiday = 0;
-            for (; holiday < HOLIDAY_COUNT; holiday += 1) {
+            Holiday holiday = HOLIDAY_FIRST;
+            for (; holiday < HOLIDAY_COUNT; holiday++) {
                 const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
                 if (holidayDescription->month == month && holidayDescription->day == day) {
+                    const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
+                    const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
+                    char holidayNameCopy[256];
+                    strcpy(holidayNameCopy, holidayName);
+
+                    int len = fontGetStringWidth(holidayNameCopy);
+                    fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - len / 2,
+                        holidayNameCopy,
+                        350,
+                        PIPBOY_WINDOW_WIDTH,
+                        COLOR_GREEN);
                     break;
                 }
-            }
-
-            if (holiday != HOLIDAY_COUNT) {
-                const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
-                const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
-                char holidayNameCopy[256];
-                strcpy(holidayNameCopy, holidayName);
-
-                int len = fontGetStringWidth(holidayNameCopy);
-                fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - len / 2,
-                    holidayNameCopy,
-                    350,
-                    PIPBOY_WINDOW_WIDTH,
-                    COLOR_GREEN);
             }
 
             windowRefresh(gPipboyWindow);
@@ -798,7 +815,7 @@ static int pipboyWindowInit(int intent)
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 215);
             showDialogBox(text, nullptr, 0, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-            intent = PIPBOY_OPEN_INTENT_UNSPECIFIED;
+            intent = PipboyOpenIntent::Unspecified;
         }
     } else {
         blitBufferToBufferTrans(
@@ -814,33 +831,30 @@ static int pipboyWindowInit(int intent)
         int year;
         gameTimeGetDate(&month, &day, &year);
 
-        int holiday;
-        for (holiday = 0; holiday < HOLIDAY_COUNT; holiday += 1) {
+        Holiday holiday;
+        for (holiday = HOLIDAY_FIRST; holiday < HOLIDAY_COUNT; holiday++) {
             const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
             if (holidayDescription->month == month && holidayDescription->day == day) {
+                const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
+                const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
+                char holidayNameCopy[256];
+                strcpy(holidayNameCopy, holidayName);
+
+                int length = fontGetStringWidth(holidayNameCopy);
+                fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - length / 2,
+                    holidayNameCopy,
+                    350,
+                    PIPBOY_WINDOW_WIDTH,
+                    COLOR_GREEN);
                 break;
             }
-        }
-
-        if (holiday != HOLIDAY_COUNT) {
-            const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
-            const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
-            char holidayNameCopy[256];
-            strcpy(holidayNameCopy, holidayName);
-
-            int length = fontGetStringWidth(holidayNameCopy);
-            fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - length / 2,
-                holidayNameCopy,
-                350,
-                PIPBOY_WINDOW_WIDTH,
-                COLOR_GREEN);
         }
 
         windowRefresh(gPipboyWindow);
     }
 
     if (questInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     soundPlayFile("pipon");
@@ -960,32 +974,32 @@ static void pipboyDrawDate()
 }
 
 // 0x497A40
-static void pipboyDrawText(const char* text, int flags, ColorWithFlags color)
+static void pipboyDrawText(const char* text, PipboyTextOptions flags, ColorWithFlags color)
 {
-    if ((flags & PIPBOY_TEXT_STYLE_UNDERLINE) != 0) {
+    if ((flags & PipboyTextOptions::Underline) != PipboyTextOptions::None) {
         color |= DRAW_TEXT_FLAG_UNDERLINED;
     }
 
     int left = 8;
-    if ((flags & PIPBOY_TEXT_NO_INDENT) != 0) {
+    if ((flags & PipboyTextOptions::NoIndent) != PipboyTextOptions::None) {
         left -= 7;
     }
 
     int length = fontGetStringWidth(text);
 
-    if ((flags & PIPBOY_TEXT_ALIGNMENT_CENTER) != 0) {
+    if ((flags & PipboyTextOptions::AlignmentCenter) != PipboyTextOptions::None) {
         left = (350 - length) / 2;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentRightColumn) != PipboyTextOptions::None) {
         left += 175;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentLeftColumnCenter) != PipboyTextOptions::None) {
         left += 86 - length + 16;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentRightColumnCenter) != PipboyTextOptions::None) {
         left += 260 - length;
     }
 
     fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (gPipboyCurrentLine * fontGetLineHeight() + PIPBOY_WINDOW_CONTENT_VIEW_Y) + PIPBOY_WINDOW_CONTENT_VIEW_X + left, text, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_WIDTH, color);
 
-    if ((flags & PIPBOY_TEXT_STYLE_STRIKE_THROUGH) != 0) {
+    if ((flags & PipboyTextOptions::StrikeThrough) != PipboyTextOptions::None) {
         int top = gPipboyCurrentLine * fontGetLineHeight() + 49;
         bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, static_cast<Color>(color & COLOR_LAST));
     }
@@ -1106,7 +1120,7 @@ static void pipboyWindowHandleStatus(int userInput)
 
         if (gPipboyQuestLocationsCount == 0) {
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 203);
-            pipboyDrawText(text, 0, COLOR_GREEN);
+            pipboyDrawText(text, PipboyTextOptions::None, COLOR_GREEN);
         }
 
         gPipboyWindowHolodisksCount = pipboyWindowRenderHolodiskList(-1);
@@ -1326,7 +1340,7 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
     const char* text2 = getmsg(&gMapMessageList, &gPipboyMessageListItem, questDescription->location);
     char formattedText[1024];
     snprintf(formattedText, sizeof(formattedText), "%s %s", text2, text1);
-    pipboyDrawText(formattedText, PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+    pipboyDrawText(formattedText, PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 3) {
         gPipboyCurrentLine = 3;
@@ -1371,13 +1385,13 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
                     char c = *ending;
                     *ending = '\0';
 
-                    int flags;
+                    PipboyTextOptions flags;
                     Color color;
                     if (gGameGlobalVars[questDescription->gvar] < questDescription->completedThreshold) {
-                        flags = 0;
+                        flags = PipboyTextOptions::None;
                         color = COLOR_GREEN;
                     } else {
-                        flags = PIPBOY_TEXT_STYLE_STRIKE_THROUGH;
+                        flags = PipboyTextOptions::StrikeThrough;
                         color = COLOR_LIGHT_GREEN_2;
                     }
 
@@ -1425,8 +1439,8 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
         gPipboyCurrentLine = 0;
     }
 
-    int flags = gPipboyWindowHolodisksCount != 0 ? PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER : PIPBOY_TEXT_ALIGNMENT_CENTER;
-    flags |= PIPBOY_TEXT_STYLE_UNDERLINE;
+    PipboyTextOptions flags = gPipboyWindowHolodisksCount != 0 ? PipboyTextOptions::AlignmentLeftColumnCenter : PipboyTextOptions::AlignmentCenter;
+    flags = flags | PipboyTextOptions::Underline;
 
     // STATUS
     const char* statusText = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 202);
@@ -1486,7 +1500,7 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
         // Render the location at index
         const char* questLocation = gPipboyQuestLocations[index];
         Color color = (gPipboyCurrentLine - 1) / 2 == (selectedQuestLocation - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
-        pipboyDrawText(questLocation, 0, color);
+        pipboyDrawText(questLocation, PipboyTextOptions::None, color);
         gPipboyCurrentLine += 1;
     }
 
@@ -1565,7 +1579,7 @@ static void pipboyRenderHolodiskText()
         }
     } else {
         const char* name = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodisk->name);
-        pipboyDrawText(name, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+        pipboyDrawText(name, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
     }
 
     if (gPipboyHolodiskLastPage != 0) {
@@ -1585,7 +1599,7 @@ static void pipboyRenderHolodiskText()
         if (strcmp(text, "**END-PAR**") == 0) {
             gPipboyCurrentLine += 1;
         } else {
-            pipboyDrawText(text, PIPBOY_TEXT_NO_INDENT, COLOR_GREEN);
+            pipboyDrawText(text, PipboyTextOptions::NoIndent, COLOR_GREEN);
         }
 
         holodiskTextId += 1;
@@ -1649,7 +1663,7 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
         if (currentIndex >= startIdx && currentIndex < startIdx + maxEntriesPerPage) {
             Color color = ((gPipboyCurrentLine - 1) / 2 == selectedHolodiskEntry - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodisk->name);
-            pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN, color);
+            pipboyDrawText(text, PipboyTextOptions::AlignmentRightColumn, color);
             gPipboyCurrentLine++;
             displayedHolodisks++;
         }
@@ -1661,7 +1675,7 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
             gPipboyCurrentLine = 0;
         }
         const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 211); // DATA
-        pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+        pipboyDrawText(text, PipboyTextOptions::AlignmentRightColumnCenter | PipboyTextOptions::Underline, COLOR_GREEN);
     }
 
     return displayedHolodisks;
@@ -1690,7 +1704,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
             PIPBOY_WINDOW_WIDTH);
 
         const char* title = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-        pipboyDrawText(title, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+        pipboyDrawText(title, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
         _location_count = _PrintAMList(-1); // get main page list count
 
@@ -1863,14 +1877,14 @@ static int _PrintAMelevList(int selectedMap)
     }
 
     const char* msg = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-    pipboyDrawText(msg, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+    pipboyDrawText(msg, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
     }
 
     const char* name = mapDescriptionById(_amcty_indx);
-    pipboyDrawText(name, PIPBOY_TEXT_ALIGNMENT_CENTER, COLOR_GREEN);
+    pipboyDrawText(name, PipboyTextOptions::AlignmentCenter, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 4) {
         gPipboyCurrentLine = 4;
@@ -1886,7 +1900,7 @@ static int _PrintAMelevList(int selectedMap)
         } else {
             color = COLOR_GREEN;
         }
-        pipboyDrawText(_sortlist[index].name, 0, color);
+        pipboyDrawText(_sortlist[index].name, PipboyTextOptions::None, color);
         gPipboyCurrentLine++;
     }
 
@@ -1978,7 +1992,7 @@ static int _PrintAMList(int selectedLocation)
 
     // Display header message
     const char* msg = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-    pipboyDrawText(msg, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+    pipboyDrawText(msg, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
@@ -1994,7 +2008,7 @@ static int _PrintAMList(int selectedLocation)
     // Print paginated locations
     for (int index = startIdx; index < endIdx; index++) {
         Color color = (gPipboyCurrentLine - 1 == selectedLocation) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
-        pipboyDrawText(_sortlist[index].name, 0, color);
+        pipboyDrawText(_sortlist[index].name, PipboyTextOptions::None, color);
         gPipboyCurrentLine++;
     }
 
@@ -2063,7 +2077,7 @@ static int pipboyRenderVideoArchive(int selectedEntry)
 
     // VIDEO ARCHIVES
     text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 206);
-    pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+    pipboyDrawText(text, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
@@ -2087,7 +2101,7 @@ static int pipboyRenderVideoArchive(int selectedEntry)
             }
 
             text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, msg_num);
-            pipboyDrawText(text, 0, color);
+            pipboyDrawText(text, PipboyTextOptions::None, color);
 
             gPipboyCurrentLine++;
         }
@@ -2185,7 +2199,7 @@ static void pipboyWindowRenderRestOptions(int a1)
 
     // ALARM CLOCK
     text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 300);
-    pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, COLOR_GREEN);
+    pipboyDrawText(text, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 5) {
         gPipboyCurrentLine = 5;
@@ -2202,7 +2216,7 @@ static void pipboyWindowRenderRestOptions(int a1)
         text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, pipboyRestDurationBaseMessageId + option - 1);
         Color color = option == a1 ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
 
-        pipboyDrawText(text, 0, color);
+        pipboyDrawText(text, PipboyTextOptions::None, color);
 
         gPipboyCurrentLine++;
     }

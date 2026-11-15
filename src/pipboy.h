@@ -6,12 +6,13 @@
 
 namespace fallout {
 
-typedef enum PipboyOpenIntent {
-    PIPBOY_OPEN_INTENT_UNSPECIFIED = 0,
-    PIPBOY_OPEN_INTENT_REST = 1,
-} PipboyOpenIntent;
+enum class PipboyOpenIntent : int {
+    Invalid = -1,
+    Unspecified = 0,
+    Rest = 1,
+};
 
-int pipboyOpen(int intent);
+int pipboyOpen(PipboyOpenIntent intent);
 void pipboyInit();
 void pipboyReset();
 void pipboySetRestHealTime(int minutes);
