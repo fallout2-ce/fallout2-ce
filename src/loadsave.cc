@@ -1552,7 +1552,6 @@ int lsgLoadGame(LoadSaveMode mode)
                 windowRefresh(gLoadSaveWindow);
             }
 
-            doubleClickTick = getTicks();
             if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
                 doubleClickTick = getTicks();
                 doubleClickSlot = -1;
