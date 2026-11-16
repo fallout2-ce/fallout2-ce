@@ -173,7 +173,6 @@ static void _ShowSlotList(LoadSaveWindowType windowType);
 static void _DrawInfoBox(int slot);
 static int _LoadTumbSlot(int slot);
 static int _GetComment(int slot);
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static int _DummyFunc(File* stream);
 static int _PrepLoad(File* stream);
 static int _EndLoad(File* stream);
@@ -2633,26 +2632,6 @@ static int _GetComment(int slot)
     }
 
     return 0;
-}
-
-// 0x47F084
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
-{
-    std::string text(description);
-
-    TextInputOptions options;
-    options.doneKeyCode = doneKeyCode;
-    options.cancelKeyCode = cancelKeyCode;
-    options.cancelReturnCode = -1;
-    options.playReturnSound = false;
-    options.clearOnFirstBackspace = true;
-
-    int rc = runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
-    if (rc == 0) {
-        strcpy(description, text.c_str());
-    }
-
-    return rc;
 }
 
 // 0x47F48C
