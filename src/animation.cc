@@ -311,7 +311,7 @@ typedef struct AnimationSad {
     int step; // current index in path, -2000 == initializing, -1000 == COMPLETE
     int targetTile;
     union {
-        unsigned char rotations[3200];
+        unsigned char rotations[kPathfinderMaxPathLength];
         StraightPathNode straightPathNodeList[200];
     };
 } AnimationSad;
@@ -1975,7 +1975,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
     if (openPathNodeListLength != 0) {
         unsigned char* v39 = rotations;
         int index = 0;
-        for (; index < 800; index++) {
+        for (; index < kPathfinderMaxPathLength; index++) {
             if (temp.tile == from) {
                 break;
             }
@@ -3126,7 +3126,7 @@ int dudeMoveGetLandingTile(int tile, int actionPoints, int* stepsPtr, int* actio
         return -1;
     }
 
-    unsigned char rotations[800];
+    unsigned char rotations[kPathfinderMaxPathLength];
     int pathLength = _make_path(gDude, gDude->tile, tile, rotations, 0);
     bool blocked = _obj_blocking_at(gDude, tile, gDude->elevation) != nullptr;
     int steps = blocked ? pathLength - 1 : pathLength;

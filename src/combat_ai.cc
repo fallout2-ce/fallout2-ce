@@ -2964,7 +2964,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
         _ai_switch_weapons(attacker, &hitMode, &weapon, defender);
     }
 
-    unsigned char rotations[800];
+    unsigned char rotations[kPathfinderMaxPathLength];
 
     Object* ammo = nullptr;
     for (int attempt = 0; attempt < 10; attempt++) {
