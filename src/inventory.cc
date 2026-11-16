@@ -2580,7 +2580,7 @@ static void _display_body(const FrmId& frmId, int inventoryWindowType)
                 && fid.animationType() == ANIM_STAND
                 && ProtoId(target).objectType() == OBJ_TYPE_CRITTER
                 && target != nullptr
-                && (target->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) == 0;
+                && (target->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN)) == 0;
 
             // Living looted critters use the same standing frame as the player;
             // other targets need the last frame for poses like corpses or open containers.
