@@ -20,7 +20,6 @@
 #include "db.h"
 #include "dbox.h"
 #include "debug.h"
-#include "delay.h"
 #include "display_monitor.h"
 #include "draw.h"
 #include "file_utils.h"
@@ -320,7 +319,8 @@ static unsigned char* _snapshotBuf;
 static MessageListItem gLoadSaveMessageListItem;
 
 // 0x6142C0 dbleclkcntr
-static int _dbleclkcntr;
+static int doubleClickTick;
+static int doubleClickDelayMs = 1000;
 
 // 0x6142C4 lsgwin
 static int gLoadSaveWindow;
@@ -652,7 +652,7 @@ int lsgSaveGame(LoadSaveMode mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
 
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
     int doubleClickSlot = -1;
@@ -766,10 +766,13 @@ int lsgSaveGame(LoadSaveMode mode)
                 if (clickedSlot == doubleClickSlot) {
                     keyCode = kLoadSaveActionDone;
                     soundPlayFile("ib1p1xx1");
+                    doubleClickSlot = -1;
+                } else {
+                    doubleClickSlot = _slot_cursor;
+                    doubleClickTick = getTicks();
                 }
 
                 selectionChanged = true;
-                doubleClickSlot = _slot_cursor;
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
@@ -815,22 +818,32 @@ int lsgSaveGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -840,7 +853,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Prevent underflow
@@ -854,7 +866,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -897,12 +908,6 @@ int lsgSaveGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
-                }
-
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
@@ -942,17 +947,14 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::SaveGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
-
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
         }
 
         if (rc == 1) {
@@ -1049,7 +1051,8 @@ int lsgSaveGame(LoadSaveMode mode)
                     _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
-                    _dbleclkcntr = 24;
+
+                    doubleClickTick = getTicks();
                 }
             }
         }
@@ -1260,7 +1263,7 @@ int lsgLoadGame(LoadSaveMode mode)
     if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
 
@@ -1378,6 +1381,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 selectionChanged = true;
                 doubleClickSlot = _slot_cursor;
+                doubleClickTick = getTicks();
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
@@ -1417,22 +1421,32 @@ int lsgLoadGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -1442,7 +1456,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Don't go under
@@ -1457,7 +1470,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -1498,12 +1510,6 @@ int lsgLoadGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
-                }
-
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
@@ -1542,13 +1548,12 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::LoadGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
-
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
         }
