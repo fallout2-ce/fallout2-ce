@@ -39,6 +39,11 @@ inline int showDialogBox(const char* title, const char** body, int bodyLength, i
 const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText, WindowFlags flags);
 const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText);
 
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText, WindowFlags flags);
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText);
+
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
 

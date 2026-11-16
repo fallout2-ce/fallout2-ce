@@ -1,11 +1,9 @@
 #include "dbox.h"
 
+#include <algorithm>
 #include <functional>
 #include <stdio.h>
-#include <string>
 #include <string_view>
-
-#include <algorithm>
 
 #include "art.h"
 #include "character_editor.h"
@@ -89,6 +87,34 @@ namespace {
                 blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), buffer + offset, width);
             }
         } // namespace input
+
+        namespace descriptionInput {
+            constexpr size_t dialogFrmCount = 3;
+
+            constexpr InterfaceFrameId kDialogFrmIds[dialogFrmCount] = {
+                InterfaceFrameId::LoadSaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown
+            };
+
+            constexpr Point titlePos { 0, 7 };
+            constexpr Point doneLabelPos { 56, 57 };
+            constexpr Point cancelLabelPos { 181, 57 };
+            constexpr Point doneButtonPos { 34, 58 };
+            constexpr Point cancelButtonPos { 160, 58 };
+            constexpr Point inputPos { 24, 35 };
+
+            struct DialogFrms {
+                FrmImage background, buttonUp, buttonDown;
+            };
+
+            bool loadImages(DialogFrms& images)
+            {
+                return images.background.lock(kDialogFrmIds[0])
+                    && images.buttonUp.lock(kDialogFrmIds[1])
+                    && images.buttonDown.lock(kDialogFrmIds[2]);
+            }
+        } // namespace descriptionInput
 
         namespace file {
             constexpr size_t dialogFrmCount = 7;
@@ -504,7 +530,6 @@ int runTextInput(int win, std::string& text, int maxLength, int x, int y,
     return rc;
 }
 
-// CE: extracted from character_editor.cc
 // TODO: see if it could be used for `showSaveFileDialog`
 static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
 {
@@ -517,6 +542,7 @@ static int _get_input_str(int win, int cancelKeyCode, std::string& text, int max
     return runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
 }
 
+// CE: extracted from character_editor.cc
 const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)
 {
     using namespace fallout::dbox;
@@ -563,6 +589,84 @@ const char* showInputDialog(const char* currentInput, int windowX, int windowY, 
 const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText)
 {
     return showInputDialog(currentInput, x, y, doneText, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+}
+
+// CE: extracted from loadsave.cc
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText, WindowFlags flags)
+{
+    using namespace fallout::dbox;
+
+    ScopedFont mainFontGuard(101);
+    static std::string result;
+
+    descriptionInput::DialogFrms frms;
+    if (!descriptionInput::loadImages(frms)) return nullptr;
+
+    int windowWidth = frms.background.getWidth();
+    int windowHeight = frms.background.getHeight();
+
+    UniqueWindow window(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
+    if (window.get() == -1) return nullptr;
+
+    unsigned char* windowBuf = windowGetBuffer(window.get());
+    memcpy(windowBuf, frms.background.getData(), static_cast<size_t>(windowWidth) * windowHeight);
+
+    {
+        ScopedFont labelFontGuard(103);
+
+        if (doneText != nullptr) {
+            fontDrawText(windowBuf + windowWidth * descriptionInput::doneLabelPos.y + descriptionInput::doneLabelPos.x,
+                doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+
+        if (cancelText != nullptr) {
+            fontDrawText(windowBuf + windowWidth * descriptionInput::cancelLabelPos.y + descriptionInput::cancelLabelPos.x,
+                cancelText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+
+        if (title != nullptr) {
+            int titleWidth = fontGetStringWidth(title);
+            int titleX = (windowWidth - titleWidth) / 2;
+            fontDrawText(windowBuf + windowWidth * descriptionInput::titlePos.y + titleX,
+                title, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+    }
+
+    dbox::createRedButton(window.get(), descriptionInput::doneButtonPos, btnId::done, frms.buttonUp, frms.buttonDown);
+    dbox::createRedButton(window.get(), descriptionInput::cancelButtonPos, btnId::cancel, frms.buttonUp, frms.buttonDown);
+
+    windowRefresh(window.get());
+
+    Color backgroundColor = static_cast<Color>(
+        *(frms.background.getData() + windowWidth * descriptionInput::inputPos.y + descriptionInput::inputPos.x) & COLOR_LAST);
+
+    std::string editableText = currentInput != nullptr ? currentInput : "";
+
+    TextInputOptions options;
+    options.doneKeyCode = btnId::done;
+    options.cancelKeyCode = btnId::cancel;
+    options.cancelReturnCode = -1;
+    options.playReturnSound = false;
+    options.clearOnFirstBackspace = true;
+
+    int status = runTextInput(window.get(), editableText, maxLength,
+        descriptionInput::inputPos.x, descriptionInput::inputPos.y,
+        COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0, options);
+
+    if (status == 0) {
+        result = std::move(editableText);
+        return result.c_str();
+    }
+
+    return nullptr;
+}
+
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText)
+{
+    return showDescriptionInputDialog(title, currentInput, maxLength, windowX, windowY,
+        doneText, cancelText, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
 }
 
 // 0x41CF20 dialog_out
