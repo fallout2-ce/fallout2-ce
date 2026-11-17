@@ -1,6 +1,7 @@
 #include "dinput.h"
 
 #include "debug.h"
+#include "gamepad.h"
 #include "settings.h"
 #include "sfall_kb_helpers.h"
 #include "svga.h"
@@ -48,7 +49,7 @@ void directInputFree()
 
 bool mouseDeviceUsesRelativeMode()
 {
-    return mouseRelativeMode;
+    return mouseRelativeMode && !gamepadControlsCursor();
 }
 
 bool mouseDeviceInitMode()
@@ -95,14 +96,32 @@ bool mouseDeviceGetData(MouseData* mouseState)
     // TODO: Move mouse events processing into `GNW95_process_message` and
     // update mouse position manually.
     SDL_PumpEvents();
-    Uint32 buttons = mouseDeviceUsesRelativeMode()
-        ? SDL_GetRelativeMouseState(&(mouseState->x), &(mouseState->y))
-        : SDL_GetMouseState(&(mouseState->x), &(mouseState->y));
-    if (!mouseDeviceUsesRelativeMode()) {
-        mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
+
+    int hostX = 0;
+    int hostY = 0;
+    Uint32 buttons = mouseRelativeMode
+        ? SDL_GetRelativeMouseState(&hostX, &hostY)
+        : SDL_GetMouseState(&hostX, &hostY);
+    if (!mouseRelativeMode) {
+        mouseDeviceMapWindowToLogicalPosition(&hostX, &hostY);
     }
+
+    gamepadNotifyHostMouse(hostX, hostY, mouseRelativeMode, buttons);
+    gamepadPoll(&gMouseWheelDeltaX, &gMouseWheelDeltaY);
+
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     mouseState->buttons[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+
+    if (gamepadControlsCursor()) {
+        gamepadFillMouse(mouseState);
+    } else {
+        mouseState->x = hostX;
+        mouseState->y = hostY;
+        if (gamepadIsOpen()) {
+            gamepadApplyButtons(mouseState);
+        }
+    }
+
     mouseState->wheelX = gMouseWheelDeltaX;
     mouseState->wheelY = gMouseWheelDeltaY;
 
@@ -142,12 +161,14 @@ bool keyboardDeviceGetData(KeyboardData* keyboardData)
 bool mouseDeviceInit()
 {
     mouseDeviceRefreshWindowMapping();
+    gamepadOpen();
     return mouseDeviceInitMode();
 }
 
 // 0x4E078C
 void mouseDeviceFree()
 {
+    gamepadClose();
 }
 
 // 0x4E07B8
@@ -200,6 +221,11 @@ void mouseDeviceRefreshWindowMapping()
 
 void mouseDeviceSetLogicalPosition(int x, int y)
 {
+    gamepadSyncVirtualCursor(x, y);
+    if (gamepadControlsCursor()) {
+        return;
+    }
+
     if (mouseDeviceUsesRelativeMode()
         || gSdlWindow == nullptr
         || mouseWindowMappingLogicalWidth <= 0
