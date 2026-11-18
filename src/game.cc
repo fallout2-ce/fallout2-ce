@@ -777,7 +777,6 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
     case KEY_EXCLAMATION:
         if (interfaceBarEnabled()) {
             soundPlayFile("ib1p1xx1");
-            gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
             _action_skill_use(SKILL_SNEAK);
         }
         break;
