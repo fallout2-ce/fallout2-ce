@@ -13,6 +13,7 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "game_speed.h"
 #include "input.h"
 #include "mouse.h"
 #include "movie.h"
@@ -151,6 +152,7 @@ int gameMoviesSave(File* stream)
 // 0x44E690 gmovie_play
 int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
 {
+    ScopedGameSpeedPause speedPause;
     if (!gameMovieExtendedIsValid(movie) || movieFileNames[movie].empty()) {
         debugPrint("\ngmovie_play() - Error: Invalid movie %d\n", movie);
         return -1;

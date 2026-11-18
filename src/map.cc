@@ -634,11 +634,12 @@ Map mapGetCurrentMap()
 // 0x4826C0
 int mapScroll(int dx, int dy)
 {
-    if (getTicksSince(gIsoWindowScrollTimestamp) < 33) {
+    unsigned int now = getRealTicks();
+    if (getTicksBetween(now, gIsoWindowScrollTimestamp) < 33) {
         return -2;
     }
 
-    gIsoWindowScrollTimestamp = getTicks();
+    gIsoWindowScrollTimestamp = now;
 
     int screenDx = dx * 32;
     int screenDy = dy * 24;

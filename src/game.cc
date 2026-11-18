@@ -29,6 +29,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_speed.h"
 #include "input.h"
 #include "interface.h"
 #include "inventory.h"
@@ -432,6 +433,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, Window
 // 0x442B84
 void gameReset()
 {
+    gameSpeedGetTicks();
     tileDisable();
     paletteReset();
     randomReset();
@@ -485,6 +487,7 @@ void gameReset()
     sfall_ini_cache_clear();
     sfallOnGameReset();
     gGameLoaded = false;
+    gameSpeedReset();
 }
 
 // 0x442C34
@@ -1690,8 +1693,10 @@ GameMode::Flags GameMode::currentGameMode = kNone;
 
 void GameMode::enterGameMode(GameMode::Flags gameMode)
 {
+    gameSpeedGetTicks();
     GameMode::Flags previousGameMode = currentGameMode;
     currentGameMode = currentGameMode | gameMode;
+    gameSpeedGetTicks();
     if (currentGameMode != previousGameMode) {
         sfallOnGameModeChange(0, previousGameMode);
     }
@@ -1699,8 +1704,10 @@ void GameMode::enterGameMode(GameMode::Flags gameMode)
 
 void GameMode::exitGameMode(GameMode::Flags gameMode)
 {
+    gameSpeedGetTicks();
     GameMode::Flags previousGameMode = currentGameMode;
     currentGameMode = currentGameMode & ~gameMode;
+    gameSpeedGetTicks();
     if (currentGameMode != previousGameMode) {
         sfallOnGameModeChange(0, previousGameMode);
     }
@@ -1709,7 +1716,9 @@ void GameMode::exitGameMode(GameMode::Flags gameMode)
 // remove game mode without triggering hooks
 void GameMode::exitGameModeQuietly(GameMode::Flags gameMode)
 {
+    gameSpeedGetTicks();
     currentGameMode = currentGameMode & ~gameMode;
+    gameSpeedGetTicks();
 }
 
 bool GameMode::isInGameMode(GameMode::Flags gameMode)

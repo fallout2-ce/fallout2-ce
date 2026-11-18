@@ -4846,16 +4846,16 @@ static void wmPartyInitWalking(int x, int y)
 
 static bool wmTravelTickDue(unsigned int now)
 {
-    if (worldmapTravelDelay == 0) {
-        return true;
-    }
+    // The default previously advanced once per rendered frame. Use the normal
+    // frame budget in gameplay time so slow motion doesn't slow input/rendering.
+    unsigned int delay = worldmapTravelDelay == 0 ? 1000 / 60 : worldmapTravelDelay;
 
-    if (getTicksBetween(now, wmLastTravelTick) < worldmapTravelDelay) {
+    if (getTicksBetween(now, wmLastTravelTick) < delay) {
         return false;
     }
 
-    wmLastTravelTick += worldmapTravelDelay;
-    if (getTicksBetween(now, wmLastTravelTick) >= worldmapTravelDelay) {
+    wmLastTravelTick += delay;
+    if (getTicksBetween(now, wmLastTravelTick) >= delay) {
         // Drop accumulated ticks after a stall instead of advancing in bursts.
         wmLastTravelTick = now;
     }
@@ -5516,9 +5516,9 @@ static void wmMouseBkProc()
             }
         }
 
-        unsigned int tick = _get_bk_time();
+        unsigned int tick = getRealTicks();
         if (getTicksBetween(tick, lastTime) > 50) {
-            lastTime = _get_bk_time();
+            lastTime = tick;
             // NOTE: Uninline.
             wmInterfaceScroll(dx, dy, &couldScroll);
         }

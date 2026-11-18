@@ -38,6 +38,14 @@ The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) inst
 | `Misc` | `ScreenshotsFormat` | `system` | `screenshots_format` |
 | `Misc` | `UseWalkDistance` | `qol` | `use_walk_distance` |
 | `Misc` | `AutoOpenDoors` | `qol` | `auto_open_doors` |
+| `Speed` | `Enable` | `speed` | `enabled` |
+| `Speed` | `SpeedMultiInitial` | `speed` | `initial_percent` |
+| `Speed` | `SpeedMulti0`–`SpeedMulti3` | `speed` | `preset_0`–`preset_3` |
+| `Input` | `SpeedKey0`–`SpeedKey3` | `speed` | `key_0`–`key_3` |
+| `Input` | `SpeedModKey` | `speed` | `modifier_key` |
+| `Input` | `SpeedToggleKey` | `speed` | `toggle_key` |
+
+Speed controls use four presets rather than sfall's ten, with percentages limited to 1–1000. The selected speed and toggle reset to the configured initial speed on new game/load/reset. Bindings retain sfall's DirectInput scancodes. Gameplay, combat, and world-map travel use scaled time; map scrolling, keyboard repeat, media playback, and `get_uptime` use real time. As in sfall, most modal screens temporarily use normal speed, while world-map mode permits acceleration. CE raises its frame limit for acceleration, while slow motion keeps input and rendering at their normal frame rate. World-map travel uses a separate gameplay timer; `travel_delay=0` selects a default 16 ms cadence, so travel also slows independently of rendering.
 
 The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg):
 
