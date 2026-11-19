@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 
+#include "debug.h"
 #include "game.h"
 #include "kb.h"
 #include "settings.h"
@@ -47,6 +48,8 @@ static void updateControls()
         return;
     }
 
+    int previousPercent = selectedPercent;
+    bool previouslyEnabled = enabled;
     bool togglePressed = settings.speed.toggle_key != 0
         && sfall_kb_is_key_pressed(settings.speed.toggle_key);
     if (modifierIsPressed()) {
@@ -66,6 +69,10 @@ static void updateControls()
         }
     }
     toggleHeld = togglePressed;
+    if (selectedPercent != previousPercent || enabled != previouslyEnabled) {
+        debugPrint("Game speed: %d%% (selected %d%%, toggle %s).\n",
+            enabled ? selectedPercent : 100, selectedPercent, enabled ? "on" : "off");
+    }
 }
 
 static int effectivePercent()
