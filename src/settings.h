@@ -222,6 +222,22 @@ struct PreferencesSettings {
     bool running_burning_guy = true;
 };
 
+struct SpeedSettings {
+    bool enabled = true;
+    int initial_percent = 100;
+    int preset_0 = 50;
+    int preset_1 = 100;
+    int preset_2 = 200;
+    int preset_3 = 300;
+    // DirectInput scancodes, as used by sfall. Defaults: Ctrl + numpad 0..3.
+    int key_0 = 0x52;
+    int key_1 = 0x4F;
+    int key_2 = 0x50;
+    int key_3 = 0x51;
+    int modifier_key = -1;
+    int toggle_key = 0;
+};
+
 struct SoundSettings {
     bool initialize = true;
     bool debug = false;
@@ -307,6 +323,7 @@ struct Settings {
     UISettings ui;
     GameplaySettings gameplay;
     PreferencesSettings preferences;
+    SpeedSettings speed;
     SoundSettings sound;
     DebugSettings debug;
     CombatAiSettings combat_ai;

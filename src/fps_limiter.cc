@@ -2,6 +2,10 @@
 
 #include <SDL.h>
 
+#include <algorithm>
+
+#include "game_speed.h"
+
 namespace fallout {
 
 FpsLimiter::FpsLimiter(unsigned int fps)
@@ -17,8 +21,12 @@ void FpsLimiter::mark()
 
 void FpsLimiter::throttle() const
 {
-    if (1000 / _fps > SDL_GetTicks() - _ticks) {
-        SDL_Delay(1000 / _fps - (SDL_GetTicks() - _ticks));
+    // Allow accelerated animations to advance more often, but keep input and
+    // rendering responsive during slow motion. Travel has its own scaled timer.
+    unsigned int frameDuration = 100000 / (_fps * std::max(100, gameSpeedGetPercent()));
+    unsigned int elapsed = SDL_GetTicks() - _ticks;
+    if (frameDuration > elapsed) {
+        SDL_Delay(frameDuration - elapsed);
     }
 }
 

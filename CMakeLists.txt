@@ -129,6 +129,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/game_movie.h"
     "src/game_sound.cc"
     "src/game_sound.h"
+    "src/game_speed.cc"
+    "src/game_speed.h"
     "src/game_vars.h"
     "src/game.cc"
     "src/game.h"

@@ -738,7 +738,7 @@ static void op_get_game_mode(Program* program)
 // get_uptime
 static void op_get_uptime(Program* program)
 {
-    programStackPushInteger(program, getTicks());
+    programStackPushInteger(program, getRealTicks());
 }
 
 // set_car_current_town
