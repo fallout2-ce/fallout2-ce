@@ -149,26 +149,6 @@ constexpr inline PipboyTextOptions operator|(PipboyTextOptions lhs, PipboyTextOp
     return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
 }
 
-enum PipboyRestDuration : int {
-    PIPBOY_REST_DURATION_TEN_MINUTES,
-    PIPBOY_REST_DURATION_THIRTY_MINUTES,
-    PIPBOY_REST_DURATION_ONE_HOUR,
-    PIPBOY_REST_DURATION_TWO_HOURS,
-    PIPBOY_REST_DURATION_THREE_HOURS,
-    PIPBOY_REST_DURATION_FOUR_HOURS,
-    PIPBOY_REST_DURATION_FIVE_HOURS,
-    PIPBOY_REST_DURATION_SIX_HOURS,
-    PIPBOY_REST_DURATION_UNTIL_MORNING,
-    PIPBOY_REST_DURATION_UNTIL_NOON,
-    PIPBOY_REST_DURATION_UNTIL_EVENING,
-    PIPBOY_REST_DURATION_UNTIL_MIDNIGHT,
-    PIPBOY_REST_DURATION_UNTIL_HEALED,
-    PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED,
-    PIPBOY_REST_DURATION_COUNT,
-    PIPBOY_REST_DURATION_COUNT_WITHOUT_PARTY = PIPBOY_REST_DURATION_COUNT - 1,
-    PIPBOY_REST_DURATION_DEFAULT = PIPBOY_REST_DURATION_TEN_MINUTES
-};
-
 static constexpr int PIPBOY_REST_DURATION_WAKE_HOUR_COUNT = PIPBOY_REST_DURATION_UNTIL_MIDNIGHT - PIPBOY_REST_DURATION_UNTIL_MORNING + 1;
 static constexpr int kDefaultPipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT] = {
     8,
@@ -2613,7 +2593,7 @@ bool pipboyRestOptionMsgsSetBase(int baseMessageId)
     return true;
 }
 
-bool pipboyRestOptionSet(int restOption, int value)
+bool pipboyRestOptionSet(PipboyRestDuration restOption, int value)
 {
     if (restOption < PIPBOY_REST_DURATION_UNTIL_MORNING || restOption > PIPBOY_REST_DURATION_UNTIL_MIDNIGHT) {
         return false;

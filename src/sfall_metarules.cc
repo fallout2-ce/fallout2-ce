@@ -2154,7 +2154,7 @@ static void mf_set_rest_heal_time(OpcodeContext& ctx)
 
 static void mf_set_rest_option(OpcodeContext& ctx)
 {
-    int restOption = ctx.arg(0).asInt();
+    PipboyRestDuration restOption = static_cast<PipboyRestDuration>(ctx.arg(0).asInt());
     int value = ctx.arg(1).asInt();
 
     if (!pipboyRestOptionSet(restOption, value)) {
