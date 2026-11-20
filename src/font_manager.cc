@@ -1,10 +1,14 @@
 #include "font_manager.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "color.h"
 #include "db.h"
+#include "debug.h"
 #include "memory_manager.h"
 #include "settings.h"
 
@@ -39,19 +43,21 @@ static int interfaceFontGetMonospacedStringWidthImpl(const char* string);
 static int interfaceFontGetLetterSpacingImpl();
 static int interfaceFontGetBufferSizeImpl(const char* string);
 static int interfaceFontGetMonospacedCharacterWidthImpl();
-static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color);
+static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, ColorWithFlags color);
 static void interfaceFontByteSwapUInt32(unsigned int* value);
 static void interfaceFontByteSwapInt32(int* value);
 static void interfaceFontByteSwapUInt16(unsigned short* value);
 static void interfaceFontByteSwapInt16(short* value);
+static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, ColorWithFlags color, float scale);
+static int interfaceFontGetScaledWidthImpl(const char* string, ColorWithFlags color, float scale);
 
-// 0x518680
+// 0x518680 gFMInit
 static bool gInterfaceFontsInitialized = false;
 
-// 0x518684
+// 0x518684 gNumFonts
 static int gInterfaceFontsLength = 0;
 
-// 0x518688
+// 0x518688 alias_mgr
 FontManager gModernFontManager = {
     100,
     110,
@@ -66,16 +72,16 @@ FontManager gModernFontManager = {
     interfaceFontGetMonospacedCharacterWidthImpl,
 };
 
-// 0x586838
+// 0x586838 gFontCache
 static InterfaceFontDescriptor gInterfaceFontDescriptors[INTERFACE_FONT_MAX];
 
-// 0x58E938
+// 0x58E938 gCurrentFontNum
 static int gCurrentInterfaceFont;
 
-// 0x58E93C
+// 0x58E93C gCurrentFont
 static InterfaceFontDescriptor* gCurrentInterfaceFontDescriptor;
 
-// 0x441C80
+// 0x441C80 FMInit
 int interfaceFontsInit()
 {
     int currentFont = -1;
@@ -104,7 +110,7 @@ int interfaceFontsInit()
     return 0;
 }
 
-// 0x441CEC
+// 0x441CEC FMExit
 void interfaceFontsExit()
 {
     for (int font = 0; font < INTERFACE_FONT_MAX; font++) {
@@ -114,7 +120,25 @@ void interfaceFontsExit()
     }
 }
 
-// 0x441D20
+void interfaceFontDrawTextScaled2D(const Buffer2D& dest, int x, int y, const char* string, ColorWithFlags color, float scale)
+{
+    if (!gInterfaceFontsInitialized || dest.data == nullptr || string == nullptr || *string == '\0') {
+        return;
+    }
+
+    interfaceFontDrawScaledImpl(dest, x, y, string, color, std::max(scale, 0.01f));
+}
+
+int interfaceFontGetStringWidthScaled(const char* string, ColorWithFlags color, float scale)
+{
+    if (!gInterfaceFontsInitialized || string == nullptr || *string == '\0') {
+        return 0;
+    }
+
+    return interfaceFontGetScaledWidthImpl(string, color, std::max(scale, 0.01f));
+}
+
+// 0x441D20 FMLoadFont
 static int interfaceFontLoad(int font_index)
 {
     InterfaceFontDescriptor* fontDescriptor = &(gInterfaceFontDescriptors[font_index]);
@@ -219,7 +243,7 @@ static int interfaceFontLoad(int font_index)
     return 0;
 }
 
-// 0x442120
+// 0x442120 FMtext_font
 static void interfaceFontSetCurrentImpl(int font)
 {
     if (!gInterfaceFontsInitialized) {
@@ -234,7 +258,7 @@ static void interfaceFontSetCurrentImpl(int font)
     }
 }
 
-// 0x442168
+// 0x442168 FMtext_height
 static int interfaceFontGetLineHeightImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -244,7 +268,7 @@ static int interfaceFontGetLineHeightImpl()
     return gCurrentInterfaceFontDescriptor->lineSpacing + gCurrentInterfaceFontDescriptor->maxHeight;
 }
 
-// 0x442188
+// 0x442188 FMtext_width
 static int interfaceFontGetStringWidthImpl(const char* string)
 {
     if (!gInterfaceFontsInitialized) {
@@ -269,7 +293,7 @@ static int interfaceFontGetStringWidthImpl(const char* string)
     return stringWidth;
 }
 
-// 0x4421DC
+// 0x4421DC FMtext_char_width
 static int interfaceFontGetCharacterWidthImpl(int ch)
 {
     int width;
@@ -278,16 +302,17 @@ static int interfaceFontGetCharacterWidthImpl(int ch)
         return 0;
     }
 
-    if (ch == ' ') {
+    unsigned char character = static_cast<unsigned char>(ch);
+    if (character == ' ') {
         width = gCurrentInterfaceFontDescriptor->wordSpacing;
     } else {
-        width = gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+        width = gCurrentInterfaceFontDescriptor->glyphs[character].width;
     }
 
     return width;
 }
 
-// 0x442210
+// 0x442210 FMtext_mono_width
 static int interfaceFontGetMonospacedStringWidthImpl(const char* str)
 {
     if (!gInterfaceFontsInitialized) {
@@ -297,7 +322,7 @@ static int interfaceFontGetMonospacedStringWidthImpl(const char* str)
     return interfaceFontGetMonospacedCharacterWidthImpl() * strlen(str);
 }
 
-// 0x442240
+// 0x442240 FMtext_spacing
 static int interfaceFontGetLetterSpacingImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -307,7 +332,7 @@ static int interfaceFontGetLetterSpacingImpl()
     return gCurrentInterfaceFontDescriptor->letterSpacing;
 }
 
-// 0x442258
+// 0x442258 FMtext_size
 static int interfaceFontGetBufferSizeImpl(const char* str)
 {
     if (!gInterfaceFontsInitialized) {
@@ -317,7 +342,7 @@ static int interfaceFontGetBufferSizeImpl(const char* str)
     return interfaceFontGetStringWidthImpl(str) * interfaceFontGetLineHeightImpl();
 }
 
-// 0x442278
+// 0x442278 FMtext_max
 static int interfaceFontGetMonospacedCharacterWidthImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -334,24 +359,24 @@ static int interfaceFontGetMonospacedCharacterWidthImpl()
     return spacing + gCurrentInterfaceFontDescriptor->maxHeight;
 }
 
-// 0x4422B4
-static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color)
+// 0x4422B4 FMtext_to_buf
+static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, ColorWithFlags color)
 {
     if (!gInterfaceFontsInitialized) {
         return;
     }
 
-    if ((color & FONT_SHADOW) != 0) {
-        color &= ~FONT_SHADOW;
+    if ((color & DRAW_TEXT_FLAG_SHADOWED) != 0) {
+        color &= ~DRAW_TEXT_FLAG_SHADOWED;
         // NOTE: Other font options preserved. This is different from text font
         // shadows.
-        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, (color & ~0xFF) | _colorTable[0]);
+        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, COLOR_BLACK | static_cast<DrawTextFlags>(color & ~0XFF));
     }
 
-    unsigned char* palette = _getColorBlendTable(color & 0xFF);
+    Color* palette = _getColorBlendTable(static_cast<Color>(color & COLOR_LAST));
 
     int monospacedCharacterWidth;
-    if ((color & FONT_MONO) != 0) {
+    if ((color & DRAW_TEXT_FLAG_MONOSPACED) != 0) {
         // NOTE: Uninline.
         monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
     }
@@ -368,7 +393,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         }
 
         unsigned char* end;
-        if ((color & FONT_MONO) != 0) {
+        if ((color & DRAW_TEXT_FLAG_MONOSPACED) != 0) {
             end = ptr + monospacedCharacterWidth;
             ptr += (monospacedCharacterWidth - characterWidth - gCurrentInterfaceFontDescriptor->letterSpacing) / 2;
         } else {
@@ -398,20 +423,98 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         ptr = end;
     }
 
-    if ((color & FONT_UNDERLINE) != 0) {
+    if ((color & DRAW_TEXT_FLAG_UNDERLINED) != 0) {
         int length = ptr - buf;
         unsigned char* underlinePtr = buf + pitch * (gCurrentInterfaceFontDescriptor->maxHeight - 1);
         for (int index = 0; index < length; index++) {
-            *underlinePtr++ = color & 0xFF;
+            *underlinePtr++ = color & COLOR_LAST;
         }
     }
 
-    _freeColorBlendTable(color & 0xFF);
+    _freeColorBlendTable(static_cast<Color>(color & COLOR_LAST));
+}
+
+static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, ColorWithFlags color, float scale)
+{
+    if ((color & DRAW_TEXT_FLAG_SHADOWED) != DRAW_TEXT_FLAG_NONE) {
+        color &= ~DRAW_TEXT_FLAG_SHADOWED;
+        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, COLOR_BLACK | static_cast<DrawTextFlags>(color & ~0XFF), scale);
+    }
+
+    if ((color & (DRAW_TEXT_FLAG_MONOSPACED | DRAW_TEXT_FLAG_UNDERLINED)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
+    }
+
+    Color* palette = _getColorBlendTable(static_cast<Color>(color & COLOR_LAST));
+
+    float cursorX = static_cast<float>(x);
+    while (*string != '\0') {
+        unsigned char ch = static_cast<unsigned char>(*string++);
+
+        int characterWidth = ch == ' '
+            ? gCurrentInterfaceFontDescriptor->wordSpacing
+            : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+
+        int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
+        int glyphX = static_cast<int>(lround(cursorX));
+
+        InterfaceFontGlyph* glyph = &(gCurrentInterfaceFontDescriptor->glyphs[ch]);
+        if (glyph->width > 0 && glyph->height > 0) {
+            unsigned char* glyphData = gCurrentInterfaceFontDescriptor->data + glyph->offset;
+            int scaledGlyphWidth = std::max(1, static_cast<int>(lround(glyph->width * scale)));
+            int scaledGlyphHeight = std::max(1, static_cast<int>(lround(glyph->height * scale)));
+            int glyphY = y + std::max(0, static_cast<int>(lround((gCurrentInterfaceFontDescriptor->maxHeight - glyph->height) * scale)));
+
+            int destLeft = std::max(glyphX, 0);
+            int destTop = std::max(glyphY, 0);
+            int destRight = std::min(glyphX + scaledGlyphWidth, dest.width);
+            int destBottom = std::min(glyphY + scaledGlyphHeight, dest.height);
+
+            for (int destY = destTop; destY < destBottom; destY++) {
+                int scaledY = destY - glyphY;
+                int srcY = std::clamp(static_cast<int>(scaledY / scale), 0, glyph->height - 1);
+
+                for (int destX = destLeft; destX < destRight; destX++) {
+                    int scaledX = destX - glyphX;
+                    int srcX = std::clamp(static_cast<int>(scaledX / scale), 0, glyph->width - 1);
+                    unsigned char byte = glyphData[srcY * glyph->width + srcX];
+                    unsigned char* pixel = dest.data + destY * dest.width + destX;
+                    *pixel = palette[(byte << 8) + *pixel];
+                }
+            }
+        }
+
+        cursorX += advance * scale;
+        if (static_cast<int>(lround(cursorX)) >= dest.width) {
+            break;
+        }
+    }
+
+    _freeColorBlendTable(static_cast<Color>(color & COLOR_LAST));
+}
+
+static int interfaceFontGetScaledWidthImpl(const char* string, ColorWithFlags color, float scale)
+{
+    if ((color & (DRAW_TEXT_FLAG_MONOSPACED | DRAW_TEXT_FLAG_UNDERLINED)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
+    }
+
+    float width = 0.0f;
+    while (*string != '\0') {
+        unsigned char ch = static_cast<unsigned char>(*string++);
+        int characterWidth = ch == ' '
+            ? gCurrentInterfaceFontDescriptor->wordSpacing
+            : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+        int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
+        width += advance * scale;
+    }
+
+    return std::max(0, static_cast<int>(lround(width)));
 }
 
 // NOTE: Inlined.
 //
-// 0x442520
+// 0x442520 Swap4
 static void interfaceFontByteSwapUInt32(unsigned int* value)
 {
     unsigned int swapped = *value;
@@ -430,7 +533,7 @@ static void interfaceFontByteSwapInt32(int* value)
     interfaceFontByteSwapUInt32((unsigned int*)value);
 }
 
-// 0x442568
+// 0x442568 Swap2
 static void interfaceFontByteSwapUInt16(unsigned short* value)
 {
     unsigned short swapped = *value;

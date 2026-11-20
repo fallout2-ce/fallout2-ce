@@ -3,22 +3,20 @@
 
 namespace fallout {
 
-typedef enum LoadSaveMode {
-    // Special case - loading game from main menu.
-    LOAD_SAVE_MODE_FROM_MAIN_MENU,
-
-    // Normal (full-screen) save/load screen.
-    LOAD_SAVE_MODE_NORMAL,
-
-    // Quick load/save.
-    LOAD_SAVE_MODE_QUICK,
-} LoadSaveMode;
+enum class LoadSaveMode : int {
+    FromMainMenu, // Special case - loading game from main menu.
+    Normal, // Normal (full-screen) save/load screen.
+    Quick, // Quick load/save.
+};
 
 void _InitLoadSave();
 void _ResetLoadSave();
-int lsgSaveGame(int mode);
-int lsgLoadGame(int mode);
+int lsgSaveGame(LoadSaveMode mode);
+int lsgLoadGame(LoadSaveMode mode);
+void lsgDevSetLoadGameSlot(int slot);
+int lsgGetTotalSlotCount();
 bool _isLoadingGame();
+int mapIdBeingLoaded();
 void lsgInit();
 int MapDirErase(const char* path, const char* extension);
 int _MapDirEraseFile_(const char* relativePath, const char* fileName);

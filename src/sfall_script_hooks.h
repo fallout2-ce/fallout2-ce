@@ -1,0 +1,390 @@
+#ifndef FALLOUT_SFALL_SCRIPT_HOOKS_H_
+#define FALLOUT_SFALL_SCRIPT_HOOKS_H_
+
+#include "animation_defs.h"
+#include "art.h"
+#include "game.h"
+#include "interpreter.h"
+#include "interpreter_extra.h"
+#include "queue.h"
+#include "random.h"
+#include "scripts.h"
+#include "skill_defs.h"
+#include "worldmap.h"
+#include <initializer_list>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace fallout {
+
+// Some hooks are implemented in sfall but aren't worth porting over:
+// - useless, never deployed in popular mods
+// - bad for performance and/or stability
+// - awkwardly implemented (need better alternatives)
+
+typedef enum {
+    // Any hit chance calculation.
+    HOOK_TOHIT = 0,
+
+    // Attack hit roll.
+    HOOK_AFTERHITROLL = 1,
+
+    // AP cost of attacks.
+    HOOK_CALCAPCOST = 2,
+
+    //    HOOK_DEATHANIM1 = 3,
+
+    // Death animation selection.
+    HOOK_DEATHANIM2 = 4,
+
+    // Damage calculation.
+    HOOK_COMBATDAMAGE = 5,
+
+    // Critter death.
+    HOOK_ONDEATH = 6,
+
+    //    HOOK_FINDTARGET = 7,
+
+    // Using item on critter or scenery, before normal script proc.
+    // TODO: rename to USEITEMON
+    HOOK_USEOBJON = 8,
+
+    // Removing object from inventory.
+    HOOK_REMOVEINVENOBJ = 9,
+
+    // Barter price calculation.
+    HOOK_BARTERPRICE = 10,
+
+    // Movement AP cost calculation. For AI triggers for every hex they move.
+    HOOK_MOVECOST = 11,
+
+    // obsolete:
+    //    HOOK_HEXMOVEBLOCKING = 12,
+    //    HOOK_HEXAIBLOCKING = 13,
+    //    HOOK_HEXSHOOTBLOCKING = 14,
+    //    HOOK_HEXSIGHTBLOCKING = 15,
+
+    // Weapon min/max damage calculation.
+    HOOK_ITEMDAMAGE = 16,
+
+    // Weapon ammo cost per attack (or per round for bursts).
+    HOOK_AMMOCOST = 17,
+
+    // Using items from inventory or main interface.
+    // TODO: rename to USEITEM
+    HOOK_USEOBJ = 18,
+
+    // Keypress/release. Originally implemented in DirectInput layer, not in the game code. Used e.g. in Party Orders addon.
+    HOOK_KEYPRESS = 19,
+
+    // Similar to KEYPRESS but for mouse buttons.
+    HOOK_MOUSECLICK = 20,
+
+    // Skill is used on object.
+    HOOK_USESKILL = 21,
+
+    // Steal is attempted on a critter.
+    HOOK_STEAL = 22,
+
+    // A check if one critter can see another (in and out of combat).
+    HOOK_WITHINPERCEPTION = 23,
+
+    // Item is moved around the player's inventory via UI.
+    HOOK_INVENTORYMOVE = 24,
+
+    // Critter is equipping/unequiping item in armor/hand slots.
+    HOOK_INVENWIELD = 25,
+
+    // Character FID calculation in UI (inventory, barter). Used for npc_armor.mod
+    HOOK_ADJUSTFID = 26,
+
+    // Before/after combat turn (global version of combat_p_proc).
+    HOOK_COMBATTURN = 27,
+
+    // Car travel on worldmap. Can change car speed and fuel consumption.
+    HOOK_CARTRAVEL = 28,
+
+    // Normal global variable is set. Allows to override value.
+    HOOK_SETGLOBALVAR = 29,
+
+    // Continuously during rest, allows to interrupt it.
+    HOOK_RESTTIMER = 30,
+
+    // Game mode is changed. Used in many mods.
+    HOOK_GAMEMODECHANGE = 31,
+
+    // Before the critter animation when using a map object.
+    HOOK_USEANIMOBJ = 32,
+
+    // Explosive timer is set. Allows to override the time.
+    HOOK_EXPLOSIVETIMER = 33,
+
+    // Object is examined by player. Allows to override text.
+    HOOK_DESCRIPTIONOBJ = 34,
+
+    // Runs before using a skill, allows to override a critter using the skill.
+    // TODO: maybe combine with USESKILL?
+    HOOK_USESKILLON = 35,
+
+    //    HOOK_ONEXPLOSION = 36,
+    //    HOOK_SUBCOMBATDAMAGE = 37,
+    //    HOOK_SETLIGHTING = 38,
+
+    // A continuous sneak check.
+    HOOK_SNEAK = 39,
+
+    // A script procedure is called.
+    // Note: those two are basically the same hook with different flag argument value.
+    HOOK_STDPROCEDURE = 40,
+    HOOK_STDPROCEDURE_END = 41,
+
+    //    HOOK_TARGETOBJECT = 42,
+
+    // Random encounter occurs. Override map or cancel the encounter.
+    HOOK_ENCOUNTER = 43,
+
+    //    HOOK_ADJUSTPOISON = 44,
+    // A critter's radiation level is changed.
+    HOOK_ADJUSTRADS = 45,
+
+    // Any random roll. Has various uses for advanced scripts.
+    HOOK_ROLLCHECK = 46,
+
+    // AI is comparing two weapons when selecting the best one against a specific target or in general.
+    HOOK_BESTWEAPON = 47,
+
+    // Allows to prevent PC or NPC from using a weapon.
+    HOOK_CANUSEWEAPON = 48,
+
+    // RESERVED 49..60
+
+    // Weapon SFX name is generated.
+    HOOK_BUILDSFXWEAPON = 61,
+
+    HOOK_COUNT,
+} HookType;
+
+typedef enum {
+    REST_EVENT_TYPE_CANCEL = -1,
+    REST_EVENT_TYPE_PROGRESS = 0,
+    REST_EVENT_TYPE_COMPLETE = 1,
+} RestEventType;
+
+typedef enum {
+    HOOK_INVENTORYMOVE_MAIN_BACKPACK = 0,
+    HOOK_INVENTORYMOVE_LEFT_HAND = 1,
+    HOOK_INVENTORYMOVE_RIGHT_HAND = 2,
+    HOOK_INVENTORYMOVE_ARMOR_SLOT = 3,
+    HOOK_INVENTORYMOVE_WEAPON_RELOAD = 4,
+    HOOK_INVENTORYMOVE_CONTAINER = 5,
+    HOOK_INVENTORYMOVE_GROUND = 6,
+    HOOK_INVENTORYMOVE_PICKUP = 7,
+    HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT = 8,
+} HookInventoryMoveType;
+
+typedef enum {
+    PERCEPTION_OTHER = 0,
+    PERCEPTION_SEE = 1,
+    PERCEPTION_HEAR = 2,
+    PERCEPTION_AI_TARGET = 3,
+} PerceptionType;
+
+typedef enum {
+    PERCEPTION_OUT_OF_RANGE = 0,
+    PERCEPTION_IN_RANGE = 1,
+    PERCEPTION_FORCE = 2,
+} PerceptionResult;
+
+constexpr size_t HOOKS_MAX_ARGUMENTS = 16;
+constexpr size_t HOOKS_MAX_RETURN_VALUES = 8;
+
+class ScriptHookValue {
+public:
+    ScriptHookValue() = default;
+    explicit ScriptHookValue(ProgramValue value);
+
+    static ScriptHookValue fromProgramValue(Program* program, ProgramValue value);
+
+    ProgramValue toProgramValue(Program* program) const;
+
+    bool isString() const;
+    bool isInt() const;
+    bool isPointer() const;
+    int asInt() const;
+    float asFloat() const;
+    Object* asObject() const;
+    const char* asString() const;
+
+private:
+    ProgramValue _value;
+    std::string _stringValue;
+    bool _isString = false;
+};
+
+/**
+ * Allows to delegate some logic to scripts:
+ * - Each hook type has different number of arguments and return values
+ * - Set up arguments, invoke `call()` and read return values
+ * - Return values can be used to alter normal engine behavior if scripts request it
+ */
+class ScriptHookCall {
+public:
+    static ScriptHookCall* current();
+
+    ScriptHookCall(HookType hookType, int maxReturnValues, std::initializer_list<ProgramValue> args);
+    ~ScriptHookCall() = default;
+
+    ScriptHookCall(const ScriptHookCall& other) = delete;
+    ScriptHookCall(ScriptHookCall&& other) = delete;
+    ScriptHookCall& operator=(const ScriptHookCall& other) = delete;
+    ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
+
+    // Sets an argument value at given index.
+    void setArgAt(int idx, Program* program, ProgramValue value);
+    // Adds return value from script.
+    // numReturnValues will only increase if current script called this more times than the last one.
+    void addReturnValueFromScript(Program* program, ProgramValue value);
+
+    void call();
+
+    ProgramValue getNextArgFromScript(Program* program);
+
+    // Number of arguments supplied from the engine.
+    int numArgs() const;
+    // Maximum expected number of return values by the engine.
+    int maxReturnValues() const;
+    // Number of actually supplied values from all scripts.
+    int numReturnValues() const;
+    // Number of supplied values from the last script.
+    int numScriptReturnValues() const;
+
+    ProgramValue getArgAt(int idx, Program* program) const;
+    const ScriptHookValue& getReturnValueAt(int idx) const;
+    HookType hookType() const;
+
+private:
+    static std::vector<ScriptHookCall*> _callStack;
+
+    HookType _hookType;
+    int _maxRetVals = 0;
+
+    ScriptHookValue _args[HOOKS_MAX_ARGUMENTS] = {};
+    int _numArgs = 0;
+    ScriptHookValue _retVals[HOOKS_MAX_RETURN_VALUES] = {};
+    int _numRetVals = 0;
+
+    int _scriptArgs = 0;
+    int _scriptRetVals = 0;
+};
+
+struct BarterPriceContext {
+    Object* dude;
+    Object* npc;
+    Object* requestTable;
+    Object* offerTable;
+    int value;
+    int offerValue;
+    int rawValue;
+    int caps;
+    bool offerButton;
+    bool partyMember;
+};
+
+struct UseSkillOnHookResult {
+    bool shouldContinue;
+    bool userOverridden;
+    bool allowInCombat;
+};
+
+enum AmmoCostHookType {
+    AMMO_COST_HOOK_SINGLE_SHOT = 0,
+    AMMO_COST_HOOK_CHECK_OUT_OF_AMMO = 1,
+    AMMO_COST_HOOK_BURST_ROUNDS = 2,
+    AMMO_COST_HOOK_BURST_SHOT = 3,
+};
+
+enum class RemoveInventoryObjectHookReason {
+    // sfall's value for its "Unlimited Ammo" fix (see `inventoryEquipFunc`).
+    WieldStack = -2,
+    ItemRemovedInventory = 4831349,
+    ItemRemoved = 4548572,
+    ItemRemovedMulti = 4563866,
+    ItemDestroyed = 4543215,
+    ItemDestroyMulti = 4571599,
+    ItemMove = 4683293,
+    ItemReplace = 4686256,
+    ConsumeDrug = 4666772,
+    UseObj = 4666865,
+    EquipArmor = 4658121,
+    EquipWeapon = 4658675,
+    UnloadWeapon = 4667030,
+    UseDrugOn = 4834866,
+    StealView = 4668206,
+    ArmorEquipped = 4651961,
+    LeftHandEquipped = 4651899,
+    RightHandEquipped = 4651934,
+    ReplaceWeapon = 4658526,
+    Throw = 4266040,
+    SubContainer = 4683191,
+    AIUseDrugOn = 4359920,
+    BarterArmor = 4675656,
+    BarterWeapon = 4675722,
+    InventoryDropCaps = 4667295,
+    DropIntoContainer = 4678833,
+};
+
+enum class EncounterHookEventType {
+    RandomEncounter = 0,
+    LocalMapEnter = 1,
+};
+
+enum class EncounterHookResult {
+    ContinueEncounter,
+    ContinueTravel,
+    LoadMapDirectly,
+};
+
+bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
+bool scriptHooks_StdProcedure(ScriptProc procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, HitMode hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
+int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);
+
+bool scriptHooksInit();
+void scriptHooksReset();
+void scriptHooksExit();
+
+void scriptHooks_GameModeChange(int exit, GameMode::Flags previousGameMode);
+bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
+void scriptHooks_OnDeath(Object* critter);
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, EventType eventType);
+EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, Map* mapIdPtr, bool isSpecial, int tableId, int entryId);
+bool scriptHooks_DescriptionObject(Object* object, std::string& description);
+bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
+bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
+bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
+void scriptHooks_CombatTurnCombatEnd(Object* critter);
+PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result);
+int scriptHooks_CalcApCost(Object* critter, HitMode hitMode, bool aiming, int actionPoints, Object* weapon);
+int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
+int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
+Roll scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, Roll roll);
+void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType* anim);
+UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Skill skill);
+int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus);
+int scriptHooks_UseItem(Object* user, Object* objUsed);
+int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
+AnimationType scriptHooks_UseAnimObj(Object* user, Object* target, AnimationType anim);
+int scriptHooks_AdjustRads(Object* critter, int amount);
+void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target);
+void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
+void scriptHooks_BarterPrice(BarterPriceContext* ctx);
+
+FrmId scriptHooks_AdjustFid(const FrmId& vanillaFrmId, const FrmId& modifiedFrmId);
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand = true);
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, HitMode hitMode);
+
+} // namespace fallout
+
+#endif /* FALLOUT_SFALL_SCRIPT_HOOKS_H_ */

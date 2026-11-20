@@ -21,6 +21,7 @@ procedure start begin
         call assertEquals("opcode_exists OP_NOOP", opcode_exists(OP_NOOP), 1);
         // Probably will never be implemented on fallout2-ce
         call assertEquals("opcode_exists OP_WRITE_INT", opcode_exists(OP_WRITE_INT), 0);
+        call assertEquals("opcode_exists bare index", opcode_exists(0x1B3), 0);
         call assertEquals("opcode_exists 0xFFFF", opcode_exists(0xFFFF), 0);
     end else begin
         display_msg("Opcode exists metarule is not available, skipping tests.");

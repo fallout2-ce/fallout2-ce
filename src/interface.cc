@@ -1,6 +1,9 @@
 #include "interface.h"
 
+#include "platform/ios/quick_toolbar.h"
+
 #include <algorithm>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -20,6 +23,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "input.h"
+#include "inventory.h"
 #include "item.h"
 #include "kb.h"
 #include "memory.h"
@@ -29,8 +33,10 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "proto_types.h"
+#include "settings.h"
 #include "skill.h"
 #include "stat.h"
+#include "string_utils.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -46,10 +52,9 @@ namespace fallout {
 
 // The maximum number of indicator boxes the indicator bar can display.
 //
-// For unknown reason this number is 6, even though there are only 5 different
-// indicator types. In addition to that, default screen width 640px cannot hold
-// 6 boxes 130px each.
-#define INDICATOR_SLOTS_COUNT (6)
+// CE extends these slots for sfall custom tags, but the actual visible count
+// is still clamped per-screen at runtime.
+#define INDICATOR_SLOTS_COUNT (16)
 
 #define INTERFACE_ITEM_ACTION_BUTTON_WIDTH 188
 #define INTERFACE_ITEM_ACTION_BUTTON_HEIGHT 67
@@ -96,25 +101,61 @@ typedef struct InterfaceItemState {
     Object* item;
     unsigned char isDisabled;
     unsigned char isWeapon;
-    int primaryHitMode;
-    int secondaryHitMode;
-    int action;
+    HitMode primaryHitMode;
+    HitMode secondaryHitMode;
+    InterfaceItemAction action;
     int itemFid;
 } InterfaceItemState;
 
+constexpr int kCustomIndicatorMinTag = DUDE_STATE_COUNT;
+constexpr int kCustomIndicatorMaxTag = 126;
+constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicatorMinTag + 1;
+constexpr int kCustomIndicatorDefaultCount = 5;
+constexpr int kCustomIndicatorTextLength = 19;
+constexpr int kCustomIndicatorTextBufferSize = kCustomIndicatorTextLength + 1;
+constexpr int kAmmoBarLeft = 463;
+constexpr int kAmmoBarTop = 26;
+constexpr int kAmmoBarMaxRatio = 70;
+constexpr int kAmmoAlternateMeterWidth = 4;
+constexpr int kAmmoAlternateMeterTopBorder = kAmmoBarTop - 1;
+constexpr int kAmmoAlternateMeterMaxSegmentCount = 12;
+constexpr int kAmmoAlternateMeterMaxSingleShotSegmentCount = 6;
+constexpr Color kAmmoAlternateMeterLeftBorderColor = Color(11);
+constexpr Color kAmmoAlternateMeterTopBorderColor = Color(15);
+constexpr Color kAmmoAlternateMeterBottomBorderColor = Color(10);
+constexpr Color kAmmoAlternateMeterEmptyDarkColor = Color(13);
+constexpr Color kAmmoAlternateMeterEmptyLightColor = Color(15);
+constexpr Color kAmmoAlternateMeterFillColor = Color(196);
+constexpr Color kAmmoAlternateMeterFillShadeColor = Color(75);
+
+struct CustomIndicatorDescription {
+    bool isActive;
+    int configColor;
+    int textColor;
+    unsigned char* data;
+    char defaultText[kCustomIndicatorTextBufferSize];
+    char text[kCustomIndicatorTextBufferSize];
+};
+
 static int _intface_redraw_items_callback(Object* _, Object* __);
 static int _intface_change_fid_callback(Object* _, Object* __);
-static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode);
+static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation previousWeaponAnimationCode, WeaponAnimation weaponAnimationCode);
 static int intface_init_items();
 static int interfaceBarRefreshMainAction();
 static int endTurnButtonInit();
 static int endTurnButtonFree();
 static int endCombatButtonInit();
 static int endCombatButtonFree();
-static void interfaceUpdateAmmoBar(int x, int ratio);
+static void interfaceUpdateAmmoBar(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot);
+static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity);
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int ammoCapacity);
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot);
+static void interfaceRestoreAlternateAmmoMeterBackground(int x);
+static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int firstActiveRow, int ammoQuantity, int ammoPerShot);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
-static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse);
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay);
 static int intface_fatal_error(int rc);
 static int indicatorBarInit();
@@ -123,9 +164,19 @@ static void indicatorBarReset();
 static int indicatorBoxCompareByPosition(const void* a, const void* b);
 static void indicatorBarRender(int count);
 static bool indicatorBarAdd(int indicator);
+static int indicatorBarGetVisibleSlotCount();
+static Color indicatorBarTextColor(int color);
+static void indicatorBarRenderBox(unsigned char* data, const char* text, Color color);
+static int indicatorBarMaxCustomTag();
+static CustomIndicatorDescription* indicatorBarGetCustomTag(int tag);
+static bool indicatorBarInitCustomTag(int tag, const char* defaultText, int configColor);
+static void indicatorBarRefreshCustomTag(int tag);
+static void indicatorBarResetCustomTags();
 
 static void customInterfaceBarInit();
 static void customInterfaceBarExit();
+
+static void extendedApBarInitToWindow();
 
 static void sidePanelsInit();
 static void sidePanelsExit();
@@ -133,66 +184,63 @@ static void sidePanelsHide();
 static void sidePanelsShow();
 static void sidePanelsDraw(const char* path, int win, bool isLeading);
 
-// 0x518F08
+// 0x518F08 insideInit
 static bool gInterfaceBarInitialized = false;
 
-// 0x518F0C
+// 0x518F0C intface_fid_is_changing
 static bool gInterfaceBarSwapHandsInProgress = false;
 
-// 0x518F10
+// 0x518F10 intfaceEnabled
 static bool gInterfaceBarEnabled = false;
 
-// 0x518F14
+// 0x518F14 intfaceHidden
 static bool gInterfaceBarHidden = false;
 
-// 0x518F18
+// 0x518F18 inventoryButton
 static int gInventoryButton = -1;
 
-// 0x518F24
+// 0x518F24 optionsButton
 static int gOptionsButton = -1;
 
-// 0x518F30
+// 0x518F30 skilldexButton
 static int gSkilldexButton = -1;
 
-// 0x518F40
+// 0x518F40 automapButton
 static int gMapButton = -1;
 
-// 0x518F50
+// 0x518F50 pipboyButton
 static int gPipboyButton = -1;
 
-// 0x518F5C
+// 0x518F5C characterButton
 static int gCharacterButton = -1;
 
-// 0x518F68
+// 0x518F68 itemButton
 static int gSingleAttackButton = -1;
 
-// 0x518F78
-static int gInterfaceCurrentHand = HAND_LEFT;
+// 0x518F78 itemCurrentItem
+static Hand gInterfaceCurrentHand = HAND_LEFT;
 
-// 0x518F7C
+// 0x518F7C itemButtonRect
 static Rect gInterfaceBarMainActionRect;
 
-// 0x518F8C
+// 0x518F8C toggleButton
 static int gChangeHandsButton = -1;
 
-// 0x518F9C
+// 0x518F9C endWindowOpen
 static bool gInterfaceBarEndButtonsIsVisible = false;
 
 // Combat mode curtains rect.
 //
-// 0x518FA0
+// 0x518FA0 endWindowRect
 static Rect gInterfaceBarEndButtonsRect;
 
-// 0x518FB0
+// 0x518FB0 endTurnButton
 static int gEndTurnButton = -1;
 
-// 0x518FBC
+// 0x518FBC endCombatButton
 static int gEndCombatButton = -1;
 
-// 0x518FD4
-static Rect gInterfaceBarActionPointsBarRect;
-
-// 0x518FE8
+// 0x518FE8 bbox
 static IndicatorDescription gIndicatorDescriptions[INDICATOR_COUNT] = {
     { 102, true, nullptr }, // ADDICT
     { 100, false, nullptr }, // SNEAK
@@ -201,64 +249,85 @@ static IndicatorDescription gIndicatorDescriptions[INDICATOR_COUNT] = {
     { 104, true, nullptr }, // RADIATED
 };
 
-// 0x519024
+// 0x519024 interfaceWindow
 int gInterfaceBarWindow = -1;
 
-// 0x519028
+// 0x519028 bar_window
 static int gIndicatorBarWindow = -1;
 
 // Last hit points rendered in interface.
 //
 // Used to animate changes.
 //
-// 0x51902C
+// 0x51902C last_points
 static int gInterfaceLastRenderedHitPoints = 0;
 
 // Last color used to render hit points in interface.
 //
 // Used to animate changes.
 //
-// 0x519030
+// 0x519030 last_points_color
 static int gInterfaceLastRenderedHitPointsColor = INTERFACE_NUMBERS_COLOR_RED;
 
 // Last armor class rendered in interface.
 //
 // Used to animate changes.
 //
-// 0x519034
+// 0x519034 last_ac
 static int gInterfaceLastRenderedArmorClass = 0;
 
 // Each slot contains one of indicators or -1 if slot is empty.
 //
-// 0x5970E0
+// 0x5970E0 bboxslot
 static int gIndicatorSlots[INDICATOR_SLOTS_COUNT];
+static unsigned char indicatorBoxBackgroundData[INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT];
+static CustomIndicatorDescription customIndicatorDescriptions[kCustomIndicatorMaxCount];
+static int initialCustomIndicatorCount = kCustomIndicatorDefaultCount;
+static int availableCustomIndicatorCount = kCustomIndicatorDefaultCount;
 
-// 0x5970F8
+// 0x5970F8 Hand
 static InterfaceItemState gInterfaceItemStates[HAND_COUNT];
 
-// 0x597138
+// 0x597138 box_status_flag
 static bool gIndicatorBarIsVisible;
 
-// 0x597154
+// 0x597154 itemButtonDown
 static unsigned char _itemButtonDown[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
-// 0x59A2B4
+// 0x59A2B4 itemButtonUp
 static unsigned char _itemButtonUp[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
-// 0x59D3F4
+// 0x59D3F4 interfaceBuffer
 static unsigned char* gInterfaceWindowBuffer;
 
-// A slice of main interface background containing 10 shadowed action point
+// Rectangle within Interface Bar window covering the Action Points bar.
+// 0x518FD4 movePointRect
+static Rect apBarRect;
+
+// Width and height of AP bulbs.
+constexpr int kApBarBulbSize = 5;
+
+// Horizontal margin between AP bulbs.
+constexpr int kApBarBulbMargin = 4;
+
+constexpr int kApBarMaxBulbs = 16;
+constexpr int kApBarMaxWidth = (kApBarBulbSize + kApBarBulbMargin) * kApBarMaxBulbs;
+
+// A slice of main interface background containing up to 16 shadowed action point
 // dots. In combat mode individual colored dots are rendered on top of this
 // background.
 //
 // This buffer is initialized once and does not change throughout the game.
 //
-// 0x59D40C
-static unsigned char gInterfaceActionPointsBarBackground[90 * 5];
+// 0x59D40C movePointBackground
+static unsigned char apBarBackgroundData[kApBarMaxWidth * kApBarBulbSize];
 
-// Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default)
-bool gInterfaceBarMode = false;
+static int apBarMaxAP;
+static int apBarWidth;
+
+// AP bar offset relative to the content area of the Interface Bar window.
+static int apBarXOffset;
+constexpr int kApBarYOffset = 14;
 
 static FrmImage _inventoryButtonNormalFrmImage;
 static FrmImage _inventoryButtonPressedFrmImage;
@@ -289,29 +358,36 @@ static FrmImage _greenLightFrmImage;
 static FrmImage _yellowLightFrmImage;
 static FrmImage _redLightFrmImage;
 
+// X offset of interface bar content (used when widescreen version of iface bar is used).
+// TODO: this seems like a bad solution, maybe better to separate message box and other content into two separate windows and avoid this offset?
 int gInterfaceBarContentOffset = 0;
 int gInterfaceBarWidth = 800; // will fall back to 640 if screen width is too narrow or asset is absent
 bool gInterfaceBarIsCustom = false;
 static Art* gCustomInterfaceBarBackground = nullptr;
 
-int gInterfaceSidePanelsImageId = 2;
-bool gInterfaceSidePanelsExtendFromScreenEdge = false;
 static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
 
+static Buffer2D interfaceWindowBuf2D()
+{
+    return { gInterfaceWindowBuffer, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT };
+}
+
+static Buffer2D apBarBackgroundBuf2D()
+{
+    return { apBarBackgroundData, apBarWidth, kApBarBulbSize };
+}
+
 // intface_init
-// 0x45D880
+// 0x45D880 intface_init
 int interfaceInit()
 {
-    int fid;
-
     if (gInterfaceBarWindow != -1) {
         return -1;
     }
 
     customInterfaceBarInit();
 
-    gInterfaceBarActionPointsBarRect = { 316 + gInterfaceBarContentOffset, 14, 406 + gInterfaceBarContentOffset, 19 };
     gInterfaceBarEndButtonsRect = { 580 + gInterfaceBarContentOffset, 38, 637 + gInterfaceBarContentOffset, 96 };
     gInterfaceBarMainActionRect = { 267 + gInterfaceBarContentOffset, 26, 455 + gInterfaceBarContentOffset, 93 };
 
@@ -320,7 +396,7 @@ int interfaceInit()
     int interfaceBarWindowX = (screenGetWidth() - gInterfaceBarWidth) / 2;
     int interfaceBarWindowY = screenGetHeight() - INTERFACE_BAR_HEIGHT;
 
-    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, _colorTable[0], WINDOW_HIDDEN);
+    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, COLOR_BLACK, WINDOW_HIDDEN);
     if (gInterfaceBarWindow == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -332,12 +408,12 @@ int interfaceInit()
         return intface_fatal_error(-1);
     }
 
+    // Blit interface bar FRM into static window buffer.
     if (gInterfaceBarIsCustom) {
         blitBufferToBuffer(customInterfaceBarGetBackgroundImageData(), gInterfaceBarWidth, INTERFACE_BAR_HEIGHT - 1, gInterfaceBarWidth, gInterfaceWindowBuffer, gInterfaceBarWidth);
     } else {
         FrmImage backgroundFrmImage;
-        fid = buildFid(OBJ_TYPE_INTERFACE, 16, 0, 0, 0);
-        if (!backgroundFrmImage.lock(fid)) {
+        if (!backgroundFrmImage.lock(InterfaceFrameId::MainInterface)) {
             return intface_fatal_error(-1);
         }
 
@@ -345,19 +421,19 @@ int interfaceInit()
         backgroundFrmImage.unlock();
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 47, 0, 0, 0);
-    if (!_inventoryButtonNormalFrmImage.lock(fid)) {
+    extendedApBarInitToWindow();
+
+    if (!_inventoryButtonNormalFrmImage.lock(InterfaceFrameId::InventoryButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 46, 0, 0, 0);
-    if (!_inventoryButtonPressedFrmImage.lock(fid)) {
+    if (!_inventoryButtonPressedFrmImage.lock(InterfaceFrameId::InventoryButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    gInventoryButton = buttonCreate(gInterfaceBarWindow, 211 + gInterfaceBarContentOffset, 40, 32, 21, -1, -1, -1, KEY_LOWERCASE_I, _inventoryButtonNormalFrmImage.getData(), _inventoryButtonPressedFrmImage.getData(), nullptr, 0);
+    gInventoryButton = buttonCreate(gInterfaceBarWindow, 211 + gInterfaceBarContentOffset, 40, 32, 21, -1, -1, -1, KEY_LOWERCASE_I, _inventoryButtonNormalFrmImage.getData(), _inventoryButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gInventoryButton == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -365,19 +441,17 @@ int interfaceInit()
 
     buttonSetCallbacks(gInventoryButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 18, 0, 0, 0);
-    if (!_optionsButtonNormalFrmImage.lock(fid)) {
+    if (!_optionsButtonNormalFrmImage.lock(InterfaceFrameId::OptionsButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 17, 0, 0, 0);
-    if (!_optionsButtonPressedFrmImage.lock(fid)) {
+    if (!_optionsButtonPressedFrmImage.lock(InterfaceFrameId::OptionsButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    gOptionsButton = buttonCreate(gInterfaceBarWindow, 210 + gInterfaceBarContentOffset, 61, 34, 34, -1, -1, -1, KEY_LOWERCASE_O, _optionsButtonNormalFrmImage.getData(), _optionsButtonPressedFrmImage.getData(), nullptr, 0);
+    gOptionsButton = buttonCreate(gInterfaceBarWindow, 210 + gInterfaceBarContentOffset, 61, 34, 34, -1, -1, -1, KEY_LOWERCASE_O, _optionsButtonNormalFrmImage.getData(), _optionsButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gOptionsButton == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -385,20 +459,17 @@ int interfaceInit()
 
     buttonSetCallbacks(gOptionsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6, 0, 0, 0);
-    if (!_skilldexButtonNormalFrmImage.lock(fid)) {
+    if (!_skilldexButtonNormalFrmImage.lock(InterfaceFrameId::BigRedButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 7, 0, 0, 0);
-    if (!_skilldexButtonPressedFrmImage.lock(fid)) {
+    if (!_skilldexButtonPressedFrmImage.lock(InterfaceFrameId::BigRedButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6, 0, 0, 0);
-    if (!_skilldexButtonMaskFrmImage.lock(fid)) {
+    if (!_skilldexButtonMaskFrmImage.lock(InterfaceFrameId::BigRedButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -412,20 +483,17 @@ int interfaceInit()
     buttonSetMask(gSkilldexButton, _skilldexButtonMaskFrmImage.getData());
     buttonSetCallbacks(gSkilldexButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 13, 0, 0, 0);
-    if (!_mapButtonNormalFrmImage.lock(fid)) {
+    if (!_mapButtonNormalFrmImage.lock(InterfaceFrameId::AutomapButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 10, 0, 0, 0);
-    if (!_mapButtonPressedFrmImage.lock(fid)) {
+    if (!_mapButtonPressedFrmImage.lock(InterfaceFrameId::AutomapButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 13, 0, 0, 0);
-    if (!_mapButtonMaskFrmImage.lock(fid)) {
+    if (!_mapButtonMaskFrmImage.lock(InterfaceFrameId::AutomapButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -439,19 +507,17 @@ int interfaceInit()
     buttonSetMask(gMapButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gMapButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 59, 0, 0, 0);
-    if (!_pipboyButtonNormalFrmImage.lock(fid)) {
+    if (!_pipboyButtonNormalFrmImage.lock(InterfaceFrameId::PipBoyButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 58, 0, 0, 0);
-    if (!_pipboyButtonPressedFrmImage.lock(fid)) {
+    if (!_pipboyButtonPressedFrmImage.lock(InterfaceFrameId::PipBoyButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    gPipboyButton = buttonCreate(gInterfaceBarWindow, 526 + gInterfaceBarContentOffset, 77, 41, 19, -1, -1, -1, KEY_LOWERCASE_P, _pipboyButtonNormalFrmImage.getData(), _pipboyButtonPressedFrmImage.getData(), nullptr, 0);
+    gPipboyButton = buttonCreate(gInterfaceBarWindow, 526 + gInterfaceBarContentOffset, 77, 41, 19, -1, -1, -1, KEY_LOWERCASE_P, _pipboyButtonNormalFrmImage.getData(), _pipboyButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gPipboyButton == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -460,19 +526,17 @@ int interfaceInit()
     buttonSetMask(gPipboyButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gPipboyButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 57, 0, 0, 0);
-    if (!_characterButtonNormalFrmImage.lock(fid)) {
+    if (!_characterButtonNormalFrmImage.lock(InterfaceFrameId::CharacterButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 56, 0, 0, 0);
-    if (!_characterButtonPressedFrmImage.lock(fid)) {
+    if (!_characterButtonPressedFrmImage.lock(InterfaceFrameId::CharacterButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    gCharacterButton = buttonCreate(gInterfaceBarWindow, 526 + gInterfaceBarContentOffset, 58, 41, 19, -1, -1, -1, KEY_LOWERCASE_C, _characterButtonNormalFrmImage.getData(), _characterButtonPressedFrmImage.getData(), nullptr, 0);
+    gCharacterButton = buttonCreate(gInterfaceBarWindow, 526 + gInterfaceBarContentOffset, 58, 41, 19, -1, -1, -1, KEY_LOWERCASE_C, _characterButtonNormalFrmImage.getData(), _characterButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gCharacterButton == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -481,20 +545,17 @@ int interfaceInit()
     buttonSetMask(gCharacterButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gCharacterButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 32, 0, 0, 0);
-    if (!_itemButtonNormalFrmImage.lock(fid)) {
+    if (!_itemButtonNormalFrmImage.lock(InterfaceFrameId::SingleAttackBigUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 31, 0, 0, 0);
-    if (!_itemButtonPressedFrmImage.lock(fid)) {
+    if (!_itemButtonPressedFrmImage.lock(InterfaceFrameId::SingleAttackBigDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 73, 0, 0, 0);
-    if (!_itemButtonDisabledFrmImage.lock(fid)) {
+    if (!_itemButtonDisabledFrmImage.lock(InterfaceFrameId::SingleAttackBigUpUnreadied)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -511,20 +572,17 @@ int interfaceInit()
     buttonSetRightMouseCallbacks(gSingleAttackButton, -1, KEY_LOWERCASE_N, nullptr, nullptr);
     buttonSetCallbacks(gSingleAttackButton, _gsound_lrg_butt_press, _gsound_lrg_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6, 0, 0, 0);
-    if (!_changeHandsButtonNormalFrmImage.lock(fid)) {
+    if (!_changeHandsButtonNormalFrmImage.lock(InterfaceFrameId::BigRedButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 7, 0, 0, 0);
-    if (!_changeHandsButtonPressedFrmImage.lock(fid)) {
+    if (!_changeHandsButtonPressedFrmImage.lock(InterfaceFrameId::BigRedButtonDown)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6, 0, 0, 0);
-    if (!_changeHandsButtonMaskFrmImage.lock(fid)) {
+    if (!_changeHandsButtonMaskFrmImage.lock(InterfaceFrameId::BigRedButtonUp)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -539,31 +597,25 @@ int interfaceInit()
     buttonSetMask(gChangeHandsButton, _changeHandsButtonMaskFrmImage.getData());
     buttonSetCallbacks(gChangeHandsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 82, 0, 0, 0);
-    if (!_numbersFrmImage.lock(fid)) {
+    if (!_numbersFrmImage.lock(InterfaceFrameId::HitPointsNumbers)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 83, 0, 0, 0);
-    if (!_greenLightFrmImage.lock(fid)) {
+    if (!_greenLightFrmImage.lock(InterfaceFrameId::HealthGreenLight)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 84, 0, 0, 0);
-    if (!_yellowLightFrmImage.lock(fid)) {
+    if (!_yellowLightFrmImage.lock(InterfaceFrameId::HealthYellowLight)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 85, 0, 0, 0);
-    if (!_redLightFrmImage.lock(fid)) {
+    if (!_redLightFrmImage.lock(InterfaceFrameId::HealthRedLight)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
-
-    blitBufferToBuffer(gInterfaceWindowBuffer + gInterfaceBarWidth * 14 + 316 + gInterfaceBarContentOffset, 90, 5, gInterfaceBarWidth, gInterfaceActionPointsBarBackground, 90);
 
     if (indicatorBarInit() == -1) {
         // NOTE: Uninline.
@@ -584,10 +636,13 @@ int interfaceInit()
     gInterfaceBarInitialized = false;
     gInterfaceBarHidden = true;
 
+    quickToolbarSetEnabled(settings.ui.quick_toolbar_visible);
+    quickToolbarInit();
+
     return 0;
 }
 
-// 0x45E3D0
+// 0x45E3D0 intface_reset
 void interfaceReset()
 {
     interfaceBarEnable();
@@ -601,12 +656,14 @@ void interfaceReset()
     // NOTE: Uninline a seemingly inlined routine.
     indicatorBarReset();
 
-    gInterfaceCurrentHand = 0;
+    gInterfaceCurrentHand = HAND_LEFT;
 }
 
-// 0x45E440
+// 0x45E440 intface_exit
 void interfaceFree()
 {
+    quickToolbarFree();
+
     if (gInterfaceBarWindow != -1) {
         // SFALL
         sidePanelsExit();
@@ -698,7 +755,7 @@ void interfaceFree()
     interfaceBarFree();
 }
 
-// 0x45E860
+// 0x45E860 intface_load
 int interfaceLoad(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -713,8 +770,8 @@ int interfaceLoad(File* stream)
     bool interfaceBarHidden;
     if (fileReadBool(stream, &interfaceBarHidden) == -1) return -1;
 
-    int interfaceCurrentHand;
-    if (fileReadInt32(stream, &interfaceCurrentHand) == -1) return -1;
+    Hand interfaceCurrentHand;
+    if (fileReadInt32Enum<Hand>(stream, &interfaceCurrentHand) == -1) return -1;
 
     bool interfaceBarEndButtonsIsVisible;
     if (fileReadBool(stream, &interfaceBarEndButtonsIsVisible) == -1) return -1;
@@ -735,7 +792,25 @@ int interfaceLoad(File* stream)
 
     gInterfaceCurrentHand = interfaceCurrentHand;
 
+    // Reset cached hand state so load consistently reselects default actions
+    // from the actual equipped items instead of reusing stale pre-load state.
+    intface_init_items();
     interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
+
+    // The loaded dude FID can retain a weapon animation from before equipment was restored.
+    Object* activeItem;
+    if (interfaceGetActiveItem(&activeItem) == 0) {
+        WeaponAnimation weaponAnimation = WeaponAnimation::None;
+        if (itemGetType(activeItem) == ITEM_TYPE_WEAPON) {
+            weaponAnimation = weaponGetAnimationCode(activeItem);
+        }
+
+        const FrmId dudeFrmId = gDude;
+        if (dudeFrmId.weaponAnimation() != weaponAnimation) {
+            debugPrint("\nLOADSAVE: Detected dude weapon animation mismatch! Correcting weapon animation from %d to %d ...", static_cast<int>(dudeFrmId.weaponAnimation()), static_cast<int>(weaponAnimation));
+            objectSetFrmId(gDude, CritterFrmId(dudeFrmId.frameId<CritterFrameId>(), dudeFrmId.animationType(), weaponAnimation, dudeFrmId.rotation()), nullptr);
+        }
+    }
 
     if (interfaceBarEndButtonsIsVisible != gInterfaceBarEndButtonsIsVisible) {
         if (interfaceBarEndButtonsIsVisible) {
@@ -756,7 +831,7 @@ int interfaceLoad(File* stream)
     return 0;
 }
 
-// 0x45E988
+// 0x45E988 intface_save
 int interfaceSave(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -765,7 +840,7 @@ int interfaceSave(File* stream)
 
     if (fileWriteBool(stream, gInterfaceBarEnabled) == -1) return -1;
     if (fileWriteBool(stream, gInterfaceBarHidden) == -1) return -1;
-    if (fileWriteInt32(stream, gInterfaceCurrentHand) == -1) return -1;
+    if (fileWriteInt32Enum<Hand>(stream, gInterfaceCurrentHand) == -1) return -1;
     if (fileWriteBool(stream, gInterfaceBarEndButtonsIsVisible) == -1) return -1;
 
     return 0;
@@ -773,7 +848,7 @@ int interfaceSave(File* stream)
 
 // NOTE: Inlined.
 //
-// 0x45E9E0
+// 0x45E9E0 intface_hide
 void interfaceBarHide()
 {
     if (gInterfaceBarWindow != -1) {
@@ -783,13 +858,15 @@ void interfaceBarHide()
         }
     }
 
+    quickToolbarHide();
+
     // SFALL
     sidePanelsHide();
 
     indicatorBarRefresh();
 }
 
-// 0x45EA10
+// 0x45EA10 intface_show
 void interfaceBarShow()
 {
     if (gInterfaceBarWindow != -1) {
@@ -803,13 +880,15 @@ void interfaceBarShow()
         }
     }
 
+    quickToolbarShow();
+
     // SFALL
     sidePanelsShow();
 
     indicatorBarRefresh();
 }
 
-// 0x45EA64
+// 0x45EA64 intface_enable
 void interfaceBarEnable()
 {
     if (!gInterfaceBarEnabled) {
@@ -832,7 +911,7 @@ void interfaceBarEnable()
     }
 }
 
-// 0x45EAFC
+// 0x45EAFC intface_disable
 void interfaceBarDisable()
 {
     if (gInterfaceBarEnabled) {
@@ -852,13 +931,13 @@ void interfaceBarDisable()
     }
 }
 
-// 0x45EB90
+// 0x45EB90 intface_is_enabled
 bool interfaceBarEnabled()
 {
     return gInterfaceBarEnabled;
 }
 
-// 0x45EB98
+// 0x45EB98 intface_redraw
 void interfaceBarRefresh()
 {
     if (gInterfaceBarWindow != -1) {
@@ -871,9 +950,14 @@ void interfaceBarRefresh()
     indicatorBarRefresh();
 }
 
+static int counterAnimationBaseDelayMs()
+{
+    return std::max(static_cast<int>(250.0 / settings.ui.anim_speed), 25);
+}
+
 // Render hit points.
 //
-// 0x45EBD8
+// 0x45EBD8 intface_update_hit_points
 void interfaceRenderHitPoints(bool animate)
 {
     if (gInterfaceBarWindow == -1) {
@@ -933,7 +1017,7 @@ void interfaceRenderHitPoints(bool animate)
     transitionPoints[count] = hp;
 
     if (animate) {
-        int delay = 250 / (abs(gInterfaceLastRenderedHitPoints - hp) + 1);
+        int delay = counterAnimationBaseDelayMs() / (abs(gInterfaceLastRenderedHitPoints - hp) + 1);
         for (int index = 0; index < count; index++) {
             interfaceRenderCounter(473 + gInterfaceBarContentOffset, 40, transitionPoints[index], transitionPoints[index + 1], transitionColors[index], delay);
         }
@@ -947,14 +1031,14 @@ void interfaceRenderHitPoints(bool animate)
 
 // Render armor class.
 //
-// 0x45EDA8
+// 0x45EDA8 intface_update_ac
 void interfaceRenderArmorClass(bool animate)
 {
     int armorClass = critterGetStat(gDude, STAT_ARMOR_CLASS);
 
     int delay = 0;
     if (animate) {
-        delay = 250 / (abs(gInterfaceLastRenderedArmorClass - armorClass) + 1);
+        delay = counterAnimationBaseDelayMs() / (abs(gInterfaceLastRenderedArmorClass - armorClass) + 1);
     }
 
     interfaceRenderCounter(473 + gInterfaceBarContentOffset, 75, gInterfaceLastRenderedArmorClass, armorClass, 0, delay);
@@ -962,57 +1046,57 @@ void interfaceRenderArmorClass(bool animate)
     gInterfaceLastRenderedArmorClass = armorClass;
 }
 
-// 0x45EE0C
+// 0x45EE0C intface_update_move_points
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 {
-    unsigned char* frmData;
+    ConstBuffer2D bulbFrmBuf {};
 
     if (gInterfaceBarWindow == -1) {
         return;
     }
 
-    blitBufferToBuffer(gInterfaceActionPointsBarBackground, 90, 5, 90, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + gInterfaceBarContentOffset + 316, gInterfaceBarWidth);
+    blitBuffer2D(apBarBackgroundBuf2D(), interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset);
 
     if (actionPointsLeft == -1) {
-        frmData = _redLightFrmImage.getData();
-        actionPointsLeft = 10;
+        bulbFrmBuf = _redLightFrmImage.getBuffer();
+        actionPointsLeft = apBarMaxAP;
         bonusActionPoints = 0;
     } else {
-        frmData = _greenLightFrmImage.getData();
+        bulbFrmBuf = _greenLightFrmImage.getBuffer();
 
         if (actionPointsLeft < 0) {
             actionPointsLeft = 0;
         }
 
-        if (actionPointsLeft > 10) {
-            actionPointsLeft = 10;
+        if (actionPointsLeft > apBarMaxAP) {
+            actionPointsLeft = apBarMaxAP;
         }
 
         if (bonusActionPoints >= 0) {
-            if (actionPointsLeft + bonusActionPoints > 10) {
-                bonusActionPoints = 10 - actionPointsLeft;
+            if (actionPointsLeft + bonusActionPoints > apBarMaxAP) {
+                bonusActionPoints = apBarMaxAP - actionPointsLeft;
             }
         } else {
             bonusActionPoints = 0;
         }
     }
 
-    int index;
-    for (index = 0; index < actionPointsLeft; index++) {
-        blitBufferToBuffer(frmData, 5, 5, 5, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + 316 + index * 9 + gInterfaceBarContentOffset, gInterfaceBarWidth);
-    }
-
-    for (; index < (actionPointsLeft + bonusActionPoints); index++) {
-        blitBufferToBuffer(_yellowLightFrmImage.getData(), 5, 5, 5, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + 316 + gInterfaceBarContentOffset + index * 9, gInterfaceBarWidth);
+    int numBulbs = actionPointsLeft + bonusActionPoints;
+    for (int index = 0; index < numBulbs; index++) {
+        constexpr int bulbXOffset = kApBarBulbSize + kApBarBulbMargin;
+        auto frmBuf = index < actionPointsLeft
+            ? bulbFrmBuf
+            : _yellowLightFrmImage.getBuffer();
+        blitBuffer2D(frmBuf, 0, 0, kApBarBulbSize, kApBarBulbSize, interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset + index * bulbXOffset, kApBarYOffset);
     }
 
     if (!gInterfaceBarInitialized) {
-        windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarActionPointsBarRect);
+        windowRefreshRect(gInterfaceBarWindow, &apBarRect);
     }
 }
 
-// 0x45EF6C
-int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
+// 0x45EF6C intface_get_attack
+int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming)
 {
     if (gInterfaceBarWindow == -1) {
         return -1;
@@ -1033,13 +1117,13 @@ int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
     case INTERFACE_ITEM_ACTION_SECONDARY:
         *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
         return 0;
+    default:
+        return -1;
     }
-
-    return -1;
 }
 
-// 0x45EFEC
-int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
+// 0x45EFEC intface_update_items
+int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, InterfaceItemAction rightItemAction)
 {
     if (isoIsDisabled()) {
         animated = false;
@@ -1056,11 +1140,11 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     if (item1 == leftItemState->item && leftItemState->item != nullptr) {
         if (leftItemState->item != nullptr) {
             leftItemState->isDisabled = dudeIsWeaponDisabled(item1);
-            leftItemState->itemFid = itemGetInventoryFid(item1);
+            leftItemState->itemFid = itemGetInventoryFrmId(item1).fid();
         }
     } else {
         Object* oldItem = leftItemState->item;
-        int oldAction = leftItemState->action;
+        InterfaceItemAction oldAction = leftItemState->action;
 
         leftItemState->item = item1;
 
@@ -1080,7 +1164,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
                 leftItemState->action = leftItemAction;
             }
 
-            leftItemState->itemFid = itemGetInventoryFid(item1);
+            leftItemState->itemFid = itemGetInventoryFrmId(item1).fid();
         } else {
             leftItemState->isDisabled = 0;
             leftItemState->isWeapon = 1;
@@ -1105,11 +1189,11 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     if (item2 == rightItemState->item && rightItemState->item != nullptr) {
         if (rightItemState->item != nullptr) {
             rightItemState->isDisabled = dudeIsWeaponDisabled(rightItemState->item);
-            rightItemState->itemFid = itemGetInventoryFid(rightItemState->item);
+            rightItemState->itemFid = itemGetInventoryFrmId(rightItemState->item).fid();
         }
     } else {
         Object* oldItem = rightItemState->item;
-        int oldAction = rightItemState->action;
+        InterfaceItemAction oldAction = rightItemState->action;
 
         rightItemState->item = item2;
 
@@ -1128,7 +1212,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
             } else {
                 rightItemState->action = rightItemAction;
             }
-            rightItemState->itemFid = itemGetInventoryFid(item2);
+            rightItemState->itemFid = itemGetInventoryFrmId(item2).fid();
         } else {
             rightItemState->isDisabled = 0;
             rightItemState->isWeapon = 1;
@@ -1150,14 +1234,14 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     if (animated) {
         Object* newCurrentItem = gInterfaceItemStates[gInterfaceCurrentHand].item;
         if (newCurrentItem != oldCurrentItem) {
-            int animationCode = 0;
+            WeaponAnimation animationCode = WeaponAnimation::None;
             if (newCurrentItem != nullptr) {
                 if (itemGetType(newCurrentItem) == ITEM_TYPE_WEAPON) {
                     animationCode = weaponGetAnimationCode(newCurrentItem);
                 }
             }
 
-            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence((gDude->fid & 0xF000) >> 12, animationCode);
+            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(FrmId(gDude).weaponAnimation(), animationCode);
 
             return 0;
         }
@@ -1168,25 +1252,25 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     return 0;
 }
 
-// 0x45F404
+// 0x45F404 intface_toggle_items
 int interfaceBarSwapHands(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
         return -1;
     }
 
-    gInterfaceCurrentHand = 1 - gInterfaceCurrentHand;
+    gInterfaceCurrentHand = static_cast<Hand>(1 - gInterfaceCurrentHand);
 
     if (animated) {
         Object* item = gInterfaceItemStates[gInterfaceCurrentHand].item;
-        int animationCode = 0;
+        WeaponAnimation animationCode = WeaponAnimation::None;
         if (item != nullptr) {
             if (itemGetType(item) == ITEM_TYPE_WEAPON) {
                 animationCode = weaponGetAnimationCode(item);
             }
         }
 
-        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence((gDude->fid & 0xF000) >> 12, animationCode);
+        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(FrmId(gDude).weaponAnimation(), animationCode);
     } else {
         interfaceBarRefreshMainAction();
     }
@@ -1199,15 +1283,15 @@ int interfaceBarSwapHands(bool animated)
     return 0;
 }
 
-// 0x45F4B4
-int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
+// 0x45F4B4 intface_get_item_states
+int interfaceGetItemActions(InterfaceItemAction* leftItemAction, InterfaceItemAction* rightItemAction)
 {
     *leftItemAction = gInterfaceItemStates[HAND_LEFT].action;
     *rightItemAction = gInterfaceItemStates[HAND_RIGHT].action;
     return 0;
 }
 
-// 0x45F4E0
+// 0x45F4E0 intface_toggle_item_state
 int interfaceCycleItemAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1216,7 +1300,7 @@ int interfaceCycleItemAction()
 
     InterfaceItemState* itemState = &(gInterfaceItemStates[gInterfaceCurrentHand]);
 
-    int oldAction = itemState->action;
+    InterfaceItemAction oldAction = itemState->action;
     if (itemState->isWeapon != 0) {
         bool done = false;
         while (!done) {
@@ -1253,6 +1337,8 @@ int interfaceCycleItemAction()
             case INTERFACE_ITEM_ACTION_COUNT:
                 itemState->action = INTERFACE_ITEM_ACTION_USE;
                 break;
+            default:
+                break;
             }
         }
     }
@@ -1264,7 +1350,7 @@ int interfaceCycleItemAction()
     return 0;
 }
 
-// 0x45F5EC
+// 0x45F5EC intface_use_item
 void _intface_use_item()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1276,7 +1362,7 @@ void _intface_use_item()
     if (ptr->isWeapon != 0) {
         if (ptr->action == INTERFACE_ITEM_ACTION_RELOAD) {
             if (isInCombat()) {
-                int hitMode = gInterfaceCurrentHand == HAND_LEFT
+                HitMode hitMode = gInterfaceCurrentHand == HAND_LEFT
                     ? HIT_MODE_LEFT_WEAPON_RELOAD
                     : HIT_MODE_RIGHT_WEAPON_RELOAD;
 
@@ -1301,12 +1387,12 @@ void _intface_use_item()
                 _combat(nullptr);
             }
         }
-    } else if (_proto_action_can_use_on(ptr->item->pid)) {
+    } else if (_proto_action_can_use_on(ptr->item)) {
         gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
         gameMouseSetMode(GAME_MOUSE_MODE_USE_CROSSHAIR);
     } else if (_obj_action_can_use(ptr->item)) {
         if (isInCombat()) {
-            int actionPointsRequired = itemGetActionPointCost(gDude, ptr->secondaryHitMode, false);
+            int actionPointsRequired = itemGetActionPointCost(gDude, ptr->primaryHitMode, false);
             if (actionPointsRequired <= gDude->data.critter.combat.ap) {
                 objectUseItem(gDude, ptr->item);
                 interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
@@ -1325,13 +1411,13 @@ void _intface_use_item()
     }
 }
 
-// 0x45F7FC
-int interfaceGetCurrentHand()
+// 0x45F7FC intface_is_item_right_hand
+Hand interfaceGetCurrentHand()
 {
     return gInterfaceCurrentHand;
 }
 
-// 0x45F804
+// 0x45F804 intface_get_current_item
 int interfaceGetActiveItem(Object** itemPtr)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1343,7 +1429,7 @@ int interfaceGetActiveItem(Object** itemPtr)
     return 0;
 }
 
-// 0x45F838
+// 0x45F838 intface_update_ammo_lights
 int _intface_update_ammo_lights()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1353,29 +1439,38 @@ int _intface_update_ammo_lights()
     InterfaceItemState* p = &(gInterfaceItemStates[gInterfaceCurrentHand]);
 
     int ratio = 0;
+    int current = 0;
+    int maximum = 0;
+    int ammoPerShot = 0;
 
     if (p->isWeapon != 0) {
-        int maximum = ammoGetCapacity(p->item);
+        maximum = ammoGetCapacity(p->item);
         if (maximum > 0) {
-            int current = ammoGetQuantity(p->item);
-            ratio = (int)((double)current / (double)maximum * 70.0);
+            current = ammoGetQuantity(p->item);
+            ratio = std::clamp(static_cast<int>(static_cast<long long>(current) * kAmmoBarMaxRatio / maximum), 0, kAmmoBarMaxRatio);
+            ammoPerShot = settings.ui.alternate_ammo_meter != 0 ? interfaceGetActiveWeaponAmmoPerShot(p, maximum) : 0;
         }
     } else {
         if (itemGetType(p->item) == ITEM_TYPE_MISC) {
-            int maximum = miscItemGetMaxCharges(p->item);
+            maximum = miscItemGetMaxCharges(p->item);
             if (maximum > 0) {
-                int current = miscItemGetCharges(p->item);
-                ratio = (int)((double)current / (double)maximum * 70.0);
+                current = miscItemGetCharges(p->item);
+                ratio = std::clamp(static_cast<int>(static_cast<long long>(current) * kAmmoBarMaxRatio / maximum), 0, kAmmoBarMaxRatio);
             }
         }
     }
 
-    interfaceUpdateAmmoBar(463 + gInterfaceBarContentOffset, ratio);
+    interfaceUpdateAmmoBar(kAmmoBarLeft + gInterfaceBarContentOffset, ratio, current, maximum, ammoPerShot);
 
     return 0;
 }
 
-// 0x45F96C
+static int interfaceBarBaseDelayMs()
+{
+    return std::max(static_cast<int>(1000.0 / settings.ui.anim_speed), 100);
+}
+
+// 0x45F96C intface_end_window_open
 void interfaceBarEndButtonsShow(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1386,9 +1481,8 @@ void interfaceBarEndButtonsShow(bool animated)
         return;
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 104, 0, 0, 0);
     CacheEntry* handle;
-    Art* art = artLock(fid, &handle);
+    Art* art = artLock(InterfaceFrameId::EndTurnWindowAnimation, &handle);
     if (art == nullptr) {
         return;
     }
@@ -1397,14 +1491,15 @@ void interfaceBarEndButtonsShow(bool animated)
     soundPlayFile("iciboxx1");
 
     if (animated) {
-        unsigned int delay = 1000 / artGetFramesPerSecond(art);
+        unsigned int delay = interfaceBarBaseDelayMs() / artGetFramesPerSecond(art);
         int time = 0;
         int frame = 0;
         while (frame < frameCount) {
             sharedFpsLimiter.mark();
+            tickersExecute();
 
             if (getTicksSince(time) >= delay) {
-                unsigned char* src = artGetFrameData(art, frame, 0);
+                unsigned char* src = artGetFrameData(art, frame);
                 if (src != nullptr) {
                     blitBufferToBuffer(src, 57, 58, 57, gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset, gInterfaceBarWidth);
                     windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
@@ -1419,7 +1514,7 @@ void interfaceBarEndButtonsShow(bool animated)
             sharedFpsLimiter.throttle();
         }
     } else {
-        unsigned char* src = artGetFrameData(art, frameCount - 1, 0);
+        unsigned char* src = artGetFrameData(art, frameCount - 1);
         blitBufferToBuffer(src, 57, 58, 57, gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset, gInterfaceBarWidth);
         windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
     }
@@ -1432,7 +1527,7 @@ void interfaceBarEndButtonsShow(bool animated)
     interfaceBarEndButtonsRenderRedLights();
 }
 
-// 0x45FAC0
+// 0x45FAC0 intface_end_window_close
 void interfaceBarEndButtonsHide(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1443,9 +1538,8 @@ void interfaceBarEndButtonsHide(bool animated)
         return;
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 104, 0, 0, 0);
     CacheEntry* handle;
-    Art* art = artLock(fid, &handle);
+    Art* art = artLock(InterfaceFrameId::EndTurnWindowAnimation, &handle);
     if (art == nullptr) {
         return;
     }
@@ -1455,15 +1549,16 @@ void interfaceBarEndButtonsHide(bool animated)
     soundPlayFile("icibcxx1");
 
     if (animated) {
-        unsigned int delay = 1000 / artGetFramesPerSecond(art);
+        unsigned int delay = interfaceBarBaseDelayMs() / artGetFramesPerSecond(art);
         unsigned int time = 0;
         int frame = artGetFrameCount(art);
 
         while (frame != 0) {
             sharedFpsLimiter.mark();
+            tickersExecute();
 
             if (getTicksSince(time) >= delay) {
-                unsigned char* src = artGetFrameData(art, frame - 1, 0);
+                unsigned char* src = artGetFrameData(art, frame - 1);
                 unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset;
                 if (src != nullptr) {
                     blitBufferToBuffer(src, 57, 58, 57, dest, gInterfaceBarWidth);
@@ -1480,7 +1575,7 @@ void interfaceBarEndButtonsHide(bool animated)
         }
     } else {
         unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset;
-        unsigned char* src = artGetFrameData(art, 0, 0);
+        unsigned char* src = artGetFrameData(art);
         blitBufferToBuffer(src, 57, 58, 57, dest, gInterfaceBarWidth);
         windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
     }
@@ -1489,7 +1584,7 @@ void interfaceBarEndButtonsHide(bool animated)
     gInterfaceBarEndButtonsIsVisible = false;
 }
 
-// 0x45FC04
+// 0x45FC04 intface_end_buttons_enable
 void interfaceBarEndButtonsRenderGreenLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1497,9 +1592,7 @@ void interfaceBarEndButtonsRenderGreenLights()
         buttonEnable(gEndCombatButton);
 
         FrmImage lightsFrmImage;
-        // endltgrn.frm - green lights around end turn/combat window
-        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, 109, 0, 0, 0);
-        if (!lightsFrmImage.lock(lightsFid)) {
+        if (!lightsFrmImage.lock(InterfaceFrameId::EndTurnGreenLight)) {
             return;
         }
 
@@ -1509,7 +1602,7 @@ void interfaceBarEndButtonsRenderGreenLights()
     }
 }
 
-// 0x45FC98
+// 0x45FC98 intface_end_buttons_disable
 void interfaceBarEndButtonsRenderRedLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1517,9 +1610,7 @@ void interfaceBarEndButtonsRenderRedLights()
         buttonDisable(gEndCombatButton);
 
         FrmImage lightsFrmImage;
-        // endltred.frm - red lights around end turn/combat window
-        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, 110, 0, 0, 0);
-        if (!lightsFrmImage.lock(lightsFid)) {
+        if (!lightsFrmImage.lock(InterfaceFrameId::EndTurnRedLight)) {
             return;
         }
 
@@ -1531,7 +1622,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
 // NOTE: Inlined.
 //
-// 0x45FD2C
+// 0x45FD2C intface_init_items
 static int intface_init_items()
 {
     // FIXME: For unknown reason these values initialized with -1. It's never
@@ -1542,7 +1633,7 @@ static int intface_init_items()
     return 0;
 }
 
-// 0x45FD88
+// 0x45FD88 intface_redraw_items
 static int interfaceBarRefreshMainAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1562,20 +1653,18 @@ static int interfaceBarRefreshMainAction()
         memcpy(_itemButtonDown, _itemButtonPressedFrmImage.getData(), sizeof(_itemButtonDown));
 
         if (itemState->isWeapon == 0) {
-            int fid;
-            if (_proto_action_can_use_on(itemState->item->pid)) {
-                // USE ON
-                fid = buildFid(OBJ_TYPE_INTERFACE, 294, 0, 0, 0);
+            InterfaceFrmId frmId;
+            if (_proto_action_can_use_on(itemState->item)) {
+                frmId = InterfaceFrameId::UseOnText;
             } else if (_obj_action_can_use(itemState->item)) {
-                // USE
-                fid = buildFid(OBJ_TYPE_INTERFACE, 292, 0, 0, 0);
+                frmId = InterfaceFrameId::UseText;
             } else {
-                fid = -1;
+                frmId = InterfaceFrameId::Invalid;
             }
 
-            if (fid != -1) {
+            if (frmId.valid()) {
                 FrmImage useTextFrmImage;
-                if (useTextFrmImage.lock(fid)) {
+                if (useTextFrmImage.lock(frmId)) {
                     int width = useTextFrmImage.getWidth();
                     int height = useTextFrmImage.getHeight();
                     unsigned char* data = useTextFrmImage.getData();
@@ -1585,34 +1674,36 @@ static int interfaceBarRefreshMainAction()
                 actionPoints = itemGetActionPointCost(gDude, itemState->primaryHitMode, false);
             }
         } else {
-            int primaryFid = -1;
-            int bullseyeFid = -1;
-            int hitMode = -1;
+            InterfaceFrmId primaryFrmId = InterfaceFrameId::Invalid;
+            InterfaceFrmId bullseyeFrmId = InterfaceFrameId::Invalid;
+            HitMode hitMode = HIT_MODE_INVALID;
 
             // NOTE: This value is decremented at 0x45FEAC, probably to build
             // jump table.
             switch (itemState->action) {
             case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
-                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, 288, 0, 0, 0);
+                bullseyeFrmId = InterfaceFrameId::Bullseye;
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_PRIMARY:
                 hitMode = itemState->primaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
-                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, 288, 0, 0, 0);
+                bullseyeFrmId = InterfaceFrameId::Bullseye;
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_SECONDARY:
                 hitMode = itemState->secondaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_RELOAD:
                 actionPoints = itemGetActionPointCost(gDude, gInterfaceCurrentHand == HAND_LEFT ? HIT_MODE_LEFT_WEAPON_RELOAD : HIT_MODE_RIGHT_WEAPON_RELOAD, false);
-                primaryFid = buildFid(OBJ_TYPE_INTERFACE, 291, 0, 0, 0);
+                primaryFrmId = InterfaceFrameId::ReloadText;
+                break;
+            default:
                 break;
             }
 
-            if (bullseyeFid != -1) {
+            if (bullseyeFrmId.valid()) {
                 FrmImage bullseyeFrmImage;
-                if (bullseyeFrmImage.lock(bullseyeFid)) {
+                if (bullseyeFrmImage.lock(bullseyeFrmId)) {
                     int width = bullseyeFrmImage.getWidth();
                     int height = bullseyeFrmImage.getHeight();
                     unsigned char* data = bullseyeFrmImage.getData();
@@ -1620,86 +1711,90 @@ static int interfaceBarRefreshMainAction()
                 }
             }
 
-            if (hitMode != -1) {
-                actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
+            if (hitMode != HIT_MODE_INVALID) {
+                actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFrmId.valid());
 
-                int id;
-                int anim = critterGetAnimationForHitMode(gDude, hitMode);
+                InterfaceFrmId frmId = InterfaceFrameId::Invalid;
+                AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
                 switch (anim) {
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        id = 432; // strong punch
+                        frmId = InterfaceFrameId::StrongPunch;
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        id = 425; // hammer punch
+                        frmId = InterfaceFrameId::HammerPunch;
                         break;
                     case HIT_MODE_HAYMAKER:
-                        id = 428; // lightning punch
+                        frmId = InterfaceFrameId::LightningPunch;
                         break;
                     case HIT_MODE_JAB:
-                        id = 421; // chop punch
+                        frmId = InterfaceFrameId::ChopPunch;
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        id = 423; // dragon punch
+                        frmId = InterfaceFrameId::DragonPunch;
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        id = 424; // force punch
+                        frmId = InterfaceFrameId::ForcePunch;
                         break;
                     default:
-                        id = 42; // punch
+                        frmId = InterfaceFrameId::PunchText;
                         break;
                     }
                     break;
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        id = 430; // skick.frm - strong kick text
+                        frmId = InterfaceFrameId::StrongKick;
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        id = 431; // snapkick.frm - snap kick text
+                        frmId = InterfaceFrameId::SnapKick;
                         break;
                     case HIT_MODE_POWER_KICK:
-                        id = 429; // cm_pwkck.frm - roundhouse kick text
+                        frmId = InterfaceFrameId::RoundhouseKick;
                         break;
                     case HIT_MODE_HIP_KICK:
-                        id = 426; // hipk.frm - kip kick text
+                        frmId = InterfaceFrameId::HipKick;
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        id = 427; // cm_hookk.frm - jump kick text
+                        frmId = InterfaceFrameId::JumpKick;
                         break;
-                    case HIT_MODE_PIERCING_KICK: // cm_prckk.frm - death blossom kick text
-                        id = 422;
+                    case HIT_MODE_PIERCING_KICK:
+                        frmId = InterfaceFrameId::DeathBlossomKick;
                         break;
                     default:
-                        id = 41; // kick.frm - kick text
+                        frmId = InterfaceFrameId::KickText;
                         break;
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    id = 117; // throw
+                    frmId = InterfaceFrameId::ThrowText;
                     break;
                 case ANIM_THRUST_ANIM:
-                    id = 45; // thrust
+                    frmId = InterfaceFrameId::ThrustText;
                     break;
                 case ANIM_SWING_ANIM:
-                    id = 44; // swing
+                    frmId = InterfaceFrameId::SwingText;
                     break;
                 case ANIM_FIRE_SINGLE:
-                    id = 43; // single
+                    frmId = InterfaceFrameId::SingleText;
                     break;
                 case ANIM_FIRE_BURST:
                 case ANIM_FIRE_CONTINUOUS:
-                    id = 40; // burst
+                    frmId = InterfaceFrameId::BurstText;
+                    break;
+                default:
                     break;
                 }
 
-                primaryFid = buildFid(OBJ_TYPE_INTERFACE, id, 0, 0, 0);
+                if (frmId.valid()) {
+                    primaryFrmId = frmId;
+                }
             }
 
-            if (primaryFid != -1) {
+            if (primaryFrmId.valid()) {
                 FrmImage primaryFrmImage;
-                if (primaryFrmImage.lock(primaryFid)) {
+                if (primaryFrmImage.lock(primaryFrmId)) {
                     int width = primaryFrmImage.getWidth();
                     int height = primaryFrmImage.getHeight();
                     unsigned char* data = primaryFrmImage.getData();
@@ -1711,10 +1806,8 @@ static int interfaceBarRefreshMainAction()
 
     if (actionPoints >= 0 && actionPoints < 10) {
         // movement point text
-        int apFid = buildFid(OBJ_TYPE_INTERFACE, 289, 0, 0, 0);
-
         FrmImage apFrmImage;
-        if (apFrmImage.lock(apFid)) {
+        if (apFrmImage.lock(InterfaceFrameId::MovementPointText)) {
             int width = apFrmImage.getWidth();
             int height = apFrmImage.getHeight();
             unsigned char* data = apFrmImage.getData();
@@ -1725,8 +1818,7 @@ static int interfaceBarRefreshMainAction()
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
-            int apNumbersFid = buildFid(OBJ_TYPE_INTERFACE, 290, 0, 0, 0);
-            if (apNumbersFrmImage.lock(apNumbersFid)) {
+            if (apNumbersFrmImage.lock(InterfaceFrameId::MovementPointsNumbers)) {
                 int width = apNumbersFrmImage.getWidth();
                 int height = apNumbersFrmImage.getHeight();
                 unsigned char* data = apNumbersFrmImage.getData();
@@ -1739,9 +1831,10 @@ static int interfaceBarRefreshMainAction()
         memcpy(_itemButtonDown, _itemButtonDisabledFrmImage.getData(), sizeof(_itemButtonDown));
     }
 
-    if (itemState->itemFid != -1) {
+    const FrmId itemFrmId = FrmId(itemState->itemFid);
+    if (itemFrmId.valid()) {
         FrmImage itemFrmImage;
-        if (itemFrmImage.lock(itemState->itemFid)) {
+        if (itemFrmImage.lock(itemFrmId)) {
             int width = itemFrmImage.getWidth();
             int height = itemFrmImage.getHeight();
             unsigned char* data = itemFrmImage.getData();
@@ -1785,22 +1878,22 @@ static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int
     }
 }
 
-// 0x460658
+// 0x460658 intface_redraw_items_callback
 static int _intface_redraw_items_callback(Object* _, Object* __)
 {
     interfaceBarRefreshMainAction();
     return 0;
 }
 
-// 0x460660
+// 0x460660 intface_change_fid_callback
 static int _intface_change_fid_callback(Object* _, Object* __)
 {
     gInterfaceBarSwapHandsInProgress = false;
     return 0;
 }
 
-// 0x46066C
-static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode)
+// 0x46066C intface_change_fid_animate
+static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation previousWeaponAnimationCode, WeaponAnimation weaponAnimationCode)
 {
     gInterfaceBarSwapHandsInProgress = true;
 
@@ -1808,8 +1901,8 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     animationRegisterSetLightDistance(gDude, 4, 0);
 
-    if (previousWeaponAnimationCode != 0) {
-        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+    if (previousWeaponAnimationCode != WeaponAnimation::None) {
+        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
         animationRegisterPlaySoundEffect(gDude, sfx, 0);
         animationRegisterAnimate(gDude, ANIM_PUT_AWAY, 0);
     }
@@ -1822,11 +1915,11 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
         animationRegisterSetLightDistance(gDude, item->lightDistance, 0);
     }
 
-    if (weaponAnimationCode != 0) {
+    if (weaponAnimationCode != WeaponAnimation::None) {
         animationRegisterTakeOutWeapon(gDude, weaponAnimationCode, -1);
     } else {
-        int fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, 0, gDude->rotation + 1);
-        animationRegisterSetFid(gDude, fid, -1);
+        const FrmId frmId = FrmId(gDude, ANIM_STAND, WeaponAnimation::None, gDude->rotation + 1);
+        animationRegisterSetFrmId(gDude, frmId, -1);
     }
 
     // TODO: Get rid of cast.
@@ -1865,11 +1958,9 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
     }
 }
 
-// 0x4607E0
+// 0x4607E0 intface_create_end_turn_button
 static int endTurnButtonInit()
 {
-    int fid;
-
     if (gInterfaceBarWindow == -1) {
         return -1;
     }
@@ -1878,17 +1969,15 @@ static int endTurnButtonInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 105, 0, 0, 0);
-    if (!_endTurnButtonNormalFrmImage.lock(fid)) {
+    if (!_endTurnButtonNormalFrmImage.lock(InterfaceFrameId::EndTurnButtonUp)) {
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 106, 0, 0, 0);
-    if (!_endTurnButtonPressedFrmImage.lock(fid)) {
+    if (!_endTurnButtonPressedFrmImage.lock(InterfaceFrameId::EndTurnButtonDown)) {
         return -1;
     }
 
-    gEndTurnButton = buttonCreate(gInterfaceBarWindow, 590 + gInterfaceBarContentOffset, 43, 38, 22, -1, -1, -1, 32, _endTurnButtonNormalFrmImage.getData(), _endTurnButtonPressedFrmImage.getData(), nullptr, 0);
+    gEndTurnButton = buttonCreate(gInterfaceBarWindow, 590 + gInterfaceBarContentOffset, 43, 38, 22, -1, -1, -1, 32, _endTurnButtonNormalFrmImage.getData(), _endTurnButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gEndTurnButton == -1) {
         return -1;
     }
@@ -1899,7 +1988,7 @@ static int endTurnButtonInit()
     return 0;
 }
 
-// 0x4608C4
+// 0x4608C4 intface_destroy_end_turn_button
 static int endTurnButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1917,11 +2006,9 @@ static int endTurnButtonFree()
     return 0;
 }
 
-// 0x460940
+// 0x460940 intface_create_end_combat_button
 static int endCombatButtonInit()
 {
-    int fid;
-
     if (gInterfaceBarWindow == -1) {
         return -1;
     }
@@ -1930,17 +2017,15 @@ static int endCombatButtonInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 107, 0, 0, 0);
-    if (!_endCombatButtonNormalFrmImage.lock(fid)) {
+    if (!_endCombatButtonNormalFrmImage.lock(InterfaceFrameId::EndCombatButtonUp)) {
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 108, 0, 0, 0);
-    if (!_endCombatButtonPressedFrmImage.lock(fid)) {
+    if (!_endCombatButtonPressedFrmImage.lock(InterfaceFrameId::EndCombatButtonDown)) {
         return -1;
     }
 
-    gEndCombatButton = buttonCreate(gInterfaceBarWindow, 590 + gInterfaceBarContentOffset, 65, 38, 22, -1, -1, -1, 13, _endCombatButtonNormalFrmImage.getData(), _endCombatButtonPressedFrmImage.getData(), nullptr, 0);
+    gEndCombatButton = buttonCreate(gInterfaceBarWindow, 590 + gInterfaceBarContentOffset, 65, 38, 22, -1, -1, -1, 13, _endCombatButtonNormalFrmImage.getData(), _endCombatButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_NONE);
     if (gEndCombatButton == -1) {
         return -1;
     }
@@ -1951,7 +2036,7 @@ static int endCombatButtonInit()
     return 0;
 }
 
-// 0x460A24
+// 0x460A24 intface_destroy_end_combat_button
 static int endCombatButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1969,16 +2054,21 @@ static int endCombatButtonFree()
     return 0;
 }
 
-// 0x460AA0
-static void interfaceUpdateAmmoBar(int x, int ratio)
+// 0x460AA0 intface_draw_ammo_lights
+static void interfaceUpdateAmmoBar(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot)
 {
+    if (settings.ui.alternate_ammo_meter != 0) {
+        interfaceUpdateAlternateAmmoMeter(x, ratio, ammoQuantity, ammoCapacity, ammoPerShot);
+        return;
+    }
+
     if ((ratio & 1) != 0) {
         ratio -= 1;
     }
 
-    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 26 + x;
+    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoBarTop + x;
 
-    for (int index = 70; index > ratio; index--) {
+    for (int index = kAmmoBarMaxRatio; index > ratio; index--) {
         *dest = 14;
         dest += gInterfaceBarWidth;
     }
@@ -1996,14 +2086,182 @@ static void interfaceUpdateAmmoBar(int x, int ratio)
     if (!gInterfaceBarInitialized) {
         Rect rect;
         rect.left = x;
-        rect.top = 26;
+        rect.top = kAmmoBarTop;
         rect.right = x + 1;
-        rect.bottom = 26 + 70;
+        rect.bottom = kAmmoBarTop + kAmmoBarMaxRatio;
         windowRefreshRect(gInterfaceBarWindow, &rect);
     }
 }
 
-// 0x460B20
+static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity)
+{
+    HitMode hitMode = HIT_MODE_INVALID;
+    switch (itemState->action) {
+    case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
+    case INTERFACE_ITEM_ACTION_PRIMARY:
+        hitMode = itemState->primaryHitMode;
+        break;
+    case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
+    case INTERFACE_ITEM_ACTION_SECONDARY:
+        hitMode = itemState->secondaryHitMode;
+        break;
+    default:
+        hitMode = itemState->primaryHitMode;
+        break;
+    }
+
+    return interfaceGetWeaponAmmoPerShot(itemState->item, hitMode, ammoCapacity);
+}
+
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int ammoCapacity)
+{
+    if (weapon == nullptr || hitMode == HIT_MODE_INVALID) {
+        return 0;
+    }
+
+    int anim = weaponGetAnimationForHitMode(weapon, hitMode);
+    if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
+        return std::max(weaponGetBurstRounds(weapon), 1);
+    }
+
+    if (settings.ui.alternate_ammo_meter == 2 && anim == ANIM_FIRE_SINGLE) {
+        int ammoPerShot = 1;
+        if (weaponComputeAmmoCost(weapon, &ammoPerShot) == -1) {
+            ammoPerShot = 1;
+        }
+        ammoPerShot = std::max(ammoPerShot, 1);
+        return (ammoCapacity + ammoPerShot - 1) / ammoPerShot <= kAmmoAlternateMeterMaxSingleShotSegmentCount ? ammoPerShot : 0;
+    }
+
+    return 0;
+}
+
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot)
+{
+    interfaceRestoreAlternateAmmoMeterBackground(x);
+
+    if (ammoCapacity > 0) {
+        if ((ratio & 1) != 0) {
+            ratio -= 1;
+        }
+
+        unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x;
+        std::fill_n(dest, kAmmoAlternateMeterWidth, kAmmoAlternateMeterTopBorderColor);
+        dest += gInterfaceBarWidth;
+
+        int firstActiveRow = kAmmoBarMaxRatio - ratio;
+
+        for (int row = 0; row < kAmmoBarMaxRatio; row++) {
+            bool filled = row >= firstActiveRow;
+            int dividerShade = interfaceAlternateAmmoMeterGetDividerShade(row, firstActiveRow, ammoQuantity, ammoPerShot);
+            if (dividerShade == 0) {
+                dest[0] = kAmmoAlternateMeterLeftBorderColor;
+                dest[1] = kAmmoAlternateMeterLeftBorderColor;
+                dest[2] = kAmmoAlternateMeterEmptyDarkColor;
+                dest[3] = kAmmoAlternateMeterEmptyLightColor;
+            } else if (dividerShade == 1) {
+                dest[0] = kAmmoAlternateMeterLeftBorderColor;
+                dest[1] = kAmmoAlternateMeterEmptyLightColor;
+                dest[2] = kAmmoAlternateMeterEmptyLightColor;
+                dest[3] = kAmmoAlternateMeterEmptyLightColor;
+            } else {
+                bool lowerHalf = filled
+                    ? ((row - firstActiveRow) & 1) != 0
+                    : (row & 1) != 0;
+                interfaceUpdateAlternateAmmoMeterRow(dest, filled, lowerHalf);
+            }
+            dest += gInterfaceBarWidth;
+        }
+
+        std::fill_n(dest, kAmmoAlternateMeterWidth, kAmmoAlternateMeterBottomBorderColor);
+    }
+
+    if (!gInterfaceBarInitialized) {
+        Rect rect;
+        rect.left = x;
+        rect.top = kAmmoAlternateMeterTopBorder;
+        rect.right = x + kAmmoAlternateMeterWidth - 1;
+        rect.bottom = kAmmoBarTop + kAmmoBarMaxRatio;
+        windowRefreshRect(gInterfaceBarWindow, &rect);
+    }
+}
+
+static void interfaceRestoreAlternateAmmoMeterBackground(int x)
+{
+    unsigned char* src = nullptr;
+    FrmImage backgroundFrmImage;
+    if (gInterfaceBarIsCustom) {
+        src = customInterfaceBarGetBackgroundImageData();
+    } else {
+        if (!backgroundFrmImage.lock(InterfaceFrameId::MainInterface)) {
+            return;
+        }
+        src = backgroundFrmImage.getData();
+    }
+
+    int height = kAmmoBarMaxRatio + 2;
+    blitBufferToBuffer(src + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x,
+        kAmmoAlternateMeterWidth,
+        height,
+        gInterfaceBarWidth,
+        gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x,
+        gInterfaceBarWidth);
+}
+
+static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf)
+{
+    dest[0] = kAmmoAlternateMeterLeftBorderColor;
+
+    if (filled) {
+        Color color = lowerHalf ? kAmmoAlternateMeterFillShadeColor : kAmmoAlternateMeterFillColor;
+        dest[1] = color;
+        dest[2] = color;
+        dest[3] = kAmmoAlternateMeterFillShadeColor;
+    } else {
+        Color color = lowerHalf ? kAmmoAlternateMeterEmptyLightColor : kAmmoAlternateMeterEmptyDarkColor;
+        dest[1] = color;
+        dest[2] = color;
+        dest[3] = kAmmoAlternateMeterEmptyLightColor;
+    }
+}
+
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int firstActiveRow, int ammoQuantity, int ammoPerShot)
+{
+    if (ammoQuantity <= 0 || ammoPerShot <= 0 || ammoPerShot >= ammoQuantity) {
+        return -1;
+    }
+
+    int segmentCount = (ammoQuantity + ammoPerShot - 1) / ammoPerShot;
+    if (segmentCount <= 1 || segmentCount > kAmmoAlternateMeterMaxSegmentCount) {
+        return -1;
+    }
+
+    constexpr int dividerHeight = 2;
+    int filledRows = kAmmoBarMaxRatio - firstActiveRow;
+    int segmentRows = filledRows - dividerHeight * (segmentCount - 1);
+    if (segmentRows < segmentCount) {
+        return -1;
+    }
+
+    int dividerRow = firstActiveRow;
+    int remainder = ammoQuantity % ammoPerShot;
+    int fullSegmentCount = ammoQuantity / ammoPerShot;
+
+    for (int segmentIndex = 0; segmentIndex < segmentCount - 1; segmentIndex++) {
+        int segmentAmmo = segmentIndex < fullSegmentCount ? ammoPerShot : remainder;
+        dividerRow += segmentAmmo * segmentRows / ammoQuantity;
+
+        if (row == dividerRow || row == dividerRow + 1) {
+            return row - dividerRow;
+        }
+
+        dividerRow += dividerHeight;
+    }
+
+    return -1;
+}
+
+// 0x460B20 intface_item_reload
 static int _intface_item_reload()
 {
     if (gInterfaceBarWindow == -1) {
@@ -2022,14 +2280,14 @@ static int _intface_item_reload()
         return -1;
     }
 
-    const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, gInterfaceItemStates[gInterfaceCurrentHand].item, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
+    const char* sfx = sfxBuildWeaponName(WeaponSoundEffect::Ready, gInterfaceItemStates[gInterfaceCurrentHand].item, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
     soundPlayFile(sfx);
 
     return 0;
 }
 
 // internal helper for interfaceRenderCounter
-static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse)
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse)
 {
     blitBufferToBuffer(src, 9, 17, 360, dest, gInterfaceBarWidth);
 
@@ -2039,7 +2297,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
     }
 
     renderPresent();
-    inputBlockForTocks(delay);
+    inputBlockForTocks(delayMs);
     windowRefreshRect(gInterfaceBarWindow, numbersRect);
 }
 
@@ -2049,7 +2307,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
 // [previousValue] is only meaningful for animation.
 // [offset] = 0 - grey, 120 - yellow, 240 - red.
 //
-// 0x460BA0
+// 0x460BA0 intface_rotate_numbers
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay)
 {
     if (value > 999) {
@@ -2147,7 +2405,7 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
 
 // NOTE: Inlined.
 //
-// 0x461128
+// 0x461128 intface_fatal_error
 static int intface_fatal_error(int rc)
 {
     interfaceFree();
@@ -2155,11 +2413,9 @@ static int intface_fatal_error(int rc)
     return rc;
 }
 
-// 0x461134
+// 0x461134 construct_box_bar_win
 static int indicatorBarInit()
 {
-    int oldFont = fontGetCurrent();
-
     if (gIndicatorBarWindow != -1) {
         return 0;
     }
@@ -2172,7 +2428,7 @@ static int indicatorBarInit()
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "intrface.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "intrface.msg");
 
     if (rc != -1) {
         if (!messageListLoad(&messageList, path)) {
@@ -2186,12 +2442,13 @@ static int indicatorBarInit()
     }
 
     FrmImage indicatorBoxFrmImage;
-    int indicatorBoxFid = buildFid(OBJ_TYPE_INTERFACE, 126, 0, 0, 0);
-    if (!indicatorBoxFrmImage.lock(indicatorBoxFid)) {
+    if (!indicatorBoxFrmImage.lock(InterfaceFrameId::WarningBox)) {
         debugPrint("\nINTRFACE: Error initializing indicator box graphics! **\n");
         messageListFree(&messageList);
         return -1;
     }
+
+    memcpy(indicatorBoxBackgroundData, indicatorBoxFrmImage.getData(), sizeof(indicatorBoxBackgroundData));
 
     for (int index = 0; index < INDICATOR_COUNT; index++) {
         IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[index]);
@@ -2202,6 +2459,7 @@ static int indicatorBarInit()
 
             while (--index >= 0) {
                 internal_free(gIndicatorDescriptions[index].data);
+                gIndicatorDescriptions[index].data = nullptr;
             }
 
             messageListFree(&messageList);
@@ -2210,38 +2468,46 @@ static int indicatorBarInit()
         }
     }
 
-    fontSetCurrent(101);
-
     for (int index = 0; index < INDICATOR_COUNT; index++) {
         IndicatorDescription* indicator = &(gIndicatorDescriptions[index]);
 
         char text[1024];
-        strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
+        stringCopy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
-        int color = indicator->isBad ? _colorTable[31744] : _colorTable[992];
+        Color color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
+        indicatorBarRenderBox(indicator->data, text, color);
+    }
 
-        memcpy(indicator->data, indicatorBoxFrmImage.getData(), INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT);
+    initialCustomIndicatorCount = kCustomIndicatorDefaultCount;
+    availableCustomIndicatorCount = initialCustomIndicatorCount;
 
-        // NOTE: For unknown reason it uses 24 as a height of the box to center
-        // the title. One explanation is that these boxes were redesigned, but
-        // this value was not changed. On the other hand 24 is
-        // [INDICATOR_BOX_HEIGHT] + [INDICATOR_BOX_CONNECTOR_WIDTH]. Maybe just
-        // a coincidence. I guess we'll never find out.
-        int y = (24 - fontGetLineHeight()) / 2;
-        int x = (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2;
-        fontDrawText(indicator->data + INDICATOR_BOX_WIDTH * y + x, text, INDICATOR_BOX_WIDTH, INDICATOR_BOX_WIDTH, color);
+    for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+        char defaultText[kCustomIndicatorTextBufferSize] = {};
+        int messageId = 100 + tag;
+        messageListItem.num = messageId;
+        if (messageListGetItem(&messageList, &messageListItem)) {
+            strncpy(defaultText, messageListItem.text, kCustomIndicatorTextLength);
+            defaultText[kCustomIndicatorTextLength] = '\0';
+        }
+
+        int configColor = 0;
+
+        if (!indicatorBarInitCustomTag(tag, defaultText, configColor)) {
+            debugPrint("\nINTRFACE: Error initializing custom indicator box graphics! **");
+            messageListFree(&messageList);
+            return -1;
+        }
     }
 
     gIndicatorBarIsVisible = true;
     indicatorBarRefresh();
 
     messageListFree(&messageList);
-    fontSetCurrent(oldFont);
 
     return 0;
 }
 
-// 0x461454
+// 0x461454 deconstruct_box_bar_win
 static void interfaceBarFree()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2256,11 +2522,19 @@ static void interfaceBarFree()
             indicatorBoxDescription->data = nullptr;
         }
     }
+
+    for (int index = 0; index < kCustomIndicatorMaxCount; index++) {
+        CustomIndicatorDescription* indicatorBoxDescription = &(customIndicatorDescriptions[index]);
+        if (indicatorBoxDescription->data != nullptr) {
+            internal_free(indicatorBoxDescription->data);
+            indicatorBoxDescription->data = nullptr;
+        }
+    }
 }
 
 // NOTE: This function is not referenced in the original code.
 //
-// 0x4614A0
+// 0x4614A0 reset_box_bar_win
 static void indicatorBarReset()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2269,11 +2543,12 @@ static void indicatorBarReset()
     }
 
     gIndicatorBarIsVisible = true;
+    indicatorBarResetCustomTags();
 }
 
 // Updates indicator bar.
 //
-// 0x4614CC
+// 0x4614CC refresh_box_bar_win
 int indicatorBarRefresh()
 {
     if (gInterfaceBarWindow != -1 && gIndicatorBarIsVisible && !gInterfaceBarHidden) {
@@ -2301,15 +2576,24 @@ int indicatorBarRefresh()
             }
         }
 
-        if (critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD) {
+        if (dudeHasState(DUDE_STATE_POISONED)) {
             if (indicatorBarAdd(INDICATOR_POISONED)) {
                 ++count;
             }
         }
 
-        if (critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD) {
+        if (dudeHasState(DUDE_STATE_RADIATED)) {
             if (indicatorBarAdd(INDICATOR_RADIATED)) {
                 ++count;
+            }
+        }
+
+        for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+            CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+            if (indicator != nullptr && indicator->isActive) {
+                if (indicatorBarAdd(tag)) {
+                    ++count;
+                }
             }
         }
 
@@ -2330,8 +2614,8 @@ int indicatorBarRefresh()
                 screenGetHeight() - INTERFACE_BAR_HEIGHT - INDICATOR_BOX_HEIGHT,
                 (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count,
                 INDICATOR_BOX_HEIGHT,
-                _colorTable[0],
-                0);
+                COLOR_BLACK,
+                WINDOW_NONE);
             indicatorBarRender(count);
             windowRefresh(gIndicatorBarWindow);
         }
@@ -2347,7 +2631,7 @@ int indicatorBarRefresh()
     return 0;
 }
 
-// 0x461624
+// 0x461624 bbox_comp
 static int indicatorBoxCompareByPosition(const void* a, const void* b)
 {
     int indicatorBox1 = *(int*)a;
@@ -2364,7 +2648,7 @@ static int indicatorBoxCompareByPosition(const void* a, const void* b)
 
 // Renders indicator boxes into the indicator bar window.
 //
-// 0x461648
+// 0x461648 draw_bboxes
 static void indicatorBarRender(int count)
 {
     if (gIndicatorBarWindow == -1) {
@@ -2396,9 +2680,21 @@ static void indicatorBarRender(int count)
 
     for (int index = 0; index < count; index++) {
         int indicator = gIndicatorSlots[index];
-        IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[indicator]);
+        unsigned char* indicatorData = nullptr;
+        if (indicator < INDICATOR_COUNT) {
+            indicatorData = gIndicatorDescriptions[indicator].data;
+        } else {
+            CustomIndicatorDescription* customIndicator = indicatorBarGetCustomTag(indicator);
+            if (customIndicator != nullptr) {
+                indicatorData = customIndicator->data;
+            }
+        }
 
-        blitBufferToBufferTrans(indicatorDescription->data + connectorWidthCompensation,
+        if (indicatorData == nullptr) {
+            continue;
+        }
+
+        blitBufferToBufferTrans(indicatorData + connectorWidthCompensation,
             INDICATOR_BOX_WIDTH - connectorWidthCompensation,
             INDICATOR_BOX_HEIGHT,
             INDICATOR_BOX_WIDTH,
@@ -2417,10 +2713,11 @@ static void indicatorBarRender(int count)
 // Returns `true` if indicator was added, or `false` if there is no available
 // space in the indicator bar.
 //
-// 0x4616F0
+// 0x4616F0 add_bar_box
 static bool indicatorBarAdd(int indicator)
 {
-    for (int index = 0; index < INDICATOR_SLOTS_COUNT; index++) {
+    int visibleSlotCount = indicatorBarGetVisibleSlotCount();
+    for (int index = 0; index < visibleSlotCount; index++) {
         if (gIndicatorSlots[index] == -1) {
             gIndicatorSlots[index] = indicator;
             return true;
@@ -2432,7 +2729,187 @@ static bool indicatorBarAdd(int indicator)
     return false;
 }
 
-// 0x461740
+static int indicatorBarGetVisibleSlotCount()
+{
+    int visibleSlotCount = screenGetWidth() / (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH);
+    return std::clamp(visibleSlotCount, 5, INDICATOR_SLOTS_COUNT);
+}
+
+static Color indicatorBarTextColor(int color)
+{
+    switch (color) {
+    case 1:
+        return COLOR_RED;
+    case 2:
+        return COLOR_WHITE;
+    case 3:
+        return COLOR_AMBER;
+    case 4:
+        return COLOR_DARK_RED;
+    case 5:
+        return COLOR_BLUE;
+    case 6:
+        return COLOR_MAGENTA;
+    case 7:
+        return COLOR_LIGHT_PINK_2;
+    default:
+        return COLOR_GREEN;
+    }
+}
+
+static void indicatorBarRenderBox(unsigned char* data, const char* text, Color color)
+{
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+
+    memcpy(data, indicatorBoxBackgroundData, sizeof(indicatorBoxBackgroundData));
+
+    // NOTE: For unknown reason it uses 24 as a height of the box to center
+    // the title. One explanation is that these boxes were redesigned, but
+    // this value was not changed. On the other hand 24 is
+    // [INDICATOR_BOX_HEIGHT] + [INDICATOR_BOX_CONNECTOR_WIDTH]. Maybe just
+    // a coincidence. I guess we'll never find out.
+    int y = (24 - fontGetLineHeight()) / 2;
+    int x = std::max(0, (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2);
+    int maxDrawWidth = INDICATOR_BOX_WIDTH - x;
+    if (maxDrawWidth > 0) {
+        fontDrawText(data + INDICATOR_BOX_WIDTH * y + x, text, maxDrawWidth, INDICATOR_BOX_WIDTH, color);
+    }
+
+    fontSetCurrent(oldFont);
+}
+
+static int indicatorBarMaxCustomTag()
+{
+    return kCustomIndicatorMinTag + availableCustomIndicatorCount - 1;
+}
+
+static CustomIndicatorDescription* indicatorBarGetCustomTag(int tag)
+{
+    if (tag < kCustomIndicatorMinTag || tag > indicatorBarMaxCustomTag()) {
+        return nullptr;
+    }
+
+    return &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+}
+
+static bool indicatorBarInitCustomTag(int tag, const char* defaultText, int configColor)
+{
+    assert(tag >= kCustomIndicatorMinTag);
+    assert(tag <= kCustomIndicatorMaxTag);
+
+    CustomIndicatorDescription* indicator = &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+    if (indicator->data == nullptr) {
+        indicator->data = (unsigned char*)internal_malloc(INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT);
+        if (indicator->data == nullptr) {
+            return false;
+        }
+    }
+
+    indicator->isActive = false;
+    indicator->configColor = configColor;
+    indicator->textColor = configColor;
+    strncpy(indicator->defaultText, defaultText, kCustomIndicatorTextLength);
+    indicator->defaultText[kCustomIndicatorTextLength] = '\0';
+    strncpy(indicator->text, indicator->defaultText, kCustomIndicatorTextLength);
+    indicator->text[kCustomIndicatorTextLength] = '\0';
+    indicatorBarRenderBox(indicator->data, indicator->text, indicatorBarTextColor(indicator->textColor));
+
+    return true;
+}
+
+static void indicatorBarRefreshCustomTag(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || indicator->data == nullptr) {
+        return;
+    }
+
+    indicatorBarRenderBox(indicator->data, indicator->text, indicatorBarTextColor(indicator->textColor));
+}
+
+static void indicatorBarResetCustomTags()
+{
+    for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+        CustomIndicatorDescription* indicator = &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+        indicator->isActive = false;
+        indicator->textColor = indicator->configColor;
+        strncpy(indicator->text, indicator->defaultText, kCustomIndicatorTextLength);
+        indicator->text[kCustomIndicatorTextLength] = '\0';
+        indicatorBarRefreshCustomTag(tag);
+    }
+
+    availableCustomIndicatorCount = initialCustomIndicatorCount;
+}
+
+int interfaceTagAdd()
+{
+    if (indicatorBarMaxCustomTag() >= kCustomIndicatorMaxTag) {
+        return -1;
+    }
+
+    int tag = kCustomIndicatorMinTag + availableCustomIndicatorCount;
+    if (!indicatorBarInitCustomTag(tag, "", 0)) {
+        return -1;
+    }
+
+    availableCustomIndicatorCount++;
+    return tag;
+}
+
+int interfaceTagGetMax()
+{
+    return indicatorBarMaxCustomTag();
+}
+
+bool interfaceTagShow(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || indicator->isActive) {
+        return false;
+    }
+
+    indicator->isActive = true;
+    indicatorBarRefresh();
+    return true;
+}
+
+bool interfaceTagHide(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || !indicator->isActive) {
+        return false;
+    }
+
+    indicator->isActive = false;
+    indicatorBarRefresh();
+    return true;
+}
+
+bool interfaceTagIsActive(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    return indicator != nullptr && indicator->isActive;
+}
+
+void interfaceTagSetText(int tag, const char* text, int color)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr) {
+        return;
+    }
+
+    indicator->textColor = color;
+    strncpy(indicator->text, text, kCustomIndicatorTextLength);
+    indicator->text[kCustomIndicatorTextLength] = '\0';
+    indicatorBarRefreshCustomTag(tag);
+
+    if (indicator->isActive) {
+        indicatorBarRefresh();
+    }
+}
+
+// 0x461740 enable_box_bar_win
 bool indicatorBarShow()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2443,7 +2920,7 @@ bool indicatorBarShow()
     return oldIsVisible;
 }
 
-// 0x461760
+// 0x461760 disable_box_bar_win
 bool indicatorBarHide()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2456,6 +2933,7 @@ bool indicatorBarHide()
 
 static void customInterfaceBarInit()
 {
+    gInterfaceBarWidth = settings.ui.iface_bar_width;
     gInterfaceBarContentOffset = gInterfaceBarWidth - 640;
     if (gInterfaceBarContentOffset > 0) {
         if (screenGetWidth() > 640 && gInterfaceBarWidth <= screenGetWidth()) {
@@ -2485,22 +2963,64 @@ static void customInterfaceBarExit()
     }
 }
 
+// Inits AP bar offsets based on custom AP bar setting and blits the correct AP graphic into the window buffer. Must be called after main panel FRM art is blitted.
+static void extendedApBarInitToWindow()
+{
+    constexpr int apBarXOffsetOriginal = 316;
+    constexpr int apBarWidthOriginal = 90;
+    constexpr int apBarMaxAPOriginal = 10;
+
+    static_assert(apBarWidthOriginal <= kApBarMaxWidth);
+    static_assert(apBarMaxAPOriginal <= kApBarMaxBulbs);
+
+    if (settings.ui.extend_ap_bar) {
+        apBarMaxAP = kApBarMaxBulbs;
+        apBarWidth = kApBarMaxWidth;
+        // Shift X offset left according to the extra AP bar width.
+        apBarXOffset = apBarXOffsetOriginal - (kApBarMaxWidth - apBarWidthOriginal) / 2;
+    } else {
+        apBarMaxAP = apBarMaxAPOriginal;
+        apBarWidth = apBarWidthOriginal;
+        apBarXOffset = apBarXOffsetOriginal;
+    }
+    apBarRect = { gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, gInterfaceBarContentOffset + apBarXOffset + apBarWidth - 1, kApBarYOffset + kApBarBulbSize - 1 };
+
+    Buffer2D ifaceBarBuf = interfaceWindowBuf2D();
+
+    // Blit extended AP bar art into static window buffer, overwriting pixels from the interface bar FRM.
+    if (settings.ui.extend_ap_bar) {
+        if (ArtPtr apBarArt { artLoad("art\\intrface\\iface_apbar_e.frm") }) {
+            if (auto apBarFrmBuf = artGetFrameBuffer(apBarArt.get(), 0, ROTATION_NE)) {
+                int apBarBgXOffset = apBarXOffset - 23;
+                constexpr int apBarBgYOffset = kApBarYOffset - 4;
+
+                blitBuffer2D(apBarFrmBuf, ifaceBarBuf, gInterfaceBarContentOffset + apBarBgXOffset, apBarBgYOffset);
+            }
+        }
+    }
+
+    // Blit the thin bar of pixels covering the bulbs (that change color) into static apBarBackgroundData buffer.
+    Buffer2D abBarBgBuf = apBarBackgroundBuf2D();
+    blitBuffer2D(ifaceBarBuf, gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, abBarBgBuf.width, abBarBgBuf.height, abBarBgBuf);
+}
+
 unsigned char* customInterfaceBarGetBackgroundImageData()
 {
     if (!gInterfaceBarIsCustom) {
         return nullptr;
     }
 
-    return artGetFrameData(gCustomInterfaceBarBackground, 0, 0);
+    return artGetFrameData(gCustomInterfaceBarBackground);
 }
 
 static void sidePanelsInit()
 {
-    if (gInterfaceBarMode) {
+    if (settings.ui.iface_bar_mode) {
         return;
     }
 
-    if (gInterfaceSidePanelsImageId == 0) {
+    int sideArtId = settings.ui.iface_bar_side_art;
+    if (sideArtId <= 0) {
         return;
     }
 
@@ -2511,14 +3031,14 @@ static void sidePanelsInit()
     Rect windowRect;
     windowGetRect(gInterfaceBarWindow, &windowRect);
 
-    gInterfaceSidePanelsLeadingWindow = windowCreate(0, windowRect.top, windowRect.left, windowRect.bottom - windowRect.top + 1, 0, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
-    gInterfaceSidePanelsTrailingWindow = windowCreate(windowRect.right + 1, windowRect.top, screenGetWidth() - windowRect.right - 1, windowRect.bottom - windowRect.top + 1, 0, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
+    gInterfaceSidePanelsLeadingWindow = windowCreate(0, windowRect.top, windowRect.left, windowRect.bottom - windowRect.top + 1, COLOR_FIRST, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
+    gInterfaceSidePanelsTrailingWindow = windowCreate(windowRect.right + 1, windowRect.top, screenGetWidth() - windowRect.right - 1, windowRect.bottom - windowRect.top + 1, COLOR_FIRST, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACELFT%d.frm", gInterfaceSidePanelsImageId);
+    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACELFT%d.frm", sideArtId);
     sidePanelsDraw(path, gInterfaceSidePanelsLeadingWindow, true);
 
-    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACERHT%d.frm", gInterfaceSidePanelsImageId);
+    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACERHT%d.frm", sideArtId);
     sidePanelsDraw(path, gInterfaceSidePanelsTrailingWindow, false);
 }
 
@@ -2564,21 +3084,21 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
         return;
     }
 
-    unsigned char* imageData = artGetFrameData(image, 0, 0);
+    unsigned char* imageData = artGetFrameData(image);
 
-    int imageWidth = artGetWidth(image, 0, 0);
-    int imageHeight = artGetHeight(image, 0, 0);
+    int imageWidth = artGetWidth(image);
+    int imageHeight = artGetHeight(image);
 
     int windowWidth = windowGetWidth(win);
     int windowHeight = windowGetHeight(win);
 
     int width = std::min(imageWidth, windowWidth);
 
-    if (!gInterfaceSidePanelsExtendFromScreenEdge && isLeading) {
+    if (!settings.ui.iface_bar_sides_ori && isLeading) {
         imageData += imageWidth - width;
     }
 
-    if (gInterfaceSidePanelsExtendFromScreenEdge && !isLeading) {
+    if (settings.ui.iface_bar_sides_ori && !isLeading) {
         imageData += imageWidth - width;
     }
 
@@ -2598,8 +3118,8 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 // differs from `interfaceGetCurrentHitMode` (can return one of `reload` hit
 // modes, the default is `punch`).
 //
-// 0x45EF6C
-bool interface_get_current_attack_mode(int* hit_mode)
+// 0x45EF6C intface_get_attack
+bool interface_get_current_attack_mode(HitMode* hitMode)
 {
     if (gInterfaceBarWindow == -1) {
         return false;
@@ -2608,19 +3128,19 @@ bool interface_get_current_attack_mode(int* hit_mode)
     switch (gInterfaceItemStates[gInterfaceCurrentHand].action) {
     case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
     case INTERFACE_ITEM_ACTION_PRIMARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
     case INTERFACE_ITEM_ACTION_SECONDARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_RELOAD:
-        *hit_mode = gInterfaceCurrentHand == HAND_LEFT
+        *hitMode = gInterfaceCurrentHand == HAND_LEFT
             ? HIT_MODE_LEFT_WEAPON_RELOAD
             : HIT_MODE_RIGHT_WEAPON_RELOAD;
         break;
     default:
-        *hit_mode = HIT_MODE_PUNCH;
+        *hitMode = HIT_MODE_PUNCH;
         break;
     }
 

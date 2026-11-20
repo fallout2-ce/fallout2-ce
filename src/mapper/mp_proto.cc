@@ -6,12 +6,15 @@
 #include "color.h"
 #include "combat_ai.h"
 #include "critter.h"
+#include "game_sound.h"
 #include "input.h"
 #include "kb.h"
 #include "mapper/mp_targt.h"
 #include "memory.h"
+#include "obj_types.h"
 #include "proto.h"
 #include "svga.h"
+#include "text_font.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
 
@@ -27,8 +30,8 @@ static int proto_choose_container_flags(Proto* proto);
 static int proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex);
 static int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex);
 static int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex);
-static void proto_critter_flags_redraw(int win, int pid);
-static int proto_critter_flags_modify(int pid);
+static void proto_critter_flags_redraw(int win, const ProtoId& protoId);
+static int proto_critter_flags_modify(const ProtoId& protoId);
 static int mp_pick_kill_type();
 
 static char kYes[] = "YES";
@@ -57,7 +60,7 @@ static char* yesno[] = {
 };
 
 // 0x559C58
-int edit_window_color = 1;
+Color edit_window_color = Color(1);
 
 // 0x559C60
 bool can_modify_protos = false;
@@ -66,7 +69,7 @@ bool can_modify_protos = false;
 static int subwin = -1;
 
 // 0x559C6C
-static int critFlagList[CRITTER_FLAG_COUNT] = {
+static CritterFlags critFlagList[CRITTER_FLAG_COUNT] = {
     CRITTER_NO_STEAL,
     CRITTER_NO_DROP,
     CRITTER_NO_LIMBS,
@@ -96,7 +99,7 @@ static const char* critFlagStrs[CRITTER_FLAG_COUNT] = {
 // 0x4922F8
 void init_mapper_protos()
 {
-    edit_window_color = _colorTable[10570];
+    edit_window_color = COLOR_DARK_GREY_2;
     can_modify_protos = target_overriden();
 }
 
@@ -121,22 +124,22 @@ int proto_choose_container_flags(Proto* proto)
         -1,
         '1',
         "Magic Hands Grnd",
-        0);
+        BUTTON_FLAG_NONE);
 
-    if ((proto->item.data.container.openFlags & 0x1) != 0) {
+    if ((proto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) != 0) {
         windowDrawText(win,
             yesno[YES],
             50,
             125,
             15,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     } else {
         windowDrawText(win,
             yesno[NO],
             50,
             125,
             15,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     _win_register_text_button(win,
@@ -147,22 +150,22 @@ int proto_choose_container_flags(Proto* proto)
         -1,
         '2',
         "Cannot Pick Up",
-        0);
+        BUTTON_FLAG_NONE);
 
-    if (_proto_action_can_pickup(proto->pid)) {
+    if (_proto_action_can_pickup(proto)) {
         windowDrawText(win,
             yesno[YES],
             50,
             125,
             36,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     } else {
         windowDrawText(win,
             yesno[NO],
             50,
             125,
             36,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     windowDrawBorder(win);
@@ -179,42 +182,42 @@ int proto_choose_container_flags(Proto* proto)
         }
 
         if (input == '1') {
-            proto->item.data.container.openFlags ^= 0x1;
+            proto->item.data.container.openFlags ^= CONTAINER_FLAG_OPEN;
 
-            if ((proto->item.data.container.openFlags & 0x1) != 0) {
+            if ((proto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) != 0) {
                 windowDrawText(win,
                     yesno[YES],
                     50,
                     125,
                     15,
-                    _colorTable[32747] | 0x10000);
+                    COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             } else {
                 windowDrawText(win,
                     yesno[NO],
                     50,
                     125,
                     15,
-                    _colorTable[32747] | 0x10000);
+                    COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             }
 
             windowRefresh(win);
         } else if (input == '2') {
             proto->item.extendedFlags ^= PROTO_EXT_FLAG_CAN_PICK_UP;
 
-            if (_proto_action_can_pickup(proto->pid)) {
+            if (_proto_action_can_pickup(proto)) {
                 windowDrawText(win,
                     yesno[YES],
                     50,
                     125,
                     36,
-                    _colorTable[32747] | 0x10000);
+                    COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             } else {
                 windowDrawText(win,
                     yesno[NO],
                     50,
                     125,
                     36,
-                    _colorTable[32747] | 0x10000);
+                    COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             }
 
             windowRefresh(win);
@@ -256,7 +259,7 @@ int proto_subdata_setup_int_button(const char* title, int key, int value, int mi
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
     if (value >= min_value && value < max_value) {
         sprintf(text, "%d", value);
@@ -265,19 +268,27 @@ int proto_subdata_setup_int_button(const char* title, int key, int value, int mi
             38,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     } else {
         windowDrawText(subwin,
             "<ERROR>",
             38,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[31744] | 0x10000);
+            COLOR_RED | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     *y += 21;
 
     return 0;
+}
+
+// 0x40A03C
+int art_list_str(int fid, char* name)
+{
+    // TODO: Incomplete.
+
+    return -1;
 }
 
 // 0x492B28
@@ -308,11 +319,11 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
     if (art_list_str(fid, text) != -1) {
         pch = strchr(text, '.');
-        if (pch != NULL) {
+        if (pch != nullptr) {
             *pch = '\0';
         }
 
@@ -321,14 +332,14 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
             80,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     } else {
         windowDrawText(subwin,
             "None",
             80,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[992] | 0x10000);
+            COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     *y += 21;
@@ -339,6 +350,7 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
 // 0x492C20
 int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex)
 {
+    const ProtoId protoId = ProtoId(pid);
     int button_x;
     int value_offset_x;
 
@@ -362,22 +374,22 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
         -1,
         key,
         title,
-        0);
+        BUTTON_FLAG_NONE);
 
-    if (pid != -1) {
+    if (protoId.valid()) {
         windowDrawText(subwin,
-            protoGetName(pid),
+            protoGetName(protoId),
             49,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     } else {
         windowDrawText(subwin,
             "None",
             49,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[992] | 0x10000);
+            COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     *y += 21;
@@ -412,37 +424,37 @@ const char* proto_wall_light_str(int flags)
 }
 
 // 0x4960B8
-void proto_critter_flags_redraw(int win, int pid)
+void proto_critter_flags_redraw(int win, const ProtoId& protoId)
 {
     int index;
-    int color;
+    Color color;
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
-        if (_critter_flag_check(pid, critFlagList[index])) {
-            color = _colorTable[992];
+        if (critterFlagCheck(protoId, critFlagList[index])) {
+            color = COLOR_GREEN;
         } else {
-            color = _colorTable[10570];
+            color = COLOR_DARK_GREY_2;
         }
 
-        windowDrawText(win, critFlagStrs[index], 44, x, 195, color | 0x10000);
+        windowDrawText(win, critFlagStrs[index], 44, x, 195, color | DRAW_TEXT_FLAG_SHADOWED);
         x += 48;
     }
 }
 
 // 0x496120
-int proto_critter_flags_modify(int pid)
+int proto_critter_flags_modify(const ProtoId& protoId)
 {
     Proto* proto;
     int rc;
     int flags = 0;
     int index;
 
-    if (protoGetProto(pid, &proto) == -1) {
+    if (protoGetProto(protoId, &proto) == -1) {
         return -1;
     }
 
-    rc = win_yes_no("Can't be stolen from?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't be stolen from?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -451,7 +463,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_STEAL;
     }
 
-    rc = win_yes_no("Can't Drop items?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Drop items?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -460,7 +472,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_DROP;
     }
 
-    rc = win_yes_no("Can't lose limbs?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't lose limbs?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -469,7 +481,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_LIMBS;
     }
 
-    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -478,7 +490,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_AGE;
     }
 
-    rc = win_yes_no("Can't Heal by Aging?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Heal by Aging?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -487,7 +499,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_HEAL;
     }
 
-    rc = win_yes_no("Is Invlunerable????", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Is Invulnerable????", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -496,7 +508,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_INVULNERABLE;
     }
 
-    rc = win_yes_no("Can't Flatten on Death?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Flatten on Death?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -505,7 +517,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_FLAT;
     }
 
-    rc = win_yes_no("Has Special Death?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Has Special Death?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -514,7 +526,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_SPECIAL_DEATH;
     }
 
-    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -523,7 +535,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_LONG_LIMBS;
     }
 
-    rc = win_yes_no("Can't be knocked back?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't be knocked back?", 340, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc == -1) {
         return -1;
     }
@@ -533,15 +545,15 @@ int proto_critter_flags_modify(int pid)
     }
 
     if (!can_modify_protos) {
-        win_timed_msg("Can't modify protos!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Can't modify protos!", COLOR_RED | DRAW_TEXT_FLAG_SHADOWED);
         return -1;
     }
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if ((critFlagList[index] & flags) != 0) {
-            critter_flag_set(pid, critFlagList[index]);
+            critterFlagSet(protoId, critFlagList[index]);
         } else {
-            critter_flag_unset(pid, critFlagList[index]);
+            critterFlagUnset(protoId, critFlagList[index]);
         }
     }
 
@@ -551,20 +563,19 @@ int proto_critter_flags_modify(int pid)
 // 0x497520
 int mp_pick_kill_type()
 {
-    char* names[KILL_TYPE_COUNT];
-    int index;
+    char* names[KILL_TYPE_DEFAULT_COUNT];
 
-    for (index = 0; index < KILL_TYPE_COUNT; index++) {
-        names[index] = killTypeGetName(index);
+    for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_DEFAULT_COUNT; killType++) {
+        names[killType] = killTypeGetName(killType);
     }
 
     return _win_list_select("Kill Type",
         names,
-        KILL_TYPE_COUNT,
-        NULL,
+        KILL_TYPE_DEFAULT_COUNT,
+        nullptr,
         50,
         100,
-        _colorTable[15855]);
+        COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
 }
 
 // 0x497568
@@ -589,10 +600,10 @@ int proto_pick_ai_packet(int* value)
     rc = _win_list_select("AI Packet",
         names,
         count,
-        NULL,
+        nullptr,
         50,
         100,
-        _colorTable[15855]);
+        COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (rc != -1) {
         *value = rc;
     }
@@ -604,5 +615,213 @@ int proto_pick_ai_packet(int* value)
     internal_free(names);
     return 0;
 }
+
+// 0x49B778
+int proto_build_all_type(ObjectType type)
+{
+    // TODO: Incomplete.
+    (void)type;
+    return 0;
+}
+
+int proto_build_all_type_binary(ObjectType type)
+{
+    // TODO: rebuild binary proto list for given object type.
+    (void)type;
+    return 0;
+}
+
+int protoEdit(const ProtoId& protoId)
+{
+    // TODO: implement proto editor dialog — load proto, show editor UI
+    (void)protoId;
+    return -1;
+}
+
+void rebuild_spray_tools()
+{
+    // TODO: rebuild spray tool (create/update pattern protos)
+}
+
+void rebuild_binary()
+{
+    // TODO: rebuild binary proto files from text sources
+}
+
+void art_to_protos()
+{
+    // TODO: create new proto entries for art files that have no proto yet
+}
+
+void swap_protos()
+{
+    // TODO: swap two prototype slots
+}
+
+static Color itemIconsBgColor()
+{
+    return COLOR_BLUE_2;
+};
+
+// proto_choose_multi_pids_update
+static void protoChooseMultiPidsUpdate(int win, ObjectType pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
+{
+    constexpr int kGridCols = 4;
+    constexpr int kGridRows = 4;
+    constexpr int kCellPitchX = 90;
+    constexpr int kCellPitchY = 80;
+    constexpr int kArtW = 80;
+    constexpr int kArtH = 60;
+    constexpr int kGridX = 8;
+    constexpr int kGridY = 9;
+
+    unsigned char* buf = windowGetBuffer(win);
+
+    for (int row = 0; row < kGridRows; row++) {
+        for (int col = 0; col < kGridCols; col++) {
+            int idx = scrollOffset + row * kGridCols + col;
+            ProtoId protoId;
+            switch (pidType) {
+            case OBJ_TYPE_ITEM:
+                protoId = static_cast<ItemProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_CRITTER:
+                protoId = static_cast<CritterProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_SCENERY:
+                protoId = static_cast<SceneryProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_WALL:
+                protoId = static_cast<WallProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_TILE:
+                protoId = static_cast<TileProtoTypeId>(idx);
+                break;
+            case OBJ_TYPE_MISC:
+                protoId = static_cast<MiscProtoTypeId>(idx);
+                break;
+            default:
+                protoId = ProtoId::Empty();
+                break;
+            }
+
+            int cellX = kGridX + col * kCellPitchX + 1;
+            int cellY = kGridY + row * kCellPitchY + 1;
+
+            bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, itemIconsBgColor());
+            Proto* proto;
+            if (protoGetProto(protoId, &proto) != -1) {
+                const FrmId frmId = fidFunc ? fidFunc(proto) : FrmId(proto->fid);
+                artRender(frmId, buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
+
+                const char* name = protoGetName(protoId);
+                int textY = cellY + kArtH + 5;
+                bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
+                windowDrawText(win, name, 80, cellX, textY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
+            }
+        }
+    }
+
+    windowRefresh(win);
+}
+
+// proto_choose_multi_pids_func
+int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc)
+{
+    constexpr int kGridCols = 4;
+    constexpr int kGridRows = 4;
+    constexpr int kCells = kGridCols * kGridRows;
+    constexpr int kCellBorderW = 82;
+    constexpr int kCellBorderH = 62;
+    constexpr int kCellPitchX = 90;
+    constexpr int kCellPitchY = 80;
+    constexpr int kWinW = 440;
+    constexpr int kWinH = 380;
+    constexpr int kGridX = 8;
+    constexpr int kGridY = 9;
+    constexpr int kBaseKey = 160;
+
+    int win = windowCreate(60, 40, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (win == -1) return -1;
+
+    int pitch = windowGetWidth(win);
+
+    windowDrawBorder(win);
+
+    _win_register_text_button(win, 345, 350, -1, -1, -1, KEY_BRACKET_LEFT, "<<", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 375, 350, -1, -1, -1, KEY_BRACKET_RIGHT, ">>", BUTTON_FLAG_NONE);
+    _win_register_text_button(win, 10, 340, -1, -1, -1, KEY_BAR, "Done", BUTTON_FLAG_NONE);
+
+    unsigned char* buf = windowGetBuffer(win);
+
+    for (int row = 0; row < kGridRows; row++) {
+        for (int col = 0; col < kGridCols; col++) {
+            int cellX = kGridX + col * kCellPitchX;
+            int cellY = kGridY + row * kCellPitchY;
+            int keyCode = kBaseKey + row * kGridCols + col;
+
+            bufferDrawRect(buf, pitch, cellX, cellY, cellX + kCellBorderW - 1, cellY + kCellBorderH - 1, COLOR_BLACK_2);
+
+            int btn = buttonCreate(win, cellX, cellY, kCellBorderW, kCellBorderH, -1, -1, -1, keyCode, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+            if (btn != -1) {
+                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+            }
+        }
+    }
+
+    int scrollOffset = 1;
+    int maxOffset = proto_max_id(pidType) - kCells;
+    if (maxOffset < 1) maxOffset = 1;
+
+    protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_BAR || key == KEY_RETURN) {
+            windowDestroy(win);
+            return key == KEY_ESCAPE ? -1 : 0;
+        }
+
+        if (key >= kBaseKey && key < kBaseKey + kCells) {
+            int pidIndex = scrollOffset + key - kBaseKey;
+            const ProtoId protoId = ProtoId(pidIndex | (pidType << 24));
+
+            Proto* proto;
+            if (protoGetProto(protoId, &proto) == -1) continue;
+
+            char prompt[128];
+            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(protoId));
+            int quantity = 1;
+            if (win_get_num_i(&quantity, 1, 32000, false, prompt, 100, 100) != -1) {
+                addFunc(protoId, quantity);
+            }
+        } else if (key == KEY_BRACKET_RIGHT) {
+            if (scrollOffset + kCells <= maxOffset) {
+                scrollOffset += kCells;
+                protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+            }
+        } else if (key == KEY_END) {
+            scrollOffset = maxOffset;
+            protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+        } else if (key == KEY_BRACKET_LEFT) {
+            if (scrollOffset > 1) {
+                int prev = scrollOffset - kCells;
+                scrollOffset = prev < 1 ? 1 : prev;
+                protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+            }
+        } else if (key == KEY_HOME) {
+            scrollOffset = 1;
+            protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// protoInstEdit implemented in mp_instance.cc
 
 } // namespace fallout

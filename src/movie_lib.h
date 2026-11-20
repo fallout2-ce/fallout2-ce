@@ -20,6 +20,7 @@ void MveSetPalette(MveSetPaletteFunc* set_palette_func);
 void MVE_rmFrameCounts(int* frame_count_ptr, int* frame_drop_count_ptr);
 int MVE_rmPrepMovie(void* handle, int dx, int dy, unsigned char track);
 int _MVE_rmStepMovie();
+void MVE_rmResetSync();
 void MVE_rmEndMovie();
 void MVE_ReleaseMem();
 

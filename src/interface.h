@@ -1,7 +1,9 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include "combat_defs.h"
 #include "db.h"
+#include "inventory.h"
 #include "obj_types.h"
 
 namespace fallout {
@@ -18,7 +20,7 @@ namespace fallout {
 // Minimum poison amount to display POISONED indicator.
 #define POISON_INDICATOR_THRESHOLD 0
 
-typedef enum InterfaceItemAction {
+enum InterfaceItemAction : int {
     INTERFACE_ITEM_ACTION_DEFAULT = -1,
     INTERFACE_ITEM_ACTION_USE,
     INTERFACE_ITEM_ACTION_PRIMARY,
@@ -27,15 +29,20 @@ typedef enum InterfaceItemAction {
     INTERFACE_ITEM_ACTION_SECONDARY_AIMING,
     INTERFACE_ITEM_ACTION_RELOAD,
     INTERFACE_ITEM_ACTION_COUNT,
-} InterfaceItemAction;
+};
+
+inline InterfaceItemAction operator++(InterfaceItemAction& e, int)
+{
+    InterfaceItemAction result = e;
+    e = static_cast<InterfaceItemAction>(static_cast<int>(e) + 1);
+    return result;
+}
 
 extern int gInterfaceBarWindow;
 extern bool gInterfaceBarMode;
 extern int gInterfaceBarWidth;
 extern bool gInterfaceBarIsCustom;
 extern int gInterfaceBarContentOffset;
-extern int gInterfaceSidePanelsImageId;
-extern bool gInterfaceSidePanelsExtendFromScreenEdge;
 
 int interfaceInit();
 void interfaceReset();
@@ -51,13 +58,13 @@ void interfaceBarRefresh();
 void interfaceRenderHitPoints(bool animate);
 void interfaceRenderArmorClass(bool animate);
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints);
-int interfaceGetCurrentHitMode(int* hitMode, bool* aiming);
-int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction);
+int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming);
+int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, InterfaceItemAction rightItemAction);
 int interfaceBarSwapHands(bool animated);
-int interfaceGetItemActions(int* leftItemAction, int* rightItemAction);
+int interfaceGetItemActions(InterfaceItemAction* leftItemAction, InterfaceItemAction* rightItemAction);
 int interfaceCycleItemAction();
 void _intface_use_item();
-int interfaceGetCurrentHand();
+Hand interfaceGetCurrentHand();
 int interfaceGetActiveItem(Object** itemPtr);
 int _intface_update_ammo_lights();
 void interfaceBarEndButtonsShow(bool animated);
@@ -67,7 +74,13 @@ void interfaceBarEndButtonsRenderRedLights();
 int indicatorBarRefresh();
 bool indicatorBarShow();
 bool indicatorBarHide();
-bool interface_get_current_attack_mode(int* hit_mode);
+bool interface_get_current_attack_mode(HitMode* hitMode);
+int interfaceTagAdd();
+int interfaceTagGetMax();
+bool interfaceTagShow(int tag);
+bool interfaceTagHide(int tag);
+bool interfaceTagIsActive(int tag);
+void interfaceTagSetText(int tag, const char* text, int color);
 
 unsigned char* customInterfaceBarGetBackgroundImageData();
 

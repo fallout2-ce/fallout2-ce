@@ -1,17 +1,15 @@
 #ifndef SOUND_EFFECTS_CACHE_H
 #define SOUND_EFFECTS_CACHE_H
 
-namespace fallout {
+#include "sound.h"
 
-// The maximum number of sound effects that can be loaded and played
-// simultaneously.
-#define SOUND_EFFECTS_MAX_COUNT (4)
+namespace fallout {
 
 int soundEffectsCacheInit(int cache_size, const char* effectsPath);
 void soundEffectsCacheExit();
 int soundEffectsCacheInitialized();
 void soundEffectsCacheFlush();
-int soundEffectsCacheFileOpen(const char* fname, int* sampleRate);
+int soundEffectsCacheFileOpen(const char* fname, AudioFileInfo* openInfo, bool* isMemoryBackedPtr);
 int soundEffectsCacheFileClose(int handle);
 int soundEffectsCacheFileRead(int handle, void* buf, unsigned int size);
 int soundEffectsCacheFileWrite(int handle, const void* buf, unsigned int size);

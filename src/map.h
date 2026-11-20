@@ -8,6 +8,7 @@
 #include "map_defs.h"
 #include "message.h"
 #include "platform_compat.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -15,9 +16,9 @@ namespace fallout {
 #define ORIGINAL_ISO_WINDOW_HEIGHT 380
 
 // TODO: Probably not needed -> replace with array?
-typedef struct TileData {
-    int field_0[SQUARE_GRID_SIZE];
-} TileData;
+struct TileData {
+    int tileFid[SQUARE_GRID_SIZE]; // contains two shortened 16 bit fids within (12 bit FrameId + 4 bit flags), lower half is floor tile fid and upper half is roof tile fid
+};
 
 typedef struct MapHeader {
     // map_ver
@@ -30,10 +31,10 @@ typedef struct MapHeader {
     int enteringTile;
 
     // map_ent_elev
-    int enteringElevation;
+    MapElevation enteringElevation;
 
     // map_ent_rot
-    int enteringRotation;
+    Rotation enteringRotation;
 
     // map_num_loc_vars
     int localVariablesCount;
@@ -42,7 +43,7 @@ typedef struct MapHeader {
     int scriptIndex;
 
     // map_flags
-    int flags;
+    MapHeaderFlags flags;
 
     // map_darkness
     int darkness;
@@ -51,7 +52,7 @@ typedef struct MapHeader {
     int globalVariablesCount;
 
     // map_number
-    int index;
+    Map index;
 
     // Time in game ticks when PC last visited this map.
     unsigned int lastVisitTime;
@@ -59,10 +60,10 @@ typedef struct MapHeader {
 } MapHeader;
 
 typedef struct MapTransition {
-    int map;
-    int elevation;
+    Map map;
+    MapElevation elevation;
     int tile;
-    int rotation;
+    Rotation rotation;
 } MapTransition;
 
 typedef void IsoWindowRefreshProc(Rect* rect);
@@ -72,7 +73,7 @@ extern int* gMapLocalVars;
 extern int* gMapGlobalVars;
 extern int gMapLocalVarsLength;
 extern int gMapGlobalVarsLength;
-extern int gElevation;
+extern MapElevation gElevation;
 
 extern MessageList gMapMessageList;
 extern MapHeader gMapHeader;
@@ -87,29 +88,38 @@ void mapExit();
 void isoEnable();
 bool isoDisable();
 bool isoIsDisabled();
-int mapSetElevation(int elevation);
+int mapSetElevation(MapElevation elevation);
 int mapSetGlobalVar(int var, ProgramValue& value);
 int mapGetGlobalVar(int var, ProgramValue& value);
 int mapSetLocalVar(int var, ProgramValue& value);
 int mapGetLocalVar(int var, ProgramValue& value);
 int mapAllocLocalVars(int numNewVars);
-void mapSetStart(int tile, int elevation, int rotation);
-char* mapGetName(int map_num, int elev);
-bool mapAreSameArea(int map_num1, int map_num2);
-int _get_map_idx_same(int map_num1, int map_num2);
-char* mapGetCityName(int map_num);
-char* mapDescriptionById(int map_index);
-int mapGetCurrentMap();
+void mapSetStart(int tile, MapElevation elevation, Rotation rotation);
+char* mapGetName(Map map_num, MapElevation elev);
+bool mapAreSameArea(Map map_num1, Map map_num2);
+int _get_map_idx_same(Map map_num1, Map map_num2);
+char* mapGetCityName(Map map_num);
+char* mapDescriptionById(Map map_index);
+Map mapGetCurrentMap();
 int mapScroll(int dx, int dy);
-int mapSetEnteringLocation(int elevation, int tile, int rotation);
+int mapSetEnteringLocation(MapElevation elevation, int tile, Rotation rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
-int mapLoadById(int map_index);
+int mapLoadById(Map map_index);
+const char* mapBuildPath(const char* name);
+// Resolves a VFS-relative data path (e.g. "MAPS\\ARROYO.MAP") to a writable path, creating its directory.
+// Save root is the validated mapper dev_path when set, otherwise the master patches path.
+const char* mapBuildDataSavePath(const char* relativePath);
+// Convenience wrapper around mapBuildDataSavePath for files under MAPS\, mirroring
+// mapBuildPath semantics: name is the bare filename, e.g. "ARROYO.MAP".
+const char* mapBuildSavePath(const char* name);
 int mapLoadSaved(char* fileName);
 int mapGetLoadedAreaId();
 int mapSetTransition(MapTransition* transition);
 int mapHandleTransition();
 int _map_save_in_game(bool isLeavingMap);
+bool mapExitScriptsRunning();
+int _map_save(bool isInGame = false);
 
 } // namespace fallout
 

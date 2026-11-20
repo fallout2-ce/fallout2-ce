@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-typedef enum GameGlobalVar {
+enum GameGlobalVar : int {
     GVAR_PLAYER_REPUTATION,
     GVAR_CHILDKILLER_REPUTATION,
     GVAR_CHAMPION_REPUTATION,
@@ -700,7 +700,7 @@ typedef enum GameGlobalVar {
     GVAR_MODOC_JONNY_PIP,
     GVAR_NEW_RENO_FLAG_4,
     GVAR_PATCH_INVAIDITATOR,
-} GameGlobalVar;
+};
 
 } // namespace fallout
 

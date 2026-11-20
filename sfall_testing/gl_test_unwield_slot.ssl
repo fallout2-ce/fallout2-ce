@@ -1,0 +1,43 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "define_extra.h"
+#include "test_utils.h"
+
+procedure run_unwield_slot_test(variable slot, variable slotName) begin
+    variable equippedItem := critter_inven_obj2(dude_obj, slot);
+
+    if (equippedItem == 0) then begin
+        display_msg("unwield_slot " + slotName + ": slot is empty");
+        return;
+    end
+
+    unwield_slot(dude_obj, slot);
+
+    call assertTrue("unwield_slot clears " + slotName + " slot", critter_inven_obj2(dude_obj, slot) == 0);
+    call report_test_results("unwield_slot");
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_J) then begin
+        call run_unwield_slot_test(INVEN_TYPE_WORN, "armor");
+    end else if (key == DIK_K) then begin
+        call run_unwield_slot_test(INVEN_TYPE_RIGHT_HAND, "right");
+    end else if (key == DIK_L) then begin
+        call run_unwield_slot_test(INVEN_TYPE_LEFT_HAND, "left");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    call assertEquals("unwield_slot metarule exists", metarule_exist("unwield_slot"), 1);
+    call assertEquals("critter_inven_obj2 metarule exists", metarule_exist("critter_inven_obj2"), 1);
+    display_msg("unwield_slot manual test ready: open inventory or barter, then press J armor, K right, L left");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end

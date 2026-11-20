@@ -1,0 +1,64 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+#include "lib.obj.h"
+
+variable calcapcost_override_enabled := true;
+
+procedure calcapcost_mode_name begin
+    if (calcapcost_override_enabled) then return "override";
+    return "engine";
+end
+
+procedure calcapcost_item_name(variable item) begin
+    if (item == 0) then return "<null>";
+    return obj_name(item);
+end
+
+procedure calcapcost_handler begin
+    variable
+        args := get_sfall_args,
+        critter := args[0],
+        attackType := args[1],
+        isAimed := args[2],
+        defaultCost := args[3],
+        weapon := args[4],
+        weaponPid := 0;
+
+    if (critter != dude_obj) then return;
+    if (weapon) then weaponPid := obj_pid(weapon);
+
+    display_msg(string_format("calcapcost mode=%s attack=%d aimed=%d default=%d weapon=%s pid=%d",
+        calcapcost_mode_name,
+        attackType,
+        isAimed,
+        defaultCost,
+        calcapcost_item_name(weapon),
+        weaponPid));
+
+    if (calcapcost_override_enabled) then
+        set_sfall_return(defaultCost + 3);
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_H) then return;
+
+    calcapcost_override_enabled := not calcapcost_override_enabled;
+    display_msg(string_format1("calcapcost mode -> %s", calcapcost_mode_name));
+    intface_redraw;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("calcapcost manual test ready: press H to toggle override (+3 AP)");
+    display_msg("check weapon, unarmed, and non-weapon hand items; hook logs args for dude only");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_CALCAPCOST, calcapcost_handler);
+end

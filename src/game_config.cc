@@ -1,8 +1,16 @@
 #include "game_config.h"
+#include "debug.h"
+#include "game_config_migration.h"
+#include "settings.h"
 #include "sfall_config.h"
 
 #include <stdio.h>
 #include <string.h>
+
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "db.h"
 #include "main.h"
@@ -15,23 +23,53 @@
 
 namespace fallout {
 
-static void gameConfigResolvePath(const char* section, const char* key);
+constexpr char kDefaultGameConfigFileName[] = "fallout2.cfg";
+constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 
 // A flag indicating if [gGameConfig] was initialized.
 //
-// 0x5186D0
+// 0x5186D0 gconfig_initialized
 bool gGameConfigInitialized = false;
 
 // fallout2.cfg
 //
-// 0x58E950
+// 0x58E950 game_config
 Config gGameConfig;
 
 // NOTE: There are additional 4 bytes following this array at 0x58EA7C, which
 // probably means it's size is 264 bytes.
 //
-// 0x58E978
+// 0x58E978 gconfig_file_name
 char gGameConfigFilePath[COMPAT_MAX_PATH];
+
+struct CommandLineOverride {
+    std::string section;
+    std::string key;
+    std::optional<std::string> originalValue;
+};
+
+static std::vector<CommandLineOverride> commandLineOverrides;
+
+static void gameConfigRecordCommandLineOverride(const char* section, const char* key)
+{
+    settingsMarkCommandLineOverride(section, key);
+
+    for (const auto& override : commandLineOverrides) {
+        if (compat_stricmp(override.section.c_str(), section) == 0
+            && compat_stricmp(override.key.c_str(), key) == 0) {
+            return;
+        }
+    }
+
+    CommandLineOverride override;
+    override.section = section;
+    override.key = key;
+    char* originalValue = nullptr;
+    if (configGetString(&gGameConfig, section, key, &originalValue)) {
+        override.originalValue = originalValue;
+    }
+    commandLineOverrides.push_back(std::move(override));
+}
 
 // Inits main game config.
 //
@@ -50,7 +88,7 @@ char gGameConfigFilePath[COMPAT_MAX_PATH];
 // Finally, this function merges key-value pairs from [argv] if any, see
 // [configParseCommandLineArguments] for expected format.
 //
-// 0x444570
+// 0x444570 gconfig_init
 bool gameConfigInit(bool isMapper, int argc, char** argv)
 {
     if (gGameConfigInitialized) {
@@ -60,78 +98,11 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     if (!configInit(&gGameConfig)) {
         return false;
     }
-
-    // Initialize defaults.
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_EXECUTABLE_KEY, "game");
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY, "master.dat");
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, "data");
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY, "critter.dat");
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY, "data");
-    configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, ENGLISH);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, 8);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_COLOR_CYCLING_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, 20480);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, 3);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TARGET_HIGHLIGHT_KEY, 2);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_ITEM_HIGHLIGHT_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_LOOKS_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_MESSAGES_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_TAUNTS_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_SPEED_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_PLAYER_SPEED_KEY, 0);
-    configSetDouble(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_BASE_DELAY_KEY, 3.5);
-    configSetDouble(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_LINE_DELAY_KEY, 1.399994);
-    configSetDouble(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, 1.0);
-    configSetDouble(&gGameConfig, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, 1.0);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEVICE_KEY, -1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_PORT_KEY, -1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_IRQ_KEY, -1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DMA_KEY, -1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SOUNDS_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_KEY, 1);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MASTER_VOLUME_KEY, 22281);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_VOLUME_KEY, 22281);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SNDFX_VOLUME_KEY, 22281);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_VOLUME_KEY, 22281);
-    configSetInt(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_CACHE_SIZE_KEY, 448);
-    configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "sound\\music\\");
-    configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, "sound\\music\\");
-    configSetString(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, "environment");
-    configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_TILE_NUM_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, 0);
-    configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, 0);
-
-    if (isMapper) {
-        configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_EXECUTABLE_KEY, "mapper");
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_USE_ART_NOT_PROTOS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_REBUILD_PROTOS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_OBJECTS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_INVENTORY_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_IGNORE_REBUILD_ERRORS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SHOW_PID_NUMBERS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SAVE_TEXT_MAPS_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_RUN_MAPPER_AS_GAME_KEY, 0);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY, 1);
-        configSetInt(&gGameConfig, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SORT_SCRIPT_LIST_KEY, 0);
-    }
+    commandLineOverrides.clear();
 
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
-    strcpy(alternativeMusicPath, "data\\sound\\music\\*.acm");
+    strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
     compat_windows_path_to_native(alternativeMusicPath);
     compat_resolve_path(alternativeMusicPath);
 
@@ -139,8 +110,9 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     int acmsLength = fileNameListInit(alternativeMusicPath, &acms);
     if (acmsLength != -1) {
         if (acmsLength > 0) {
-            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "data\\sound\\music\\");
-            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, "data\\sound\\music\\");
+            // TODO: apply these to settings directly instead of config
+            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, R"(data\sound\music\)");
+            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, R"(data\sound\music\)");
         }
         fileNameListFree(&acms, 0);
     }
@@ -151,7 +123,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     const char* configFileName = customConfigFileName != nullptr && *customConfigFileName != '\0'
         ? customConfigFileName
-        : DEFAULT_GAME_CONFIG_FILE_NAME;
+        : kDefaultGameConfigFileName;
 
     // Make `fallout2.cfg` file path.
     char* executable = argv[0];
@@ -163,7 +135,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
                 sizeof(gGameConfigFilePath),
                 "%s\\%s",
                 executable,
-                MAPPER_CONFIG_FILE_NAME);
+                kMapperConfigFileName);
         } else {
             snprintf(gGameConfigFilePath,
                 sizeof(gGameConfigFilePath),
@@ -174,30 +146,27 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         *ch = '\\';
     } else {
         if (isMapper) {
-            strcpy(gGameConfigFilePath, MAPPER_CONFIG_FILE_NAME);
+            strcpy(gGameConfigFilePath, kMapperConfigFileName);
         } else {
             strcpy(gGameConfigFilePath, configFileName);
         }
     }
 
-    auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
-    // Read contents of `fallout2.cfg` into config. The values from the file
-    // will override the defaults above.
     configRead(&gGameConfig, gGameConfigFilePath, false);
-    configChecker.check(gGameConfig);
+
+    debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
+
+    if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
+        debugPrint("Migrated settings from f2_res.ini.\n");
+        configWriteEx(&gGameConfig, gGameConfigFilePath, ConfigFlags::RetainAll);
+    }
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
-    configParseCommandLineArguments(&gGameConfig, argc, argv);
+    configParseCommandLineArguments(&gGameConfig, argc, argv, gameConfigRecordCommandLineOverride);
 
-    // CE: Normalize and resolve asset bundle paths.
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY);
+    // Writes default values to config, skipping keys that were already loaded.
+    settingsWriteToConfig(true);
 
     gGameConfigInitialized = true;
 
@@ -212,16 +181,35 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 // clang-format on
 #endif
 
-// Saves game config into `fallout2.cfg`.
+// Saves game config into the active config file.
 //
-// 0x444C14
+// 0x444C14 gconfig_save
 bool gameConfigSave()
 {
     if (!gGameConfigInitialized) {
         return false;
     }
 
-    if (!configWrite(&gGameConfig, gGameConfigFilePath, false)) {
+    // Strip process overrides from a copy so saving cannot alter active values
+    // or invalidate strings held by config readers.
+    ScopedConfig savedConfig;
+    if (!savedConfig || !configCopy(savedConfig.get(), &gGameConfig)) {
+        return false;
+    }
+
+    for (const auto& override : commandLineOverrides) {
+        if (override.originalValue.has_value()) {
+            if (!configSetString(savedConfig.get(), override.section.c_str(), override.key.c_str(), override.originalValue->c_str())) {
+                return false;
+            }
+        } else {
+            if (!configRemoveKey(savedConfig.get(), override.section.c_str(), override.key.c_str())) {
+                return false;
+            }
+        }
+    }
+
+    if (!configWriteEx(savedConfig.get(), gGameConfigFilePath, ConfigFlags::RetainAll)) {
         return false;
     }
 
@@ -234,7 +222,7 @@ bool gameConfigSave()
 
 // Frees game config, optionally saving it.
 //
-// 0x444C3C
+// 0x444C3C gconfig_exit
 bool gameConfigExit(bool shouldSave)
 {
     if (!gGameConfigInitialized) {
@@ -244,7 +232,7 @@ bool gameConfigExit(bool shouldSave)
     bool result = true;
 
     if (shouldSave) {
-        if (!configWrite(&gGameConfig, gGameConfigFilePath, false)) {
+        if (!gameConfigSave()) {
             result = false;
         }
     }
@@ -252,16 +240,9 @@ bool gameConfigExit(bool shouldSave)
     configFree(&gGameConfig);
 
     gGameConfigInitialized = false;
+    commandLineOverrides.clear();
 
     return result;
-}
-
-static void gameConfigResolvePath(const char* section, const char* key)
-{
-    char* path;
-    configGetString(&gGameConfig, section, key, &path);
-    compat_windows_path_to_native(path);
-    compat_resolve_path(path);
 }
 
 } // namespace fallout

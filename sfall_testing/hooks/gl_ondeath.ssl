@@ -1,0 +1,52 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+
+#define TEST_KEY (DIK_J)
+
+procedure ondeath_handler begin
+    variable
+        dead_critter := get_sfall_arg_at(0),
+        critter_name := "<null>",
+        critter_pid := -1;
+
+    if (dead_critter) then begin
+        critter_name := obj_name(dead_critter);
+        critter_pid := obj_pid(dead_critter);
+    end
+
+    display_msg(string_format2("ondeath critter=%s pid=%d", critter_name, critter_pid));
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1),
+        target;
+
+    if (not pressed) then return;
+    if (key != TEST_KEY) then return;
+
+    target := obj_under_cursor(true, false);
+    if (target == 0) then begin
+        display_msg("ondeath test: no critter under cursor");
+        return;
+    end
+
+    if (target == dude_obj) then begin
+        display_msg("ondeath test: refusing to kill dude");
+        return;
+    end
+
+    display_msg(string_format1("ondeath test: killing %s", obj_name(target)));
+    critter_dmg(target, 9999, DMG_BYPASS_ARMOR);
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("ondeath manual test ready: hover a critter and press J");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_ONDEATH, ondeath_handler);
+end

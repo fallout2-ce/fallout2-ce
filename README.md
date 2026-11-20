@@ -1,18 +1,115 @@
-# Fallout 2 Community Edition
+# Fallout 2: Community Engine
 
-Fallout 2 Community Edition is a fully working re-implementation of Fallout 2, with the same original gameplay, engine bugfixes, and some quality of life improvements, that works (mostly) hassle-free on multiple platforms.  This is a fork of the original project, which isn't getting regular updates.
+Fallout 2:CE is a fully working re-implementation of the classic Fallout engine, optimized for a hassle-free experience on multiple platforms, including Windows, Mac, iOS, Android, and Linux.  It provides high resolution support, quality-of-life improvements, and dozens upon dozens of bug fixes.
 
-Popular Fallout 2 total conversion mods are partially supported. Original versions of Nevada and Sonora (that do not rely on extended features provided by Sfall) work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project), [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
+This is a fork of the original Fallout 2:CE project, which is no longer getting regular updates.
 
-There is also [Fallout Community Edition](https://github.com/alexbatalov/fallout1-ce) (not affiliated with this fork).
+Popular total conversion mods are supported:
+ * [Fallout Et Tu](https://github.com/rotators/Fo1in2): Full Support.  Use v2.0+
+ * [Fallout: Sonora](https://github.com/NovaRain/Fallout-Sonora-English): Full Support.
+ * [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project): Full Support.
+ * Fallout of Nevada: Supported with minor tweaks needed.
+ * [Olympus 2207](https://steamcommunity.com/sharedfiles/filedetails/?id=2509613179), Resurrection, Yesterday: partially work but not fully supported.
 
-## Installation
+CE has broad (though not total) compatibility with [Sfall](https://github.com/sfall-team/sfall) scripting extensions.  Many traditional Fallout mods work out of the box, including NPC Armor, Party Orders, FO2Tweaks (we recommend v14.5+), Talking Heads, VOCK, and many others.
 
-You must own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410). Download latest [release](https://github.com/fallout2-ce/fallout2-ce/releases) or build from source. 
+## Installation — [Download Latest CE Release](https://github.com/fallout2-ce/fallout2-ce/releases)
+
+You *must* own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410).
+
+Download CE from the link above, then extract the archive into your game folder. Launch `fallout2-ce.exe` on Windows (or the platform-specific executable) to play. CE has a lot of enhancements that require configuration. See [Configuration](#configuration) for examples.
+
+For detailed instructions on how to play on Mac, Linux, iOS, or Android, see the [Platform-specific instructions](#platform-specific-installation).
+
+## Quality of life benefits over vanilla Fallout
+
+* High resolution support
+* Party members can loot and barter in place of PC
+* Directly equip party members instead of convincing them to use the right equipment.
+* Expanded 2-column inventory, loot screens
+* Expanded 4-row barter screen
+* Expanded AP bar
+* Ctrl-click to quickly move items when bartering, looting, or stealing, and auto-balance caps
+* Music continues playing between maps
+* Auto open doors
+* Integrated "HELP" menu
+* 44.1 kHz stereo sound/music supported, in .ogg and .wav format as well as legacy .acm
+* Last used save slot is remembered
+* You can cancel elevator floor selection using ESC
+* Spiffy ammo meter with burst-mode segmentation
+* Item/Corpse/Container/Critter highlighting (configure using [mods/sfall-mods.ini](https://github.com/sfall-team/sfall/blob/master/artifacts/config_files/sfall-mods.ini))
+
+<table>
+  <tr>
+    <td align="center">
+    <img src="docs/images/two-column-inventory.jpg" alt="Expanded 2-column inventory" width="360"><br>
+    <sub>Expanded 2-column inventory</sub>
+    </td>
+    <td align="center">
+      <img src="docs/images/companion-equip.gif" alt="Companion equip screen" width="360"><br>
+      <sub>Companion equip screen</sub>
+    </td>
+
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/images/party-member-loot.gif" alt="Party member loot" width="360"><br>
+      <sub>Party member loot</sub>
+    </td>
+    <td align="center">
+      <img src="docs/images/help-menu.gif" alt="Integrated HELP menu" width="360"><br>
+      <sub>Integrated HELP menu</sub>
+    </td>
+  </tr>
+</table>
+
+There are also dozens of small things that just work a little better than they did in the original.  Better pathfinding, fewer graphics glitches, less finicky weapon stacking, picking up items hidden behind scenery, and much more.
+
+## Configuration
+
+The main configuration file is `fallout2.cfg`. This contains original game config as well as new CE settings.
+
+Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2.cfg` file (previously part of `f2_res.ini` from Mash's HRP).
+
+Here are some important settings in `fallout2.cfg` under the `[screen]` and `[ui]` sections.  See [the example config](https://github.com/fallout2-ce/fallout2-ce/tree/refs/heads/main/files/fallout2.cfg) for a full list of settings.
+
+```ini
+[screen]
+resolution_x=1600 ; actual game window size (screen resolution), in pixels
+resolution_y=1080
+windowed=1 ; 0 = fullscreen
+scale=2 ; 1 = original scale, 2 = 2x scale, etc. (e.g. at scale 2 and screen resolution 1920x1080, in-game resolution will be 960x540, thus every pixel is twice as wide and tall)
+
+[ui]
+; Maximum number of columns shown in the main inventory and loot/steal windows (valid range: 1..2)
+inventory_columns=2
+
+; Set to 1 to expand the barter/trade window vertically, adding a 4th item slot per side (requires ce.dat)
+expand_barter_window=1
+
+[qol]
+; Allow opening party member inventory from the long-press context menu.
+party_trade_from_menu=1
+
+; Allow switching to companions' inventories in loot screens (and barter, in the future)
+party_loot_and_barter=1
+```
+
+**Recommendations:**
+- **Desktops**: Use any size you see fit.
+- **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but its logical resolution is 834x1194 (points).
+- **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
+
+In time this stuff will receive an in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
+*Note*: Use of the IFACE_BAR settings requires the `f2_res.dat` file, which contains graphical assets. Various versions are available, but one compatible with the above settings can be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/main/files/f2_res.dat)
+
+Note: There are a few settings that are still configured in `ddraw.ini`.  They will be migrated to cfg over time.
+
+## Platform-specific installation
 
 ### Windows
 
-Download and copy `fallout2-ce.exe` to your `Fallout2` folder. It serves as a drop-in replacement for `fallout2.exe`.
+[Download](https://github.com/fallout2-ce/fallout2-ce/releases) and unzip into your `Fallout2` folder. Launch the game using `fallout2-ce.exe`.
 
 ### Linux
 
@@ -22,17 +119,10 @@ Download and copy `fallout2-ce.exe` to your `Fallout2` folder. It serves as a dr
 
 ```console
 $ sudo apt install innoextract
-$ innoextract ~/Downloads/setup_fallout2_2.1.0.18.exe -I app
-$ mv app Fallout2
+$ innoextract ~/Downloads/setup_fallout_2_1.02_gog_v1_\(77792\).exe -d Fallout2
 ```
 
-- Download and copy `fallout2-ce` to this folder.
-
-- Install [SDL2](https://libsdl.org/download-2.0.php):
-
-```console
-$ sudo apt install libsdl2-2.0-0
-```
+- Download the Linux release archive, extract `fallout2-ce` and `ce.dat`, and copy them into this folder.
 
 - Run `./fallout2-ce`.
 
@@ -48,13 +138,13 @@ $ sudo apt install libsdl2-2.0-0
 
 ```console
 $ brew install innoextract
-$ innoextract ~/Downloads/setup_fallout2_2.1.0.18.exe -I app
-$ mv app /Applications/Fallout2
+$ innoextract ~/Downloads/setup_fallout_2_1.02_gog_v1_\(77792\).exe -d fallout2
+$ mv fallout2 /Applications/Fallout2
 ```
 
-- Download and copy `fallout2-ce.app` to this folder.
+- [Download](https://github.com/fallout2-ce/fallout2-ce/releases) and copy `Fallout II Community Edition.app` to this folder.
 
-- Run `fallout2-ce.app`.
+- Run `Fallout II Community Edition.app`.
 
 ### Android
 
@@ -66,9 +156,11 @@ $ mv app /Applications/Fallout2
 
 > **NOTE**: From Android standpoint release and debug builds are different apps. Both apps require their own copy of game assets and have their own savegames. This is intentional. As a gamer just stick with release version and check for updates.
 
-- Use Windows installation as a base - it contains data assets needed to play. Copy `Fallout2` folder to your device, for example to `Downloads`. You need `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder. Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
+- Download the Android [release](https://github.com/fallout2-ce/fallout2-ce/releases), which contains an .apk file and `ce.dat`.
 
-- Download `fallout2-ce.apk` and copy it to your device. Open it with file explorer, follow instructions (install from unknown source).
+- Use Windows installation as a base - it contains data assets needed to play. Copy `Fallout2` folder to your device, for example to `Downloads`. You need `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder. Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).  Copy `ce.dat` into this folder.
+
+- Copy `fallout2-ce.apk` from the release to your device. Open it with file explorer, follow instructions (install from unknown source).
 
 - When you run the game for the first time it will immediately present file picker. Select the folder from the first step. Wait until this data is copied. A loading dialog will appear, just wait for about 30 seconds. If you're installing total conversion mod or localized version with a large number of unpacked resources in `data` folder it can take up to 20 minutes. Once copied, the game will start automatically.
 
@@ -80,96 +172,46 @@ $ mv app /Applications/Fallout2
 
 - Run the game once. You'll see error message saying "Couldn't find/load text fonts". This step is needed for iOS to expose the game via File Sharing feature.
 
-- Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
+- Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, `ce.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
+
+-
+
+**Controls on iPad:**
+
+- One-finger tap → left click; hold → left button held.
+- Two-finger tap → right click (cycles cursor mode between walk and attack).
+- One-finger drag → scroll map / windows.
+- Two-finger drag → mouse wheel.
+- **Three-finger swipe down → ESC** (opens options / main menu).
+- **Four-finger long press → F6** (quicksave). Hold four fingers on the screen for about half a second.
+- **Three-finger long press → hold Shift** (highlights interactable objects — containers, doors, items — while held).
+- Taps on the HUD (interface bar / end-turn / end-combat buttons) act as direct touches so small buttons are easy to hit without aiming.
+- A Bluetooth keyboard works for everything else (numbered dialog choices, load game, etc.).
 
 ### Browser
 
-> **NOTE**: WebAssebly build with emscripten
+> **NOTE**: WebAssembly build with emscripten
 ```
 docker run --rm -v $(pwd):/src emscripten/emsdk:3.1.74 sh -c 'git config --global --add safe.directory "*" && mkdir -p build && cd build && emcmake cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/Emscripten.cmake && emmake make'
 ```
 - Demo available at https://github.com/ololoken/fallout2-ce-ems.git
 
-## Configuration
-
-The main configuration file is `fallout2.cfg`. There are several important settings you might need to adjust for your installation. Depending on your Fallout distribution main game assets `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder might be either all lowercased, or all uppercased. You can either update `master_dat`, `critter_dat`, `master_patches` and `critter_patches` settings to match your file names, or rename files to match entries in your `fallout2.cfg`.
-
-The `sound` folder (with `music` folder inside) might be located either in `data` folder, or be in the Fallout folder. Update `music_path1` setting to match your hierarchy, usually it's `data/sound/music/` or `sound/music/`. Make sure it matches your path exactly (so it might be `SOUND/MUSIC/` if you've installed Fallout from CD). Music files themselves (with `ACM` extension) should be all uppercased, regardless of `sound` and `music` folders.
-
-The second configuration file is `f2_res.ini`. Use it to change game window size, enable/disable fullscreen mode and configure IFACE settings (the control bar at the bottom of the game screen).
-
-```ini
-[MAIN]
-SCR_WIDTH=1280
-SCR_HEIGHT=720
-WINDOWED=1 ; 0 = fullscreen
-SCALE_2X=1 ; 0 = original scale, 1 = 2x - requires increasing the minimum resolution from 640x480 to 1280x960.
-
-[IFACE]
-; if IFACE_BAR_MODE=0 - the bottom of the map view window sits at the top of the IFACE Bar.
-; if IFACE_BAR_MODE=1 - the bottom of the map view window extends to the base of the screen and is overlapped by the IFACE Bar.
-IFACE_BAR_MODE=0
-
-;if IFACE_BAR_SIDE_ART=0 - Black, No Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=1 - Metal (grey) look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=2 - Leather look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=3-6 - Alternative Metal look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=7 - Alternative Leather look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=8 - Metal (brown) look Iface-bar side art used.
-IFACE_BAR_SIDE_ART=2
-
-;if IFACE_BAR_SIDES_ORI=0 - Iface-bar side graphics extend from the Iface-Bar to the Screen edges.
-;if IFACE_BAR_SIDES_ORI=1 - Iface-bar side graphics extend from the Screen edges to the Iface-Bar.
-IFACE_BAR_SIDES_ORI=0
-
-;This will increase the width of the interface bar expanding the area used to display text.
-;if IFACE_BAR_WIDTH=640 - Interface bar will remain at it's original width.
-;if IFACE_BAR_WIDTH=800 - Interface bar will use 800pix wide asset from f2_res.dat.
-;IFACE_BAR_WIDTH=640
-
-[STATIC_SCREENS]
-;if SPLASH_SCRN_SIZE=0 - Splash screen shows at original size if it fits, otherwise scales down while preserving aspect ratio.
-;if SPLASH_SCRN_SIZE=1 - Splash screen scales to fit the screen while preserving aspect ratio.
-;if SPLASH_SCRN_SIZE=2 - Splash screen stretches to fill the entire screen.
-SPLASH_SCRN_SIZE=0
-
-[MAPS]
-;if IGNORE_MAP_EDGES=0 - Hi-Res map scroll edges are enabled.
-;if IGNORE_MAP_EDGES=1 - Hi-Res map scroll edges are ignored.
-IGNORE_MAP_EDGES=0
-```
-
-Recommendations:
-- **Desktops**: Use any size you see fit.
-- **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
-- **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
-
-In time this stuff will receive in-game interface, right now you have to do it manually. For a sample f2_res.ini configuration file, containing all currently working settings use this link: [f2_res.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/mainmenu/files/f2_res.ini)
-
-*Note*: use of the IFACE_BAR settings requires the f2_res.dat file, which contains graphical assets. Various versions are available, but one compatible with the above f2_res.ini be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/mainmenu/files/f2_res.dat)
-
-The third configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
-
-For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
-
-## Quality of life benefits over vanilla Fallout
-
-* High resolution support
-* Increased pathfinding nodes 5x for more accurate pathfinding
-* Ctrl-click to quickly move items when bartering, looting, or stealing
-* _a_ to select "all" when selecting item quantity
-* _a_ to `Take All` when looting
-* When bartering, caps default to the right amount to balance the trade (if possible)
-* Music continues playing between maps (requires config)
-* Auto open doors (requires config)
 
 ## Contributing
 
-Integrating Sfall goodies is the top priority. Quality of life updates are OK too. Please no large scale refactorings at this time as we need to reconcile changes from Reference Edition, which will make this process slow and error-prone. In any case open up an issue with your suggestion or to notify other people that something is being worked on.
+For build instructions and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Integrating Sfall
+Integrating Sfall goodies is the top priority. Quality of life updates are OK too.  In any case open up an issue with your suggestion or to notify other people that something is being worked on.
 
-There are literally hundreds if not thousands of fixes and features in sfall. I guess not all of them are needed in Community Edition, but for the sake of compatibility with big mods out there, let's integrate them all.
+For current sfall compatibility status and the remaining work needed to close gaps, see [SFALL_COMPATIBILITY.md](SFALL_COMPATIBILITY.md).
+
+## For modders
+
+* Robust (though not 100%) Sfall opcode and hook support
+* .ogg/.wav support for map music
+* .png support for static assets (must be 8bit indexed)
+* .zip support for .dat archives
+* Working BIS mapper
 
 ## License
 

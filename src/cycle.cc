@@ -13,7 +13,7 @@ static constexpr unsigned int kMediumCyclePeriod = 1000 / 7;
 static constexpr unsigned int kFastCyclePeriod = 1000 / 10;
 static constexpr unsigned int kVeryFastCyclePeriod = 1000 / 30;
 
-// 0x51843C
+// 0x51843C cycle_speed_factor
 static int gColorCycleSpeedFactor = 1;
 
 // TODO: Convert colors to RGB.
@@ -21,7 +21,7 @@ static int gColorCycleSpeedFactor = 1;
 
 // Green.
 //
-// 0x518440
+// 0x518440 slime
 static unsigned char slime[12] = {
     0, 108, 0,
     11, 115, 7,
@@ -31,7 +31,7 @@ static unsigned char slime[12] = {
 
 // Light gray?
 //
-// 0x51844C
+// 0x51844C shoreline
 static unsigned char shoreline[18] = {
     83, 63, 43,
     75, 59, 43,
@@ -43,7 +43,7 @@ static unsigned char shoreline[18] = {
 
 // Orange.
 //
-// 0x51845E
+// 0x51845E fire_slow
 static unsigned char fire_slow[15] = {
     255, 0, 0,
     215, 0, 0,
@@ -54,7 +54,7 @@ static unsigned char fire_slow[15] = {
 
 // Red.
 //
-// 0x51846D
+// 0x51846D fire_fast
 static unsigned char fire_fast[15] = {
     71, 0, 0,
     123, 0, 0,
@@ -65,7 +65,7 @@ static unsigned char fire_fast[15] = {
 
 // Light blue.
 //
-// 0x51847C
+// 0x51847C monitors
 static unsigned char monitors[15] = {
     107, 107, 111,
     99, 103, 127,
@@ -76,25 +76,25 @@ static unsigned char monitors[15] = {
 
 // clang-format on
 
-// 0x51848C
+// 0x51848C cycle_initialized
 static bool gColorCycleInitialized = false;
 
-// 0x518490
+// 0x518490 cycle_enabled
 static bool gColorCycleEnabled = false;
 
-// 0x56D7D0
+// 0x56D7D0 last_cycle_fast
 static unsigned int last_cycle_fast;
 
-// 0x56D7D4
+// 0x56D7D4 last_cycle_slow
 static unsigned int last_cycle_slow;
 
-// 0x56D7D8
+// 0x56D7D8 last_cycle_medium
 static unsigned int last_cycle_medium;
 
-// 0x56D7DC
+// 0x56D7DC last_cycle_very_fast
 static unsigned int last_cycle_very_fast;
 
-// 0x42E780
+// 0x42E780 cycle_init
 void colorCycleInit()
 {
     if (gColorCycleInitialized) {
@@ -133,7 +133,7 @@ void colorCycleInit()
     cycleSetSpeedFactor(settings.system.cycle_speed_factor);
 }
 
-// 0x42E8CC
+// 0x42E8CC cycle_reset
 void colorCycleReset()
 {
     if (gColorCycleInitialized) {
@@ -146,7 +146,7 @@ void colorCycleReset()
     }
 }
 
-// 0x42E90C
+// 0x42E90C cycle_exit
 void colorCycleFree()
 {
     if (gColorCycleInitialized) {
@@ -156,32 +156,32 @@ void colorCycleFree()
     }
 }
 
-// 0x42E930
+// 0x42E930 cycle_disable
 void colorCycleDisable()
 {
     gColorCycleEnabled = false;
 }
 
-// 0x42E93C
+// 0x42E93C cycle_enable
 void colorCycleEnable()
 {
     gColorCycleEnabled = true;
 }
 
-// 0x42E948
+// 0x42E948 cycle_is_enabled
 bool colorCycleEnabled()
 {
     return gColorCycleEnabled;
 }
 
-// 0x42E950
+// 0x42E950 change_cycle_speed
 void cycleSetSpeedFactor(int value)
 {
     gColorCycleSpeedFactor = value;
     settings.system.cycle_speed_factor = value;
 }
 
-// 0x42E97C
+// 0x42E97C cycle_colors
 void colorCycleTicker()
 {
     // 0x518494

@@ -1,7 +1,18 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "animation_defs.h"
+#include "combat_defs.h"
+#include "game.h"
+#include "game_movie.h"
+#include "game_sound.h"
 #include "object.h"
+#include "proto_types.h"
+#include "random.h"
+#include "sfall_lists.h"
+#include "stat_defs.h"
+#include "window_defs.h"
+#include "worldmap.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -102,16 +113,20 @@ typedef enum ProcedureFlags {
 
 typedef enum ProgramFlags {
     PROGRAM_FLAG_EXITED = 0x01,
-    PROGRAM_FLAG_0x02 = 0x02,
-    PROGRAM_FLAG_0x04 = 0x04,
+    PROGRAM_FLAG_RUNNING = 0x02,
+    PROGRAM_FLAG_FATAL_ERROR = 0x04,
     PROGRAM_FLAG_STOPPED = 0x08,
 
     // Program is in waiting state with `checkWaitFunc` set.
     PROGRAM_IS_WAITING = 0x10,
-    PROGRAM_FLAG_0x20 = 0x20,
-    PROGRAM_FLAG_0x40 = 0x40,
+    // Program has an attached child created via O_CALLSTART.
+    // Also set in many opcodes that might trigger event procedures (probably to prevent them from disrupting current execution).
+    PROGRAM_FLAG_CHILD_CALL = 0x20,
+    // Set when current synchronous procedure call is finished.
+    PROGRAM_FLAG_FINISHED = 0x40,
     PROGRAM_FLAG_CRITICAL_SECTION = 0x80,
-    PROGRAM_FLAG_0x0100 = 0x0100,
+    // Program has an attached child created via O_SPAWN.
+    PROGRAM_FLAG_CHILD_SPAWN = 0x0100,
 } ProgramFlags;
 
 enum RawValueType {
@@ -141,11 +156,18 @@ typedef struct Procedure {
     int argCount;
 } Procedure;
 
+struct Program;
+
 class ProgramValue {
 public:
     ProgramValue();
     ProgramValue(int value);
+    ProgramValue(unsigned int value);
+    ProgramValue(bool value);
+    ProgramValue(float value);
     ProgramValue(Object* value);
+    // TODO: better approach for supporting different object types?
+    ProgramValue(Attack* value);
 
     opcode_t opcode;
     union {
@@ -161,16 +183,17 @@ public:
     float asFloat() const;
     bool isPointer() const;
     int asInt() const;
+    Object* asObject() const;
+    const char* asString(Program* program) const;
+    const char* typeDebugString() const;
 };
 
 typedef std::vector<ProgramValue> ProgramStack;
-
-typedef struct Program Program;
 typedef int(InterpretCheckWaitFunc)(Program* program);
 
 // It's size in original code is 144 (0x8C) bytes due to the different
 // size of `jmp_buf`.
-typedef struct Program {
+struct Program {
     char* name;
     unsigned char* data;
     struct Program* parent;
@@ -185,14 +208,16 @@ typedef struct Program {
     jmp_buf env;
     unsigned int waitEnd; // end time of timer (field_74 + wait time)
     unsigned int waitStart; // time when wait was called
-    int field_78; // time when program begin execution (for the first time)?, -1 - program never executed
+    int startTime; // time when program begin execution (for the first time), in seconds, -1 - program never executed; not used
     InterpretCheckWaitFunc* checkWaitFunc;
     int flags; // flags
     int windowId;
     bool exited;
     ProgramStack* stackValues;
     ProgramStack* returnStackValues;
-} Program;
+
+    int procedureCount() const;
+};
 
 typedef unsigned int(InterpretTimerFunc)();
 typedef void OpcodeHandler(Program* program);
@@ -202,10 +227,11 @@ extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 extern int _TimeOut;
 
 char* _interpretMangleName(char* s);
-void _interpretOutputFunc(int (*func)(char*));
+void _interpretOutputFunc(int (*func)(const char*));
 int _interpretOutput(const char* format, ...);
-[[noreturn]] void programFatalError(const char* str, ...);
-void _interpretDecStringRef(Program* program, opcode_t a2, int a3);
+void programFatalError(const char* str, ...);
+void programPrintError(const char* format, ...);
+void interpreterStringRefCountDecrease(Program* program, opcode_t opcode, int value);
 void programFree(Program* program);
 Program* programCreateByPath(const char* path);
 char* programGetString(Program* program, opcode_t opcode, int offset);
@@ -213,10 +239,13 @@ char* programGetIdentifier(Program* program, int offset);
 int programPushString(Program* program, const char* const string);
 void interpreterRegisterOpcodeHandlers();
 void _interpretClose();
-void _interpret(Program* program, int a2);
-void _executeProc(Program* program, int procedureIndex);
+// Runs interpreter for a given number of instructions.
+// For a typical script, if instructionPointer is 0 and numInstructions < 0, will execute script header, then 'start' procedure and then exit via O_EXIT_PROG.
+void programInterpret(Program* program, int numInstructions);
+void programExecuteProcedureAsync(Program* program, int procedureIndex);
 int programFindProcedure(Program* prg, const char* name);
-void _executeProcedure(Program* program, int procedureIndex);
+void programExecuteProcedure(Program* program, int procedureIndex);
+void programProcessProcedureEvents(Program* program);
 void programListNodeCreate(Program* program);
 void runProgram(Program* program);
 Program* runScript(char* name);
@@ -224,7 +253,7 @@ void _updatePrograms();
 void programListFree();
 void interpreterRegisterOpcode(int opcode, OpcodeHandler* handler);
 
-void programStackPushValue(Program* program, ProgramValue& programValue);
+void programStackPushValue(Program* program, const ProgramValue& programValue);
 void programStackPushInteger(Program* program, int value);
 void programStackPushFloat(Program* program, float value);
 void programStackPushString(Program* program, const char* const string);
@@ -234,6 +263,285 @@ ProgramValue programStackPopValue(Program* program);
 int programStackPopInteger(Program* program);
 char* programStackPopString(Program* program);
 void* programStackPopPointer(Program* program);
+
+template <typename T>
+T programStackPopEnum(Program* program);
+
+inline ProtoId programStackPopProtoId(Program* program)
+{
+    const ProtoId protoId = ProtoId(programStackPopInteger(program));
+    if (protoId.hasPid() && !protoId.valid()) {
+        programPrintError("invalid proto id %d", protoId.pid());
+    }
+
+    return protoId;
+}
+
+template <>
+inline HitMode programStackPopEnum(Program* program)
+{
+    int hitMode = programStackPopInteger(program);
+    if (!hitModeIsValid(hitMode)) {
+        programPrintError("invalid hit mode %d", hitMode);
+    }
+
+    return static_cast<HitMode>(hitMode);
+}
+
+template <>
+inline HitLocation programStackPopEnum(Program* program)
+{
+    int hitLocation = programStackPopInteger(program);
+    if (!hitLocationIsValid(hitLocation)) {
+        programPrintError("invalid hit location %d", hitLocation);
+    }
+
+    return static_cast<HitLocation>(hitLocation);
+}
+
+template <>
+inline MapElevation programStackPopEnum(Program* program)
+{
+    int elevation = programStackPopInteger(program);
+    if (!elevationIsValid(elevation)) {
+        programPrintError("invalid elevation %d", elevation);
+    }
+
+    return static_cast<MapElevation>(elevation);
+}
+
+template <>
+inline CriticalHitDataMember programStackPopEnum(Program* program)
+{
+    int criticalHitDataMember = programStackPopInteger(program);
+    if (!criticalHitDataMemberIsValid(criticalHitDataMember)) {
+        programPrintError("invalid critical hit data member %d", criticalHitDataMember);
+    }
+
+    return static_cast<CriticalHitDataMember>(criticalHitDataMember);
+}
+
+template <>
+inline CriticalEffect programStackPopEnum(Program* program)
+{
+    int effect = programStackPopInteger(program);
+    if (!criticalEffectIsValid(effect)) {
+        programPrintError("invalid critical effect %d", effect);
+    }
+
+    return static_cast<CriticalEffect>(effect);
+}
+
+template <>
+inline KillType programStackPopEnum(Program* program)
+{
+    int killType = programStackPopInteger(program);
+    if (!killTypeOverrideIsValid(killType)) {
+        programPrintError("invalid kill type %d", killType);
+    }
+
+    return static_cast<KillType>(killType);
+}
+
+template <>
+inline Skill programStackPopEnum(Program* program)
+{
+    int skill = programStackPopInteger(program);
+    if (!skillIsValid(skill)) {
+        programPrintError("invalid skill %d", skill);
+    }
+
+    return static_cast<Skill>(skill);
+}
+
+template <>
+inline Stat programStackPopEnum(Program* program)
+{
+    int stat = programStackPopInteger(program);
+    if (!statIsValid(stat)) {
+        programPrintError("invalid stat %d", stat);
+    }
+
+    return static_cast<Stat>(stat);
+}
+
+template <>
+inline PcStat programStackPopEnum(Program* program)
+{
+    int pcStat = programStackPopInteger(program);
+    if (!pcStatIsValid(pcStat)) {
+        programPrintError("invalid pc stat %d", pcStat);
+    }
+
+    return static_cast<PcStat>(pcStat);
+}
+
+template <>
+inline GameGlobalVar programStackPopEnum(Program* program)
+{
+    int var = programStackPopInteger(program);
+    if (!globalVariableIsValid(var)) {
+        programPrintError("invalid global variable %d", var);
+    }
+
+    return static_cast<GameGlobalVar>(var);
+}
+
+template <>
+inline AnimationType programStackPopEnum(Program* program)
+{
+    int anim = programStackPopInteger(program);
+    if (!animationTypeIsValid(anim)) {
+        programPrintError("invalid animation type %d", anim);
+    }
+
+    return static_cast<AnimationType>(anim);
+}
+
+template <>
+inline WeaponAnimation programStackPopEnum(Program* program)
+{
+    int anim = programStackPopInteger(program);
+    if (!weaponAnimationIsValid(anim)) {
+        programPrintError("invalid weapon animation %d", anim);
+    }
+
+    return static_cast<WeaponAnimation>(anim);
+}
+
+template <>
+inline CharacterSoundEffect programStackPopEnum(Program* program)
+{
+    int soundEffect = programStackPopInteger(program);
+    if (!characterSoundEffectIsValid(soundEffect)) {
+        programPrintError("invalid character sound effect %d", soundEffect);
+    }
+
+    return static_cast<CharacterSoundEffect>(soundEffect);
+}
+
+template <>
+inline Rotation programStackPopEnum(Program* program)
+{
+    int rotation = programStackPopInteger(program);
+    if (!rotationIsValid(rotation)) {
+        programPrintError("invalid rotation %d", rotation);
+    }
+
+    return static_cast<Rotation>(rotation);
+}
+
+template <>
+inline Map programStackPopEnum(Program* program)
+{
+    int map = programStackPopInteger(program);
+
+    // do not use the mapIsValid here as -1 and -2 might be valid argument from the script perspective
+    if (map >= wmMapMaxCount()) {
+        programPrintError("invalid map %d", map);
+    }
+
+    return static_cast<Map>(map);
+}
+
+template <>
+inline City programStackPopEnum(Program* program)
+{
+    int city = programStackPopInteger(program);
+    if (!cityIsValid(city)) {
+        programPrintError("invalid city %d", city);
+    }
+
+    return static_cast<City>(city);
+}
+
+template <>
+inline VisitedState programStackPopEnum(Program* program)
+{
+    int visited = programStackPopInteger(program);
+    if (!visitedStateIsValid(visited)) {
+        programPrintError("invalid visited state %d", visited);
+    }
+
+    return static_cast<VisitedState>(visited);
+}
+
+template <>
+inline TextAlignment programStackPopEnum(Program* program)
+{
+    int textAlignment = programStackPopInteger(program);
+    if (!textAlignmentIsValid(textAlignment)) {
+        programPrintError("invalid text alignment %d", textAlignment);
+    }
+
+    return static_cast<TextAlignment>(textAlignment);
+}
+
+template <>
+inline WeaponSoundEffect programStackPopEnum(Program* program)
+{
+    int weaponSoundEffect = programStackPopInteger(program);
+    if (!weaponSoundEffectIsValid(weaponSoundEffect)) {
+        programPrintError("invalid weapon sound effect %d", weaponSoundEffect);
+    }
+
+    return static_cast<WeaponSoundEffect>(weaponSoundEffect);
+}
+
+template <>
+inline ScenerySoundEffect programStackPopEnum(Program* program)
+{
+    int scenerySoundEffect = programStackPopInteger(program);
+    if (!scenerySoundEffectIsValid(scenerySoundEffect)) {
+        programPrintError("invalid scenery sound effect %d", scenerySoundEffect);
+    }
+
+    return static_cast<ScenerySoundEffect>(scenerySoundEffect);
+}
+
+template <>
+inline SoundEffectActionType programStackPopEnum(Program* program)
+{
+    int actionType = programStackPopInteger(program);
+    if (!soundEffectActionTypeIsValid(actionType)) {
+        programPrintError("invalid sound effect action type %d", actionType);
+    }
+
+    return static_cast<SoundEffectActionType>(actionType);
+}
+
+template <>
+inline GameMovie programStackPopEnum(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    if (!gameMovieExtendedIsValid(movie)) {
+        programPrintError("invalid movie %d", movie);
+    }
+
+    return static_cast<GameMovie>(movie);
+}
+
+template <>
+inline Roll programStackPopEnum(Program* program)
+{
+    int roll = programStackPopInteger(program);
+    if (!rollIsValid(roll)) {
+        programPrintError("invalid roll %d", roll);
+    }
+
+    return static_cast<Roll>(roll);
+}
+
+template <>
+inline ListType programStackPopEnum(Program* program)
+{
+    int listType = programStackPopInteger(program);
+    if (!listTypeIsValid(listType)) {
+        programPrintError("invalid list type %d", listType);
+    }
+
+    return static_cast<ListType>(listType);
+}
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
@@ -245,8 +553,6 @@ void* programReturnStackPopPointer(Program* program);
 
 opcode_t stackReadInt16(unsigned char* data, int pos);
 int stackReadInt32(unsigned char* data, int pos);
-
-extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 
 ProgramValue programMakeString(Program* program, const char* str);
 ProgramValue programMakeInt(Program* program, int val);

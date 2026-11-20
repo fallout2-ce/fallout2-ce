@@ -7,21 +7,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cassert>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "db.h"
 #include "memory.h"
 #include "platform_compat.h"
 
 namespace fallout {
 
-#define CONFIG_FILE_MAX_LINE_LENGTH (256)
+#define CONFIG_FILE_MAX_LINE_LENGTH (2048)
 
 // The initial number of sections (or key-value) pairs in the config.
 #define CONFIG_INITIAL_CAPACITY (10)
 
+struct CaseInsensitiveLess {
+    bool operator()(const std::string& a, const std::string& b) const
+    {
+        return compat_stricmp(a.c_str(), b.c_str()) < 0;
+    }
+};
+
+typedef std::set<std::string, CaseInsensitiveLess> StringSet;
+
 static bool configParseLine(Config* config, char* string);
-static bool configParseKeyValue(char* string, char* key, char* value);
+static bool configParseKeyValue(char* string, std::string& key, std::string& value);
 static bool configEnsureSectionExists(Config* config, const char* sectionKey);
 static bool configTrimString(char* string);
+static bool configGetIntImpl(Config* config, const char* sectionKey, const char* key, int* valuePtr, int base);
+static std::string configGetTrimmedString(const char* string);
+
+static bool configWriteDb(Config* config, const char* filePath);
+static bool configWriteStandard(Config* config, const char* filePath);
+static bool configWriteSideBySide(Config* config, const char* filePath, ConfigFlags flags);
+static void configWriteSection(FILE* stream, const char* sectionName, ConfigSection* section, const StringSet* handledKeys);
 
 // Last section key read from .INI file.
 //
@@ -67,6 +88,32 @@ void configFree(Config* config)
     dictionaryFree(config);
 }
 
+bool configCopy(Config* destination, const Config* source)
+{
+    if (destination == nullptr || source == nullptr
+        || !destination->isInitialized() || !source->isInitialized()) {
+        return false;
+    }
+    assert(destination != source);
+    assert(destination->entriesLength == 0);
+
+    for (int sectionIndex = 0; sectionIndex < source->entriesLength; sectionIndex++) {
+        const DictionaryEntry& sectionEntry = source->entries[sectionIndex];
+        const auto* section = static_cast<const ConfigSection*>(sectionEntry.value);
+        if (!configEnsureSectionExists(destination, sectionEntry.key)) {
+            return false;
+        }
+        for (int keyIndex = 0; keyIndex < section->entriesLength; keyIndex++) {
+            const DictionaryEntry& keyEntry = section->entries[keyIndex];
+            const char* value = *static_cast<char* const*>(keyEntry.value);
+            if (!configSetString(destination, sectionEntry.key, keyEntry.key, value)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 // Parses command line argments and adds them into the config.
 //
 // The expected format of [argv] elements are "[section]key=value", otherwise
@@ -76,7 +123,7 @@ void configFree(Config* config)
 // I don't know if this is intentional or it's bug.
 //
 // 0x42BE38
-bool configParseCommandLineArguments(Config* config, int argc, char** argv)
+bool configParseCommandLineArguments(Config* config, int argc, char** argv, void (*onOverride)(const char*, const char*))
 {
     if (config == nullptr) {
         return false;
@@ -102,10 +149,13 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
 
         *pch = '\0';
 
-        char key[260];
-        char value[260];
+        std::string key;
+        std::string value;
         if (configParseKeyValue(pch + 1, key, value)) {
-            if (!configSetString(config, sectionKey, key, value)) {
+            if (onOverride != nullptr) {
+                onOverride(sectionKey, key.c_str());
+            }
+            if (!configSetString(config, sectionKey, key.c_str(), value.c_str())) {
                 *pch = ']';
                 return false;
             }
@@ -117,6 +167,7 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
     return true;
 }
 
+// TODO: use const char** for valuePtr to enforce read-only API
 // 0x42BF48
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr)
 {
@@ -140,6 +191,17 @@ bool configGetString(Config* config, const char* sectionKey, const char* key, ch
     DictionaryEntry* keyValueEntry = &(section->entries[index]);
     *valuePtr = *(char**)keyValueEntry->value;
 
+    return true;
+}
+
+bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr, const char* defaultValue)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetString(config, sectionKey, key, valuePtr) || (*valuePtr)[0] == '\0') {
+        *valuePtr = const_cast<char*>(defaultValue);
+    }
     return true;
 }
 
@@ -185,8 +247,34 @@ bool configSetString(Config* config, const char* sectionKey, const char* key, co
     return true;
 }
 
+bool configRemoveKey(Config* config, const char* sectionKey, const char* key)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr) {
+        return false;
+    }
+
+    int sectionIndex = dictionaryGetIndexByKey(config, sectionKey);
+    if (sectionIndex == -1) {
+        return true;
+    }
+
+    ConfigSection* section = static_cast<ConfigSection*>(config->entries[sectionIndex].value);
+    int keyIndex = dictionaryGetIndexByKey(section, key);
+    if (keyIndex == -1) {
+        return true;
+    }
+
+    internal_free(*static_cast<char**>(section->entries[keyIndex].value));
+    return dictionaryRemoveValue(section, key) == 0;
+}
+
 // 0x42C05C
-bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base /* = 0 */)
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr)
+{
+    return configGetIntImpl(config, sectionKey, key, valuePtr, 0);
+}
+
+static bool configGetIntImpl(Config* config, const char* sectionKey, const char* key, int* valuePtr, int base)
 {
     if (valuePtr == nullptr) {
         return false;
@@ -214,6 +302,22 @@ bool configGetInt(Config* config, const char* sectionKey, const char* key, int* 
 
     *valuePtr = l;
 
+    return true;
+}
+
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue)
+{
+    return configGetIntBase(config, sectionKey, key, valuePtr, defaultValue, 0);
+}
+
+bool configGetIntBase(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue, int base)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetIntImpl(config, sectionKey, key, valuePtr, base)) {
+        *valuePtr = defaultValue;
+    }
     return true;
 }
 
@@ -312,52 +416,276 @@ bool configRead(Config* config, const char* filePath, bool isDb)
 // 0x42C324
 bool configWrite(Config* config, const char* filePath, bool isDb)
 {
+    return configWriteEx(config, filePath, isDb ? ConfigFlags::IsDatabase : ConfigFlags::Default);
+}
+
+bool configWriteEx(Config* config, const char* filePath, ConfigFlags flags)
+{
     if (config == nullptr || filePath == nullptr) {
         return false;
     }
 
-    if (isDb) {
-        File* stream = fileOpen(filePath, "wt");
-        if (stream == nullptr) {
-            return false;
-        }
-
-        for (int sectionIndex = 0; sectionIndex < config->entriesLength; sectionIndex++) {
-            DictionaryEntry* sectionEntry = &(config->entries[sectionIndex]);
-            filePrintFormatted(stream, "[%s]\n", sectionEntry->key);
-
-            ConfigSection* section = (ConfigSection*)sectionEntry->value;
-            for (int index = 0; index < section->entriesLength; index++) {
-                DictionaryEntry* keyValueEntry = &(section->entries[index]);
-                filePrintFormatted(stream, "%s=%s\n", keyValueEntry->key, *(char**)keyValueEntry->value);
-            }
-
-            filePrintFormatted(stream, "\n");
-        }
-
-        fileClose(stream);
-    } else {
-        FILE* stream = compat_fopen(filePath, "wt");
-        if (stream == nullptr) {
-            return false;
-        }
-
-        for (int sectionIndex = 0; sectionIndex < config->entriesLength; sectionIndex++) {
-            DictionaryEntry* sectionEntry = &(config->entries[sectionIndex]);
-            fprintf(stream, "[%s]\n", sectionEntry->key);
-
-            ConfigSection* section = (ConfigSection*)sectionEntry->value;
-            for (int index = 0; index < section->entriesLength; index++) {
-                DictionaryEntry* keyValueEntry = &(section->entries[index]);
-                fprintf(stream, "%s=%s\n", keyValueEntry->key, *(char**)keyValueEntry->value);
-            }
-
-            fprintf(stream, "\n");
-        }
-
-        fclose(stream);
+    if ((flags & ConfigFlags::IsDatabase) != ConfigFlags::Default) {
+        return configWriteDb(config, filePath);
     }
 
+    if ((flags & (ConfigFlags::RetainComments | ConfigFlags::RetainOrder | ConfigFlags::RetainUnknown)) != ConfigFlags::Default) {
+        return configWriteSideBySide(config, filePath, flags);
+    }
+
+    return configWriteStandard(config, filePath);
+}
+
+static bool configWriteDb(Config* config, const char* filePath)
+{
+    File* stream = fileOpen(filePath, "wt");
+    if (stream == nullptr) {
+        return false;
+    }
+
+    for (int i = 0; i < config->entriesLength; i++) {
+        DictionaryEntry* sectionEntry = &(config->entries[i]);
+        filePrintFormatted(stream, "[%s]\n", sectionEntry->key);
+
+        ConfigSection* section = (ConfigSection*)sectionEntry->value;
+        for (int j = 0; j < section->entriesLength; j++) {
+            DictionaryEntry* keyValueEntry = &(section->entries[j]);
+            filePrintFormatted(stream, "%s=%s\n", keyValueEntry->key, *(char**)keyValueEntry->value);
+        }
+        filePrintFormatted(stream, "\n");
+    }
+
+    fileClose(stream);
+    return true;
+}
+
+static bool configWriteStandard(Config* config, const char* filePath)
+{
+    FILE* stream = compat_fopen(filePath, "wt");
+    if (stream == nullptr) {
+        return false;
+    }
+
+    for (int i = 0; i < config->entriesLength; i++) {
+        configWriteSection(stream, config->entries[i].key, (ConfigSection*)config->entries[i].value, nullptr);
+        fprintf(stream, "\n");
+    }
+
+    fclose(stream);
+    return true;
+}
+
+static void configWriteSection(FILE* stream, const char* sectionName, ConfigSection* section, const StringSet* handledKeys)
+{
+    if (sectionName != nullptr) {
+        fprintf(stream, "[%s]\n", sectionName);
+    }
+
+    for (int i = 0; i < section->entriesLength; i++) {
+        DictionaryEntry* entry = &(section->entries[i]);
+        if (handledKeys == nullptr || handledKeys->find(entry->key) == handledKeys->end()) {
+            fprintf(stream, "%s=%s\n", entry->key, *(char**)entry->value);
+        }
+    }
+}
+
+static bool configWriteSideBySide(Config* config, const char* filePath, ConfigFlags flags)
+{
+    bool retainUnknown = (flags & ConfigFlags::RetainUnknown) != ConfigFlags::Default;
+
+    FILE* original = compat_fopen(filePath, "rt");
+    if (original == nullptr) {
+        if (errno == ENOENT) {
+            // File doesn't exist, nothing to retain, perform standard write.
+            return configWriteStandard(config, filePath);
+        }
+        // Other error (e.g., permissions), fail as requested.
+        return false;
+    }
+
+    char tempPath[COMPAT_MAX_PATH];
+    int tempPathLength = snprintf(tempPath, sizeof(tempPath), "%s.tmp", filePath);
+    if (tempPathLength < 0 || tempPathLength >= (int)sizeof(tempPath)) {
+        fclose(original);
+        return false;
+    }
+    FILE* output = compat_fopen(tempPath, "wt");
+    if (output == nullptr) {
+        fclose(original);
+        return false;
+    }
+
+    StringSet handledSections;
+    StringSet handledKeys;
+    std::vector<std::string> pendingLines;
+
+    char currentSectionName[CONFIG_FILE_MAX_LINE_LENGTH] = "";
+    ConfigSection* currentSection = nullptr;
+    // Treat pre-section preamble as "known" so its comments are preserved.
+    bool currentSectionKnown = true;
+
+    char line[CONFIG_FILE_MAX_LINE_LENGTH];
+    while (compat_fgets(line, sizeof(line), original) != nullptr) {
+        char lineCopy[CONFIG_FILE_MAX_LINE_LENGTH];
+        strcpy(lineCopy, line);
+
+        char* trimmed = lineCopy;
+        while (isspace(static_cast<unsigned char>(*trimmed))) {
+            trimmed++;
+        }
+
+        // Buffer comments and empty lines; drop them if inside a suppressed section.
+        if (*trimmed == '\0' || *trimmed == ';' || *trimmed == '#') {
+            if (!currentSectionKnown && !retainUnknown) {
+                continue;
+            }
+            if ((flags & ConfigFlags::RetainComments) != ConfigFlags::Default || (*trimmed == '\0')) {
+                pendingLines.emplace_back(line);
+            }
+            continue;
+        }
+
+        if (*trimmed == '[') {
+            // End current section, write out remaining keys from it.
+            if (currentSection != nullptr) {
+                configWriteSection(output, nullptr, currentSection, &handledKeys);
+                handledKeys.clear();
+                currentSection = nullptr;
+            }
+
+            // Parse the section name before deciding whether to write.
+            currentSectionKnown = false;
+            currentSectionName[0] = '\0';
+
+            char* end = strchr(trimmed, ']');
+            if (end != nullptr) {
+                *end = '\0';
+                strcpy(currentSectionName, trimmed + 1);
+                configTrimString(currentSectionName);
+                *end = ']';
+
+                int sectionIndex = dictionaryGetIndexByKey(config, currentSectionName);
+                if (sectionIndex != -1) {
+                    currentSection = (ConfigSection*)config->entries[sectionIndex].value;
+                    handledSections.insert(currentSectionName);
+                    currentSectionKnown = true;
+                }
+            }
+
+            if (currentSectionKnown || retainUnknown) {
+                // Flush buffered comments/empty lines that preceded this header.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+                fprintf(output, "%s", line);
+            } else {
+                // Suppress unknown section entirely, discard buffered lines.
+                pendingLines.clear();
+            }
+            continue;
+        }
+
+        char* equals = strchr(trimmed, '=');
+        if (equals != nullptr) {
+            *equals = '\0';
+            char key[CONFIG_FILE_MAX_LINE_LENGTH];
+            strcpy(key, trimmed);
+            configTrimString(key);
+            *equals = '=';
+
+            char* value = nullptr;
+            if (currentSection != nullptr) {
+                configGetString(config, currentSectionName, key, &value);
+            }
+
+            if (value != nullptr) {
+                // Flush lines that were between previous key and this one.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+
+                const char* k = key;
+                char* comment = nullptr;
+
+                if ((flags & ConfigFlags::RetainComments) != ConfigFlags::Default) {
+                    *equals = '\0';
+                    k = trimmed;
+                    if ((comment = strchr(equals + 1, ';')) == nullptr) {
+                        comment = strchr(equals + 1, '#');
+                    }
+                }
+
+                fprintf(output, "%s=%s%s%s", k, value, comment ? " " : "", comment ? comment : "\n");
+                handledKeys.insert(key);
+            } else if (retainUnknown) {
+                // Key not in config - write verbatim from original file.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+                fprintf(output, "%s", line);
+            }
+            // else: drop key; keep pending lines buffered so they attach to the
+            // next surviving key rather than becoming orphaned.
+            continue;
+        }
+
+        // Unknown line structure - buffer if retaining comments/structure.
+        if ((currentSectionKnown || retainUnknown) && (flags & ConfigFlags::RetainComments) != ConfigFlags::Default) {
+            pendingLines.emplace_back(line);
+        }
+    }
+
+    // Write remaining keys in the last processed section.
+    if (currentSection != nullptr) {
+        configWriteSection(output, nullptr, currentSection, &handledKeys);
+    }
+
+    // Flush remaining comments/empty lines.
+    for (const std::string& l : pendingLines) {
+        fprintf(output, "%s", l.c_str());
+    }
+    pendingLines.clear();
+
+    // Write completely new sections, separated from existing content.
+    bool firstNewSection = true;
+    for (int i = 0; i < config->entriesLength; i++) {
+        DictionaryEntry* sectionEntry = &(config->entries[i]);
+        if (handledSections.find(sectionEntry->key) == handledSections.end()) {
+            if (firstNewSection) {
+                fprintf(output, "\n");
+                firstNewSection = false;
+            }
+            configWriteSection(output, sectionEntry->key, (ConfigSection*)sectionEntry->value, nullptr);
+            fprintf(output, "\n");
+        }
+    }
+
+    fclose(output);
+    fclose(original);
+
+    std::string backupPath = std::string(filePath) + ".bak";
+
+    if (compat_remove(backupPath.c_str()) != 0 && errno != ENOENT) {
+        compat_remove(tempPath);
+        return false;
+    }
+
+    if (compat_rename(filePath, backupPath.c_str()) != 0) {
+        compat_remove(tempPath);
+        return false;
+    }
+
+    if (compat_rename(tempPath, filePath) != 0) {
+        compat_rename(backupPath.c_str(), filePath);
+        return false;
+    }
+
+    // The new config is already installed. Backup cleanup failure does not
+    // make the save fail, since callers cannot roll back an installed file.
+    compat_remove(backupPath.c_str());
     return true;
 }
 
@@ -381,6 +709,10 @@ static bool configParseLine(Config* config, char* string)
 
     // Find comment marker and truncate the string.
     pch = strchr(string, ';');
+    if (pch == nullptr) {
+        pch = strchr(string, '#');
+    }
+
     if (pch != nullptr) {
         *pch = '\0';
     }
@@ -414,13 +746,13 @@ static bool configParseLine(Config* config, char* string)
         }
     }
 
-    char key[260];
-    char value[260];
+    std::string key;
+    std::string value;
     if (!configParseKeyValue(string, key, value)) {
         return false;
     }
 
-    return configSetString(config, gConfigLastSectionKey, key, value);
+    return configSetString(config, gConfigLastSectionKey, key.c_str(), value.c_str());
 }
 
 // Splits "key=value" pair from [string] and copy appropriate parts into [key]
@@ -429,9 +761,9 @@ static bool configParseLine(Config* config, char* string)
 // Both key and value are trimmed.
 //
 // 0x42C594
-static bool configParseKeyValue(char* string, char* key, char* value)
+static bool configParseKeyValue(char* string, std::string& key, std::string& value)
 {
-    if (string == nullptr || key == nullptr || value == nullptr) {
+    if (string == nullptr) {
         return false;
     }
 
@@ -443,13 +775,10 @@ static bool configParseKeyValue(char* string, char* key, char* value)
 
     *pch = '\0';
 
-    strcpy(key, string);
-    strcpy(value, pch + 1);
+    key = configGetTrimmedString(string);
+    value = configGetTrimmedString(pch + 1);
 
     *pch = '=';
-
-    configTrimString(key);
-    configTrimString(value);
 
     return true;
 }
@@ -522,6 +851,25 @@ static bool configTrimString(char* string)
     return true;
 }
 
+static std::string configGetTrimmedString(const char* string)
+{
+    if (string == nullptr) {
+        return std::string();
+    }
+
+    const char* start = string;
+    while (isspace(static_cast<unsigned char>(*start))) {
+        start++;
+    }
+
+    const char* end = start + strlen(start);
+    while (end > start && isspace(static_cast<unsigned char>(*(end - 1)))) {
+        end--;
+    }
+
+    return std::string(start, end);
+}
+
 // 0x42C718
 bool configGetDouble(Config* config, const char* sectionKey, const char* key, double* valuePtr)
 {
@@ -565,10 +913,58 @@ bool configGetBool(Config* config, const char* sectionKey, const char* key, bool
     return true;
 }
 
+bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, const bool defaultValue)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetBool(config, sectionKey, key, valuePtr)) {
+        *valuePtr = defaultValue;
+    }
+    return true;
+}
+
 // NOTE: Boolean-typed variant of [configGetInt].
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value)
 {
     return configSetInt(config, sectionKey, key, value ? 1 : 0);
+}
+
+// ScopedConfig is a RAII wrapper around Config that makes cleanup easier.
+ScopedConfig::ScopedConfig()
+{
+    _loaded = configInit(&_config);
+}
+
+ScopedConfig::ScopedConfig(const char* filePath, bool isDb)
+    : ScopedConfig()
+{
+    if (_loaded) {
+        _loaded = configRead(&_config, filePath, isDb);
+    }
+}
+
+ScopedConfig::~ScopedConfig()
+{
+    if (_config.isInitialized()) {
+        configFree(&_config);
+    }
+}
+
+// get returns a pointer to be useful in the config* API above; it cannot be nullptr
+Config* ScopedConfig::get()
+{
+    return &_config;
+}
+
+const Config* ScopedConfig::get() const
+{
+    return &_config;
+}
+
+ScopedConfig::operator bool() const
+{
+    return _loaded;
 }
 
 } // namespace fallout

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
+#include "color.h"
 #include "debug.h"
 #include "draw.h"
 #include "input.h"
@@ -17,15 +18,26 @@
 namespace fallout {
 
 // The maximum number of text objects that can exist at the same time.
-#define TEXT_OBJECTS_MAX_COUNT (20)
+#define TEXT_OBJECTS_MAX_COUNT (200)
 
-typedef enum TextObjectFlags {
-    TEXT_OBJECT_MARKED_FOR_REMOVAL = 0x01,
-    TEXT_OBJECT_UNBOUNDED = 0x02,
-} TextObjectFlags;
+enum class TextObjectFlags : unsigned int {
+    None = 0x00,
+    MarkedForRemoval = 0x01,
+    Unbounded = 0x02,
+};
+
+constexpr inline TextObjectFlags operator&(TextObjectFlags lhs, TextObjectFlags rhs)
+{
+    return static_cast<TextObjectFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline TextObjectFlags operator|(TextObjectFlags lhs, TextObjectFlags rhs)
+{
+    return static_cast<TextObjectFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 typedef struct TextObject {
-    int flags;
+    TextObjectFlags flags;
     Object* owner;
     unsigned int time;
     int linesCount;
@@ -42,34 +54,34 @@ typedef struct TextObject {
 static void textObjectsTicker();
 static void textObjectFindPlacement(TextObject* textObject);
 
-// 0x51D944
+// 0x51D944 text_object_index
 static int gTextObjectsCount = 0;
 
-// 0x51D948
+// 0x51D948 text_object_base_delay
 static unsigned int gTextObjectsBaseDelay = 3500;
 
-// 0x51D94C
+// 0x51D94C text_object_line_delay
 static unsigned int gTextObjectsLineDelay = 1399;
 
-// 0x6681C0
+// 0x6681C0 text_object_list
 static TextObject* gTextObjects[TEXT_OBJECTS_MAX_COUNT];
 
-// 0x668210
+// 0x668210 display_width
 static int gTextObjectsWindowWidth;
 
-// 0x668214
+// 0x668214 display_height
 static int gTextObjectsWindowHeight;
 
-// 0x668218
+// 0x668218 display_buffer
 static unsigned char* gTextObjectsWindowBuffer;
 
-// 0x66821C
+// 0x66821C text_object_enabled
 static bool gTextObjectsEnabled;
 
-// 0x668220
+// 0x668220 text_object_initialized
 static bool gTextObjectsInitialized;
 
-// 0x4B0130
+// 0x4B0130 text_object_init
 int textObjectsInit(unsigned char* windowBuffer, int width, int height)
 {
     if (gTextObjectsInitialized) {
@@ -92,7 +104,7 @@ int textObjectsInit(unsigned char* windowBuffer, int width, int height)
     return 0;
 }
 
-// 0x4B021C
+// 0x4B021C text_object_reset
 int textObjectsReset()
 {
     if (!gTextObjectsInitialized) {
@@ -110,7 +122,7 @@ int textObjectsReset()
     return 0;
 }
 
-// 0x4B0280
+// 0x4B0280 text_object_exit
 void textObjectsFree()
 {
     if (gTextObjectsInitialized) {
@@ -120,19 +132,19 @@ void textObjectsFree()
     }
 }
 
-// 0x4B02A4
+// 0x4B02A4 text_object_disable
 void textObjectsDisable()
 {
     gTextObjectsEnabled = false;
 }
 
-// 0x4B02B0
+// 0x4B02B0 text_object_enable
 void textObjectsEnable()
 {
     gTextObjectsEnabled = true;
 }
 
-// 0x4B02C4
+// 0x4B02C4 text_object_set_base_delay
 void textObjectsSetBaseDelay(double value)
 {
     if (value < 1.0) {
@@ -142,7 +154,7 @@ void textObjectsSetBaseDelay(double value)
     gTextObjectsBaseDelay = (int)(value * 1000.0);
 }
 
-// 0x4B031C
+// 0x4B031C text_object_set_line_delay
 void textObjectsSetLineDelay(double value)
 {
     if (value < 0.0) {
@@ -153,8 +165,8 @@ void textObjectsSetLineDelay(double value)
 }
 
 // text_object_create
-// 0x4B036C
-int textObjectAdd(Object* object, char* string, int font, int color, int outlineColor, Rect* rect)
+// 0x4B036C text_object_create
+int textObjectAdd(Object* object, char* string, int font, ColorWithFlags color, ColorWithFlags outlineColor, Rect* rect)
 {
     if (!gTextObjectsInitialized) {
         return -1;
@@ -215,7 +227,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
 
     textObject->height = (fontGetLineHeight() + 1) * textObject->linesCount;
 
-    if (outlineColor != -1) {
+    if (outlineColor != COLOR_INVALID) {
         textObject->width += 2;
         textObject->height += 2;
     }
@@ -232,7 +244,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
     unsigned char* dest = textObject->data;
     int skip = textObject->width * (fontGetLineHeight() + 1);
 
-    if (outlineColor != -1) {
+    if (outlineColor != COLOR_INVALID) {
         dest += textObject->width;
     }
 
@@ -254,14 +266,14 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
         dest += skip;
     }
 
-    if (outlineColor != -1) {
-        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, outlineColor);
+    if (outlineColor != COLOR_INVALID) {
+        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, static_cast<Color>(outlineColor & COLOR_LAST));
     }
 
     if (object != nullptr) {
         textObject->tile = object->tile;
     } else {
-        textObject->flags |= TEXT_OBJECT_UNBOUNDED;
+        textObject->flags = textObject->flags | TextObjectFlags::Unbounded;
         textObject->tile = gCenterTile;
     }
 
@@ -287,7 +299,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
     return 0;
 }
 
-// 0x4B06E8
+// 0x4B06E8 text_object_render
 void textObjectsRenderInRect(Rect* rect)
 {
     if (!gTextObjectsInitialized) {
@@ -316,13 +328,13 @@ void textObjectsRenderInRect(Rect* rect)
     }
 }
 
-// 0x4B07F0
+// 0x4B07F0 text_object_count
 int textObjectsGetCount()
 {
     return gTextObjectsCount;
 }
 
-// 0x4B07F8
+// 0x4B07F8 text_object_bk
 static void textObjectsTicker()
 {
     if (!gTextObjectsEnabled) {
@@ -336,7 +348,7 @@ static void textObjectsTicker()
         TextObject* textObject = gTextObjects[index];
 
         unsigned int delay = gTextObjectsLineDelay * textObject->linesCount + gTextObjectsBaseDelay;
-        if ((textObject->flags & TEXT_OBJECT_MARKED_FOR_REMOVAL) != 0 || (getTicksBetween(_get_bk_time(), textObject->time) > delay)) {
+        if ((textObject->flags & TextObjectFlags::MarkedForRemoval) != TextObjectFlags::None || (getTicksBetween(_get_bk_time(), textObject->time) >= delay)) {
             tileToScreenXY(textObject->tile, &(textObject->x), &(textObject->y));
             textObject->x += textObject->sx;
             textObject->y += textObject->sy;
@@ -371,7 +383,7 @@ static void textObjectsTicker()
 
 // Finds best position for placing text object.
 //
-// 0x4B0954
+// 0x4B0954 text_object_get_offset
 static void textObjectFindPlacement(TextObject* textObject)
 {
     int tileScreenX;
@@ -380,7 +392,7 @@ static void textObjectFindPlacement(TextObject* textObject)
     textObject->x = tileScreenX + 16 - textObject->width / 2;
     textObject->y = tileScreenY;
 
-    if ((textObject->flags & TEXT_OBJECT_UNBOUNDED) == 0) {
+    if ((textObject->flags & TextObjectFlags::Unbounded) == TextObjectFlags::None) {
         textObject->y -= textObject->height + 60;
     }
 
@@ -457,12 +469,12 @@ static void textObjectFindPlacement(TextObject* textObject)
 
 // Marks text objects attached to [object] for removal.
 //
-// 0x4B0C00
+// 0x4B0C00 text_object_remove
 void textObjectsRemoveByOwner(Object* object)
 {
     for (int index = 0; index < gTextObjectsCount; index++) {
         if (gTextObjects[index]->owner == object) {
-            gTextObjects[index]->flags |= TEXT_OBJECT_MARKED_FOR_REMOVAL;
+            gTextObjects[index]->flags = gTextObjects[index]->flags | TextObjectFlags::MarkedForRemoval;
         }
     }
 }

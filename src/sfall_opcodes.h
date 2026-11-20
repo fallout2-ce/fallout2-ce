@@ -3,6 +3,10 @@
 
 namespace fallout {
 
+class ScriptHookCall;
+
+ScriptHookCall* hookOpcodeGetCurrentCall(const char* opcodeName);
+
 void sfallOpcodesInit();
 void sfallOpcodesExit();
 

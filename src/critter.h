@@ -1,17 +1,51 @@
 #ifndef CRITTER_H
 #define CRITTER_H
 
+#include "animation_defs.h"
+#include "art.h"
+#include "art_defs.h"
+#include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
 
 namespace fallout {
 
-typedef enum DudeState {
-    DUDE_STATE_SNEAKING = 0,
-    DUDE_STATE_LEVEL_UP_AVAILABLE = 3,
-    DUDE_STATE_ADDICTED = 4,
-} DudeState;
+// Radiation levels.
+//
+// The names of levels are taken from Fallout 3, comments from Fallout 2.
+enum RadiationLevel : int {
+    // Very nauseous.
+    RADIATION_LEVEL_NONE,
+
+    // Slightly fatigued.
+    RADIATION_LEVEL_MINOR,
+
+    // Vomiting does not stop.
+    RADIATION_LEVEL_ADVANCED,
+
+    // Hair is falling out.
+    RADIATION_LEVEL_CRITICAL,
+
+    // Skin is falling off.
+    RADIATION_LEVEL_DEADLY,
+
+    // Intense agony.
+    RADIATION_LEVEL_FATAL,
+
+    // The number of radiation levels.
+    RADIATION_LEVEL_COUNT,
+};
+
+inline RadiationLevel operator++(RadiationLevel& e, int)
+{
+    RadiationLevel result = e;
+    e = static_cast<RadiationLevel>(static_cast<int>(e) + 1);
+    return result;
+}
+
+const CritterFrameId kGorisCombatBaseFrameId = CritterFrameId(100);
+const CritterFrameId kGorisRobeBaseFrameId = CritterFrameId(99);
 
 int critterInit();
 void critterReset();
@@ -31,34 +65,38 @@ int critterGetRadiation(Object* critter);
 int critterAdjustRadiation(Object* obj, int amount);
 int critterCheckRadiationEvent(Object* critter);
 int radiationClearDamage(Object* obj, void* data);
-void radiationProcess(Object* obj, int radiationLevel, bool direction);
+void radiationProcess(Object* obj, RadiationLevel radiationLevel, bool direction);
 int radiationEventProcess(Object* obj, void* data);
 int radiationEventRead(File* stream, void** dataPtr);
 int radiationEventWrite(File* stream, void* data);
-int critterGetDamageType(Object* critter);
-int killsIncByType(int killType);
-int killsGetByType(int killType);
+DamageType critterGetDamageType(Object* critter);
+int killsIncByType(KillType killType);
+int killsGetByType(KillType killType);
 int killsLoad(File* stream);
 int killsSave(File* stream);
-int critterGetKillType(Object* critter);
-char* killTypeGetName(int killType);
-char* killTypeGetDescription(int killType);
+KillType critterGetKillType(Object* critter);
+char* killTypeGetName(KillType killType);
+char* killTypeGetDescription(KillType killType);
 int critterHealByHours(Object* obj, int hours);
-void critterKill(Object* critter, int anim, bool refreshRect);
+void critterKill(Object* critter, AnimationType anim, bool refreshRect);
 int critterGetExp(Object* critter);
 bool critterIsActive(Object* critter);
 bool critterIsDead(Object* critter);
 bool critterIsCrippled(Object* critter);
 bool critterIsProne(Object* critter);
-int critterGetBodyType(Object* critter);
+BodyType critterGetBodyType(Object* critter);
+// Checks physical/art capability only. Callers that expose weapon usability
+// decisions must still call scriptHooks_CanUseWeapon with the final result.
+bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode);
+CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId);
 int gcdLoad(const char* path);
 int protoCritterDataRead(File* stream, CritterProtoData* critterData);
 int gcdSave(const char* path);
 int protoCritterDataWrite(File* stream, CritterProtoData* critterData);
-void dudeDisableState(int state);
-void dudeEnableState(int state);
-void dudeToggleState(int state);
-bool dudeHasState(int state);
+void dudeDisableState(DudeState state);
+void dudeEnableState(DudeState state);
+void dudeToggleState(DudeState state);
+bool dudeHasState(DudeState state);
 int sneakEventProcess(Object* obj, void* data);
 int critterDisableSneak(Object* obj, void* data);
 bool dudeIsSneaking();
@@ -69,9 +107,9 @@ bool critterCanDudeRest();
 int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int distance);
 bool critterIsEncumbered(Object* critter);
 bool critterIsFleeing(Object* critter);
-bool critterFlagCheck(int pid, int flag);
-void critterFlagSet(int pid, int flag);
-void critterFlagUnset(int pid, int flag);
+bool critterFlagCheck(const ProtoId& protoId, CritterFlags flag);
+void critterFlagSet(const ProtoId& protoId, CritterFlags flag);
+void critterFlagUnset(const ProtoId& protoId, CritterFlags flag);
 
 } // namespace fallout
 

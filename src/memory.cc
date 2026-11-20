@@ -4,7 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <limits>
+
 #include "debug.h"
+#include "memory_defs.h"
 
 namespace fallout {
 
@@ -32,31 +35,32 @@ typedef struct MemoryBlockFooter {
 static void* memoryBlockMallocImpl(size_t size);
 static void* memoryBlockReallocImpl(void* ptr, size_t size);
 static void memoryBlockFreeImpl(void* ptr);
+static bool memoryBlockGetAllocationSize(size_t dataSize, size_t* allocationSizePtr);
 static void* mem_prep_block(void* block, size_t size);
 static void memoryBlockValidate(void* block);
 
-// 0x51DED0
+// 0x51DED0 p_malloc
 static MallocProc* gMallocProc = memoryBlockMallocImpl;
 
-// 0x51DED4
+// 0x51DED4 p_realloc
 static ReallocProc* gReallocProc = memoryBlockReallocImpl;
 
-// 0x51DED8
+// 0x51DED8 p_free
 static FreeProc* gFreeProc = memoryBlockFreeImpl;
 
-// 0x51DEDC
+// 0x51DEDC num_blocks
 static int gMemoryBlocksCurrentCount = 0;
 
-// 0x51DEE0
+// 0x51DEE0 max_blocks
 static int gMemoryBlockMaximumCount = 0;
 
-// 0x51DEE4
+// 0x51DEE4 mem_allocated
 static size_t gMemoryBlocksCurrentSize = 0;
 
-// 0x51DEE8
+// 0x51DEE8 max_allocated
 static size_t gMemoryBlocksMaximumSize = 0;
 
-// 0x4C5A80
+// 0x4C5A80 mem_strdup
 char* internal_strdup(const char* string)
 {
     char* copy = nullptr;
@@ -67,20 +71,22 @@ char* internal_strdup(const char* string)
     return copy;
 }
 
-// 0x4C5AD0
+// 0x4C5AD0 mem_malloc
 void* internal_malloc(size_t size)
 {
     return gMallocProc(size);
 }
 
-// 0x4C5AD8
+// 0x4C5AD8 my_malloc
 static void* memoryBlockMallocImpl(size_t size)
 {
     void* ptr = nullptr;
 
     if (size != 0) {
-        size += sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
-        size += sizeof(int) - size % sizeof(int);
+        if (!memoryBlockGetAllocationSize(size, &size)) {
+            debugPrint("Allocation size overflow.\n");
+            return nullptr;
+        }
 
         unsigned char* block = (unsigned char*)malloc(size);
         if (block != nullptr) {
@@ -102,16 +108,22 @@ static void* memoryBlockMallocImpl(size_t size)
     return ptr;
 }
 
-// 0x4C5B50
+// 0x4C5B50 mem_realloc
 void* internal_realloc(void* ptr, size_t size)
 {
     return gReallocProc(ptr, size);
 }
 
-// 0x4C5B58
+// 0x4C5B58 my_realloc
 static void* memoryBlockReallocImpl(void* ptr, size_t size)
 {
     if (ptr != nullptr) {
+        size_t allocationSize = 0;
+        if (size != 0 && !memoryBlockGetAllocationSize(size, &allocationSize)) {
+            debugPrint("Realloc size overflow.\n");
+            return nullptr;
+        }
+
         unsigned char* block = (unsigned char*)ptr - sizeof(MemoryBlockHeader);
 
         MemoryBlockHeader* header = (MemoryBlockHeader*)block;
@@ -121,29 +133,26 @@ static void* memoryBlockReallocImpl(void* ptr, size_t size)
 
         memoryBlockValidate(block);
 
-        if (size != 0) {
-            size += sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
-            size += sizeof(int) - size % sizeof(int);
+        if (size == 0) {
+            free(block);
+            gMemoryBlocksCurrentCount--;
+            return nullptr;
         }
 
-        unsigned char* newBlock = (unsigned char*)realloc(block, size);
+        unsigned char* newBlock = (unsigned char*)realloc(block, allocationSize);
         if (newBlock != nullptr) {
-            gMemoryBlocksCurrentSize += size;
+            gMemoryBlocksCurrentSize += allocationSize;
             if (gMemoryBlocksCurrentSize > gMemoryBlocksMaximumSize) {
                 gMemoryBlocksMaximumSize = gMemoryBlocksCurrentSize;
             }
 
             // NOTE: Uninline.
-            ptr = mem_prep_block(newBlock, size);
+            ptr = mem_prep_block(newBlock, allocationSize);
         } else {
-            if (size != 0) {
-                gMemoryBlocksCurrentSize += oldSize;
+            gMemoryBlocksCurrentSize += oldSize;
 
-                debugPrint("%s,%u: ", __FILE__, __LINE__); // "Memory.c", 195
-                debugPrint("Realloc failure.\n");
-            } else {
-                gMemoryBlocksCurrentCount--;
-            }
+            debugPrint("%s,%u: ", __FILE__, __LINE__); // "Memory.c", 195
+            debugPrint("Realloc failure.\n");
             ptr = nullptr;
         }
     } else {
@@ -153,13 +162,32 @@ static void* memoryBlockReallocImpl(void* ptr, size_t size)
     return ptr;
 }
 
-// 0x4C5C24
+static bool memoryBlockGetAllocationSize(size_t dataSize, size_t* allocationSizePtr)
+{
+    constexpr size_t overhead = sizeof(MemoryBlockHeader) + sizeof(MemoryBlockFooter);
+    constexpr size_t alignment = sizeof(int);
+
+    if (dataSize > std::numeric_limits<size_t>::max() - overhead) {
+        return false;
+    }
+
+    size_t allocationSize = dataSize + overhead;
+    size_t padding = alignment - allocationSize % alignment;
+    if (allocationSize > std::numeric_limits<size_t>::max() - padding) {
+        return false;
+    }
+
+    *allocationSizePtr = allocationSize + padding;
+    return true;
+}
+
+// 0x4C5C24 mem_free
 void internal_free(void* ptr)
 {
     gFreeProc(ptr);
 }
 
-// 0x4C5C2C
+// 0x4C5C2C my_free
 static void memoryBlockFreeImpl(void* ptr)
 {
     if (ptr != nullptr) {
@@ -175,18 +203,18 @@ static void memoryBlockFreeImpl(void* ptr)
     }
 }
 
-// 0x4C5C5C
+// 0x4C5C5C mem_check
 void mem_check()
 {
     if (gMallocProc == memoryBlockMallocImpl) {
-        debugPrint("Current memory allocated: %6d blocks, %9u bytes total\n", gMemoryBlocksCurrentCount, gMemoryBlocksCurrentSize);
-        debugPrint("Max memory allocated:     %6d blocks, %9u bytes total\n", gMemoryBlockMaximumCount, gMemoryBlocksMaximumSize);
+        debugPrint("Current memory allocated: %6d blocks, %9zu bytes total\n", gMemoryBlocksCurrentCount, gMemoryBlocksCurrentSize);
+        debugPrint("Max memory allocated:     %6d blocks, %9zu bytes total\n", gMemoryBlockMaximumCount, gMemoryBlocksMaximumSize);
     }
 }
 
 // NOTE: Inlined.
 //
-// 0x4C5CC4
+// 0x4C5CC4 mem_prep_block
 static void* mem_prep_block(void* block, size_t size)
 {
     MemoryBlockHeader* header;
@@ -206,7 +234,7 @@ static void* mem_prep_block(void* block, size_t size)
 //
 // [block] is a pointer to the the memory block itself, not it's data.
 //
-// 0x4C5CE4
+// 0x4C5CE4 mem_check_block
 static void memoryBlockValidate(void* block)
 {
     MemoryBlockHeader* header = (MemoryBlockHeader*)block;

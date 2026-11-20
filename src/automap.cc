@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "art.h"
+#include "automap.h"
 #include "color.h"
 #include "config.h"
 #include "dbox.h"
@@ -26,6 +27,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -37,23 +39,33 @@ namespace fallout {
 #define AUTOMAP_PIPBOY_VIEW_X (238)
 #define AUTOMAP_PIPBOY_VIEW_Y (105)
 
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags);
+#define AUTOMAP_ENTRY_DATA_SIZE (10000)
+#define AUTOMAP_ENTRY_BUFFER_SIZE (11024)
+
+static void automapRenderInMapWindow(int window, MapElevation elevation, unsigned char* backgroundData, AutomapFlags flags);
 static int automapSaveEntry(File* stream);
-static int automapLoadEntry(int map, int elevation);
+static int automapLoadEntry(Map map, MapElevation elevation);
 static int automapSaveHeader(File* stream);
 static int automapLoadHeader(File* stream);
-static void _decode_map_data(int elevation);
+static void _decode_map_data(MapElevation elevation);
 static int automapCreate();
 static int _copy_file_data(File* stream1, File* stream2, int length);
 
-typedef enum AutomapFrm {
+static int gAutomapWindow = -1;
+
+static bool automapEntryIsValid(int map, MapElevation elevation)
+{
+    return map >= MAP_FIRST && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
+}
+
+enum AutomapFrm : int {
     AUTOMAP_FRM_BACKGROUND,
     AUTOMAP_FRM_BUTTON_UP,
     AUTOMAP_FRM_BUTTON_DOWN,
     AUTOMAP_FRM_SWITCH_UP,
     AUTOMAP_FRM_SWITCH_DOWN,
     AUTOMAP_FRM_COUNT,
-} AutomapFrm;
+};
 
 typedef struct AutomapEntry {
     int dataSize;
@@ -62,14 +74,14 @@ typedef struct AutomapEntry {
     unsigned char* data;
 } AutomapEntry;
 
-// 0x41ADE0
+// 0x41ADE0 defam
 static const int _defam[AUTOMAP_MAP_COUNT][ELEVATION_COUNT] = {
     { -1, -1, -1 },
     { -1, -1, -1 },
     { -1, -1, -1 },
 };
 
-// 0x41B560
+// 0x41B560 displayMapList
 static int _displayMapList[AUTOMAP_MAP_COUNT] = {
     -1,
     -1,
@@ -234,41 +246,41 @@ static int _displayMapList[AUTOMAP_MAP_COUNT] = {
 };
 
 // 0x41B7E0
-static const int gAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
-    171, // automap.frm - automap window
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    172, // autoup.frm - switch up
-    173, // autodwn.frm - switch down
+static constexpr InterfaceFrmId kAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
+    InterfaceFrameId::AutomapWindow,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::AutoUp,
+    InterfaceFrameId::AutoDown,
 };
 
-// 0x5108C4
-static int gAutomapFlags = 0;
+// 0x5108C4 autoflags
+static AutomapFlags gAutomapFlags = AUTOMAP_NONE;
 
-// 0x56CB18
+// 0x56CB18 amdbhead
 static AutomapHeader gAutomapHeader;
 
-// 0x56D2A0
+// 0x56D2A0 amdbsubhead
 static AutomapEntry gAutomapEntry;
 
 // automap_init
-// 0x41B7F4
+// 0x41B7F4 automap_init
 int automapInit()
 {
-    gAutomapFlags = 0;
+    gAutomapFlags = AUTOMAP_NONE;
     automapCreate();
     return 0;
 }
 
-// 0x41B808
+// 0x41B808 automap_reset
 int automapReset()
 {
-    gAutomapFlags = 0;
+    gAutomapFlags = AUTOMAP_NONE;
     automapCreate();
     return 0;
 }
 
-// 0x41B81C
+// 0x41B81C automap_exit
 void automapExit()
 {
     char path[COMPAT_MAX_PATH];
@@ -276,46 +288,46 @@ void automapExit()
     compat_remove(path);
 }
 
-// 0x41B87C
+// 0x41B87C automap_load
 int automapLoad(File* stream)
 {
-    return fileReadInt32(stream, &gAutomapFlags);
+    return fileReadInt32Enum<AutomapFlags>(stream, &gAutomapFlags);
 }
 
-// 0x41B898
+// 0x41B898 automap_save
 int automapSave(File* stream)
 {
-    return fileWriteInt32(stream, gAutomapFlags);
+    return fileWriteInt32Enum<AutomapFlags>(stream, gAutomapFlags);
 }
 
-// 0x41B8B4
+// 0x41B8B4 automapDisplayMap
 int _automapDisplayMap(int map)
 {
+    if (map < 0 || map >= AUTOMAP_MAP_COUNT) {
+        return -1;
+    }
+
     return _displayMapList[map];
 }
 
-// 0x41B8BC
+// 0x41B8BC automap
 void automapShow(bool isInGame, bool isUsingScanner)
 {
     ScopedGameMode gm(GameMode::kAutomap);
 
-    int frmIds[AUTOMAP_FRM_COUNT];
-    memcpy(frmIds, gAutomapFrmIds, sizeof(gAutomapFrmIds));
-
     FrmImage frmImages[AUTOMAP_FRM_COUNT];
     for (int index = 0; index < AUTOMAP_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, frmIds[index], 0, 0, 0);
-        if (!frmImages[index].lock(fid)) {
+        if (!frmImages[index].lock(kAutomapFrmIds[index])) {
             return;
         }
     }
 
-    int color;
+    Color color;
     if (isInGame) {
-        color = _colorTable[8456];
+        color = COLOR_DARK_GREY;
         _obj_process_seen();
     } else {
-        color = _colorTable[22025];
+        color = COLOR_SAND;
     }
 
     int oldFont = fontGetCurrent();
@@ -326,6 +338,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
     int automapWindowY = (screenGetHeight() - AUTOMAP_WINDOW_HEIGHT) / 2;
     // adding WINDOW_TRANSPARENT and WINDOW_DRAGGABLE_BY_BACKGROUND for testing temporarily
     int window = windowCreate(automapWindowX, automapWindowY, AUTOMAP_WINDOW_WIDTH, AUTOMAP_WINDOW_HEIGHT, color, WINDOW_MODAL | WINDOW_MOVE_ON_TOP | WINDOW_TRANSPARENT | WINDOW_DRAGGABLE_BY_BACKGROUND);
+    gAutomapWindow = window;
 
     int scannerBtn = buttonCreate(window,
         111,
@@ -382,7 +395,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
         _win_set_button_rest_state(switchBtn, 1, 0);
     }
 
-    int elevation = gElevation;
+    MapElevation elevation = gElevation;
 
     gAutomapFlags &= AUTOMAP_WTH_HIGH_DETAILS;
 
@@ -440,11 +453,11 @@ void automapShow(bool isInGame, bool isUsingScanner)
                 Object* scanner = nullptr;
 
                 Object* item1 = critterGetItem1(gDude);
-                if (item1 != nullptr && item1->pid == PROTO_ID_MOTION_SENSOR) {
+                if (ProtoId(item1) == ItemProtoTypeId::MotionSensor) {
                     scanner = item1;
                 } else {
                     Object* item2 = critterGetItem2(gDude);
-                    if (item2 != nullptr && item2->pid == PROTO_ID_MOTION_SENSOR) {
+                    if (ProtoId(item2) == ItemProtoTypeId::MotionSensor) {
                         scanner = item2;
                     }
                 }
@@ -460,7 +473,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
                     // 17 - The motion sensor is not installed.
                     // 18 - The motion sensor has no charges remaining.
                     const char* title = getmsg(&gMiscMessageList, &messageListItem, scanner != nullptr ? 18 : 17);
-                    showDialogBox(title, nullptr, 0, 165, 140, _colorTable[32328], nullptr, _colorTable[32328], 0);
+                    showDialogBox(title, nullptr, 0, 165, 140, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
                 }
             }
 
@@ -475,7 +488,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
             break;
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -493,20 +506,26 @@ void automapShow(bool isInGame, bool isUsingScanner)
     }
 
     windowDestroy(window);
+    gAutomapWindow = -1;
     fontSetCurrent(oldFont);
     touch_set_touchscreen_mode(false);
 }
 
+int automapGetWindow()
+{
+    return windowGetWindow(gAutomapWindow) != nullptr ? gAutomapWindow : -1;
+}
+
 // Renders automap in Map window.
 //
-// 0x41BD1C
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags)
+// 0x41BD1C draw_top_down_map
+static void automapRenderInMapWindow(int window, MapElevation elevation, unsigned char* backgroundData, AutomapFlags flags)
 {
-    int color;
-    if ((flags & AUTOMAP_IN_GAME) != 0) {
-        color = _colorTable[8456];
+    Color color;
+    if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
+        color = COLOR_DARK_GREY;
     } else {
-        color = _colorTable[22025];
+        color = COLOR_SAND;
     }
 
     windowFill(window, 0, 0, AUTOMAP_WINDOW_WIDTH, AUTOMAP_WINDOW_HEIGHT, color);
@@ -520,65 +539,68 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
             continue;
         }
 
-        int objectType = FID_TYPE(object->fid);
-        unsigned char objectColor;
+        ObjectType objectType = FrmId(object).objectType();
+        Color objectColor;
 
-        if ((flags & AUTOMAP_IN_GAME) != 0) {
+        if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
             if (objectType == OBJ_TYPE_CRITTER
-                && (object->flags & OBJECT_HIDDEN) == 0
-                && (flags & AUTOMAP_WITH_SCANNER) != 0
-                && (object->data.critter.combat.results & DAM_DEAD) == 0) {
-                objectColor = _colorTable[31744];
+                && (object->flags & OBJECT_HIDDEN) == OBJECT_NONE
+                && (flags & AUTOMAP_WITH_SCANNER) != AUTOMAP_NONE
+                && (object->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
+                objectColor = COLOR_RED;
             } else {
-                if ((object->flags & OBJECT_SEEN) == 0) {
+                if ((object->flags & OBJECT_SEEN) == OBJECT_NONE) {
                     continue;
                 }
 
-                if (object->pid == PROTO_ID_0x2000031) {
-                    objectColor = _colorTable[32328];
+                const ProtoId objectProtoId = ProtoId(object);
+                if (objectProtoId == SceneryProtoTypeId::ExitGridAutomapMarker) {
+                    objectColor = COLOR_AMBER;
                 } else if (objectType == OBJ_TYPE_WALL) {
-                    objectColor = _colorTable[992];
+                    objectColor = COLOR_GREEN;
                 } else if (objectType == OBJ_TYPE_SCENERY
-                    && (flags & AUTOMAP_WTH_HIGH_DETAILS) != 0
-                    && object->pid != PROTO_ID_0x2000158) {
-                    objectColor = _colorTable[480];
+                    && (flags & AUTOMAP_WTH_HIGH_DETAILS) != AUTOMAP_NONE
+                    && objectProtoId != SceneryProtoTypeId::BlockingHexAutomap) {
+                    objectColor = COLOR_DARK_GREEN;
                 } else if (object == gDude) {
-                    objectColor = _colorTable[31744];
+                    objectColor = COLOR_RED;
                 } else {
-                    objectColor = _colorTable[0];
+                    objectColor = COLOR_BLACK;
                 }
             }
         }
 
         int pixelOffset = -2 * (object->tile % 200) - 10 + AUTOMAP_WINDOW_WIDTH * (2 * (object->tile / 200) + 9) - 60;
-        if ((flags & AUTOMAP_IN_GAME) == 0) {
+        if ((flags & AUTOMAP_IN_GAME) == AUTOMAP_NONE) {
             switch (objectType) {
             case OBJ_TYPE_ITEM:
-                objectColor = _colorTable[6513];
+                objectColor = COLOR_LIGHT_BLUE;
                 break;
             case OBJ_TYPE_CRITTER:
-                objectColor = _colorTable[28672];
+                objectColor = COLOR_RED_2;
                 break;
             case OBJ_TYPE_SCENERY:
-                objectColor = _colorTable[448];
+                objectColor = COLOR_LIGHT_GREEN;
                 break;
             case OBJ_TYPE_WALL:
-                objectColor = _colorTable[12546];
+                objectColor = COLOR_DARK_BROWN;
                 break;
             case OBJ_TYPE_MISC:
-                objectColor = _colorTable[31650];
+                objectColor = COLOR_LIGHT_GOLD;
                 break;
             default:
-                objectColor = _colorTable[0];
+                objectColor = COLOR_BLACK;
             }
         }
 
-        if (objectColor != _colorTable[0]) {
+        if (objectColor != COLOR_BLACK) {
             unsigned char* pixel = windowBuffer + pixelOffset;
-            if ((flags & AUTOMAP_IN_GAME) != 0) {
-                if (*pixel != _colorTable[992] || objectColor != _colorTable[480]) {
+            if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
+                if (*pixel != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
                     pixel[0] = objectColor;
-                    pixel[1] = objectColor;
+                    if (pixel[1] != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
+                        pixel[1] = objectColor;
+                    }
                 }
 
                 if (object == gDude) {
@@ -600,19 +622,20 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
     }
 
-    int textColor;
-    if ((flags & AUTOMAP_IN_GAME) != 0) {
-        textColor = _colorTable[992];
+    Color textColor;
+    if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
+        textColor = COLOR_GREEN;
     } else {
-        textColor = _colorTable[12546];
+        textColor = COLOR_DARK_BROWN;
     }
 
-    if (mapGetCurrentMap() != -1) {
-        char* areaName = mapGetCityName(mapGetCurrentMap());
-        windowDrawText(window, areaName, 240, 150, 380, textColor | 0x2000000);
+    Map map = mapGetCurrentMap();
+    if (mapIsValid(map)) {
+        char* areaName = mapGetCityName(map);
+        windowDrawText(window, areaName, 240, 150, 380, textColor | DRAW_TEXT_FLAG_NO_BG);
 
-        char* mapName = mapGetName(mapGetCurrentMap(), elevation);
-        windowDrawText(window, mapName, 240, 150, 396, textColor | 0x2000000);
+        char* mapName = mapGetName(map, elevation);
+        windowDrawText(window, mapName, 240, 150, 396, textColor | DRAW_TEXT_FLAG_NO_BG);
     }
 
     windowRefresh(window);
@@ -620,15 +643,12 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 
 // Renders automap in Pipboy window.
 //
-// 0x41C004
-int automapRenderInPipboyWindow(int window, int map, int elevation)
+// 0x41C004 draw_top_down_map_pipboy
+int automapRenderInPipboyWindow(int window, Map map, MapElevation elevation)
 {
-    unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
+    Buffer2D windowBuffer = windowGetBuffer2D(window);
 
-    unsigned char wallColor = _colorTable[992];
-    unsigned char sceneryColor = _colorTable[480];
-
-    gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
+    gAutomapEntry.data = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
     if (gAutomapEntry.data == nullptr) {
         debugPrint("\nAUTOMAP: Error allocating data buffer!\n");
         return -1;
@@ -643,11 +663,6 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
     unsigned char byte = 0;
     unsigned char* ptr = gAutomapEntry.data;
 
-    // FIXME: This loop is implemented incorrectly. Automap requires 400x400 px,
-    // but it's top offset is 105, which gives max y 505. It only works because
-    // lower portions of automap data contains zeroes. If it doesn't this loop
-    // will try to set pixels outside of window buffer, which usually leads to
-    // crash.
     for (int y = 0; y < HEX_GRID_HEIGHT; y++) {
         for (int x = 0; x < HEX_GRID_WIDTH; x++) {
             bitsRemaining -= 1;
@@ -656,24 +671,32 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
                 byte = *ptr++;
             }
 
-            switch ((byte & 0xC0) >> 6) {
-            case 1:
-                *windowBuffer++ = wallColor;
-                *windowBuffer++ = wallColor;
-                break;
-            case 2:
-                *windowBuffer++ = sceneryColor;
-                *windowBuffer++ = sceneryColor;
-                break;
-            default:
-                windowBuffer += 2;
-                break;
+            int destX = AUTOMAP_PIPBOY_VIEW_X + x * 2;
+            int destY = AUTOMAP_PIPBOY_VIEW_Y + y * 2;
+            if (destX >= 0 && destX + 1 < windowBuffer.width && destY >= 0 && destY < windowBuffer.height) {
+                Color color;
+                bool shouldDraw = true;
+                switch ((byte & 0xC0) >> 6) {
+                case 1:
+                    color = COLOR_GREEN;
+                    break;
+                case 2:
+                    color = COLOR_DARK_GREEN;
+                    break;
+                default:
+                    shouldDraw = false;
+                    break;
+                }
+
+                if (shouldDraw) {
+                    unsigned char* dest = windowBuffer.data + destY * windowBuffer.width + destX;
+                    dest[0] = color;
+                    dest[1] = color;
+                }
             }
 
             byte <<= 2;
         }
-
-        windowBuffer += 640 + 240;
     }
 
     internal_free(gAutomapEntry.data);
@@ -682,11 +705,14 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
 }
 
 // automap_pip_save
-// 0x41C0F0
+// 0x41C0F0 automap_pip_save
 int automapSaveCurrent()
 {
-    int map = mapGetCurrentMap();
-    int elevation = gElevation;
+    Map map = mapGetCurrentMap();
+    MapElevation elevation = gElevation;
+    if (!automapEntryIsValid(map, elevation)) {
+        return 0;
+    }
 
     int entryOffset = gAutomapHeader.offsets[map][elevation];
     if (entryOffset < 0) {
@@ -696,9 +722,9 @@ int automapSaveCurrent()
     debugPrint("\nAUTOMAP: Saving AutoMap DB index %d, level %d\n", map, elevation);
 
     bool dataBuffersAllocated = false;
-    gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
+    gAutomapEntry.data = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
     if (gAutomapEntry.data != nullptr) {
-        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(11024);
+        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(AUTOMAP_ENTRY_BUFFER_SIZE);
         if (gAutomapEntry.compressedData != nullptr) {
             dataBuffersAllocated = true;
         }
@@ -733,9 +759,9 @@ int automapSaveCurrent()
 
     _decode_map_data(elevation);
 
-    int compressedDataSize = graphCompress(gAutomapEntry.data, gAutomapEntry.compressedData, 10000);
+    int compressedDataSize = graphCompress(gAutomapEntry.data, gAutomapEntry.compressedData, AUTOMAP_ENTRY_DATA_SIZE);
     if (compressedDataSize == -1) {
-        gAutomapEntry.dataSize = 10000;
+        gAutomapEntry.dataSize = AUTOMAP_ENTRY_DATA_SIZE;
         gAutomapEntry.isCompressed = 0;
     } else {
         gAutomapEntry.dataSize = compressedDataSize;
@@ -814,8 +840,8 @@ int automapSaveCurrent()
         }
 
         int diff = gAutomapEntry.dataSize - nextEntryDataSize;
-        for (int map = 0; map < AUTOMAP_MAP_COUNT; map++) {
-            for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (Map map = MAP_FIRST; map < AUTOMAP_MAP_COUNT; map++) {
+            for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
                 if (gAutomapHeader.offsets[map][elevation] > entryOffset) {
                     gAutomapHeader.offsets[map][elevation] += diff;
                 }
@@ -896,7 +922,7 @@ int automapSaveCurrent()
 
 // Saves automap entry into stream.
 //
-// 0x41C844
+// 0x41C844 WriteAM_Entry
 static int automapSaveEntry(File* stream)
 {
     unsigned char* buffer;
@@ -928,15 +954,21 @@ err:
     return -1;
 }
 
-// 0x41C8CC
-static int automapLoadEntry(int map, int elevation)
+// 0x41C8CC AM_ReadEntry
+static int automapLoadEntry(Map map, MapElevation elevation)
 {
     gAutomapEntry.compressedData = nullptr;
+    if (!automapEntryIsValid(map, elevation)) {
+        return -1;
+    }
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", "MAPS", AUTOMAP_DB);
 
     bool success = true;
+    int fileSize = -1;
+    long headerEndOffset = -1;
+    long entryDataOffset = -1;
 
     File* stream = fileOpen(path, "r+b");
     if (stream == nullptr) {
@@ -951,7 +983,18 @@ static int automapLoadEntry(int map, int elevation)
         return -1;
     }
 
+    headerEndOffset = fileTell(stream);
+
     if (gAutomapHeader.offsets[map][elevation] <= 0) {
+        success = false;
+        goto out;
+    }
+
+    fileSize = fileGetSize(stream);
+    if (headerEndOffset < 0
+        || fileSize < 0
+        || gAutomapHeader.offsets[map][elevation] < headerEndOffset
+        || gAutomapHeader.offsets[map][elevation] > fileSize - 5) {
         success = false;
         goto out;
     }
@@ -971,12 +1014,26 @@ static int automapLoadEntry(int map, int elevation)
         goto out;
     }
 
+    if (gAutomapEntry.isCompressed != 0 && gAutomapEntry.isCompressed != 1) {
+        success = false;
+        goto out;
+    }
+
+    entryDataOffset = fileTell(stream);
+    if (entryDataOffset < 0
+        || gAutomapEntry.dataSize <= 0
+        || gAutomapEntry.dataSize > AUTOMAP_ENTRY_DATA_SIZE
+        || gAutomapEntry.dataSize > fileSize - entryDataOffset) {
+        success = false;
+        goto out;
+    }
+
     if (gAutomapEntry.isCompressed == 1) {
-        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(11024);
+        gAutomapEntry.compressedData = (unsigned char*)internal_malloc(gAutomapEntry.dataSize);
         if (gAutomapEntry.compressedData == nullptr) {
             debugPrint("\nAUTOMAP: Error allocating decompression buffer!\n");
-            fileClose(stream);
-            return -1;
+            success = false;
+            goto out;
         }
 
         if (fileReadUInt8List(stream, gAutomapEntry.compressedData, gAutomapEntry.dataSize) == -1) {
@@ -984,12 +1041,17 @@ static int automapLoadEntry(int map, int elevation)
             goto out;
         }
 
-        if (graphDecompress(gAutomapEntry.compressedData, gAutomapEntry.data, 10000) == -1) {
+        if (graphDecompress(gAutomapEntry.compressedData, gAutomapEntry.dataSize, gAutomapEntry.data, AUTOMAP_ENTRY_DATA_SIZE) == -1) {
             debugPrint("\nAUTOMAP: Error decompressing DB entry!\n");
-            fileClose(stream);
-            return -1;
+            success = false;
+            goto out;
         }
     } else {
+        if (gAutomapEntry.dataSize != AUTOMAP_ENTRY_DATA_SIZE) {
+            success = false;
+            goto out;
+        }
+
         if (fileReadUInt8List(stream, gAutomapEntry.data, gAutomapEntry.dataSize) == -1) {
             success = false;
             goto out;
@@ -1000,14 +1062,15 @@ out:
 
     fileClose(stream);
 
+    if (gAutomapEntry.compressedData != nullptr) {
+        internal_free(gAutomapEntry.compressedData);
+        gAutomapEntry.compressedData = nullptr;
+    }
+
     if (!success) {
         debugPrint("\nAUTOMAP: Error reading automap database entry data!\n");
 
         return -1;
-    }
-
-    if (gAutomapEntry.compressedData != nullptr) {
-        internal_free(gAutomapEntry.compressedData);
     }
 
     return 0;
@@ -1015,7 +1078,7 @@ out:
 
 // Saves automap.db header.
 //
-// 0x41CAD8
+// 0x41CAD8 WriteAM_Header
 static int automapSaveHeader(File* stream)
 {
     fileRewind(stream);
@@ -1045,7 +1108,7 @@ err:
 
 // Loads automap.db header.
 //
-// 0x41CB50
+// 0x41CB50 AM_ReadMainHeader
 static int automapLoadHeader(File* stream)
 {
 
@@ -1068,20 +1131,21 @@ static int automapLoadHeader(File* stream)
     return 0;
 }
 
-// 0x41CBA4
-static void _decode_map_data(int elevation)
+// 0x41CBA4 decode_map_data
+static void _decode_map_data(MapElevation elevation)
 {
-    memset(gAutomapEntry.data, 0, SQUARE_GRID_SIZE);
+    memset(gAutomapEntry.data, 0, AUTOMAP_ENTRY_DATA_SIZE);
 
     _obj_process_seen();
 
     Object* object = objectFindFirstAtElevation(elevation);
     while (object != nullptr) {
-        if (object->tile != -1 && (object->flags & OBJECT_SEEN) != 0) {
+        if (object->tile != -1 && (object->flags & OBJECT_SEEN) != OBJECT_NONE) {
             int contentType;
 
-            int objectType = FID_TYPE(object->fid);
-            if (objectType == OBJ_TYPE_SCENERY && object->pid != PROTO_ID_0x2000158) {
+            const ProtoId objectProtoId = ProtoId(object);
+            ObjectType objectType = objectProtoId.objectType();
+            if (objectType == OBJ_TYPE_SCENERY && objectProtoId != SceneryProtoTypeId::BlockingHexAutomap) {
                 contentType = 2;
             } else if (objectType == OBJ_TYPE_WALL) {
                 contentType = 1;
@@ -1101,7 +1165,7 @@ static void _decode_map_data(int elevation)
     }
 }
 
-// 0x41CC98
+// 0x41CC98 am_pip_init
 static int automapCreate()
 {
     gAutomapHeader.version = 1;
@@ -1128,7 +1192,7 @@ static int automapCreate()
 
 // Copy data from stream1 to stream2.
 //
-// 0x41CD6C
+// 0x41CD6C copy_file_data
 static int _copy_file_data(File* stream1, File* stream2, int length)
 {
     void* buffer = internal_malloc(0xFFFF);
@@ -1160,7 +1224,7 @@ static int _copy_file_data(File* stream1, File* stream2, int length)
     return 0;
 }
 
-// 0x41CE74
+// 0x41CE74 ReadAMList
 int automapGetHeader(AutomapHeader** automapHeaderPtr)
 {
     char path[COMPAT_MAX_PATH];
@@ -1186,9 +1250,9 @@ int automapGetHeader(AutomapHeader** automapHeaderPtr)
     return 0;
 }
 
-void automapSetDisplayMap(int map, bool available)
+void automapSetDisplayMap(Map map, bool available)
 {
-    if (map >= 0 && map < AUTOMAP_MAP_COUNT) {
+    if (map >= MAP_FIRST && map < AUTOMAP_MAP_COUNT) {
         _displayMapList[map] = available ? 0 : -1;
     }
 }

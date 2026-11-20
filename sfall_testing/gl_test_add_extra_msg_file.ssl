@@ -1,0 +1,26 @@
+#include "test_utils.h"
+#include "sfall.h"
+
+// to test, copy test_extra_msg_file.msg into <game folder>/text/English/game/
+
+procedure start begin
+    variable auto_id;
+    variable duplicate_auto_id;
+
+    display_msg("Testing add_extra_msg_file...");
+
+    call assertEquals("metarule exists", metarule_exist("add_extra_msg_file"), 1);
+
+    auto_id := add_extra_msg_file("test_extra_msg_file.msg");
+    call assertNotEquals("auto id is not load error", auto_id, -2);
+    call assertTrue("auto id lower bound", auto_id >= 0x3000);
+    call assertTrue("auto id upper bound", auto_id <= 0x3FFF);
+    call assertEquals("auto message", message_str_game(auto_id, 100), "auto extra msg");
+
+    duplicate_auto_id := add_extra_msg_file("TEST_EXTRA_MSG_FILE.MSG");
+    call assertEquals("duplicate file returns existing id", duplicate_auto_id, auto_id);
+
+    call assertEquals("missing file", add_extra_msg_file("missing_extra_msg_file.msg"), -2);
+
+    call report_test_results("add_extra_msg_file");
+end

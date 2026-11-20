@@ -1,31 +1,65 @@
 #include "mainmenu.h"
 
+#include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "art.h"
 #include "color.h"
+#include "content_config.h"
+#include "debug.h"
+#include "delay.h"
 #include "draw.h"
+#include "font_manager.h"
 #include "game.h"
 #include "game_sound.h"
+#include "geometry.h"
 #include "input.h"
 #include "kb.h"
 #include "mouse.h"
 #include "palette.h"
+#include "platform_compat.h"
 #include "preferences.h"
-#include "sfall_config.h"
+#include "settings.h"
 #include "svga.h"
 #include "text_font.h"
 #include "version.h"
+#include "window.h"
 #include "window_manager.h"
 
 #include "platform/git_version.h"
 
+#include <math.h>
+
+#include <vector>
+
 namespace fallout {
 
-#define MAIN_MENU_WINDOW_WIDTH 640
-#define MAIN_MENU_WINDOW_HEIGHT 480
+#define MAIN_MENU_LOGICAL_WIDTH 640
+#define MAIN_MENU_LOGICAL_HEIGHT 480
+#define MAIN_MENU_BUTTON_WIDTH 26
+#define MAIN_MENU_BUTTON_HEIGHT 26
+#define MAIN_MENU_PANEL_OFFSET_X 16
+#define MAIN_MENU_PANEL_OFFSET_Y 15
+#define MAIN_MENU_BUTTON_X 30
+#define MAIN_MENU_BUTTON_Y 19
+#define MAIN_MENU_BUTTON_Y_STEP 41
+#define MAIN_MENU_BUTTON_LABEL_X 126
+#define MAIN_MENU_BUTTON_LABEL_Y 20
+#define MAIN_MENU_FOOTER_LEFT_X 15
+#define MAIN_MENU_FOOTER_RIGHT_MARGIN 25
+#define MAIN_MENU_COPYRIGHT_Y 460
+#define MAIN_MENU_VERSION_Y 440
+#define MAIN_MENU_BUILD_HASH_Y 450
+#define MAIN_MENU_BUILD_DATE_Y 460
+constexpr int mainMenuOverlayWindowWidth = 640;
+constexpr int mainMenuOverlayWindowHeight = 480;
+constexpr int mainMenuOverlayDimTargetIntensity = 0x8000;
+constexpr int mainMenuOverlayDimClearIntensity = 0x10000;
+constexpr int mainMenuOverlayDimAnimationSteps = 5;
+constexpr int mainMenuOverlayDimFrameDelay = 18;
 
-typedef enum MainMenuButton {
+enum MainMenuButton : int {
     MAIN_MENU_BUTTON_INTRO,
     MAIN_MENU_BUTTON_NEW_GAME,
     MAIN_MENU_BUTTON_LOAD_GAME,
@@ -33,234 +67,562 @@ typedef enum MainMenuButton {
     MAIN_MENU_BUTTON_CREDITS,
     MAIN_MENU_BUTTON_EXIT,
     MAIN_MENU_BUTTON_COUNT,
-} MainMenuButton;
+    MAIN_MENU_BUTTON_FIRST = MAIN_MENU_BUTTON_INTRO
+};
+
+inline MainMenuButton operator++(MainMenuButton& e, int)
+{
+    MainMenuButton result = e;
+    e = static_cast<MainMenuButton>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum class MenuArt {
+    Vanilla,
+    Hires,
+};
 
 static int main_menu_fatal_error();
 static void main_menu_play_sound(const char* fileName);
 
-// 0x5194F0
+// 0x5194F0 main_window
 static int gMainMenuWindow = -1;
 
-// 0x5194F4
+// 0x5194F4 main_window_buf
 static unsigned char* gMainMenuWindowBuffer = nullptr;
 
-// 0x519504
+// 0x519504 in_main_menu
 static bool _in_main_menu = false;
 
-// 0x519508
+// 0x519508 main_menu_created
 static bool gMainMenuWindowInitialized = false;
 
-// 0x51950C
+static bool gMainMenuExitRequested = false;
+
+// 0x51950C main_menu_timeout
 static unsigned int gMainMenuScreensaverDelay = 120000;
 
-// 0x519510
-static const int gMainMenuButtonKeyBindings[MAIN_MENU_BUTTON_COUNT] = {
-    KEY_LOWERCASE_I, // intro
-    KEY_LOWERCASE_N, // new game
-    KEY_LOWERCASE_L, // load game
-    KEY_LOWERCASE_O, // options
-    KEY_LOWERCASE_C, // credits
-    KEY_LOWERCASE_E, // exit
+struct MainMenuButtonSpec {
+    int keyCode;
+    MainMenuOption returnValue;
+    int labelMessage;
 };
 
-// 0x519528
-static const int _return_values[MAIN_MENU_BUTTON_COUNT] = {
-    MAIN_MENU_INTRO,
-    MAIN_MENU_NEW_GAME,
-    MAIN_MENU_LOAD_GAME,
-    MAIN_MENU_OPTIONS,
-    MAIN_MENU_CREDITS,
-    MAIN_MENU_EXIT,
+// 0x519510 button_values / 0x519528 return_values
+static const MainMenuButtonSpec mainMenuButtonSpecs[MAIN_MENU_BUTTON_COUNT] = {
+    { KEY_LOWERCASE_I, MainMenuOption::Intro, 9 },
+    { KEY_LOWERCASE_N, MainMenuOption::NewGame, 10 },
+    { KEY_LOWERCASE_L, MainMenuOption::LoadGame, 11 },
+    { KEY_LOWERCASE_O, MainMenuOption::Options, 12 },
+    { KEY_LOWERCASE_C, MainMenuOption::Credits, 13 },
+    { KEY_LOWERCASE_E, MainMenuOption::Exit, 14 },
 };
 
-// 0x614840
+// 0x614840 buttons
 static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 
-// 0x614858
+// 0x614858 main_menu_is_hidden
 static bool gMainMenuWindowHidden;
+static int mainMenuOverlayCount = 0;
+static bool mainMenuOverlayBackgroundEnabled = false;
+static int mainMenuSubscreenBackdrop = -1;
 
-static FrmImage _mainMenuBackgroundFrmImage;
-static FrmImage _mainMenuButtonNormalFrmImage;
-static FrmImage _mainMenuButtonPressedFrmImage;
+static FrmImage mainMenuBackgroundFrmImage;
+static FrmImage mainMenuButtonPanelFrmImage;
+static FrmImage mainMenuButtonNormalFrmImage;
+static FrmImage mainMenuButtonPressedFrmImage;
+static std::vector<unsigned char> mainMenuScaledButtonData;
+static std::vector<unsigned char> mainMenuOverlayDimmedBackup;
+static void mainMenuSetButtonsEnabled(bool enabled);
+static void mainMenuApplyOverlayDim();
+static void mainMenuRemoveOverlayDim();
+static void mainMenuSetOverlayDimIntensity(int intensity);
+static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity);
 
-// 0x481650
-int mainMenuWindowInit()
+struct MainMenuLayout {
+    int screenWidth;
+    int screenHeight;
+    int backgroundX;
+    int backgroundY;
+    int backgroundWidth;
+    int backgroundHeight;
+    float scaleX;
+    float scaleY;
+    float scale;
+    MenuArt art;
+    bool scaleControls;
+};
+
+struct MainMenuOffsets {
+    int menuX;
+    int menuY;
+    int creditsX;
+    int creditsY;
+};
+
+static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight);
+static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight);
+static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgroundHeight);
+static bool mainMenuLoadArt();
+static MainMenuLayout mainMenuBuildLayout();
+static void mainMenuDrawBackground(const MainMenuLayout& layout);
+static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout);
+static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static Point mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y);
+static Size mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
+static int mainMenuScaleX(const MainMenuLayout& layout, int value);
+static int mainMenuScaleY(const MainMenuLayout& layout, int value);
+static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
+static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
+static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout);
+static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static bool mainMenuWindowIsOverlayActive();
+static void mainMenuWindowEnterOverlay();
+static void mainMenuWindowLeaveOverlay();
+static void mainMenuWindowShowOverlayDim();
+
+static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight)
 {
-    int fid;
+    int dstWidth = screenGetWidth();
+    int dstHeight = screenGetHeight();
+    outWidth = dstWidth;
+    outHeight = dstHeight;
+
+    if (dstHeight * srcWidth > dstWidth * srcHeight) {
+        outHeight = dstWidth * srcHeight / srcWidth;
+    } else {
+        outWidth = dstHeight * srcWidth / srcHeight;
+    }
+
+    outX = (dstWidth - outWidth) / 2;
+    outY = (dstHeight - outHeight) / 2;
+}
+
+static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight)
+{
+    return settings.ui.main_menu_scale_mode != 0 || backgroundWidth > screenGetWidth() || backgroundHeight > screenGetHeight();
+}
+
+static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgroundHeight)
+{
+    int x, y, width, height;
+    if (!mainMenuShouldAspectFit(backgroundWidth, backgroundHeight)) {
+        return false;
+    }
+
+    mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, x, y, width, height);
+    return width == MAIN_MENU_LOGICAL_WIDTH && height == MAIN_MENU_LOGICAL_HEIGHT;
+}
+
+static bool mainMenuLoadArt()
+{
+    bool canUseHiresArt = screenGetWidth() != MAIN_MENU_LOGICAL_WIDTH || screenGetHeight() != MAIN_MENU_LOGICAL_HEIGHT;
+    if (canUseHiresArt && mainMenuBackgroundFrmImage.lock(InterfaceFrmId("HR_MAINMENU.FRM"))) {
+        if (mainMenuShouldUseVanillaArtForLayout(mainMenuBackgroundFrmImage.getWidth(), mainMenuBackgroundFrmImage.getHeight())) {
+            // use Vanilla art if not scaling to reduce artifacts
+            mainMenuBackgroundFrmImage.unlock();
+        } else {
+            // for highres main menu art, use separate panel art
+            if (!mainMenuButtonPanelFrmImage.lock(InterfaceFrmId("HR_MENU_BG.FRM"))) {
+                debugPrint("MAINMENU: failed to load hires HR_MENU_BG.FRM, falling back to vanilla mainmenu.frm\n");
+                mainMenuBackgroundFrmImage.unlock();
+            }
+        }
+    }
+
+    if (!mainMenuBackgroundFrmImage.isLocked()) {
+        if (!mainMenuBackgroundFrmImage.lock(InterfaceFrameId::MainMenuBackgroundImage)) {
+            debugPrint("MAINMENU: failed to load vanilla mainmenu.frm\n");
+            return false;
+        }
+    }
+
+    if (!mainMenuButtonNormalFrmImage.lock(InterfaceFrameId::MainMenuButtonUp)) {
+        return false;
+    }
+
+    if (!mainMenuButtonPressedFrmImage.lock(InterfaceFrameId::MainMenuButtonDown)) {
+        return false;
+    }
+
+    return true;
+}
+
+static MainMenuLayout mainMenuBuildLayout()
+{
+    MainMenuLayout layout {};
+    layout.screenWidth = screenGetWidth();
+    layout.screenHeight = screenGetHeight();
+    layout.art = mainMenuBackgroundFrmImage.getWidth() != MAIN_MENU_LOGICAL_WIDTH || mainMenuBackgroundFrmImage.getHeight() != MAIN_MENU_LOGICAL_HEIGHT
+        ? MenuArt::Hires
+        : MenuArt::Vanilla;
+
+    int backgroundWidth = mainMenuBackgroundFrmImage.getWidth();
+    int backgroundHeight = mainMenuBackgroundFrmImage.getHeight();
+
+    bool aspectFit = mainMenuShouldAspectFit(backgroundWidth, backgroundHeight);
+    if (aspectFit) {
+        mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, layout.backgroundX, layout.backgroundY, layout.backgroundWidth, layout.backgroundHeight);
+    } else {
+        layout.backgroundWidth = backgroundWidth;
+        layout.backgroundHeight = backgroundHeight;
+        layout.backgroundX = (layout.screenWidth - layout.backgroundWidth) / 2;
+        layout.backgroundY = (layout.screenHeight - layout.backgroundHeight) / 2;
+    }
+
+    layout.scaleX = layout.backgroundWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
+    layout.scaleY = layout.backgroundHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
+
+    bool scaleButtonsAndText = false;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "scale_buttons_and_text", &scaleButtonsAndText, false);
+    layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_mode >= 2 || scaleButtonsAndText;
+    layout.scale = layout.scaleControls ? layout.scaleY : 1.0f;
+    return layout;
+}
+
+static void mainMenuDrawBackground(const MainMenuLayout& layout)
+{
+    Buffer2D dest(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight);
+    bufferFill2D(dest, COLOR_FIRST);
+
+    if (layout.backgroundWidth == mainMenuBackgroundFrmImage.getWidth()
+        && layout.backgroundHeight == mainMenuBackgroundFrmImage.getHeight()) {
+        blitBuffer2D(mainMenuBackgroundFrmImage.getBuffer(), dest, layout.backgroundX, layout.backgroundY);
+    } else {
+        blitBuffer2DScaled(mainMenuBackgroundFrmImage.getBuffer(),
+            0,
+            0,
+            mainMenuBackgroundFrmImage.getWidth(),
+            mainMenuBackgroundFrmImage.getHeight(),
+            dest,
+            layout.backgroundX,
+            layout.backgroundY,
+            layout.backgroundWidth,
+            layout.backgroundHeight);
+    }
+}
+
+static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout)
+{
+    MainMenuOffsets offsets {};
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &offsets.menuX, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &offsets.menuY, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", &offsets.creditsX, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", &offsets.creditsY, 0);
+
+    offsets.menuX = mainMenuScaleX(layout, offsets.menuX);
+    offsets.menuY = mainMenuScaleY(layout, offsets.menuY);
+
+    // Match HRP's extra compensation when the hires background is scaled but
+    // the buttons/panel stay at their original size.  It uses this funny quadratic scaling to place the menu
+    if (layout.art == MenuArt::Hires && !layout.scaleControls) {
+        if (layout.screenWidth != MAIN_MENU_LOGICAL_WIDTH) {
+            float diff = layout.screenWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
+            offsets.menuX += static_cast<int>(lround(8.0f * diff * diff));
+        }
+        if (layout.screenHeight != MAIN_MENU_LOGICAL_HEIGHT) {
+            float diff = layout.screenHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
+            offsets.menuY += static_cast<int>(lround(6.0f * diff * diff));
+        }
+    }
+
+    return offsets;
+}
+
+static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
+{
+    if (layout.art != MenuArt::Hires || !mainMenuButtonPanelFrmImage.isLocked()) {
+        return;
+    }
+
+    int panelOffsetX = MAIN_MENU_PANEL_OFFSET_X;
+    int panelOffsetY = MAIN_MENU_PANEL_OFFSET_Y;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "main_menu_panel_offset_x", &panelOffsetX, MAIN_MENU_PANEL_OFFSET_X);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "main_menu_panel_offset_y", &panelOffsetY, MAIN_MENU_PANEL_OFFSET_Y);
+
+    Size panelSize = mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight());
+    Point panelOrigin = mainMenuTransformPoint(layout, panelOffsetX, panelOffsetY);
+
+    blitBuffer2DScaledTrans(mainMenuButtonPanelFrmImage.getBuffer(),
+        Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),
+        panelOrigin.x + offsets.menuX,
+        panelOrigin.y + offsets.menuY,
+        panelSize.width,
+        panelSize.height);
+}
+
+static Point mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y)
+{
+    return {
+        layout.backgroundX + (layout.scaleControls ? static_cast<int>(lround(x * layout.scale)) : x),
+        layout.backgroundY + (layout.scaleControls ? static_cast<int>(lround(y * layout.scale)) : y),
+    };
+}
+
+static Size mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
+{
+    return {
+        std::max(1, static_cast<int>(lround(width * layout.scale))),
+        std::max(1, static_cast<int>(lround(height * layout.scale))),
+    };
+}
+
+static int mainMenuScaleX(const MainMenuLayout& layout, int value)
+{
+    return static_cast<int>(lround(value * layout.scaleX));
+}
+
+static int mainMenuScaleY(const MainMenuLayout& layout, int value)
+{
+    return static_cast<int>(lround(value * layout.scaleY));
+}
+
+static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value)
+{
+    return layout.backgroundY + layout.backgroundHeight + value - MAIN_MENU_LOGICAL_HEIGHT;
+}
+
+static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width)
+{
+    return layout.backgroundX + layout.backgroundWidth - rightMargin - width;
+}
+
+static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout)
+{
+    return settings.ui.main_menu_overlay_subscreens
+        && (layout.backgroundWidth > mainMenuOverlayWindowWidth
+            || layout.backgroundHeight > mainMenuOverlayWindowHeight);
+}
+
+static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
+{
     MessageListItem msg;
-    int len;
-
-    if (gMainMenuWindowInitialized) {
-        return 0;
-    }
-
-    colorPaletteLoad("color.pal");
-
-    int mainMenuWindowX = (screenGetWidth() - MAIN_MENU_WINDOW_WIDTH) / 2;
-    int mainMenuWindowY = (screenGetHeight() - MAIN_MENU_WINDOW_HEIGHT) / 2;
-    gMainMenuWindow = windowCreate(mainMenuWindowX,
-        mainMenuWindowY,
-        MAIN_MENU_WINDOW_WIDTH,
-        MAIN_MENU_WINDOW_HEIGHT,
-        0,
-        WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
-    if (gMainMenuWindow == -1) {
-        // NOTE: Uninline.
-        return main_menu_fatal_error();
-    }
-
-    gMainMenuWindowBuffer = windowGetBuffer(gMainMenuWindow);
-
-    // mainmenu.frm
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 140, 0, 0, 0);
-    if (!_mainMenuBackgroundFrmImage.lock(backgroundFid)) {
-        // NOTE: Uninline.
-        return main_menu_fatal_error();
-    }
-
-    blitBufferToBuffer(_mainMenuBackgroundFrmImage.getData(), 640, 480, 640, gMainMenuWindowBuffer, 640);
-    _mainMenuBackgroundFrmImage.unlock();
-
-    int oldFont = fontGetCurrent();
-    fontSetCurrent(100);
 
     // SFALL: Allow to change font color/flags of copyright/version text
     //        It's the last byte ('3C' by default) that picks the colour used. The first byte supplies additional flags for this option
     //        0x010000 - change the color for version string only
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
-    int fontSettings = _colorTable[21091], fontSettingsSFall = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_FONT_COLOR_KEY, &fontSettingsSFall);
-    if (fontSettingsSFall && !(fontSettingsSFall & 0x010000))
-        fontSettings = fontSettingsSFall & 0xFF;
-
-    // SFALL: Allow to move copyright text
-    int offsetX = 0, offsetY = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_CREDITS_OFFSET_X_KEY, &offsetX);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_CREDITS_OFFSET_Y_KEY, &offsetY);
-
-    // Copyright.
-    msg.num = 20;
-    if (messageListGetItem(&gMiscMessageList, &msg)) {
-        windowDrawText(gMainMenuWindow, msg.text, 0, offsetX + 15, offsetY + 460, fontSettings | 0x06000000);
+    ColorWithFlags fontSettings = COLOR_YELLOW_2 | DRAW_TEXT_FLAG_NONE;
+    ColorWithFlags fontSettingsSFall = COLOR_FIRST | DRAW_TEXT_FLAG_NONE;
+    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, COLOR_FIRST | DRAW_TEXT_FLAG_NONE);
+    if (fontSettingsSFall && !(fontSettingsSFall & DRAW_TEXT_FLAG_SHADOWED)) {
+        fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
     }
 
-    // SFALL: Make sure font settings are applied when using 0x010000 flag
-    if (fontSettingsSFall)
-        fontSettings = fontSettingsSFall;
+    msg.num = 20;
+    if (messageListGetItem(&gMiscMessageList, &msg)) {
+        windowDrawText(gMainMenuWindow,
+            msg.text,
+            0,
+            layout.backgroundX + offsets.creditsX + MAIN_MENU_FOOTER_LEFT_X,
+            mainMenuGetAnchoredY(layout, offsets.creditsY + MAIN_MENU_COPYRIGHT_Y),
+            fontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
+    }
 
-    // TODO: Allow to move version text
-    // Version.
+    if (fontSettingsSFall) {
+        fontSettings = fontSettingsSFall;
+    }
+
+    fontSettings &= ~DRAW_TEXT_FLAG_SHADOWED;
+    ColorWithFlags versionFontSettings = fontSettings;
     char version[VERSION_MAX];
     versionGetVersion(version, sizeof(version));
-    len = fontGetStringWidth(version);
-    windowDrawText(gMainMenuWindow, version, 0, 615 - len, 440, fontSettings | 0x06000000);
+    int len = fontGetStringWidth(version);
+    windowDrawText(gMainMenuWindow, version, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_VERSION_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     char commitHash[VERSION_MAX] = "BUILD HASH: ";
     strcat(commitHash, _BUILD_HASH);
     len = fontGetStringWidth(commitHash);
-    windowDrawText(gMainMenuWindow, commitHash, 0, 615 - len, 450, fontSettings | 0x06000000);
+    windowDrawText(gMainMenuWindow, commitHash, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_HASH_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     char buildDate[VERSION_MAX] = "DATE: ";
     strcat(buildDate, _BUILD_DATE);
     len = fontGetStringWidth(buildDate);
-    windowDrawText(gMainMenuWindow, buildDate, 0, 615 - len, 460, fontSettings | 0x06000000);
+    windowDrawText(gMainMenuWindow, buildDate, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_DATE_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
+}
 
-    // menuup.frm
-    fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
-    if (!_mainMenuButtonNormalFrmImage.lock(fid)) {
-        // NOTE: Uninline.
-        return main_menu_fatal_error();
+static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
+{
+    Size buttonSize = mainMenuTransformSize(layout, MAIN_MENU_BUTTON_WIDTH, MAIN_MENU_BUTTON_HEIGHT);
+    int buttonWidth = buttonSize.width;
+    int buttonHeight = buttonSize.height;
+    unsigned char* buttonNormalData;
+    unsigned char* buttonPressedData;
+    if (buttonWidth == MAIN_MENU_BUTTON_WIDTH && buttonHeight == MAIN_MENU_BUTTON_HEIGHT) {
+        buttonNormalData = mainMenuButtonNormalFrmImage.getData();
+        buttonPressedData = mainMenuButtonPressedFrmImage.getData();
+    } else {
+        mainMenuScaledButtonData.assign(static_cast<size_t>(buttonWidth) * buttonHeight * 2, 0);
+        buttonNormalData = mainMenuScaledButtonData.data();
+        buttonPressedData = buttonNormalData + buttonWidth * buttonHeight;
+
+        blitBuffer2DScaledTrans(mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(buttonNormalData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
+        blitBuffer2DScaledTrans(mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
     }
 
-    // menudown.frm
-    fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
-    if (!_mainMenuButtonPressedFrmImage.lock(fid)) {
-        // NOTE: Uninline.
-        return main_menu_fatal_error();
-    }
-
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        gMainMenuButtons[index] = -1;
-    }
-
-    // SFALL: Allow to move menu buttons
-    offsetX = offsetY = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_OFFSET_X_KEY, &offsetX);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_OFFSET_Y_KEY, &offsetY);
-
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        Point buttonPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_X, MAIN_MENU_BUTTON_Y + index * MAIN_MENU_BUTTON_Y_STEP);
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
-            offsetX + 30,
-            offsetY + 19 + index * 42 - index,
-            26,
-            26,
+            buttonPosition.x + offsets.menuX,
+            buttonPosition.y + offsets.menuY,
+            buttonWidth,
+            buttonHeight,
             -1,
             -1,
             1111,
-            gMainMenuButtonKeyBindings[index],
-            _mainMenuButtonNormalFrmImage.getData(),
-            _mainMenuButtonPressedFrmImage.getData(),
+            mainMenuButtonSpecs[index].keyCode,
+            buttonNormalData,
+            buttonPressedData,
             nullptr,
             BUTTON_FLAG_TRANSPARENT);
         if (gMainMenuButtons[index] == -1) {
-            // NOTE: Uninline.
-            return main_menu_fatal_error();
+            return false;
         }
 
-        buttonSetMask(gMainMenuButtons[index], _mainMenuButtonNormalFrmImage.getData());
+        buttonSetMask(gMainMenuButtons[index], buttonNormalData);
+    }
+
+    return true;
+}
+
+static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
+{
+    MessageListItem msg;
+    ColorWithFlags fontSettings = COLOR_YELLOW_2 | DRAW_TEXT_FLAG_NONE;
+    ColorWithFlags fontSettingsSFall = COLOR_BLACK | DRAW_TEXT_FLAG_NONE;
+    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, COLOR_BLACK | DRAW_TEXT_FLAG_NONE);
+    if (fontSettingsSFall) {
+        fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
+    }
+
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        msg.num = mainMenuButtonSpecs[index].labelMessage;
+        if (!messageListGetItem(&gMiscMessageList, &msg)) {
+            continue;
+        }
+
+        int len = fontGetStringWidth(msg.text);
+        Point labelPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_LABEL_X, MAIN_MENU_BUTTON_LABEL_Y + index * MAIN_MENU_BUTTON_Y_STEP);
+        if (!layout.scaleControls) {
+            fontDrawText(gMainMenuWindowBuffer + (labelPosition.y + offsets.menuY) * layout.screenWidth + labelPosition.x + offsets.menuX - (len / 2),
+                msg.text,
+                layout.screenWidth - (labelPosition.x + offsets.menuX - (len / 2)) - 1,
+                layout.screenWidth,
+                fontSettings);
+        } else {
+            int scaledLen = interfaceFontGetStringWidthScaled(msg.text, fontSettings, layout.scale);
+            interfaceFontDrawTextScaled2D(Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),
+                labelPosition.x + offsets.menuX - scaledLen / 2,
+                labelPosition.y + offsets.menuY,
+                msg.text,
+                fontSettings,
+                layout.scale);
+        }
+    }
+}
+
+// 0x481650 main_menu_create
+int mainMenuWindowInit()
+{
+    if (gMainMenuWindowInitialized) {
+        return 0;
+    }
+
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        gMainMenuButtons[index] = -1;
+    }
+
+    colorPaletteLoad("color.pal");
+
+    gMainMenuWindow = windowCreate(0,
+        0,
+        screenGetWidth(),
+        screenGetHeight(),
+        COLOR_FIRST,
+        WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
+    if (gMainMenuWindow == -1) {
+        return main_menu_fatal_error();
+    }
+
+    gMainMenuWindowBuffer = windowGetBuffer(gMainMenuWindow);
+
+    if (!mainMenuLoadArt()) {
+        return main_menu_fatal_error();
+    }
+
+    MainMenuLayout layout = mainMenuBuildLayout();
+    mainMenuOverlayBackgroundEnabled = mainMenuShouldEnableOverlayBackground(layout);
+    MainMenuOffsets offsets = mainMenuReadOffsets(layout);
+
+    mainMenuDrawBackground(layout);
+    mainMenuDrawPanel(layout, offsets);
+
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(100);
+    mainMenuDrawBuildInfo(layout, offsets);
+
+    if (!mainMenuCreateButtons(layout, offsets)) {
+        return main_menu_fatal_error();
     }
 
     fontSetCurrent(104);
-
-    // SFALL: Allow to change font color of buttons
-    fontSettings = _colorTable[21091];
-    fontSettingsSFall = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_BIG_FONT_COLOR_KEY, &fontSettingsSFall);
-    if (fontSettingsSFall)
-        fontSettings = fontSettingsSFall & 0xFF;
-
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        msg.num = 9 + index;
-        if (messageListGetItem(&gMiscMessageList, &msg)) {
-            len = fontGetStringWidth(msg.text);
-            fontDrawText(gMainMenuWindowBuffer + offsetX + 640 * (offsetY + 42 * index - index + 20) + 126 - (len / 2), msg.text, 640 - (126 - (len / 2)) - 1, 640, fontSettings);
-        }
-    }
+    mainMenuDrawButtonLabels(layout, offsets);
 
     fontSetCurrent(oldFont);
+    mainMenuBackgroundFrmImage.unlock();
+    mainMenuButtonPanelFrmImage.unlock();
 
     gMainMenuWindowInitialized = true;
     gMainMenuWindowHidden = true;
+    mainMenuOverlayCount = 0;
+    mainMenuOverlayDimmedBackup.clear();
 
     return 0;
 }
 
-// 0x481968
+static void mainMenuDestroySubscreenBackdrop()
+{
+    if (mainMenuSubscreenBackdrop != -1) {
+        windowDestroy(mainMenuSubscreenBackdrop);
+        mainMenuSubscreenBackdrop = -1;
+    }
+}
+
+// 0x481968 main_menu_destroy
 void mainMenuWindowFree()
 {
-    if (!gMainMenuWindowInitialized) {
-        return;
-    }
+    mainMenuDestroySubscreenBackdrop();
 
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        // FIXME: Why it tries to free only invalid buttons?
-        if (gMainMenuButtons[index] == -1) {
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        if (gMainMenuButtons[index] != -1) {
             buttonDestroy(gMainMenuButtons[index]);
+            gMainMenuButtons[index] = -1;
         }
     }
 
-    _mainMenuButtonPressedFrmImage.unlock();
-    _mainMenuButtonNormalFrmImage.unlock();
+    mainMenuScaledButtonData.clear();
+    mainMenuOverlayDimmedBackup.clear();
+    mainMenuButtonPanelFrmImage.unlock();
+    mainMenuButtonPressedFrmImage.unlock();
+    mainMenuButtonNormalFrmImage.unlock();
+    mainMenuBackgroundFrmImage.unlock();
 
     if (gMainMenuWindow != -1) {
         windowDestroy(gMainMenuWindow);
     }
 
     gMainMenuWindowInitialized = false;
+    gMainMenuWindow = -1;
+    gMainMenuWindowBuffer = nullptr;
+    gMainMenuWindowHidden = true;
+    mainMenuOverlayCount = 0;
+    mainMenuOverlayBackgroundEnabled = false;
 }
 
-// 0x481A00
+// 0x481A00 main_menu_hide
 void mainMenuWindowHide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -280,11 +642,13 @@ void mainMenuWindowHide(bool animate)
 
     windowHide(gMainMenuWindow);
     touch_set_touchscreen_mode(false);
+    mainMenuOverlayDimmedBackup.clear();
+    mainMenuOverlayCount = 0;
 
     gMainMenuWindowHidden = true;
 }
 
-// 0x481A48
+// 0x481A48 main_menu_show
 void mainMenuWindowUnhide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -306,14 +670,131 @@ void mainMenuWindowUnhide(bool animate)
     gMainMenuWindowHidden = false;
 }
 
-// 0x481AA8
+static void mainMenuWindowEnterOverlay()
+{
+    if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
+        return;
+    }
+
+    if (mainMenuOverlayCount == 0) {
+        mainMenuSetButtonsEnabled(false);
+    }
+
+    mainMenuOverlayCount += 1;
+}
+
+static void mainMenuWindowLeaveOverlay()
+{
+    if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
+        mainMenuOverlayCount = 0;
+        return;
+    }
+
+    assert(mainMenuOverlayCount > 0);
+    if (mainMenuOverlayCount <= 0) {
+        mainMenuOverlayCount = 0;
+        return;
+    }
+
+    mainMenuOverlayCount -= 1;
+    if (mainMenuOverlayCount == 0) {
+        mainMenuRemoveOverlayDim();
+        mainMenuSetButtonsEnabled(true);
+        touch_set_touchscreen_mode(true);
+    }
+}
+
+static bool mainMenuWindowIsOverlayActive()
+{
+    return gMainMenuWindowInitialized && !gMainMenuWindowHidden && mainMenuOverlayCount > 0;
+}
+
+static void mainMenuWindowShowOverlayDim()
+{
+    if (!mainMenuWindowIsOverlayActive() || !mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    mainMenuApplyOverlayDim();
+}
+
+void mainMenuBeginSubscreen()
+{
+    if (mainMenuOverlayBackgroundEnabled) {
+        mainMenuWindowEnterOverlay();
+        return;
+    }
+
+    mainMenuWindowHide(true);
+    if (mainMenuSubscreenBackdrop == -1) {
+        // Palette index 0 in the root window is grey, so cover it around 640x480 dialogs.
+        mainMenuSubscreenBackdrop = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_NONE);
+        if (mainMenuSubscreenBackdrop != -1) {
+            windowRefresh(mainMenuSubscreenBackdrop);
+        }
+    }
+}
+
+void mainMenuCancelSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowLeaveOverlay();
+    }
+
+    mainMenuDestroySubscreenBackdrop();
+}
+
+void mainMenuFinishSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowHide(false);
+    }
+
+    mainMenuWindowFree();
+}
+
+WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags overlayFlags)
+{
+    return mainMenuWindowIsOverlayActive() ? overlayFlags : defaultFlags;
+}
+
+void mainMenuShowSubscreen(bool animate)
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        renderPresent();
+        mainMenuWindowShowOverlayDim();
+    } else if (animate) {
+        colorPaletteLoad("color.pal");
+        paletteFadeTo(_cmap);
+    }
+}
+
+void mainMenuFadeOutForMenuReturn(bool animate)
+{
+    if (!animate || mainMenuWindowIsOverlayActive()) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
+}
+
+void mainMenuFadeOutForGameStart(bool animate)
+{
+    if (!animate) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
+}
+
+// 0x481AA8 main_menu_is_enabled
 int _main_menu_is_enabled()
 {
     return 1;
 }
 
-// 0x481AEC
-int mainMenuWindowHandleEvents()
+// 0x481AEC main_menu_loop
+MainMenuOption mainMenuWindowHandleEvents()
 {
     _in_main_menu = true;
 
@@ -324,40 +805,46 @@ int mainMenuWindowHandleEvents()
 
     unsigned int tick = getTicks();
 
-    int rc = -1;
-    while (rc == -1) {
+    MainMenuOption rc = MainMenuOption::Invalid;
+    while (rc == MainMenuOption::Invalid) {
+        if (gMainMenuExitRequested) {
+            gMainMenuExitRequested = false;
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_EXIT;
+        }
+
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
 
-        for (int buttonIndex = 0; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
-            if (keyCode == gMainMenuButtonKeyBindings[buttonIndex] || keyCode == toupper(gMainMenuButtonKeyBindings[buttonIndex])) {
+        for (MainMenuButton buttonIndex = MAIN_MENU_BUTTON_FIRST; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
+            int buttonKeyCode = mainMenuButtonSpecs[buttonIndex].keyCode;
+            if (keyCode == buttonKeyCode || keyCode == toupper(buttonKeyCode)) {
                 // NOTE: Uninline.
                 main_menu_play_sound("nmselec1");
 
-                rc = _return_values[buttonIndex];
+                rc = mainMenuButtonSpecs[buttonIndex].returnValue;
 
                 if (buttonIndex == MAIN_MENU_BUTTON_CREDITS && (gPressedPhysicalKeys[SDL_SCANCODE_RSHIFT] != KEY_STATE_UP || gPressedPhysicalKeys[SDL_SCANCODE_LSHIFT] != KEY_STATE_UP)) {
-                    rc = MAIN_MENU_QUOTES;
+                    rc = MainMenuOption::Quotes;
                 }
 
                 break;
             }
         }
 
-        if (rc == -1) {
+        if (rc == MainMenuOption::Invalid) {
             if (keyCode == KEY_CTRL_R) {
-                rc = MAIN_MENU_SELFRUN;
+                rc = MainMenuOption::SelfRun;
                 continue;
             } else if (keyCode == KEY_PLUS || keyCode == KEY_EQUAL) {
                 brightnessIncrease();
             } else if (keyCode == KEY_MINUS || keyCode == KEY_UNDERSCORE) {
                 brightnessDecrease();
             } else if (keyCode == KEY_UPPERCASE_D || keyCode == KEY_LOWERCASE_D) {
-                rc = MAIN_MENU_SCREENSAVER;
+                rc = MainMenuOption::ScreenSaver;
                 continue;
             } else if (keyCode == 1111) {
-                if (!(mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT)) {
+                if ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) == MouseButtonEvent::None) {
                     // NOTE: Uninline.
                     main_menu_play_sound("nmselec0");
                 }
@@ -365,17 +852,17 @@ int mainMenuWindowHandleEvents()
             }
         }
 
-        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit == 3) {
-            rc = MAIN_MENU_EXIT;
+        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit == GAME_QUIT_REQUEST_EXIT) {
+            rc = MainMenuOption::Exit;
 
             // NOTE: Uninline.
             main_menu_play_sound("nmselec1");
             break;
-        } else if (_game_user_wants_to_quit == 2) {
-            _game_user_wants_to_quit = 0;
+        } else if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_MAIN_MENU) {
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
         } else {
             if (getTicksSince(tick) >= gMainMenuScreensaverDelay) {
-                rc = MAIN_MENU_TIMEOUT;
+                rc = MainMenuOption::Timeout;
             }
         }
 
@@ -392,9 +879,14 @@ int mainMenuWindowHandleEvents()
     return rc;
 }
 
+void mainMenuRequestExit()
+{
+    gMainMenuExitRequested = true;
+}
+
 // NOTE: Inlined.
 //
-// 0x481C88
+// 0x481C88 main_menu_fatal_error
 static int main_menu_fatal_error()
 {
     mainMenuWindowFree();
@@ -404,10 +896,97 @@ static int main_menu_fatal_error()
 
 // NOTE: Inlined.
 //
-// 0x481C94
+// 0x481C94 main_menu_play_sound
 static void main_menu_play_sound(const char* fileName)
 {
     soundPlayFile(fileName);
+}
+
+static void mainMenuSetButtonsEnabled(bool enabled)
+{
+    for (MainMenuButton index = MAIN_MENU_BUTTON_FIRST; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        if (gMainMenuButtons[index] == -1) {
+            continue;
+        }
+
+        if (enabled) {
+            buttonEnable(gMainMenuButtons[index]);
+        } else {
+            buttonDisable(gMainMenuButtons[index]);
+        }
+    }
+}
+
+static void mainMenuApplyOverlayDim()
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    int size = width * height;
+
+    mainMenuOverlayDimmedBackup.assign(gMainMenuWindowBuffer, gMainMenuWindowBuffer + size);
+    mainMenuAnimateOverlayDim(mainMenuOverlayDimClearIntensity, mainMenuOverlayDimTargetIntensity);
+}
+
+static void mainMenuRemoveOverlayDim()
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr || mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    int size = width * height;
+    if (static_cast<int>(mainMenuOverlayDimmedBackup.size()) != size) {
+        mainMenuOverlayDimmedBackup.clear();
+        return;
+    }
+
+    bool cursorWasHidden = cursorIsHidden();
+    if (cursorWasHidden) {
+        mouseShowCursor();
+    }
+
+    mainMenuAnimateOverlayDim(mainMenuOverlayDimTargetIntensity, mainMenuOverlayDimClearIntensity);
+
+    if (cursorWasHidden) {
+        mouseHideCursor();
+    }
+
+    memcpy(gMainMenuWindowBuffer, mainMenuOverlayDimmedBackup.data(), size);
+    mainMenuOverlayDimmedBackup.clear();
+    windowRefresh(gMainMenuWindow);
+}
+
+static void mainMenuSetOverlayDimIntensity(int intensity)
+{
+    if (gMainMenuWindow == -1 || gMainMenuWindowBuffer == nullptr || mainMenuOverlayDimmedBackup.empty()) {
+        return;
+    }
+
+    int width = windowGetWidth(gMainMenuWindow);
+    int height = windowGetHeight(gMainMenuWindow);
+    _dark_trans_buf_to_buf(mainMenuOverlayDimmedBackup.data(), width, height, width, gMainMenuWindowBuffer, 0, 0, width, intensity);
+    windowRefresh(gMainMenuWindow);
+    renderPresent();
+}
+
+static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)
+{
+    for (int step = 0; step < mainMenuOverlayDimAnimationSteps; step++) {
+        _GNW95_process_message();
+        _mouse_info();
+
+        int intensity = startIntensity + (endIntensity - startIntensity) * (step + 1) / mainMenuOverlayDimAnimationSteps;
+        mainMenuSetOverlayDimIntensity(intensity);
+
+        if (step + 1 < mainMenuOverlayDimAnimationSteps) {
+            delay_ms(mainMenuOverlayDimFrameDelay);
+        }
+    }
 }
 
 } // namespace fallout

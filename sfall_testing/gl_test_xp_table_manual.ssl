@@ -1,0 +1,33 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+
+procedure print_status(variable prefix) begin
+    display_msg(string_format("%s Level: %d, XP: %d",
+        prefix,
+        get_pc_stat(PCSTAT_level),
+        get_pc_stat(PCSTAT_experience)));
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_X) then begin
+        give_exp_points(1000);
+        call print_status("Granted 1000 XP.");
+    end
+    if (key == DIK_K) then begin
+        give_exp_points(10000);
+        call print_status("Granted 10000 XP.");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("XP table test ready: X = +1000 XP");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end

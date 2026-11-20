@@ -1,7 +1,18 @@
 #include "sfall_callbacks.h"
 
+#include "combat.h"
+#include "content_config.h"
 #include "display_monitor.h"
-#include "sfall_config.h"
+#include "game.h"
+#include "game_dialog.h"
+#include "interface.h"
+#include "inventory.h"
+#include "reaction.h"
+#include "script_sound.h"
+#include "sfall_filesystem.h"
+#include "sfall_object_name.h"
+#include "sfall_script_hooks.h"
+#include "stat.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -13,6 +24,7 @@ void sfallOnBeforeGameInit()
 
 void sfallOnGameInit()
 {
+    inventoryResetInvenApCost();
     return;
 }
 
@@ -23,11 +35,20 @@ void sfallOnAfterGameInit()
 
 void sfallOnGameExit()
 {
+    scriptSoundExit();
     return;
 }
 
 void sfallOnGameReset()
 {
+    inventoryResetInvenApCost();
+    combatResetFo1HitChance();
+    gameDialogResetPartyMemberCcMsgIds();
+    reactionResetThresholds();
+    scriptSoundReset();
+    sfallFileSystemReset();
+    sfallObjectNameReset();
+    statResetUnspentApBonuses();
     return;
 }
 
@@ -40,11 +61,19 @@ void sfallOnAfterGameStarted()
 {
     // Disable Horrigan Patch
     bool isDisableHorrigan = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DISABLE_HORRIGAN, &isDisableHorrigan);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", &isDisableHorrigan);
 
     if (isDisableHorrigan) {
         gDidMeetFrankHorrigan = true;
-        displayMonitorAddMessage(SFALL_CONFIG_DISABLE_HORRIGAN);
+    }
+
+    // Refresh item art after load, which calls the CALCAPCOST hook if present to
+    // display the correct AP cost.
+    if (gInterfaceBarWindow != -1) {
+        InterfaceItemAction leftItemAction;
+        InterfaceItemAction rightItemAction;
+        interfaceGetItemActions(&leftItemAction, &rightItemAction);
+        interfaceUpdateItems(false, leftItemAction, rightItemAction);
     }
 }
 
@@ -53,9 +82,9 @@ void sfallOnAfterNewGame()
     return;
 }
 
-void sfallOnGameModeChange()
+void sfallOnGameModeChange(int exit, GameMode::Flags previousGameMode)
 {
-    return;
+    scriptHooks_GameModeChange(exit, previousGameMode);
 }
 
 void sfallOnBeforeGameClose()
@@ -75,7 +104,7 @@ void sfallOnCombatEnd()
 
 void sfallOnBeforeMapLoad()
 {
-    return;
+    sfallObjectNameReset();
 }
 
 } // namespace fallout

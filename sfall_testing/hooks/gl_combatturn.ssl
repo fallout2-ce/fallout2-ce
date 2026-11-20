@@ -1,0 +1,54 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+
+variable skip_next_turn := false;
+
+procedure combatturn_event_name(variable event_type) begin
+    if (event_type == 1) then return "start";
+    if (event_type == 0) then return "end";
+    if (event_type == -1) then return "abrupt_end";
+    if (event_type == -2) then return "combat_over";
+    return "unknown";
+end
+
+procedure combatturn_handler begin
+    variable
+        args := get_sfall_args,
+        event_type := args[0],
+        critter := args[1],
+        loaded_after_combat_save := args[2],
+        critter_name := "<null>";
+
+    if (critter) then critter_name := obj_name(critter);
+
+    display_msg(string_format3("combatturn %s critter=%s loaded=%d", combatturn_event_name(event_type), critter_name, loaded_after_combat_save));
+    display_msg(string_format1("combatturn args=%s", debug_array_str(args)));
+
+    if (event_type == 1 and skip_next_turn) then begin
+        skip_next_turn := false;
+        display_msg("combatturn skip_next_turn -> 0, skipping this turn");
+        set_sfall_return(1);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    skip_next_turn := true;
+    display_msg("combatturn skip_next_turn -> 1");
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("combatturn manual test ready: press X to skip the next combat turn");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_COMBATTURN, combatturn_handler);
+end

@@ -1,18 +1,18 @@
 #include "dbox.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <algorithm>
+#include <functional>
+#include <stdio.h>
+#include <string_view>
 
 #include "art.h"
 #include "character_editor.h"
 #include "color.h"
 #include "debug.h"
-#include "delay.h"
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
+#include "geometry.h"
 #include "input.h"
 #include "kb.h"
 #include "message.h"
@@ -25,147 +25,662 @@
 
 namespace fallout {
 
-#define FILE_DIALOG_LINE_COUNT 12
-
-#define FILE_DIALOG_DOUBLE_CLICK_DELAY 32
-
-#define LOAD_FILE_DIALOG_DONE_BUTTON_X 58
-#define LOAD_FILE_DIALOG_DONE_BUTTON_Y 187
-
-#define LOAD_FILE_DIALOG_DONE_LABEL_X 79
-#define LOAD_FILE_DIALOG_DONE_LABEL_Y 187
-
-#define LOAD_FILE_DIALOG_CANCEL_BUTTON_X 163
-#define LOAD_FILE_DIALOG_CANCEL_BUTTON_Y 187
-
-#define LOAD_FILE_DIALOG_CANCEL_LABEL_X 182
-#define LOAD_FILE_DIALOG_CANCEL_LABEL_Y 187
-
-#define SAVE_FILE_DIALOG_DONE_BUTTON_X 58
-#define SAVE_FILE_DIALOG_DONE_BUTTON_Y 214
-
-#define SAVE_FILE_DIALOG_DONE_LABEL_X 79
-#define SAVE_FILE_DIALOG_DONE_LABEL_Y 213
-
-#define SAVE_FILE_DIALOG_CANCEL_BUTTON_X 163
-#define SAVE_FILE_DIALOG_CANCEL_BUTTON_Y 214
-
-#define SAVE_FILE_DIALOG_CANCEL_LABEL_X 182
-#define SAVE_FILE_DIALOG_CANCEL_LABEL_Y 213
-
-#define FILE_DIALOG_TITLE_X 49
-#define FILE_DIALOG_TITLE_Y 16
-
-#define FILE_DIALOG_SCROLL_BUTTON_X 36
-#define FILE_DIALOG_SCROLL_BUTTON_Y 44
-
-#define FILE_DIALOG_FILE_LIST_X 55
-#define FILE_DIALOG_FILE_LIST_Y 49
-#define FILE_DIALOG_FILE_LIST_WIDTH 190
-#define FILE_DIALOG_FILE_LIST_HEIGHT 124
-
-typedef enum DialogType {
-    DIALOG_TYPE_MEDIUM,
-    DIALOG_TYPE_LARGE,
-    DIALOG_TYPE_COUNT,
-} DialogType;
-
-typedef enum FileDialogFrm {
-    FILE_DIALOG_FRM_BACKGROUND,
-    FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL,
-    FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED,
-    FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL,
-    FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED,
-    FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL,
-    FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED,
-    FILE_DIALOG_FRM_COUNT,
-} FileDialogFrm;
-
-typedef enum FileDialogScrollDirection {
-    FILE_DIALOG_SCROLL_DIRECTION_NONE,
-    FILE_DIALOG_SCROLL_DIRECTION_UP,
-    FILE_DIALOG_SCROLL_DIRECTION_DOWN,
-} FileDialogScrollDirection;
-
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
-// 0x5108C8
-static const int gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    218, // MEDIALOG.FRM - Medium generic dialog box
-    217, // LGDIALOG.FRM - Large generic dialog box
-};
+namespace {
+    namespace dbox {
+        // Original blinking frequency: 3 frames (24 FPS) = 125 ms
+        constexpr unsigned int baseFrameMs = 1000 / 24;
+        constexpr unsigned int blinkIntervalMs = baseFrameMs * 3;
 
-// 0x5108D0
-static const int _ytable[DIALOG_TYPE_COUNT] = {
-    23,
-    27,
-};
+        namespace btnId {
+            constexpr int done = 500;
+            constexpr int cancel = 501;
+            constexpr int fileList = 502;
+            constexpr int scrollDown = 503; // Down arrow hold
+            constexpr int scrollDownArrow = 504; // Down arrow click
+            constexpr int scrollUp = 505; // Up arrow hold
+            constexpr int scrollUpArrow = 506; // Up arrow click
+        } // namespace btnId
 
-// 0x5108D8
-static const int _xtable[DIALOG_TYPE_COUNT] = {
-    29,
-    29,
-};
+        int createRedButton(int windowId, Point pos, int buttonId, const FrmImage& upFrm, const FrmImage& downFrm)
+        {
+            int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
+                -1, -1, -1, buttonId, upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
 
-// 0x5108E0
-static const int _doneY[DIALOG_TYPE_COUNT] = {
-    81,
-    98,
-};
+            if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+            return btn;
+        }
 
-// 0x5108E8
-static const int _doneX[DIALOG_TYPE_COUNT] = {
-    51,
-    37,
-};
+        namespace input {
+            constexpr size_t dialogFrmCount = 5;
 
-// 0x5108F0
-static const int _dblines[DIALOG_TYPE_COUNT] = {
-    5,
-    6,
-};
+            constexpr InterfaceFrameId kInputDialogFrmIds[dialogFrmCount] = {
+                InterfaceFrameId::CharacterWindow,
+                InterfaceFrameId::CharacterEditorNameBox,
+                InterfaceFrameId::DoneBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown
+            };
 
-// 0x510900
-static int gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    224, // loadbox.frm - character editor
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    181, // dnarwoff.frm - character editor
-    182, // dnarwon.frm - character editor
-    199, // uparwoff.frm - character editor
-    200, // uparwon.frm - character editor
-};
+            constexpr Point nameBoxPos { 13, 13 };
+            constexpr Point doneBoxPos { 13, 40 };
+            constexpr Point doneLabelPos { 50, 44 };
+            constexpr Point doneButtonPos { 26, 44 };
 
-// 0x51091C
-static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    225, // savebox.frm - character editor
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    181, // dnarwoff.frm - character editor
-    182, // dnarwon.frm - character editor
-    199, // uparwoff.frm - character editor
-    200, // uparwon.frm - character editor
-};
+            struct DialogFrms {
+                FrmImage background, nameBox, doneBox, buttonUp, buttonDown;
+            };
 
-// 0x41CF20
-int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags)
+            bool loadImages(DialogFrms& images)
+            {
+                return images.background.lock(kInputDialogFrmIds[0])
+                    && images.nameBox.lock(kInputDialogFrmIds[1])
+                    && images.doneBox.lock(kInputDialogFrmIds[2])
+                    && images.buttonUp.lock(kInputDialogFrmIds[3])
+                    && images.buttonDown.lock(kInputDialogFrmIds[4]);
+            }
+
+            void drawBox(unsigned char* buffer, int width, Point position, const FrmImage& frm)
+            {
+                size_t offset = static_cast<size_t>(width) * position.y + position.x;
+                blitBufferToBufferTrans(frm.getData(), frm.getWidth(), frm.getHeight(), frm.getWidth(), buffer + offset, width);
+            }
+        } // namespace input
+
+        namespace descriptionInput {
+            constexpr size_t dialogFrmCount = 3;
+
+            constexpr InterfaceFrameId kDialogFrmIds[dialogFrmCount] = {
+                InterfaceFrameId::LoadSaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown
+            };
+
+            constexpr Point titlePos { 0, 7 };
+            constexpr Point doneLabelPos { 56, 57 };
+            constexpr Point cancelLabelPos { 181, 57 };
+            constexpr Point doneButtonPos { 34, 58 };
+            constexpr Point cancelButtonPos { 160, 58 };
+            constexpr Point inputPos { 24, 35 };
+
+            struct DialogFrms {
+                FrmImage background, buttonUp, buttonDown;
+            };
+
+            bool loadImages(DialogFrms& images)
+            {
+                return images.background.lock(kDialogFrmIds[0])
+                    && images.buttonUp.lock(kDialogFrmIds[1])
+                    && images.buttonDown.lock(kDialogFrmIds[2]);
+            }
+        } // namespace descriptionInput
+
+        namespace file {
+            constexpr size_t dialogFrmCount = 7;
+
+            struct DialogFrms {
+                FrmImage background;
+                FrmImage buttonNormal;
+                FrmImage buttonPressed;
+                FrmImage scrollDownNormal;
+                FrmImage scrollDownPressed;
+                FrmImage scrollUpNormal;
+                FrmImage scrollUpPressed;
+            };
+
+            struct ModeConfig {
+                InterfaceFrmId frmIds[dialogFrmCount];
+
+                Point doneButton;
+                Point doneLabel;
+                Point cancelButton;
+                Point cancelLabel;
+            };
+
+            struct Context {
+                UniqueWindow window;
+                unsigned char* windowBuffer;
+                MessageList messageList;
+            };
+
+            bool loadImages(DialogFrms& images, const InterfaceFrmId* frmIds)
+            {
+                FrmImage* frms[dialogFrmCount] = {
+                    &images.background,
+                    &images.buttonNormal,
+                    &images.buttonPressed,
+                    &images.scrollDownNormal,
+                    &images.scrollDownPressed,
+                    &images.scrollUpNormal,
+                    &images.scrollUpPressed
+                };
+
+                for (size_t index = 0; index < dialogFrmCount; ++index) {
+                    if (!frms[index]->lock(frmIds[index])) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            constexpr int lineCount = 12;
+            constexpr int doubleClickDelay = 32;
+
+            constexpr Point title { 49, 16 };
+            constexpr Point scrollButton { 36, 44 };
+
+            struct ListRect {
+                int x, y, width, height;
+            };
+            constexpr ListRect list { 55, 49, 190, 124 };
+
+            int createScrollButton(int windowId, Point pos, int buttonId, int shortKey, int arrowKey, int hoverKey,
+                const FrmImage& upFrm, const FrmImage& downFrm)
+            {
+                int btn = buttonCreate(windowId, pos.x, pos.y, downFrm.getWidth(), downFrm.getHeight(),
+                    shortKey, arrowKey, hoverKey, buttonId,
+                    upFrm.getData(), downFrm.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
+
+                if (btn != -1) buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+                return btn;
+            }
+
+            bool initInterface(Context& ctx, DialogFrms& frms, const ModeConfig& cfg, const char* title, int& x, int& y)
+            {
+                if (!loadImages(frms, cfg.frmIds)) return false;
+
+                int bgWidth = frms.background.getWidth(), bgHeight = frms.background.getHeight();
+                x += (screenGetWidth() - 640) / 2, y += (screenGetHeight() - 480) / 2;
+
+                ctx.window.reset(windowCreate(x, y, bgWidth, bgHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+                if (ctx.window.get() == -1) return false;
+
+                ctx.windowBuffer = windowGetBuffer(ctx.window.get());
+                memcpy(ctx.windowBuffer, frms.background.getData(), static_cast<size_t>(bgWidth) * bgHeight);
+
+                MessageListItem messageListItem;
+                if (!messageListInit(&ctx.messageList)) return false;
+
+                char path[COMPAT_MAX_PATH];
+                snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "DBOX.MSG");
+                if (!messageListLoad(&ctx.messageList, path)) return false;
+
+                fontSetCurrent(103);
+
+                const char* doneText = getmsg(&ctx.messageList, &messageListItem, 100);
+                fontDrawText(ctx.windowBuffer + bgWidth * cfg.doneLabel.y + cfg.doneLabel.x, doneText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
+
+                const char* cancelText = getmsg(&ctx.messageList, &messageListItem, 103);
+                fontDrawText(ctx.windowBuffer + bgWidth * cfg.cancelLabel.y + cfg.cancelLabel.x, cancelText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
+
+                int doneBtn = createRedButton(ctx.window.get(), cfg.doneButton, btnId::done, frms.buttonNormal, frms.buttonPressed);
+                int cancelBtn = createRedButton(ctx.window.get(), cfg.cancelButton, btnId::cancel, frms.buttonNormal, frms.buttonPressed);
+
+                int scrollUpBtn = createScrollButton(ctx.window.get(), scrollButton,
+                    btnId::scrollUp, -1, btnId::scrollUp, btnId::scrollUpArrow, frms.scrollUpNormal, frms.scrollUpPressed);
+
+                Point scrollDownPos { scrollButton.x, scrollButton.y + frms.scrollUpPressed.getHeight() };
+                int scrollDownBtn = createScrollButton(ctx.window.get(), scrollDownPos,
+                    btnId::scrollDown, -1, btnId::scrollDown, btnId::scrollDownArrow, frms.scrollDownNormal, frms.scrollDownPressed);
+
+                buttonCreate(ctx.window.get(), list.x, list.y, list.width, list.height, -1, -1, -1, btnId::fileList, nullptr, nullptr, nullptr, BUTTON_FLAG_NONE);
+
+                if (title != nullptr) {
+                    fontDrawText(ctx.windowBuffer + bgWidth * file::title.y + file::title.x, title, bgWidth, bgWidth, COLOR_DARK_YELLOW);
+                }
+
+                return true;
+            }
+
+            namespace scrollDirection {
+                constexpr int none = 0;
+                constexpr int up = 1;
+                constexpr int down = 2;
+            } // namespace scrollDirection
+
+            struct ScrollState {
+                int& selectedFileIndex;
+                int& pageOffset;
+                int maxPageOffset;
+                int fileListLength;
+                int& doubleClickSelectedFileIndex;
+                int& doubleClickTimer;
+                int& scrollCounter;
+                bool& isScrolling;
+                int bgWidth;
+                bool isScrollable;
+            };
+
+            void handleScrolling(int windowId, unsigned char* windowBuffer, char** fileList,
+                int scrollDirection, ScrollState& s, unsigned int tick, int& rc, std::function<void()> onStep = nullptr)
+            {
+                static unsigned int lastDoubleClickCheck = getTicks();
+
+                if (scrollDirection != scrollDirection::none) {
+                    unsigned int scrollDelay = 4;
+                    s.doubleClickSelectedFileIndex = -2;
+
+                    unsigned int scrollStartTime = getTicks();
+                    unsigned int lastStepTime = scrollStartTime;
+                    bool firstStepDone = false;
+
+                    while (1) {
+                        sharedFpsLimiter.mark();
+                        unsigned int now = getTicks();
+
+                        // 14.4 ticks(24 fps) = 600 ms
+                        bool isAutoScrolling = (now - scrollStartTime) > 600;
+                        unsigned int stepIntervalMs = isAutoScrolling ? (1000 / scrollDelay) : baseFrameMs;
+
+                        if (!firstStepDone || (isAutoScrolling && (now - lastStepTime) >= stepIntervalMs)) {
+                            firstStepDone = true;
+                            lastStepTime = now;
+                            s.isScrolling = true;
+
+                            if (isAutoScrolling) {
+                                scrollDelay += 1;
+                                if (scrollDelay > 24) scrollDelay = 24;
+                            }
+
+                            if (scrollDirection == scrollDirection::up) {
+                                s.pageOffset--;
+                                if (s.pageOffset < 0) {
+                                    s.selectedFileIndex--;
+                                    if (s.selectedFileIndex < 0) s.selectedFileIndex = 0;
+                                    s.pageOffset = 0;
+                                }
+                            } else {
+                                if (s.isScrollable) {
+                                    s.pageOffset++;
+                                    if (s.pageOffset > s.maxPageOffset) {
+                                        s.selectedFileIndex++;
+                                        if (s.selectedFileIndex >= lineCount) s.selectedFileIndex = lineCount - 1;
+                                        s.pageOffset = s.maxPageOffset;
+                                    }
+                                } else {
+                                    s.selectedFileIndex++;
+                                    if (s.selectedFileIndex > s.maxPageOffset) s.selectedFileIndex = s.maxPageOffset;
+                                }
+                            }
+
+                            fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, s.fileListLength, s.selectedFileIndex, s.bgWidth);
+                            windowRefresh(windowId);
+                        }
+
+                        if (onStep) onStep();
+
+                        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                            rc = 1;
+                            break;
+                        }
+
+                        int keyCode = inputGetInput();
+                        if (keyCode == btnId::scrollUp || keyCode == btnId::scrollDown) break;
+
+                        renderPresent();
+                        sharedFpsLimiter.throttle();
+                    }
+                } else {
+                    if (onStep) onStep();
+
+                    unsigned int doubleClickTimeoutMs = static_cast<unsigned int>(doubleClickDelay) * baseFrameMs;
+                    if (tick - lastDoubleClickCheck >= doubleClickTimeoutMs) {
+                        lastDoubleClickCheck = tick;
+                        s.doubleClickSelectedFileIndex = -2;
+                    }
+                }
+            }
+
+            struct NavigationState {
+                int& selectedFileIndex;
+                int& pageOffset;
+                int maxPageOffset;
+                bool isScrollable;
+                int bgWidth;
+                int& doubleClickSelectedFileIndex;
+            };
+
+            bool handleKeyboardNavigation(int keyCode, NavigationState& s, unsigned char* windowBuffer, char** fileList, int fileListLength)
+            {
+                bool handled = true;
+
+                switch (keyCode) {
+                case KEY_ARROW_UP:
+                    s.pageOffset--;
+                    if (s.pageOffset < 0) {
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex - 1, 0, fileListLength);
+                        s.pageOffset = 0;
+                    }
+                    break;
+                case KEY_ARROW_DOWN:
+                    if (s.isScrollable) {
+                        s.pageOffset++;
+                        if (s.pageOffset > s.maxPageOffset) {
+                            s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, lineCount - 1);
+                            s.pageOffset = s.maxPageOffset;
+                        }
+                    } else {
+                        s.selectedFileIndex = std::clamp(s.selectedFileIndex + 1, 0, s.maxPageOffset);
+                    }
+                    break;
+                case KEY_HOME:
+                    s.selectedFileIndex = 0;
+                    s.pageOffset = 0;
+                    break;
+                case KEY_END:
+                    if (s.isScrollable) {
+                        s.selectedFileIndex = lineCount - 1;
+                        s.pageOffset = s.maxPageOffset;
+                    } else {
+                        s.selectedFileIndex = s.maxPageOffset;
+                        s.pageOffset = 0;
+                    }
+                    break;
+                default:
+                    handled = false;
+                    break;
+                }
+
+                if (handled) {
+                    s.doubleClickSelectedFileIndex = -2;
+                    fileDialogRenderFileList(windowBuffer, fileList, s.pageOffset, fileListLength, s.selectedFileIndex, s.bgWidth);
+                }
+
+                return handled;
+            }
+        } // namespace file
+
+        namespace alert {
+            typedef enum DialogType {
+                DIALOG_TYPE_MEDIUM,
+                DIALOG_TYPE_LARGE,
+                DIALOG_TYPE_COUNT,
+            } DialogType;
+
+            // 0x5108C8 dbox
+            constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+                InterfaceFrameId::MediumDialog,
+                InterfaceFrameId::LargeDialog,
+            };
+
+            struct DialogConfig {
+                InterfaceFrmId backgroundFrameId;
+                int x, y, doneX, doneY, lines;
+            };
+
+            constexpr DialogConfig kDialogConfigs[DIALOG_TYPE_COUNT] = {
+                { InterfaceFrameId::MediumDialog, 29, 23, 51, 81, 5 },
+                { InterfaceFrameId::LargeDialog, 29, 27, 37, 98, 6 }
+            };
+
+            struct DialogFrms {
+                FrmImage done;
+                FrmImage buttonUp;
+                FrmImage buttonDown;
+            };
+
+            bool loadImages(DialogFrms& images)
+            {
+                return images.done.lock(InterfaceFrameId::DoneBox)
+                    && images.buttonUp.lock(InterfaceFrameId::LittleRedButtonUp)
+                    && images.buttonDown.lock(InterfaceFrameId::LittleRedButtonDown);
+            }
+        } // namespace alert
+    } // namespace dbox
+} // namespace
+
+int runTextInput(int win, std::string& text, int maxLength, int x, int y,
+    ColorWithFlags textColor, Color backgroundColor, int flags,
+    const TextInputOptions& options)
 {
+    int cursorWidth = fontGetStringWidth("_") - 4;
+    int windowWidth = windowGetWidth(win);
+    int lineHeight = fontGetLineHeight();
+    unsigned char* windowBuffer = windowGetBuffer(win);
+
+    if (maxLength > 255) {
+        maxLength = 255;
+    }
+
+    std::string copy = text + " ";
+    int lastDrawnWidth = fontGetStringWidth(copy.c_str());
+
+    unsigned int lastBlinkTime = getTicks();
+    bool blink = false;
+
+    auto drawCursor = [&](bool visible) {
+        Color color = visible ? static_cast<Color>(textColor & COLOR_LAST) : backgroundColor;
+        int currentTextWidth = fontGetStringWidth(copy.c_str());
+        bufferFill(windowBuffer + windowWidth * y + x + currentTextWidth - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
+    };
+
+    auto redrawText = [&]() {
+        int newWidth = fontGetStringWidth(copy.c_str());
+        int clearWidth = std::max(lastDrawnWidth, newWidth);
+
+        bufferFill(windowBuffer + windowWidth * y + x, clearWidth, lineHeight, windowWidth, backgroundColor);
+        fontDrawText(windowBuffer + windowWidth * y + x, copy.c_str(), windowWidth, windowWidth, textColor);
+
+        drawCursor(blink);
+        windowRefresh(win);
+
+        lastDrawnWidth = newWidth;
+    };
+
+    redrawText();
+    renderPresent();
+
+    beginTextInput();
+
+    int keyPressCount = 0;
+    int rc = 1;
+
+    while (rc == 1) {
+        sharedFpsLimiter.mark();
+
+        int keyCode = inputGetInput();
+        if (keyCode != -1 && (keyCode & 0x80000000) == 0) {
+            keyPressCount++;
+        }
+
+        if (options.doneKeyCode != -1 && keyCode == options.doneKeyCode) {
+            rc = 0;
+        } else if (keyCode == KEY_RETURN) {
+            if (options.playReturnSound) {
+                soundPlayFile("ib1p1xx1");
+            }
+            rc = 0;
+        } else if (options.cancelKeyCode != -1 && keyCode == options.cancelKeyCode) {
+            rc = options.cancelReturnCode;
+        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+            rc = -1;
+        } else {
+            if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && !text.empty()) {
+                if (options.clearOnFirstBackspace && keyPressCount == 1) {
+                    text.clear();
+                } else {
+                    text.pop_back();
+                }
+                copy = text + " ";
+                redrawText();
+            } else if ((keyCode >= KEY_FIRST_INPUT_CHARACTER && keyCode <= KEY_LAST_INPUT_CHARACTER) && text.size() < static_cast<size_t>(maxLength)) {
+                if ((flags & 0x01) == 0 || _isdoschar(keyCode)) {
+                    text.push_back(static_cast<char>(keyCode & 0xFF));
+                    copy = text + " ";
+                    redrawText();
+                }
+            }
+        }
+
+        unsigned int now = getTicks();
+        if (now - lastBlinkTime >= dbox::blinkIntervalMs) {
+            lastBlinkTime = now;
+            blink = !blink;
+            drawCursor(blink);
+            windowRefresh(win);
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+
+    endTextInput();
+    return rc;
+}
+
+// TODO: see if it could be used for `showSaveFileDialog`
+static int _get_input_str(int win, int cancelKeyCode, std::string& text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
+{
+    TextInputOptions options;
+    options.cancelKeyCode = cancelKeyCode;
+    options.cancelReturnCode = 0;
+    options.playReturnSound = true;
+    options.clearOnFirstBackspace = false;
+
+    return runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
+}
+
+// CE: extracted from character_editor.cc
+const char* showInputDialog(const char* currentInput, int windowX, int windowY, const char* doneText, WindowFlags flags)
+{
+    using namespace fallout::dbox;
+
+    ScopedFont mainFontGuard(101); // default font for input box
+    static std::string result;
+
+    input::DialogFrms frms;
+    if (!input::loadImages(frms)) return nullptr;
+
+    int windowWidth = frms.background.getWidth();
+    int windowHeight = frms.background.getHeight();
+
+    UniqueWindow window(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
+    if (window.get() == -1) return nullptr;
+
+    unsigned char* windowBuf = windowGetBuffer(window.get());
+    memcpy(windowBuf, frms.background.getData(), static_cast<size_t>(windowWidth) * windowHeight);
+
+    input::drawBox(windowBuf, windowWidth, input::nameBoxPos, frms.nameBox);
+    input::drawBox(windowBuf, windowWidth, input::doneBoxPos, frms.doneBox);
+
+    {
+        ScopedFont buttonFontGuard(103); // "Done" button font
+        fontDrawText(windowBuf + windowWidth * input::doneLabelPos.y + input::doneLabelPos.x,
+            doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+    }
+
+    int doneBtn = dbox::createRedButton(window.get(), input::doneButtonPos, btnId::done, frms.buttonUp, frms.buttonDown);
+
+    windowRefresh(window.get());
+
+    std::string editableText = (currentInput && strcmp(currentInput, "None") != 0) ? currentInput : "";
+    int status = _get_input_str(window.get(), btnId::done, editableText, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0);
+
+    if (status == 0 && !editableText.empty()) {
+        result = std::move(editableText);
+        return result.c_str();
+    }
+
+    return nullptr;
+}
+
+const char* showInputDialog(const char* currentInput, int x, int y, const char* doneText)
+{
+    return showInputDialog(currentInput, x, y, doneText, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+}
+
+// CE: extracted from loadsave.cc
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText, WindowFlags flags)
+{
+    using namespace fallout::dbox;
+
+    ScopedFont mainFontGuard(101);
+    static std::string result;
+
+    descriptionInput::DialogFrms frms;
+    if (!descriptionInput::loadImages(frms)) return nullptr;
+
+    int windowWidth = frms.background.getWidth();
+    int windowHeight = frms.background.getHeight();
+
+    UniqueWindow window(windowCreate(windowX, windowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), flags));
+    if (window.get() == -1) return nullptr;
+
+    unsigned char* windowBuf = windowGetBuffer(window.get());
+    memcpy(windowBuf, frms.background.getData(), static_cast<size_t>(windowWidth) * windowHeight);
+
+    {
+        ScopedFont labelFontGuard(103);
+
+        if (doneText != nullptr) {
+            fontDrawText(windowBuf + windowWidth * descriptionInput::doneLabelPos.y + descriptionInput::doneLabelPos.x,
+                doneText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+
+        if (cancelText != nullptr) {
+            fontDrawText(windowBuf + windowWidth * descriptionInput::cancelLabelPos.y + descriptionInput::cancelLabelPos.x,
+                cancelText, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+
+        if (title != nullptr) {
+            int titleWidth = fontGetStringWidth(title);
+            int titleX = (windowWidth - titleWidth) / 2;
+            fontDrawText(windowBuf + windowWidth * descriptionInput::titlePos.y + titleX,
+                title, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+        }
+    }
+
+    dbox::createRedButton(window.get(), descriptionInput::doneButtonPos, btnId::done, frms.buttonUp, frms.buttonDown);
+    dbox::createRedButton(window.get(), descriptionInput::cancelButtonPos, btnId::cancel, frms.buttonUp, frms.buttonDown);
+
+    windowRefresh(window.get());
+
+    Color backgroundColor = static_cast<Color>(
+        *(frms.background.getData() + windowWidth * descriptionInput::inputPos.y + descriptionInput::inputPos.x) & COLOR_LAST);
+
+    std::string editableText = currentInput != nullptr ? currentInput : "";
+
+    TextInputOptions options;
+    options.doneKeyCode = btnId::done;
+    options.cancelKeyCode = btnId::cancel;
+    options.cancelReturnCode = -1;
+    options.playReturnSound = false;
+    options.clearOnFirstBackspace = true;
+
+    int status = runTextInput(window.get(), editableText, maxLength,
+        descriptionInput::inputPos.x, descriptionInput::inputPos.y,
+        COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0, options);
+
+    if (status == 0) {
+        result = std::move(editableText);
+        return result.c_str();
+    }
+
+    return nullptr;
+}
+
+const char* showDescriptionInputDialog(const char* title, const char* currentInput, int maxLength,
+    int windowX, int windowY, const char* doneText, const char* cancelText)
+{
+    return showDescriptionInputDialog(title, currentInput, maxLength, windowX, windowY,
+        doneText, cancelText, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+}
+
+// 0x41CF20 dialog_out
+int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, ColorWithFlags titleColor, const char* secondaryButtonText, ColorWithFlags bodyColor, int flags)
+{
+    using namespace fallout::dbox;
+
     MessageList messageList;
     MessageListItem messageListItem;
-    int savedFont = fontGetCurrent();
 
     bool initializedButtons = false;
 
-    bool hasTwoButtons = false;
-    if (secondaryButtonText != nullptr) {
-        // TODO: secondaryButtonText seems to be a way to customize "NO", but is unused.
-        hasTwoButtons = true;
-    }
-
-    bool hasTitle = false;
-    if (title != nullptr) {
-        hasTitle = true;
-    }
+    bool hasTwoButtons = (secondaryButtonText != nullptr);
+    const bool hasTitle = (title != nullptr);
 
     if ((flags & DIALOG_BOX_YES_NO) != 0) {
         hasTwoButtons = true;
@@ -173,356 +688,188 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         flags &= ~DIALOG_BOX_NO_BUTTONS;
     }
 
-    int maximumLineWidth = 0;
-    if (hasTitle) {
-        maximumLineWidth = fontGetStringWidth(title);
-    }
-
-    int linesCount = 0;
+    int maximumLineWidth = hasTitle ? fontGetStringWidth(title) : 0;
     for (int index = 0; index < bodyLength; index++) {
-        // NOTE: Originally there is no `max` macro.
         maximumLineWidth = std::max(fontGetStringWidth(body[index]), maximumLineWidth);
-        linesCount++;
     }
 
+    int linesCount = bodyLength;
     int dialogType;
+
     if ((flags & DIALOG_BOX_LARGE) != 0 || hasTwoButtons) {
-        dialogType = DIALOG_TYPE_LARGE;
+        dialogType = alert::DIALOG_TYPE_LARGE;
     } else if ((flags & DIALOG_BOX_MEDIUM) != 0) {
-        dialogType = DIALOG_TYPE_MEDIUM;
+        dialogType = alert::DIALOG_TYPE_MEDIUM;
     } else {
-        if (hasTitle) {
-            linesCount++;
-        }
+        if (hasTitle) linesCount++;
 
-        dialogType = maximumLineWidth > 168 || linesCount > 5
-            ? DIALOG_TYPE_LARGE
-            : DIALOG_TYPE_MEDIUM;
+        dialogType = (maximumLineWidth > 168 || linesCount > 5) ? alert::DIALOG_TYPE_LARGE : alert::DIALOG_TYPE_MEDIUM;
     }
 
-    FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gDialogBoxBackgroundFrmIds[dialogType], 0, 0, 0);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
-        fontSetCurrent(savedFont);
-        return -1;
-    }
+    alert::DialogConfig config = alert::kDialogConfigs[dialogType];
+
+    FrmImage bg;
+    if (!bg.lock(alert::kDialogBoxBackgroundFrmIds[dialogType])) return -1;
 
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x,
-        y,
-        backgroundFrmImage.getWidth(),
-        backgroundFrmImage.getHeight(),
-        256,
-        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        fontSetCurrent(savedFont);
-        return -1;
+
+    UniqueWindow window(windowCreate(x, y, bg.getWidth(), bg.getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP));
+    if (window.get() == -1) return -1;
+
+    unsigned char* windowBuf = windowGetBuffer(window.get());
+    size_t bufferSize = static_cast<size_t>(bg.getWidth()) * bg.getHeight();
+    memcpy(windowBuf, bg.getData(), bufferSize);
+
+    alert::DialogFrms frms;
+
+    // Resources init
+    const bool hasPrimaryButton = (flags & DIALOG_BOX_NO_BUTTONS) == 0;
+    const bool hasSecondaryButton = hasTwoButtons && dialogType == alert::DIALOG_TYPE_LARGE;
+
+    if (hasPrimaryButton || hasSecondaryButton) {
+        if (!alert::loadImages(frms) || !messageListInit(&messageList)) return -1;
+
+        std::string path = std::string(gGameMsgPath) + "DBOX.MSG";
+        if (!messageListLoad(&messageList, path.c_str())) {
+            messageListFree(&messageList);
+            return -1;
+        }
     }
 
-    unsigned char* windowBuf = windowGetBuffer(win);
-    memcpy(windowBuf, backgroundFrmImage.getData(), backgroundFrmImage.getWidth() * backgroundFrmImage.getHeight());
+    const int bgWidth = bg.getWidth();
 
-    FrmImage doneBoxFrmImage;
-    FrmImage buttonNormalFrmImage;
-    FrmImage buttonPressedFrmImage;
+    // Buttons
+    {
+        ScopedFont buttonFontGuard(103);
 
-    if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209, 0, 0, 0);
-        if (!doneBoxFrmImage.lock(doneBoxFid)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
-            return -1;
+        // First button
+        if (hasPrimaryButton) {
+            const int doneBoxX = hasTwoButtons ? config.doneX : (bgWidth - frms.done.getWidth()) / 2;
+
+            blitBufferToBuffer(frms.done.getData(), frms.done.getWidth(), frms.done.getHeight(), frms.done.getWidth(),
+                windowBuf + bgWidth * config.doneY + doneBoxX, bgWidth);
+
+            messageListItem.num = ((flags & DIALOG_BOX_YES_NO) == 0) ? 100 : 101; // 100 - DONE, 101 - YES
+            if (messageListGetItem(&messageList, &messageListItem)) {
+                fontDrawText(windowBuf + bgWidth * (config.doneY + 3) + doneBoxX + 35,
+                    messageListItem.text, bgWidth, bgWidth, COLOR_DARK_YELLOW);
+            }
+
+            Point btnPos = { doneBoxX + 13, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, btnId::done, frms.buttonUp, frms.buttonDown);
+
+            initializedButtons = true;
         }
 
-        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
-        if (!buttonPressedFrmImage.lock(pressedFid)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
-            return -1;
-        }
-
-        int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
-        if (!buttonNormalFrmImage.lock(normalFid)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
-            return -1;
-        }
-
-        int v27 = hasTwoButtons
-            ? _doneX[dialogType]
-            : (backgroundFrmImage.getWidth() - doneBoxFrmImage.getWidth()) / 2;
-        blitBufferToBuffer(doneBoxFrmImage.getData(),
-            doneBoxFrmImage.getWidth(),
-            doneBoxFrmImage.getHeight(),
-            doneBoxFrmImage.getWidth(),
-            windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + v27,
-            backgroundFrmImage.getWidth());
-
-        if (!messageListInit(&messageList)) {
-            fontSetCurrent(savedFont);
-            windowDestroy(win);
-            return -1;
-        }
-
-        char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-        if (!messageListLoad(&messageList, path)) {
-            fontSetCurrent(savedFont);
-            // FIXME: Window is not removed.
-            return -1;
-        }
-
-        fontSetCurrent(103);
-
-        // 100 - DONE
-        // 101 - YES
-        messageListItem.num = (flags & DIALOG_BOX_YES_NO) == 0 ? 100 : 101;
-        if (messageListGetItem(&messageList, &messageListItem)) {
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + v27 + 35,
-                messageListItem.text,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                _colorTable[18979]);
-        }
-
-        int btn = buttonCreate(win,
-            v27 + 13,
-            _doneY[dialogType] + 4,
-            buttonPressedFrmImage.getWidth(),
-            buttonPressedFrmImage.getHeight(),
-            -1,
-            -1,
-            -1,
-            500,
-            buttonNormalFrmImage.getData(),
-            buttonPressedFrmImage.getData(),
-            nullptr,
-            BUTTON_FLAG_TRANSPARENT);
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-
-        initializedButtons = true;
-    }
-
-    if (hasTwoButtons && dialogType == DIALOG_TYPE_LARGE) {
-        if (initializedButtons) {
+        // Second button
+        if (hasSecondaryButton) {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
                 secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
             }
 
-            fontSetCurrent(103);
+            const int blitXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 24) : config.doneX;
+            const int textXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 59) : (config.doneX + 35);
+            const int buttonXOffset = hasPrimaryButton ? (config.doneX + frms.done.getWidth() + 37) : (config.doneX + 13);
 
-            blitBufferToBufferTrans(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(),
-                doneBoxFrmImage.getHeight(),
-                doneBoxFrmImage.getWidth(),
-                windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + _doneX[dialogType] + doneBoxFrmImage.getWidth() + 24,
-                backgroundFrmImage.getWidth());
+            blitBufferToBufferTrans(frms.done.getData(), frms.done.getWidth(), frms.done.getHeight(), frms.done.getWidth(),
+                windowBuf + bgWidth * config.doneY + blitXOffset, bgWidth);
 
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + doneBoxFrmImage.getWidth() + 59,
-                secondaryButtonText,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                _colorTable[18979]);
-
-            int btn = buttonCreate(win,
-                doneBoxFrmImage.getWidth() + _doneX[dialogType] + 37,
-                _doneY[dialogType] + 4,
-                buttonPressedFrmImage.getWidth(),
-                buttonPressedFrmImage.getHeight(),
-                -1,
-                -1,
-                -1,
-                501,
-                buttonNormalFrmImage.getData(),
-                buttonPressedFrmImage.getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
-        } else {
-            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209, 0, 0, 0);
-            if (!doneBoxFrmImage.lock(doneBoxFid)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
-                return -1;
+            if (secondaryButtonText != nullptr) {
+                fontDrawText(windowBuf + bgWidth * (config.doneY + 3) + textXOffset,
+                    secondaryButtonText, bgWidth, bgWidth, COLOR_DARK_YELLOW);
             }
 
-            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
-            if (!buttonPressedFrmImage.lock(pressedFid)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
-                return -1;
-            }
-
-            int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
-            if (!buttonNormalFrmImage.lock(normalFid)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
-                return -1;
-            }
-
-            if (!messageListInit(&messageList)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
-                return -1;
-            }
-
-            char path[COMPAT_MAX_PATH];
-            snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-            if (!messageListLoad(&messageList, path)) {
-                fontSetCurrent(savedFont);
-                windowDestroy(win);
-                return -1;
-            }
-
-            blitBufferToBufferTrans(doneBoxFrmImage.getData(),
-                doneBoxFrmImage.getWidth(),
-                doneBoxFrmImage.getHeight(),
-                doneBoxFrmImage.getWidth(),
-                windowBuf + backgroundFrmImage.getWidth() * _doneY[dialogType] + _doneX[dialogType],
-                backgroundFrmImage.getWidth());
-
-            fontSetCurrent(103);
-
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + 35,
-                secondaryButtonText, backgroundFrmImage.getWidth(), backgroundFrmImage.getWidth(), _colorTable[18979]);
-
-            int btn = buttonCreate(win,
-                _doneX[dialogType] + 13,
-                _doneY[dialogType] + 4,
-                buttonPressedFrmImage.getWidth(),
-                buttonPressedFrmImage.getHeight(),
-                -1,
-                -1,
-                -1,
-                501,
-                buttonNormalFrmImage.getData(),
-                buttonPressedFrmImage.getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
-            if (btn != -1) {
-                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-            }
+            Point btnPos = { buttonXOffset, config.doneY + 4 };
+            int btn = createRedButton(window.get(), btnPos, btnId::cancel, frms.buttonUp, frms.buttonDown);
 
             initializedButtons = true;
         }
     }
 
-    fontSetCurrent(101);
+    ScopedFont mainFontGuard(101);
 
-    int nextY = _ytable[dialogType];
-    int maxY = _ytable[dialogType] + _dblines[dialogType] * fontGetLineHeight();
+    int nextY = config.y;
+    int maxY = config.y + config.lines * fontGetLineHeight();
+    int maxWidth = bg.getWidth() - config.x * 2;
 
-    if ((flags & DIALOG_BOX_NO_VERTICAL_CENTERING) == 0) {
-        int numberOfLines = 0;
+    auto drawLine = [&](const char* text, int currentY, ColorWithFlags textColor) {
+        int bgWidth = bg.getWidth();
+        int xOffset = 0;
 
-        if (hasTitle) {
-            numberOfLines++;
+        if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
+            xOffset = config.x;
+        } else {
+            xOffset = (bgWidth - fontGetStringWidth(text)) / 2;
         }
 
+        fontDrawText(windowBuf + bgWidth * currentY + xOffset, text, bgWidth, bgWidth, textColor);
+    };
+
+    // Vertical center
+    if ((flags & DIALOG_BOX_NO_VERTICAL_CENTERING) == 0) {
+        int numberOfLines = hasTitle ? 1 : 0;
+
         for (int index = 0; index < bodyLength; index++) {
+            if (body[index] == nullptr) continue;
+
+            const int maxWidth = bg.getWidth() - config.x * 2;
+
             short beginnings[WORD_WRAP_MAX_COUNT];
-            short subLineCount;
-            int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
+            short subLineCount = 0;
+
             if (wordWrap(body[index], maxWidth, beginnings, &subLineCount) == 0) {
                 numberOfLines += subLineCount - 1;
             }
         }
 
-        if (numberOfLines > _dblines[dialogType]) {
-            numberOfLines = _dblines[dialogType];
+        if (numberOfLines > config.lines) {
+            numberOfLines = config.lines;
         }
 
-        nextY += (_dblines[dialogType] - numberOfLines) * fontGetLineHeight() / 2;
+        nextY += (config.lines - numberOfLines) * fontGetLineHeight() / 2;
     }
 
-    if (hasTitle) {
-        if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                title,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                titleColor);
-        } else {
-            int length = fontGetStringWidth(title);
-            fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                title,
-                backgroundFrmImage.getWidth(),
-                backgroundFrmImage.getWidth(),
-                titleColor);
-        }
+    if (hasTitle && title != nullptr) {
+        drawLine(title, nextY, titleColor);
         nextY += fontGetLineHeight();
     }
 
     for (int index = 0; index < bodyLength && nextY < maxY; index++) {
+        if (body[index] == nullptr) continue;
+
         int width = fontGetStringWidth(body[index]);
-        int maxWidth = backgroundFrmImage.getWidth() - _xtable[dialogType] * 2;
         if (width <= maxWidth) {
-            if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-                fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                    body[index],
-                    backgroundFrmImage.getWidth(),
-                    backgroundFrmImage.getWidth(),
-                    bodyColor);
-            } else {
-                int length = fontGetStringWidth(body[index]);
-                fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                    body[index],
-                    backgroundFrmImage.getWidth(),
-                    backgroundFrmImage.getWidth(),
-                    bodyColor);
-            }
+            // Line's short
+            drawLine(body[index], nextY, bodyColor);
             nextY += fontGetLineHeight();
         } else {
+            // Line's long, use word wrap
             short beginnings[WORD_WRAP_MAX_COUNT];
             short count;
             if (wordWrap(body[index], maxWidth, beginnings, &count) != 0) {
                 debugPrint("\nError: dialog_out");
             }
 
+            std::string_view fullText(body[index]);
+
             for (int beginningIndex = 1; beginningIndex < count && nextY < maxY; beginningIndex++) {
-                int subLineLength = beginnings[beginningIndex] - beginnings[beginningIndex - 1];
-                if (subLineLength >= 260) {
-                    subLineLength = 259;
-                }
+                size_t start = beginnings[beginningIndex - 1];
+                size_t length = beginnings[beginningIndex] - start;
 
-                char string[260];
-                strncpy(string, body[index] + beginnings[beginningIndex - 1], subLineLength);
-                string[subLineLength] = '\0';
+                std::string_view subLine = fullText.substr(start, length);
+                if (!subLine.empty() && subLine.back() == ' ') subLine.remove_suffix(1); // trim whitespace
 
-                // Remove trailing space as it affects width calculation.
-                if (subLineLength > 0 && string[subLineLength - 1] == ' ') {
-                    string[subLineLength - 1] = '\0';
-                    subLineLength -= 1;
-                }
-
-                if ((flags & DIALOG_BOX_NO_HORIZONTAL_CENTERING) != 0) {
-                    fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + _xtable[dialogType],
-                        string,
-                        backgroundFrmImage.getWidth(),
-                        backgroundFrmImage.getWidth(),
-                        bodyColor);
-                } else {
-                    int length = fontGetStringWidth(string);
-                    fontDrawText(windowBuf + backgroundFrmImage.getWidth() * nextY + (backgroundFrmImage.getWidth() - length) / 2,
-                        string,
-                        backgroundFrmImage.getWidth(),
-                        backgroundFrmImage.getWidth(),
-                        bodyColor);
-                }
+                // null-terminator for fontDrawText
+                std::string safeString(subLine);
+                drawLine(safeString.c_str(), nextY, bodyColor);
                 nextY += fontGetLineHeight();
             }
         }
     }
 
-    windowRefresh(win);
+    windowRefresh(window.get());
 
     int rc = -1;
     while (rc == -1) {
@@ -530,12 +877,12 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
         int keyCode = inputGetInput();
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) { // First button (Done/Yes)
             rc = 1;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 1;
-        } else if (keyCode == KEY_ESCAPE || keyCode == 501) {
+        } else if (keyCode == KEY_ESCAPE || keyCode == btnId::cancel) { // Second button (NO) or ESC
             rc = 0;
         } else {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
@@ -547,16 +894,13 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 1;
         }
 
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
-    windowDestroy(win);
-    fontSetCurrent(savedFont);
 
     if (initializedButtons) {
         messageListFree(&messageList);
@@ -565,169 +909,55 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     return rc;
 }
 
-// 0x41DE90
+namespace {
+    namespace dbox::file::load {
+        constexpr dbox::file::ModeConfig kDialogConfig {
+            {
+                // 0x510900 flgids
+                InterfaceFrameId::LoadBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 187 }, { 79, 187 }, // doneButton, doneLabel
+            { 163, 187 }, { 182, 187 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
+// 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    int oldFont = fontGetCurrent();
+    using namespace fallout::dbox;
+    ScopedFont mainFont(103);
 
-    bool isScrollable = false;
-    if (fileListLength > FILE_DIALOG_LINE_COUNT) {
-        isScrollable = true;
-    }
+    bool isScrollable = (fileListLength > file::lineCount);
 
-    int selectedFileIndex = 0;
-    int pageOffset = 0;
-    int maxPageOffset = fileListLength - (FILE_DIALOG_LINE_COUNT + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = fileListLength - 1;
-        if (maxPageOffset < 0) {
-            maxPageOffset = 0;
-        }
-    }
+    int selectedFileIndex = 0, pageOffset = 0;
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
-    FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
+    file::DialogFrms frms;
+    file::Context ctx;
 
-    for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadFileDialogFrmIds[index], 0, 0, 0);
-        if (!frmImages[index].lock(fid)) {
-            return -1;
-        }
-    }
-
-    int backgroundWidth = frmImages[FILE_DIALOG_FRM_BACKGROUND].getWidth();
-    int backgroundHeight = frmImages[FILE_DIALOG_FRM_BACKGROUND].getHeight();
-
-    // Maintain original position in original resolution, otherwise center it.
-    x += (screenGetWidth() - 640) / 2;
-    y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
+    if (!file::initInterface(ctx, frms, file::load::kDialogConfig, title, x, y)) {
         return -1;
-    }
-
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), backgroundWidth * backgroundHeight);
-
-    MessageList messageList;
-    MessageListItem messageListItem;
-
-    if (!messageListInit(&messageList)) {
-        windowDestroy(win);
-        return -1;
-    }
-
-    char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-    if (!messageListLoad(&messageList, path)) {
-        windowDestroy(win);
-        return -1;
-    }
-
-    fontSetCurrent(103);
-
-    // DONE
-    const char* done = getmsg(&messageList, &messageListItem, 100);
-    fontDrawText(windowBuffer + LOAD_FILE_DIALOG_DONE_LABEL_Y * backgroundWidth + LOAD_FILE_DIALOG_DONE_LABEL_X, done, backgroundWidth, backgroundWidth, _colorTable[18979]);
-
-    // CANCEL
-    const char* cancel = getmsg(&messageList, &messageListItem, 103);
-    fontDrawText(windowBuffer + LOAD_FILE_DIALOG_CANCEL_LABEL_Y * backgroundWidth + LOAD_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, _colorTable[18979]);
-
-    int doneBtn = buttonCreate(win,
-        LOAD_FILE_DIALOG_DONE_BUTTON_X,
-        LOAD_FILE_DIALOG_DONE_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int cancelBtn = buttonCreate(win,
-        LOAD_FILE_DIALOG_CANCEL_BUTTON_X,
-        LOAD_FILE_DIALOG_CANCEL_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        501,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (cancelBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int scrollUpBtn = buttonCreate(win,
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1,
-        505,
-        506,
-        505,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int scrollDownButton = buttonCreate(win,
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1,
-        503,
-        504,
-        503,
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    buttonCreate(
-        win,
-        FILE_DIALOG_FILE_LIST_X,
-        FILE_DIALOG_FILE_LIST_Y,
-        FILE_DIALOG_FILE_LIST_WIDTH,
-        FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1,
-        -1,
-        -1,
-        502,
-        nullptr,
-        nullptr,
-        nullptr,
-        0);
-
-    if (title != nullptr) {
-        fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, _colorTable[18979]);
     }
 
     fontSetCurrent(101);
 
-    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-    windowRefresh(win);
+    int bgWidth = frms.background.getWidth();
+
+    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
+    windowRefresh(ctx.window.get());
 
     int doubleClickSelectedFileIndex = -2;
-    int doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+    int doubleClickTimer = file::doubleClickDelay;
 
     int rc = -1;
     while (rc == -1) {
@@ -735,34 +965,34 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             if (fileListLength != 0) {
                 strncpy(dest, fileList[selectedFileIndex + pageOffset], 16);
                 rc = 0;
             } else {
                 rc = 1;
             }
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
-        } else if (keyCode == 502 && fileListLength != 0) {
+        } else if (keyCode == btnId::fileList && fileListLength != 0) {
             int mouseX;
             int mouseY;
             mouseGetPosition(&mouseX, &mouseY);
 
-            int selectedLine = (mouseY - y - FILE_DIALOG_FILE_LIST_Y) / fontGetLineHeight();
+            int selectedLine = (mouseY - y - file::list.y) / fontGetLineHeight();
             if (selectedLine - 1 < 0) {
                 selectedLine = 0;
             }
 
             if (isScrollable || selectedLine < fileListLength) {
-                if (selectedLine >= FILE_DIALOG_LINE_COUNT) {
-                    selectedLine = FILE_DIALOG_LINE_COUNT - 1;
+                if (selectedLine >= file::lineCount) {
+                    selectedLine = file::lineCount - 1;
                 }
             } else {
                 selectedLine = fileListLength - 1;
@@ -776,143 +1006,26 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
             }
 
             doubleClickSelectedFileIndex = selectedFileIndex;
-            fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-        } else if (keyCode == 506) {
-            scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_UP;
-        } else if (keyCode == 504) {
-            scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+            fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
+        } else if (keyCode == btnId::scrollUpArrow) {
+            scrollDirection = file::scrollDirection::up;
+        } else if (keyCode == btnId::scrollDownArrow) {
+            scrollDirection = file::scrollDirection::down;
         } else {
-            switch (keyCode) {
-            case KEY_ARROW_UP:
-                pageOffset--;
-                if (pageOffset < 0) {
-                    selectedFileIndex--;
-                    if (selectedFileIndex < 0) {
-                        selectedFileIndex = 0;
-                    }
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_ARROW_DOWN:
-                if (isScrollable) {
-                    pageOffset++;
-                    // FIXME: Should be >= maxPageOffset (as in save dialog).
-                    // Otherwise out of bounds index is considered selected.
-                    if (pageOffset > maxPageOffset) {
-                        selectedFileIndex++;
-                        // FIXME: Should be >= FILE_DIALOG_LINE_COUNT (as in
-                        // save dialog). Otherwise out of bounds index is
-                        // considered selected.
-                        if (selectedFileIndex > FILE_DIALOG_LINE_COUNT) {
-                            selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
-                        }
-                        pageOffset = maxPageOffset;
-                    }
-                } else {
-                    selectedFileIndex++;
-                    if (selectedFileIndex > maxPageOffset) {
-                        selectedFileIndex = maxPageOffset;
-                    }
-                }
-                fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_HOME:
-                selectedFileIndex = 0;
-                pageOffset = 0;
-                fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            case KEY_END:
-                if (isScrollable) {
-                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
-                    pageOffset = maxPageOffset;
-                } else {
-                    selectedFileIndex = maxPageOffset;
-                    pageOffset = 0;
-                }
-                fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                doubleClickSelectedFileIndex = -2;
-                break;
-            }
+            file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset,
+                isScrollable, bgWidth, doubleClickSelectedFileIndex };
+
+            file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
         }
 
-        if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
-            unsigned int scrollDelay = 4;
-            doubleClickSelectedFileIndex = -2;
-            while (1) {
-                unsigned int scrollTick = getTicks();
-                scrollCounter += 1;
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
-                    isScrolling = true;
+        file::ScrollState scrollState {
+            selectedFileIndex, pageOffset, maxPageOffset, fileListLength,
+            doubleClickSelectedFileIndex, doubleClickTimer, scrollCounter,
+            isScrolling, bgWidth, isScrollable
+        };
 
-                    if (scrollCounter > 14.4) {
-                        scrollDelay += 1;
-                        if (scrollDelay > 24) {
-                            scrollDelay = 24;
-                        }
-                    }
-
-                    if (scrollDirection == FILE_DIALOG_SCROLL_DIRECTION_UP) {
-                        pageOffset--;
-                        if (pageOffset < 0) {
-                            selectedFileIndex--;
-                            if (selectedFileIndex < 0) {
-                                selectedFileIndex = 0;
-                            }
-                            pageOffset = 0;
-                        }
-                    } else {
-                        if (isScrollable) {
-                            pageOffset++;
-                            if (pageOffset > maxPageOffset) {
-                                selectedFileIndex++;
-                                if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
-                                }
-                                pageOffset = maxPageOffset;
-                            }
-                        } else {
-                            selectedFileIndex++;
-                            if (selectedFileIndex > maxPageOffset) {
-                                selectedFileIndex = maxPageOffset;
-                            }
-                        }
-                    }
-
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    windowRefresh(win);
-                }
-
-                unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-
-                delay_ms(delay - (getTicks() - scrollTick));
-
-                if (_game_user_wants_to_quit != 0) {
-                    rc = 1;
-                    break;
-                }
-
-                int keyCode = inputGetInput();
-                if (keyCode == 505 || keyCode == 503) {
-                    break;
-                }
-
-                renderPresent();
-            }
-        } else {
-            windowRefresh(win);
-
-            doubleClickTimer--;
-            if (doubleClickTimer == 0) {
-                doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
-                doubleClickSelectedFileIndex = -2;
-            }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
-        }
+        file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc);
+        windowRefresh(ctx.window.get());
 
         if (_game_user_wants_to_quit) {
             rc = 1;
@@ -922,175 +1035,58 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         sharedFpsLimiter.throttle();
     }
 
-    windowDestroy(win);
-
-    messageListFree(&messageList);
-    fontSetCurrent(oldFont);
+    messageListFree(&ctx.messageList);
 
     return rc;
 }
 
-// 0x41EA78
+namespace {
+    namespace dbox::file::save {
+        constexpr dbox::file::ModeConfig kDialogConfig {
+            {
+                // 0x51091C flgids2
+                InterfaceFrameId::SaveBox,
+                InterfaceFrameId::LittleRedButtonUp,
+                InterfaceFrameId::LittleRedButtonDown,
+                InterfaceFrameId::CharacterEditorDownArrowOff,
+                InterfaceFrameId::CharacterEditorDownArrowOn,
+                InterfaceFrameId::CharacterEditorUpArrowOff,
+                InterfaceFrameId::CharacterEditorUpArrowOn,
+            },
+
+            { 58, 214 }, { 79, 213 }, // doneButton, doneLabel
+            { 163, 214 }, { 182, 213 } // cancelButton, cancelLabel
+        };
+    }
+} // namespace
+
+// 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
-    int oldFont = fontGetCurrent();
+    using namespace fallout::dbox;
+    ScopedFont mainFont(103);
 
-    bool isScrollable = false;
-    if (fileListLength > FILE_DIALOG_LINE_COUNT) {
-        isScrollable = true;
-    }
+    const bool isScrollable = (fileListLength > file::lineCount);
 
-    int selectedFileIndex = 0;
-    int pageOffset = 0;
-    int maxPageOffset = fileListLength - (FILE_DIALOG_LINE_COUNT + 1);
-    if (maxPageOffset < 0) {
-        maxPageOffset = fileListLength - 1;
-        if (maxPageOffset < 0) {
-            maxPageOffset = 0;
-        }
-    }
+    int selectedFileIndex = 0, pageOffset = 0;
+    const int maxPageOffset = (fileListLength - (file::lineCount + 1) < 0)
+        ? std::max(0, fileListLength - 1)
+        : fileListLength - (file::lineCount + 1);
 
-    FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
+    file::DialogFrms frms;
+    file::Context ctx;
 
-    for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gSaveFileDialogFrmIds[index], 0, 0, 0);
-        if (!frmImages[index].lock(fid)) {
-            return -1;
-        }
-    }
-
-    int backgroundWidth = frmImages[FILE_DIALOG_FRM_BACKGROUND].getWidth();
-    int backgroundHeight = frmImages[FILE_DIALOG_FRM_BACKGROUND].getHeight();
-
-    // Maintain original position in original resolution, otherwise center it.
-    x += (screenGetWidth() - 640) / 2;
-    y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
+    if (!file::initInterface(ctx, frms, file::save::kDialogConfig, title, x, y)) {
         return -1;
     }
 
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), backgroundWidth * backgroundHeight);
-
-    MessageList messageList;
-    MessageListItem messageListItem;
-
-    if (!messageListInit(&messageList)) {
-        windowDestroy(win);
-        return -1;
-    }
-
-    char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "DBOX.MSG");
-
-    if (!messageListLoad(&messageList, path)) {
-        windowDestroy(win);
-        return -1;
-    }
-
-    fontSetCurrent(103);
-
-    // DONE
-    const char* done = getmsg(&messageList, &messageListItem, 100);
-    fontDrawText(windowBuffer + backgroundWidth * SAVE_FILE_DIALOG_DONE_LABEL_Y + SAVE_FILE_DIALOG_DONE_LABEL_X, done, backgroundWidth, backgroundWidth, _colorTable[18979]);
-
-    // CANCEL
-    const char* cancel = getmsg(&messageList, &messageListItem, 103);
-    fontDrawText(windowBuffer + backgroundWidth * SAVE_FILE_DIALOG_CANCEL_LABEL_Y + SAVE_FILE_DIALOG_CANCEL_LABEL_X, cancel, backgroundWidth, backgroundWidth, _colorTable[18979]);
-
-    int doneBtn = buttonCreate(win,
-        SAVE_FILE_DIALOG_DONE_BUTTON_X,
-        SAVE_FILE_DIALOG_DONE_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        500,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (doneBtn != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int cancelBtn = buttonCreate(win,
-        SAVE_FILE_DIALOG_CANCEL_BUTTON_X,
-        SAVE_FILE_DIALOG_CANCEL_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        501,
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_LITTLE_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (cancelBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int scrollUpBtn = buttonCreate(win,
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        -1,
-        505,
-        506,
-        505,
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    int scrollDownButton = buttonCreate(win,
-        FILE_DIALOG_SCROLL_BUTTON_X,
-        FILE_DIALOG_SCROLL_BUTTON_Y + frmImages[FILE_DIALOG_FRM_SCROLL_UP_ARROW_PRESSED].getHeight(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getWidth(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getHeight(),
-        -1,
-        503,
-        504,
-        503,
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_NORMAL].getData(),
-        frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    buttonCreate(
-        win,
-        FILE_DIALOG_FILE_LIST_X,
-        FILE_DIALOG_FILE_LIST_Y,
-        FILE_DIALOG_FILE_LIST_WIDTH,
-        FILE_DIALOG_FILE_LIST_HEIGHT,
-        -1,
-        -1,
-        -1,
-        502,
-        nullptr,
-        nullptr,
-        nullptr,
-        0);
-
-    if (title != nullptr) {
-        fontDrawText(windowBuffer + backgroundWidth * FILE_DIALOG_TITLE_Y + FILE_DIALOG_TITLE_X, title, backgroundWidth, backgroundWidth, _colorTable[18979]);
-    }
+    int bgWidth = frms.background.getWidth();
 
     fontSetCurrent(101);
 
     int cursorHeight = fontGetLineHeight();
     int cursorWidth = fontGetStringWidth("_") - 4;
-    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
+    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
 
     int fileNameLength = 0;
     char* pch = dest;
@@ -1099,6 +1095,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         if (fileNameLength >= 12) {
             break;
         }
+
+        pch++;
     }
     dest[fileNameLength] = '\0';
 
@@ -1109,20 +1107,20 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     fileNameCopy[fileNameCopyLength + 1] = '\0';
     fileNameCopy[fileNameCopyLength] = ' ';
 
-    unsigned char* fileNameBufferPtr = windowBuffer + backgroundWidth * 190 + 57;
+    unsigned char* fileNameBufferPtr = ctx.windowBuffer + bgWidth * 190 + 57;
 
-    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
-    fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, _colorTable[992]);
+    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
+    fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
 
-    windowRefresh(win);
+    windowRefresh(ctx.window.get());
 
     beginTextInput();
 
-    int blinkingCounter = 3;
+    unsigned int lastBlinkTime = getTicks();
     bool blink = false;
 
     int doubleClickSelectedFileIndex = -2;
-    int doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
+    int doubleClickTimer = file::doubleClickDelay;
 
     int rc = -1;
     while (rc == -1) {
@@ -1130,40 +1128,40 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
-        int scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_NONE;
+        int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == 500) {
+        if (keyCode == btnId::done) {
             rc = 0;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 0;
-        } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
+        } else if (keyCode == btnId::cancel || keyCode == KEY_ESCAPE) {
             rc = 1;
         } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && fileNameCopyLength > 0) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
             fileNameCopy[fileNameCopyLength - 1] = ' ';
             fileNameCopy[fileNameCopyLength] = '\0';
-            fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, _colorTable[992]);
+            fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
             fileNameCopyLength--;
-            windowRefresh(win);
+            windowRefresh(ctx.window.get());
         } else if (keyCode < KEY_FIRST_INPUT_CHARACTER || keyCode > KEY_LAST_INPUT_CHARACTER || fileNameCopyLength >= 8) {
-            if (keyCode == 502 && fileListLength != 0) {
+            if (keyCode == btnId::fileList && fileListLength != 0) {
                 int mouseX;
                 int mouseY;
                 mouseGetPosition(&mouseX, &mouseY);
 
-                int selectedLine = (mouseY - y - FILE_DIALOG_FILE_LIST_Y) / fontGetLineHeight();
+                int selectedLine = (mouseY - y - file::list.y) / fontGetLineHeight();
                 if (selectedLine - 1 < 0) {
                     selectedLine = 0;
                 }
 
                 if (isScrollable || selectedLine < fileListLength) {
-                    if (selectedLine >= FILE_DIALOG_LINE_COUNT) {
-                        selectedLine = FILE_DIALOG_LINE_COUNT - 1;
+                    if (selectedLine >= file::lineCount) {
+                        selectedLine = file::lineCount - 1;
                     }
                 } else {
                     selectedLine = fileListLength - 1;
@@ -1185,7 +1183,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     rc = 2;
                 } else {
                     doubleClickSelectedFileIndex = selectedFileIndex;
-                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
                     strncpy(fileNameCopy, fileList[selectedFileIndex + pageOffset], 16);
 
                     int index;
@@ -1200,179 +1198,54 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     fileNameCopy[fileNameCopyLength] = ' ';
                     fileNameCopy[fileNameCopyLength + 1] = '\0';
 
-                    fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, _colorTable[992]);
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
+                    fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
+                    fileDialogRenderFileList(ctx.windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, bgWidth);
+
+                    windowRefresh(ctx.window.get());
                 }
-            } else if (keyCode == 506) {
-                scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_UP;
-            } else if (keyCode == 504) {
-                scrollDirection = FILE_DIALOG_SCROLL_DIRECTION_DOWN;
+            } else if (keyCode == btnId::scrollUpArrow) {
+                scrollDirection = file::scrollDirection::up;
+            } else if (keyCode == btnId::scrollDownArrow) {
+                scrollDirection = file::scrollDirection::down;
             } else {
-                switch (keyCode) {
-                case KEY_ARROW_UP:
-                    pageOffset--;
-                    if (pageOffset < 0) {
-                        selectedFileIndex--;
-                        if (selectedFileIndex < 0) {
-                            selectedFileIndex = 0;
-                        }
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_ARROW_DOWN:
-                    if (isScrollable) {
-                        pageOffset++;
-                        if (pageOffset >= maxPageOffset) {
-                            selectedFileIndex++;
-                            if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
-                            }
-                            pageOffset = maxPageOffset;
-                        }
-                    } else {
-                        selectedFileIndex++;
-                        if (selectedFileIndex > maxPageOffset) {
-                            selectedFileIndex = maxPageOffset;
-                        }
-                    }
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_HOME:
-                    selectedFileIndex = 0;
-                    pageOffset = 0;
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                case KEY_END:
-                    if (isScrollable) {
-                        selectedFileIndex = 11;
-                        pageOffset = maxPageOffset;
-                    } else {
-                        selectedFileIndex = maxPageOffset;
-                        pageOffset = 0;
-                    }
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    doubleClickSelectedFileIndex = -2;
-                    break;
-                }
+                file::NavigationState nav { selectedFileIndex, pageOffset, maxPageOffset, isScrollable,
+                    bgWidth, doubleClickSelectedFileIndex };
+                file::handleKeyboardNavigation(keyCode, nav, ctx.windowBuffer, fileList, fileListLength);
+
+                windowRefresh(ctx.window.get());
             }
         } else if (_isdoschar(keyCode)) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, bgWidth, Color(100));
 
             fileNameCopy[fileNameCopyLength] = keyCode & 0xFF;
             fileNameCopy[fileNameCopyLength + 1] = ' ';
             fileNameCopy[fileNameCopyLength + 2] = '\0';
-            fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, _colorTable[992]);
+            fontDrawText(fileNameBufferPtr, fileNameCopy, bgWidth, bgWidth, COLOR_GREEN);
             fileNameCopyLength++;
 
-            windowRefresh(win);
+            windowRefresh(ctx.window.get());
         }
 
-        if (scrollDirection != FILE_DIALOG_SCROLL_DIRECTION_NONE) {
-            unsigned int scrollDelay = 4;
-            doubleClickSelectedFileIndex = -2;
-            while (1) {
-                unsigned int scrollTick = getTicks();
-                scrollCounter += 1;
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
-                    isScrolling = true;
+        file::ScrollState scrollState {
+            selectedFileIndex, pageOffset, maxPageOffset, fileListLength,
+            doubleClickSelectedFileIndex, doubleClickTimer, scrollCounter,
+            isScrolling, bgWidth, isScrollable
+        };
 
-                    if (scrollCounter > 14.4) {
-                        scrollDelay += 1;
-                        if (scrollDelay > 24) {
-                            scrollDelay = 24;
-                        }
-                    }
-
-                    if (scrollDirection == FILE_DIALOG_SCROLL_DIRECTION_UP) {
-                        pageOffset--;
-                        if (pageOffset < 0) {
-                            selectedFileIndex--;
-                            if (selectedFileIndex < 0) {
-                                selectedFileIndex = 0;
-                            }
-                            pageOffset = 0;
-                        }
-                    } else {
-                        if (isScrollable) {
-                            pageOffset++;
-                            if (pageOffset > maxPageOffset) {
-                                selectedFileIndex++;
-                                if (selectedFileIndex >= FILE_DIALOG_LINE_COUNT) {
-                                    selectedFileIndex = FILE_DIALOG_LINE_COUNT - 1;
-                                }
-                                pageOffset = maxPageOffset;
-                            }
-                        } else {
-                            selectedFileIndex++;
-                            if (selectedFileIndex > maxPageOffset) {
-                                selectedFileIndex = maxPageOffset;
-                            }
-                        }
-                    }
-
-                    fileDialogRenderFileList(windowBuffer, fileList, pageOffset, fileListLength, selectedFileIndex, backgroundWidth);
-                    windowRefresh(win);
-                }
-
-                // NOTE: Original code is slightly different. For unknown reason
-                // entire blinking stuff is placed into two different branches,
-                // which only differs by amount of delay. Probably result of
-                // using large blinking macro as there are no traces of inlined
-                // function.
-                blinkingCounter -= 1;
-                if (blinkingCounter == 0) {
-                    blinkingCounter = 3;
-
-                    int color = blink ? 100 : _colorTable[992];
-                    blink = !blink;
-
-                    bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
-                }
-
-                // FIXME: Missing windowRefresh makes blinking useless.
-
-                unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-                delay_ms(delay - (getTicks() - scrollTick));
-
-                if (_game_user_wants_to_quit != 0) {
-                    rc = 1;
-                    break;
-                }
-
-                int key = inputGetInput();
-                if (key == 505 || key == 503) {
-                    break;
-                }
-
-                renderPresent();
-            }
-        } else {
-            blinkingCounter -= 1;
-            if (blinkingCounter == 0) {
-                blinkingCounter = 3;
-
-                int color = blink ? 100 : _colorTable[992];
+        auto handleCursorBlink = [&]() {
+            unsigned int now = getTicks();
+            if (now - lastBlinkTime >= dbox::blinkIntervalMs) {
+                lastBlinkTime = now;
+                Color color = blink ? Color(100) : COLOR_GREEN;
                 blink = !blink;
-
-                bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
+                bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, bgWidth, color);
+                windowRefresh(ctx.window.get());
             }
+        };
 
-            windowRefresh(win);
+        file::handleScrolling(ctx.window.get(), ctx.windowBuffer, fileList, scrollDirection, scrollState, tick, rc, handleCursorBlink);
 
-            doubleClickTimer--;
-            if (doubleClickTimer == 0) {
-                doubleClickTimer = FILE_DIALOG_DOUBLE_CLICK_DELAY;
-                doubleClickSelectedFileIndex = -2;
-            }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
-        }
-
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 1;
         }
 
@@ -1395,27 +1268,27 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         }
     }
 
-    windowDestroy(win);
-    messageListFree(&messageList);
-    fontSetCurrent(oldFont);
+    messageListFree(&ctx.messageList);
 
     return rc;
 }
 
-// 0x41FBDC
+// 0x41FBDC PrntFlist
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch)
 {
+    using namespace fallout::dbox;
+
     int lineHeight = fontGetLineHeight();
-    int y = FILE_DIALOG_FILE_LIST_Y;
-    bufferFill(buffer + y * pitch + FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT, pitch, 100);
+    int y = file::list.y;
+    bufferFill(buffer + y * pitch + file::list.x, file::list.width, file::list.height, pitch, static_cast<Color>(100));
     if (fileListLength != 0) {
-        if (fileListLength - pageOffset > FILE_DIALOG_LINE_COUNT) {
-            fileListLength = FILE_DIALOG_LINE_COUNT;
+        if (fileListLength - pageOffset > file::lineCount) {
+            fileListLength = file::lineCount;
         }
 
         for (int index = 0; index < fileListLength; index++) {
-            int color = index == selectedIndex ? _colorTable[32747] : _colorTable[992];
-            fontDrawText(buffer + pitch * y + FILE_DIALOG_FILE_LIST_X, fileList[pageOffset + index], FILE_DIALOG_FILE_LIST_WIDTH, pitch, color);
+            Color color = index == selectedIndex ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+            fontDrawText(buffer + pitch * y + file::list.x, fileList[pageOffset + index], file::list.width, pitch, color);
             y += lineHeight;
         }
     }

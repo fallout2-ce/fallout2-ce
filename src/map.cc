@@ -12,6 +12,7 @@
 #include "character_editor.h"
 #include "color.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "debug.h"
@@ -26,19 +27,19 @@
 #include "item.h"
 #include "light.h"
 #include "loadsave.h"
+#include "map_defs.h"
+#include "map_edge.h"
 #include "memory.h"
 #include "object.h"
-#include "palette.h"
 #include "party_member.h"
-#include "pipboy.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
-#include "sfall_config.h"
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
@@ -49,12 +50,13 @@
 
 namespace fallout {
 
-static char* mapBuildPath(char* name);
+const char* mapBuildPath(const char* name);
 static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
-static int _map_save();
 static int _map_save_file(File* stream);
+int _map_save(bool isInGame);
+static int replaceDeadCritter(Object* critter);
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -68,100 +70,110 @@ static int mapLocalVariablesLoad(File* stream);
 static void _map_place_dude_and_mouse();
 static void square_init();
 static void _square_reset();
-static int _square_load(File* stream, int flags);
+static int _square_load(File* stream, MapHeaderFlags flags);
 static int mapHeaderWrite(MapHeader* ptr, File* stream);
 static int mapHeaderRead(MapHeader* ptr, File* stream);
+static void mapLoadTimerStart();
+static void mapLoadTimerFinish(const char* fileName, int rc);
+
+// Also covers the synchronous explosion pre-pass, as in sfall's OnMapLeave.
+static bool exitScriptsRunning = false;
+static bool restoreSneakOnMapEnter = false;
 
 // 0x50B058
 static char byte_50B058[] = "";
 
-// 0x50B30C
+// 0x50B30C aErrorF2
 static char _aErrorF2[] = "ERROR! F2";
 
-// 0x519540
+// 0x519540 map_scroll_refresh
 static IsoWindowRefreshProc* _map_scroll_refresh = isoWindowRefreshRectGame;
 
-// 0x519544
-static const int _map_data_elev_flags[ELEVATION_COUNT] = {
-    2,
-    4,
-    8,
+// 0x519544 map_data_elev_flags
+static const MapHeaderFlags _map_data_elev_flags[ELEVATION_COUNT] = {
+    MAP_HEADER_ELEVATION_0,
+    MAP_HEADER_ELEVATION_1,
+    MAP_HEADER_ELEVATION_2,
 };
 
-// 0x519550
+// 0x519550 map_last_scroll_time
 static unsigned int gIsoWindowScrollTimestamp = 0;
 
-// 0x519554
+// 0x519554 map_bk_enabled
 static bool gIsoEnabled = false;
 
-// 0x519558
-static int gEnteringElevation = 0;
+// 0x519558 mapEntranceElevation
+static MapElevation gEnteringElevation = ELEVATION_FIRST;
 
-// 0x51955C
+// 0x51955C mapEntranceTileNum
 static int gEnteringTile = -1;
 
-// 0x519560
-static int gEnteringRotation = ROTATION_NE;
+// 0x519560 mapEntranceRotation
+static Rotation gEnteringRotation = ROTATION_NE;
 
-// 0x519564
+// 0x519564 map_script_id
 int gMapSid = -1;
 
 // local_vars
-// 0x519568
+// 0x519568 map_local_vars
 int* gMapLocalVars = nullptr;
 
 // map_vars
-// 0x51956C
+// 0x51956C map_global_vars
 int* gMapGlobalVars = nullptr;
 
 // local_vars_num
-// 0x519570
+// 0x519570 num_map_local_vars
 int gMapLocalVarsLength = 0;
 
 // map_vars_num
-// 0x519574
+// 0x519574 num_map_global_vars
 int gMapGlobalVarsLength = 0;
 
 // Current elevation.
 //
-// 0x519578
-int gElevation = 0;
+// 0x519578 map_elevation
+MapElevation gElevation = ELEVATION_FIRST;
 
-// 0x51957C
+// 0x51957C errMapName
 static char* _errMapName = byte_50B058;
 
-// 0x519584
-static int _wmMapIdx = -1;
+// 0x519584 wmMapIdx
+static Map _wmMapIdx = MAP_INVALID;
 
-// 0x614868
+// 0x614868 square_data
 static TileData _square_data[ELEVATION_COUNT];
 
-// 0x631D28
+// 0x631D28 map_state
 static MapTransition gMapTransition;
+static bool disableSpecialMapIds;
 
-// 0x631D38
+// 0x631D38 map_display_rect
 static Rect gIsoWindowRect;
 
 // map.msg
 //
 // map_msg_file
-// 0x631D48
+// 0x631D48 map_msg_file
 MessageList gMapMessageList;
 
-// 0x631D50
+// 0x631D50 display_buf
 static unsigned char* gIsoWindowBuffer;
 
-// 0x631D54
+// 0x631D54 map_data
 MapHeader gMapHeader;
 
-// 0x631E40
+// 0x631E40 square
 TileData* _square[ELEVATION_COUNT];
 
-// 0x631E4C
+// 0x631E4C display_win
 int gIsoWindow;
 
-// 0x631E50
+// 0x631E50 scratchStr
 static char _scratchStr[40];
+
+static int mapLoadTimerDepth = 0;
+static unsigned int mapLoadStartTime = 0;
 
 // CE: Basically the same problem described in |gMapLocalPointers|, but this
 // time Olympus folks use global map variables to store objects (looks like
@@ -184,7 +196,7 @@ int isoInit()
     // NOTE: Uninline.
     square_init();
 
-    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), 256, 10);
+    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
     if (gIsoWindow == -1) {
         debugPrint("win_add failed in iso_init\n");
         return -1;
@@ -225,8 +237,12 @@ int isoInit()
     colorCycleInit();
     debugPrint(">cycle_init\t\t");
 
-    tileScrollBlockingEnable();
-    tileScrollLimitingEnable();
+    if (!settings.ui.ignore_map_edges) {
+        tileScrollBlockingEnable();
+    }
+    if (!settings.ui.ignore_scroll_limit) {
+        tileScrollLimitingEnable();
+    }
 
     if (interfaceInit() != 0) {
         debugPrint("intface_init failed in iso_init\n");
@@ -241,7 +257,7 @@ int isoInit()
     mapMakeMapsDirectory();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 
     return 0;
 }
@@ -249,6 +265,9 @@ int isoInit()
 // 0x481ED4
 void isoReset()
 {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
     // NOTE: Uninline.
     mapGlobalVariablesFree();
 
@@ -262,7 +281,7 @@ void isoReset()
     interfaceReset();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 }
 
 // 0x481F48
@@ -286,13 +305,18 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
-    if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
+    exitScriptsRunning = false;
+    restoreSneakOnMapEnter = false;
+
+    configGetBool(&gContentConfig, CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", &disableSpecialMapIds, false);
+
+    if (settings.system.executableIsMapper()) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
 
     if (messageListInit(&gMapMessageList)) {
         char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%smap.msg", asc_5186C8);
+        snprintf(path, sizeof(path), "%smap.msg", gGameMsgPath);
 
         if (!messageListLoad(&gMapMessageList, path)) {
             debugPrint("\nError loading map_msg_file!");
@@ -309,7 +333,7 @@ void mapInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MAP, &gMapMessageList);
 }
 
-// 0x482084
+// 0x482084 map_enable_bk_processes
 void mapExit()
 {
     windowHide(gIsoWindow);
@@ -337,7 +361,7 @@ void isoEnable()
     }
 }
 
-// 0x482104
+// 0x482104 map_disable_bk_processes
 bool isoDisable()
 {
     if (!gIsoEnabled) {
@@ -355,15 +379,14 @@ bool isoDisable()
     return true;
 }
 
-// 0x482148
+// 0x482148 map_bk_processes_are_disabled
 bool isoIsDisabled()
 {
     return gIsoEnabled == false;
 }
 
-// map_set_elevation
-// 0x482158
-int mapSetElevation(int elevation)
+// 0x482158 map_set_elevation
+int mapSetElevation(MapElevation elevation)
 {
     if (!elevationIsValid(elevation)) {
         return -1;
@@ -383,7 +406,7 @@ int mapSetElevation(int elevation)
     gElevation = elevation;
 
     reg_anim_clear(gDude);
-    _dude_stand(gDude, gDude->rotation, gDude->fid);
+    _dude_stand(gDude, gDude->rotation, FrmId(gDude));
     _partyMemberSyncPosition();
 
     if (gMapSid != -1) {
@@ -486,6 +509,8 @@ int mapAllocLocalVars(const int numNewVars)
     int* vars = (int*)internal_realloc(gMapLocalVars, sizeof(*vars) * gMapLocalVarsLength);
     if (vars == nullptr) {
         debugPrint("\nError: Ran out of memory!");
+        gMapLocalVarsLength = oldMapLocalVarsLength;
+        return -1;
     }
 
     gMapLocalVars = vars;
@@ -497,7 +522,7 @@ int mapAllocLocalVars(const int numNewVars)
 }
 
 // 0x48234C
-void mapSetStart(int tile, int elevation, int rotation)
+void mapSetStart(int tile, MapElevation elevation, Rotation rotation)
 {
     gMapHeader.enteringTile = tile;
     gMapHeader.enteringElevation = elevation;
@@ -505,9 +530,9 @@ void mapSetStart(int tile, int elevation, int rotation)
 }
 
 // 0x4824CC
-char* mapGetName(int map, int elevation)
+char* mapGetName(Map map, MapElevation elevation)
 {
-    if (map < 0 || map >= wmMapMaxCount()) {
+    if (!mapIsValid(map)) {
         return nullptr;
     }
 
@@ -522,13 +547,13 @@ char* mapGetName(int map, int elevation)
 // TODO: Check, probably returns true if map1 and map2 represents the same city.
 //
 // 0x482528
-bool mapAreSameArea(int map1, int map2)
+bool mapAreSameArea(Map map1, Map map2)
 {
-    if (map1 < 0 || map1 >= wmMapMaxCount()) {
+    if (!mapIsValid(map1)) {
         return false;
     }
 
-    if (map2 < 0 || map2 >= wmMapMaxCount()) {
+    if (!mapIsValid(map2)) {
         return false;
     }
 
@@ -540,12 +565,12 @@ bool mapAreSameArea(int map1, int map2)
         return false;
     }
 
-    int city1;
+    City city1;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
         return false;
     }
 
-    int city2;
+    City city2;
     if (wmMatchAreaContainingMapIdx(map2, &city2) == -1) {
         return false;
     }
@@ -555,14 +580,14 @@ bool mapAreSameArea(int map1, int map2)
 
 // TODO: probably can be replaced with mapAreSameArea
 // 0x4825CC
-int _get_map_idx_same(int map1, int map2)
+int _get_map_idx_same(Map map1, Map map2)
 {
-    int city1 = -1;
+    City city1 = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
         return -1;
     }
 
-    int city2 = -2;
+    City city2 = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(map2, &city2) == -1) {
         return -1;
     }
@@ -575,9 +600,9 @@ int _get_map_idx_same(int map1, int map2)
 }
 
 // 0x48261C
-char* mapGetCityName(int map)
+char* mapGetCityName(Map map)
 {
-    int city;
+    City city;
     if (wmMatchAreaContainingMapIdx(map, &city) == -1) {
         return _aErrorF2;
     }
@@ -588,9 +613,9 @@ char* mapGetCityName(int map)
 }
 
 // 0x48268C
-char* mapDescriptionById(int map)
+char* mapDescriptionById(Map map)
 {
-    int city;
+    City city;
     if (wmMatchAreaContainingMapIdx(map, &city) == 0) {
         wmGetAreaIdxName(city, _scratchStr);
     } else {
@@ -601,7 +626,7 @@ char* mapDescriptionById(int map)
 }
 
 // 0x4826B8
-int mapGetCurrentMap()
+Map mapGetCurrentMap()
 {
     return gMapHeader.index;
 }
@@ -609,11 +634,12 @@ int mapGetCurrentMap()
 // 0x4826C0
 int mapScroll(int dx, int dy)
 {
-    if (getTicksSince(gIsoWindowScrollTimestamp) < 33) {
+    unsigned int now = getRealTicks();
+    if (getTicksBetween(now, gIsoWindowScrollTimestamp) < 33) {
         return -2;
     }
 
-    gIsoWindowScrollTimestamp = getTicks();
+    gIsoWindowScrollTimestamp = now;
 
     int screenDx = dx * 32;
     int screenDy = dy * 24;
@@ -709,7 +735,7 @@ int mapScroll(int dx, int dy)
 }
 
 // 0x482900
-static char* mapBuildPath(char* name)
+const char* mapBuildPath(const char* name)
 {
     // 0x631E78
     static char map_path[COMPAT_MAX_PATH];
@@ -722,23 +748,55 @@ static char* mapBuildPath(char* name)
     return name;
 }
 
+const char* mapBuildDataSavePath(const char* relativePath)
+{
+    static char path[COMPAT_MAX_PATH];
+
+    // Save root: the validated mapper dev_path when set (mapper only), otherwise the master patches path.
+    const std::string& devPath = settings.mapper.dev_path;
+    const char* root = (settings.system.executableIsMapper() && !devPath.empty()) ? devPath.c_str() : settings.system.master_patches_path.c_str();
+    // Join root + relativePath, tolerating a trailing separator on the root.
+    size_t rootLen = strlen(root);
+    bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
+    snprintf(path, sizeof(path), "%s%s%s", root, rootHasSeparator ? "" : "\\", relativePath);
+
+    // Ensure the directory portion exists.
+    char dir[COMPAT_MAX_PATH];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char* separator = strrchr(dir, '\\');
+    if (separator != nullptr) {
+        *separator = '\0';
+        compat_mkdir_recursive(dir);
+    }
+
+    return path;
+}
+
+const char* mapBuildSavePath(const char* name)
+{
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", name);
+    return mapBuildDataSavePath(relativePath);
+}
+
 // 0x482924
-int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
+int mapSetEnteringLocation(MapElevation elevation, int tile_num, Rotation rotation)
 {
     gEnteringElevation = elevation;
     gEnteringTile = tile_num;
-    gEnteringRotation = orientation;
+    gEnteringRotation = rotation;
     return 0;
 }
 
 // 0x482938
 void mapNewMap()
 {
-    mapSetElevation(0);
+    mapEdgeFree();
+    mapSetElevation(ELEVATION_FIRST);
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
-    gMapHeader.enteringElevation = 0;
-    gMapHeader.enteringRotation = 0;
+    gMapHeader.enteringElevation = ELEVATION_FIRST;
+    gMapHeader.enteringRotation = ROTATION_NE;
     gMapHeader.localVariablesCount = 0;
     gMapHeader.version = 20;
     gMapHeader.name[0] = '\0';
@@ -757,29 +815,33 @@ void mapNewMap()
     tileWindowRefresh();
 }
 
-// 0x482A68
+// 0x482A68 map_load
 int mapLoadByName(char* fileName)
 {
+    mapLoadTimerStart();
+
     int rc;
 
     compat_strupr(fileName);
 
     rc = -1;
 
-    char* extension = strstr(fileName, ".MAP");
-    if (extension != nullptr) {
-        strcpy(extension, ".SAV");
+    if (!settings.system.executableIsMapper()) {
+        char* extension = strstr(fileName, ".MAP");
+        if (extension != nullptr) {
+            strcpy(extension, ".SAV");
 
-        const char* filePath = mapBuildPath(fileName);
+            const char* filePath = mapBuildPath(fileName);
 
-        File* stream = fileOpen(filePath, "rb");
+            File* stream = fileOpen(filePath, "rb");
 
-        strcpy(extension, ".MAP");
+            strcpy(extension, ".MAP");
 
-        if (stream != nullptr) {
-            fileClose(stream);
-            rc = mapLoadSaved(fileName);
-            wmMapMusicStart();
+            if (stream != nullptr) {
+                fileClose(stream);
+                rc = mapLoadSaved(fileName);
+                wmMapMusicStart();
+            }
         }
     }
 
@@ -797,11 +859,38 @@ int mapLoadByName(char* fileName)
         }
     }
 
+    mapLoadTimerFinish(fileName, rc);
+
     return rc;
 }
 
+static void mapLoadTimerStart()
+{
+    if (mapLoadTimerDepth == 0) {
+        mapLoadStartTime = compat_timeGetTime();
+    }
+
+    mapLoadTimerDepth++;
+}
+
+static void mapLoadTimerFinish(const char* fileName, int rc)
+{
+    assert(mapLoadTimerDepth > 0);
+
+    mapLoadTimerDepth--;
+    if (mapLoadTimerDepth != 0) {
+        return;
+    }
+
+    unsigned int elapsed = getTicksBetween(compat_timeGetTime(), mapLoadStartTime);
+    debugPrint("\nMAP LOAD: %s rc=%d total=%ums",
+        fileName != nullptr ? fileName : "<null>",
+        rc,
+        elapsed);
+}
+
 // 0x482B34
-int mapLoadById(int map)
+int mapLoadById(Map map)
 {
     scriptSetFixedParam(gMapSid, map);
 
@@ -819,21 +908,29 @@ int mapLoadById(int map)
     return rc;
 }
 
-// 0x482B74
+// 0x482B74 map_load_file
 static int mapLoad(File* stream)
 {
-    _map_save_in_game(true);
-    int gaplessMusic = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
-    if (backgoundSoundIsPlaying() && !gaplessMusic) {
-        // playing the loading sound might interrupt continuous music playback
-        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP);
+    int mapLoadSoundId = 0;
+    if (!settings.system.executableIsMapper()) {
+        _map_save_in_game(true);
+        if (backgoundSoundIsPlaying()) {
+            // Use the sfall sound path so the map-loading ambience does not depend
+            // on the native background music loader.
+            const char* mapLoadingSound = gameSoundGetMusicOverride("map_loading_sound", "wind2");
+            char mapLoadingSoundPath[COMPAT_MAX_PATH];
+            snprintf(mapLoadingSoundPath, sizeof(mapLoadingSoundPath), "sound\\music\\%s.ACM", mapLoadingSound);
+            mapLoadSoundId = scriptSoundPlay(mapLoadingSoundPath, SCRIPT_SOUND_MODE_LOOP);
+        }
     }
     isoDisable();
     _partyMemberPrepLoad();
     _gmouse_disable_scrolling();
 
-    int savedMouseCursorId = gameMouseGetCursor();
+    MouseCursorType savedMouseCursorId = gameMouseGetCursor();
+    if (savedMouseCursorId >= MOUSE_CURSOR_SCROLL_NW && savedMouseCursorId <= MOUSE_CURSOR_SCROLL_W_INVALID) {
+        savedMouseCursorId = MOUSE_CURSOR_ARROW; // reset if it was in view scrolling mode
+    }
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_PLANET);
     fileSetReadProgressHandler(gameMouseRefreshImmediately, 32768);
     tileDisable();
@@ -845,7 +942,7 @@ static int mapLoad(File* stream)
         0,
         windowGetWidth(gIsoWindow),
         windowGetHeight(gIsoWindow),
-        _colorTable[0]);
+        COLOR_BLACK);
     windowRefresh(gIsoWindow);
     animationStop();
     scriptsDisable();
@@ -922,7 +1019,8 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if ((gMapHeader.flags & 1) == 0) {
+    if (!_isLoadingGame()) {
+        // Fix whoHitMe union.  When loading a saved game, combatLoad is responsible for this fix
         _map_fix_critter_combat_data();
     }
 
@@ -931,17 +1029,21 @@ static int mapLoad(File* stream)
         goto err;
     }
 
+    if (settings.system.executableIsMapper() || settings.ui.edg_support) {
+        mapEdgeLoad(gMapHeader.name);
+    }
+
     error = "Error setting tile center";
-    if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS | TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) != 0) {
+    if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
         goto err;
     }
 
     lightSetAmbientIntensity(LIGHT_INTENSITY_MAX, false);
-    objectSetLocation(gDude, gCenterTile, gElevation, nullptr);
+    objectSetLocation(gDude, gEnteringTile, gElevation, nullptr);
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
 
-    if ((gMapHeader.flags & 1) == 0) {
+    if ((gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE) {
         char path[COMPAT_MAX_PATH];
         snprintf(path, sizeof(path), "maps\\%s", gMapHeader.name);
 
@@ -972,17 +1074,16 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0, 0);
-        objectCreateWithFidPid(&object, fid, -1);
+        objectCreateWithFrmIdProtoId(&object, MiscFrameId::ScrollBlocker, ProtoId::Empty());
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
-        objectSetLocation(object, 1, 0, nullptr);
+        objectSetLocation(object, 1, ELEVATION_FIRST, nullptr);
         object->sid = gMapSid;
-        scriptSetFixedParam(gMapSid, (gMapHeader.flags & 1) == 0);
+        scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
 
         Script* script;
         scriptGetScript(gMapSid, &script);
         script->index = gMapHeader.scriptIndex - 1;
-        script->flags |= SCRIPT_FLAG_0x08;
+        script->flags |= SCRIPT_FLAG_NO_SAVE;
         object->id = scriptsNewObjectId();
         script->ownerId = object->id;
         script->owner = object;
@@ -1025,6 +1126,11 @@ err:
         debugPrint("\n   Error: scr_load_all_scripts failed!");
     }
 
+    if (restoreSneakOnMapEnter) {
+        // Consume before enabling sneak, which also schedules its new timer.
+        restoreSneakOnMapEnter = false;
+        dudeEnableState(DUDE_STATE_SNEAKING);
+    }
     scriptsExecMapEnterProc();
     scriptsExecMapUpdateProc();
     tileEnable();
@@ -1059,18 +1165,23 @@ err:
     gameMouseSetCursor(savedMouseCursorId);
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(ELEVATION_INVALID, -1, ROTATION_INVALID);
 
-    tile_hires_stencil_init();
+    tile_hires_stencil_on_map_load();
 
     gameMovieFadeOut();
 
     gMapHeader.version = 20;
 
+    if (mapLoadSoundId != 0) {
+        scriptSoundStop(mapLoadSoundId);
+        mapLoadSoundId = 0;
+    }
+
     return rc;
 }
 
-// 0x483188
+// 0x483188 map_load_in_game
 int mapLoadSaved(char* fileName)
 {
     debugPrint("\nMAP: Loading SAVED map.");
@@ -1085,9 +1196,11 @@ int mapLoadSaved(char* fileName)
             objectUnjamAll();
         }
 
+        // NOTE: The original fails the load here, and `mapLoadByName` loads
+        // the .MAP instead: the map as new. The saved map loads, the bodies
+        // the aging couldn't replace stay for the next visit.
         if (_map_age_dead_critters() == -1) {
             debugPrint("\nError: Critter aging failed on map load!");
-            return -1;
         }
     }
 
@@ -1110,9 +1223,10 @@ int mapLoadSaved(char* fileName)
 // 0x48328C
 static int _map_age_dead_critters()
 {
-    if (!wmMapDeadBodiesAge()) {
-        return 0;
-    }
+    // SFALL: Fix for critters not being healed over time when entering a map
+    // with 'dead_bodies_age=No' set in maps.txt: the setting keeps the dead
+    // bodies, the living critters still heal (see below).
+    bool deadBodiesAge = wmMapDeadBodiesAge();
 
     int hoursSinceLastVisit = (gameTimeGetTime() - gMapHeader.lastVisitTime) / GAME_TIME_TICKS_PER_HOUR;
     if (hoursSinceLastVisit == 0) {
@@ -1121,23 +1235,30 @@ static int _map_age_dead_critters()
 
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER
+        const ProtoId protoId = obj;
+        if (protoId.objectType() == OBJ_TYPE_CRITTER
             && obj != gDude
             && !objectIsPartyMember(obj)
             && !critterIsDead(obj)) {
             obj->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
-            if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
+            if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(protoId, CRITTER_NO_HEAL)) {
                 critterHealByHours(obj, hoursSinceLastVisit);
             }
         }
         obj = objectFindNext();
     }
 
+    if (!deadBodiesAge) {
+        return 0;
+    }
+
+    // NOTE: The original (0x483334) replaces dead bodies by blood stains
+    // after 6 days and also removes the blood stains after 14 days.
     int agingType;
-    if (hoursSinceLastVisit > 6 * 24) {
-        agingType = 1;
-    } else if (hoursSinceLastVisit > 14 * 24) {
+    if (hoursSinceLastVisit > 14 * 24) {
         agingType = 2;
+    } else if (hoursSinceLastVisit > 6 * 24) {
+        agingType = 1;
     } else {
         return 0;
     }
@@ -1148,10 +1269,10 @@ static int _map_age_dead_critters()
 
     obj = objectFindFirst();
     while (obj != nullptr) {
-        int type = PID_TYPE(obj->pid);
-        if (type == OBJ_TYPE_CRITTER) {
+        const ProtoId protoId = obj;
+        if (protoId.objectType() == OBJ_TYPE_CRITTER) {
             if (obj != gDude && critterIsDead(obj)) {
-                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
+                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(protoId, CRITTER_NO_AGE)) {
                     objects[count++] = obj;
 
                     if (count >= capacity) {
@@ -1164,7 +1285,7 @@ static int _map_age_dead_critters()
                     }
                 }
             }
-        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->pid == 0x500000B) {
+        } else if (agingType == 2 && protoId.objectType() == OBJ_TYPE_MISC && FrmId(obj) == MiscFrameId::BloodPool) {
             objects[count++] = obj;
             if (count >= capacity) {
                 capacity *= 2;
@@ -1181,33 +1302,19 @@ static int _map_age_dead_critters()
     int rc = 0;
     for (int index = 0; index < count; index++) {
         Object* obj = objects[index];
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
-            if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
-                itemDropAll(obj, obj->tile);
-            }
-
-            Object* blood;
-            if (objectCreateWithPid(&blood, 0x5000004) == -1) {
+        const ProtoId protoId = obj;
+        if (protoId.objectType() == OBJ_TYPE_CRITTER) {
+            // replace the dead critter bodies by the blood pool stain
+            if (replaceDeadCritter(obj) == -1) {
+                debugPrint("\n%s: Could not replace dead body by the blood stain for the critter %d with pid %d.", __func__, obj->id, obj->pid);
                 rc = -1;
                 break;
             }
 
-            objectSetLocation(blood, obj->tile, obj->elevation, nullptr);
-
-            Proto* proto;
-            protoGetProto(obj->pid, &proto);
-
-            int frame = randomBetween(0, 3);
-            if ((proto->critter.flags & CRITTER_FLAT)) {
-                frame += 6;
-            } else {
-                if (critterGetKillType(obj) != KILL_TYPE_RAT
-                    && critterGetKillType(obj) != KILL_TYPE_MANTIS) {
-                    frame += 3;
-                }
+            // drop the critter owned items on top of the blood stain only when successfully replaced
+            if (!critterFlagCheck(protoId, CRITTER_NO_DROP)) {
+                itemDropAll(obj, obj->tile);
             }
-
-            objectSetFrame(blood, frame, nullptr);
         }
 
         reg_anim_clear(obj);
@@ -1219,12 +1326,46 @@ static int _map_age_dead_critters()
     return rc;
 }
 
+static int replaceDeadCritter(Object* critter)
+{
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
+        return -1;
+    }
+
+    Object* blood;
+    if (objectCreateWithProtoId(&blood, MiscProtoTypeId::Blood) == -1) {
+        return -1;
+    }
+
+    if (objectSetLocation(blood, critter->tile, critter->elevation, nullptr) == -1) {
+        return -1;
+    }
+
+    int frame = randomBetween(0, 3);
+    if ((critter->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
+        frame += 6;
+    } else {
+        KillType killType = critterGetKillType(critter);
+        if (killType != KILL_TYPE_RAT && killType != KILL_TYPE_MANTIS) {
+            frame += 3;
+        }
+    }
+
+    // NOTE: The original (0x483545) ignores obj_set_frame's result. A multihex
+    // body's frame (6 to 9) can be past the stain art's last one (8), then the
+    // stain keeps its first frame. Failing here failed the critter aging, and
+    // with it the saved map's load: the map was loaded as new.
+    objectSetFrame(blood, frame, nullptr);
+
+    return 0;
+}
+
 // 0x48358C
 int mapGetLoadedAreaId()
 {
-    int city = -1;
+    City city = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(gMapHeader.index, &city) == -1) {
-        city = -1;
+        city = CITY_INVALID;
     }
     return city;
 }
@@ -1238,12 +1379,12 @@ int mapSetTransition(MapTransition* transition)
 
     memcpy(&gMapTransition, transition, sizeof(gMapTransition));
 
-    if (gMapTransition.map == 0) {
-        gMapTransition.map = -2;
+    if (gMapTransition.map == MAP_FIRST) {
+        gMapTransition.map = MAP_TRANSITION;
     }
 
     if (isInCombat()) {
-        _game_user_wants_to_quit = 1;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
     }
 
     return 0;
@@ -1260,7 +1401,7 @@ int mapHandleTransition()
 
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
 
-    if (gMapTransition.map == -1) {
+    if (gMapTransition.map == MAP_INVALID) {
         if (!isInCombat()) {
             animationStop();
             // SFALL: Remove text floaters when moving to the world map
@@ -1268,7 +1409,7 @@ int mapHandleTransition()
             wmTownMap(); // nb this is a world map transition
             memset(&gMapTransition, 0, sizeof(gMapTransition));
         }
-    } else if (gMapTransition.map == -2) {
+    } else if (gMapTransition.map == MAP_TRANSITION) {
         if (!isInCombat()) {
             animationStop();
             // SFALL: Remove text floaters when moving to the world map
@@ -1282,24 +1423,25 @@ int mapHandleTransition()
                 // SFALL: Remove text floaters after moving to another map.
                 textObjectsReset();
 
-                mapLoadById(gMapTransition.map);
+                mapLoadById(static_cast<Map>(gMapTransition.map));
             }
 
             if (gMapTransition.tile != -1 && gMapTransition.tile != 0
-                && gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A
+                && (disableSpecialMapIds
+                    || (gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A))
                 && elevationIsValid(gMapTransition.elevation)) {
                 objectSetLocation(gDude, gMapTransition.tile, gMapTransition.elevation, nullptr);
                 mapSetElevation(gMapTransition.elevation);
                 objectSetRotation(gDude, gMapTransition.rotation, nullptr);
             }
 
-            if (tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW | TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) == -1) {
+            if (tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW) == -1) {
                 debugPrint("\nError: map: attempt to center out-of-bounds!");
             }
 
             memset(&gMapTransition, 0, sizeof(gMapTransition));
 
-            int city;
+            City city = CITY_INVALID;
             wmMatchAreaContainingMapIdx(gMapHeader.index, &city);
             if (wmTeleportToArea(city) == -1) {
                 debugPrint("\nError: couldn't make jump on worldmap for map jump!");
@@ -1314,11 +1456,7 @@ int mapHandleTransition()
 static void _map_fix_critter_combat_data()
 {
     for (Object* object = objectFindFirst(); object != nullptr; object = objectFindNext()) {
-        if (object->pid == -1) {
-            continue;
-        }
-
-        if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+        if (ProtoId(object).objectType() != OBJ_TYPE_CRITTER) {
             continue;
         }
 
@@ -1330,32 +1468,26 @@ static void _map_fix_critter_combat_data()
 
 // map_save
 // 0x483850
-static int _map_save()
+int _map_save(bool isInGame)
 {
-    char temp[80];
-    temp[0] = '\0';
-
-    strcat(temp, settings.system.master_patches_path.c_str());
-    compat_mkdir(temp);
-
-    strcat(temp, "\\MAPS");
-    compat_mkdir(temp);
-
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
-        char* mapFileName = mapBuildPath(gMapHeader.name);
-        File* stream = fileOpen(mapFileName, "wb");
+        const char* mapFilePath = mapBuildSavePath(gMapHeader.name);
+        File* stream = fileOpen(mapFilePath, "wb");
         if (stream != nullptr) {
             rc = _map_save_file(stream);
             fileClose(stream);
         } else {
-            snprintf(temp, sizeof(temp), "Unable to open %s to write!", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("Unable to open %s to write!", gMapHeader.name);
         }
 
         if (rc == 0) {
-            snprintf(temp, sizeof(temp), "%s saved.", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("%s saved.", gMapHeader.name);
+
+            if (!isInGame) {
+                // Write the edge (.EDG) alongside the map.
+                mapEdgeSave(gMapHeader.name);
+            }
         }
     } else {
         debugPrint("\nError: map_save: map header corrupt!");
@@ -1373,18 +1505,18 @@ static int _map_save_file(File* stream)
 
     scriptsDisable();
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            int fid;
+            TileFrameId frameId;
 
-            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            frameId = FloorTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            frameId = RoofTileFrmId(_square[elevation]->tileFid[tile]).frameId<TileFrameId>();
+            if (frameId != TileFrameId::Grid) {
                 break;
             }
         }
@@ -1424,9 +1556,9 @@ static int _map_save_file(File* stream)
         fileWriteInt32List(stream, gMapLocalVars, gMapHeader.localVariablesCount);
     }
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == 0) {
-            _db_fwriteLongCount(stream, _square[elevation]->field_0, SQUARE_GRID_SIZE);
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
+        if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
+            _db_fwriteLongCount(stream, _square[elevation]->tileFid, SQUARE_GRID_SIZE);
         }
     }
 
@@ -1434,17 +1566,22 @@ static int _map_save_file(File* stream)
 
     if (scriptSaveAll(stream) == -1) {
         snprintf(err, sizeof(err), "Error saving scripts in %s", gMapHeader.name);
-        _win_msg(err, 80, 80, _colorTable[31744]);
+        _win_msg(err, 80, 80, COLOR_RED);
     }
 
     if (objectSaveAll(stream) == -1) {
         snprintf(err, sizeof(err), "Error saving objects in %s", gMapHeader.name);
-        _win_msg(err, 80, 80, _colorTable[31744]);
+        _win_msg(err, 80, 80, COLOR_RED);
     }
 
     scriptsEnable();
 
     return 0;
+}
+
+bool mapExitScriptsRunning()
+{
+    return exitScriptsRunning;
 }
 
 // 0x483C98
@@ -1455,13 +1592,24 @@ int _map_save_in_game(bool isLeavingMap)
     }
 
     animationStop();
+
+    if (isLeavingMap) {
+        // SFALL: Run exit scripts before event cleanup and party preparation so
+        // scripts can still add or remove party members and update their state.
+        exitScriptsRunning = true;
+        queueClearMapExitExplosions();
+        scriptsExecMapExitProc();
+        // SFALL: Capture after exit scripts, before cleanup disables sneaking.
+        restoreSneakOnMapEnter = dudeHasState(DUDE_STATE_SNEAKING);
+        exitScriptsRunning = false;
+        _queue_leaving_map();
+    }
+
     _partyMemberSaveProtos();
 
     if (isLeavingMap) {
-        _queue_leaving_map();
         _partyMemberPrepLoad();
         _partyMemberPrepItemSaveAll();
-        scriptsExecMapExitProc();
 
         if (gMapSid != -1) {
             Script* script;
@@ -1472,7 +1620,7 @@ int _map_save_in_game(bool isLeavingMap)
         _obj_reset_roof();
     }
 
-    gMapHeader.flags |= 0x01;
+    gMapHeader.flags |= MAP_HEADER_SAVED;
     gMapHeader.lastVisitTime = gameTimeGetTime();
 
     char name[16];
@@ -1489,21 +1637,21 @@ int _map_save_in_game(bool isLeavingMap)
 
         strcpy(name, gMapHeader.name);
         _strmfe(gMapHeader.name, name, "SAV");
-        if (_map_save() == -1) {
+        if (_map_save(true) == -1) {
             return -1;
         }
 
         strcpy(gMapHeader.name, name);
 
         automapSaveCurrent();
+    }
 
-        if (isLeavingMap) {
-            gMapHeader.name[0] = '\0';
-            _obj_remove_all();
-            _proto_remove_all();
-            _square_reset();
-            gameTimeScheduleUpdateEvent();
-        }
+    if (isLeavingMap) {
+        gMapHeader.name[0] = '\0';
+        _obj_remove_all();
+        _proto_remove_all();
+        _square_reset();
+        gameTimeScheduleUpdateEvent();
     }
 
     return 0;
@@ -1527,7 +1675,7 @@ static void isoWindowRefreshRect(Rect* rect)
     windowRefreshRect(gIsoWindow, rect);
 }
 
-// 0x483EE4
+// 0x483EE4 map_scroll_refresh_game
 static void isoWindowRefreshRectGame(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1535,23 +1683,31 @@ static void isoWindowRefreshRectGame(Rect* rect)
         return;
     }
 
-    // CE: Clear dirty rect to prevent most of the visual artifacts near map
-    // edges.
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
-        0);
+        COLOR_FIRST);
+
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
     tileRenderFloorsInRect(&rectToUpdate, gElevation);
     _obj_render_pre_roof(&rectToUpdate, gElevation);
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
 }
 
-// 0x483F44
+// 0x483F44 map_scroll_refresh_mapper
 static void isoWindowRefreshRectMapper(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1559,11 +1715,19 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         return;
     }
 
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
-        0);
+        COLOR_FIRST);
+
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
     tileRenderFloorsInRect(&rectToUpdate, gElevation);
     _grid_render(&rectToUpdate, gElevation);
@@ -1571,7 +1735,11 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
+
+    tileMapperOverlayRender(gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), gElevation, &rectToUpdate);
 }
 
 // NOTE: Inlined.
@@ -1670,9 +1838,9 @@ static void _map_place_dude_and_mouse()
     _obj_clear_seen();
 
     if (gDude != nullptr) {
-        if (FID_ANIM_TYPE(gDude->fid) != ANIM_STAND) {
+        if (FrmId(gDude).animationType() != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, (gDude->fid & 0xF000) >> 12, gDude->rotation + 1);
+            gDude->fid = FrmId(gDude, ANIM_STAND, gDude->rotation + 1).fid();
         }
 
         if (gDude->tile == -1) {
@@ -1683,11 +1851,11 @@ static void _map_place_dude_and_mouse()
         objectSetLight(gDude, 4, 0x10000, nullptr);
         gDude->flags |= OBJECT_NO_SAVE;
 
-        _dude_stand(gDude, gDude->rotation, gDude->fid);
+        _dude_stand(gDude, gDude->rotation, FrmId(gDude));
         _partyMemberSyncPosition();
     }
 
-    gameMouseResetBouncingCursorFid();
+    gameMouseResetBouncingCursorFrmId();
     gameMouseObjectsShow();
 }
 
@@ -1696,7 +1864,7 @@ static void _map_place_dude_and_mouse()
 // 0x4841F0
 static void square_init()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         _square[elevation] = &(_square_data[elevation]);
     }
 }
@@ -1704,23 +1872,22 @@ static void square_init()
 // 0x484210
 static void _square_reset()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        int* p = _square[elevation]->field_0;
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
+        int* p = _square[elevation]->tileFid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
-                // TODO: Strange math, initially right, but need to figure it out and
-                // check subsequent calls.
                 int fid = *p;
-                fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                const FloorTileFrmId originalFloorTileFrmId = FloorTileFrmId(fid);
+                const RoofTileFrmId originalRoofTileFrmId = RoofTileFrmId(fid);
+                const TileFrmId updatedTileFrmId = TileFrmId(
+                    FloorTileFrmId(
+                        TileFrameId::Grid,
+                        originalFloorTileFrmId.flags()),
+                    RoofTileFrmId(
+                        TileFrameId::Grid,
+                        originalRoofTileFrmId.flags()));
 
-                fid = *p;
-                int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | tileFlags;
-
-                fid &= ~0xFFFF;
-
-                *p = updatedLowerTile | ((fid >> 16) << 16);
+                *p = updatedTileFrmId.fid();
 
                 p++;
             }
@@ -1729,33 +1896,30 @@ static void _square_reset()
 }
 
 // 0x48431C
-static int _square_load(File* stream, int flags)
+static int _square_load(File* stream, MapHeaderFlags flags)
 {
-    int upperTileWord;
-    int upperTileFlags;
-    int upperTileArtId;
-    int lowerTileWord;
-
     _square_reset();
 
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        if ((flags & _map_data_elev_flags[elevation]) == 0) {
-            int* arr = _square[elevation]->field_0;
-            if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
+        if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
+            int* tileFids = _square[elevation]->tileFid;
+            if (_db_freadIntCount(stream, tileFids, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                upperTileWord = arr[tile];
-                upperTileWord &= ~(0xFFFF);
-                upperTileWord >>= 16;
+                const RoofTileFrmId roofTileFrmId = RoofTileFrmId(tileFids[tile]);
 
-                upperTileFlags = (upperTileWord & 0xF000) >> 12;
-                upperTileFlags &= ~(0x01);
+                TileFlags roofTileFlags = roofTileFrmId.flags() & ~TileFlags::TemporarilyHidden;
 
-                upperTileArtId = upperTileWord & 0xFFF;
-                lowerTileWord = arr[tile] & 0xFFFF;
-                arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
+                TileFrameId roofTileArtId = roofTileFrmId.frameId<TileFrameId>();
+                if (roofTileArtId == TileFrameId::Invalid) {
+                    roofTileArtId = TileFrameId::Last;
+                }
+
+                const FloorTileFrmId floorTileFrmId = FloorTileFrmId(tileFids[tile]);
+                const TileFrmId updatedTileFrmId = TileFrmId(floorTileFrmId, RoofTileFrmId(roofTileArtId, roofTileFlags));
+                tileFids[tile] = updatedTileFrmId.fid();
             }
         }
     }
@@ -1769,14 +1933,14 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     if (fileWriteInt32(stream, ptr->version) == -1) return -1;
     if (fileWriteFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileWriteInt32(stream, ptr->enteringTile) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->enteringElevation) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->enteringRotation) == -1) return -1;
+    if (fileWriteInt32Enum<MapElevation>(stream, ptr->enteringElevation) == -1) return -1;
+    if (fileWriteInt32Enum<Rotation>(stream, ptr->enteringRotation) == -1) return -1;
     if (fileWriteInt32(stream, ptr->localVariablesCount) == -1) return -1;
     if (fileWriteInt32(stream, ptr->scriptIndex) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->flags) == -1) return -1;
+    if (fileWriteInt32Enum<MapHeaderFlags>(stream, ptr->flags) == -1) return -1;
     if (fileWriteInt32(stream, ptr->darkness) == -1) return -1;
     if (fileWriteInt32(stream, ptr->globalVariablesCount) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->index) == -1) return -1;
+    if (fileWriteInt32Enum<Map>(stream, ptr->index) == -1) return -1;
     if (fileWriteUInt32(stream, ptr->lastVisitTime) == -1) return -1;
     if (fileWriteInt32List(stream, ptr->field_3C, 44) == -1) return -1;
 
@@ -1789,14 +1953,14 @@ static int mapHeaderRead(MapHeader* ptr, File* stream)
     if (fileReadInt32(stream, &(ptr->version)) == -1) return -1;
     if (fileReadFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->enteringTile)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->enteringElevation)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->enteringRotation)) == -1) return -1;
+    if (fileReadInt32Enum<MapElevation>(stream, &(ptr->enteringElevation)) == -1) return -1;
+    if (fileReadInt32Enum<Rotation>(stream, &(ptr->enteringRotation)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->localVariablesCount)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->scriptIndex)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->flags)) == -1) return -1;
+    if (fileReadInt32Enum<MapHeaderFlags>(stream, &(ptr->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->darkness)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->globalVariablesCount)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->index)) == -1) return -1;
+    if (fileReadInt32Enum<Map>(stream, &(ptr->index)) == -1) return -1;
     if (fileReadUInt32(stream, &(ptr->lastVisitTime)) == -1) return -1;
     if (fileReadInt32List(stream, ptr->field_3C, 44) == -1) return -1;
 

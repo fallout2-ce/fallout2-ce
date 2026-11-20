@@ -1,0 +1,32 @@
+#include "sfall.h"
+#include "test_utils.h"
+
+#define FLOAT_TEST_KEY "FltTest1"
+#define FLOAT_TEST_INT_KEY 19374621
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("Testing get_sfall_global_float...");
+    test_suite_errors := 0;
+    test_suite_assertions := 0;
+
+    set_sfall_global(FLOAT_TEST_KEY, 0);
+    set_sfall_global(FLOAT_TEST_INT_KEY, 0);
+    call assertEquals("unset float global", get_sfall_global_float(FLOAT_TEST_KEY), 0.0);
+    call assertFloat("unset multiplier fallback", get_sfall_global_float(FLOAT_TEST_KEY) orElse 1.0, 1.0);
+
+    set_sfall_global(FLOAT_TEST_KEY, 1.5);
+    call assertEquals("float global", get_sfall_global_float(FLOAT_TEST_KEY), 1.5);
+    call assertEquals("float stored as raw bits", get_sfall_global_int(FLOAT_TEST_KEY), 0x3FC00000);
+
+    set_sfall_global(FLOAT_TEST_INT_KEY, -2.25);
+    call assertEquals("integer key float global", get_sfall_global_float(FLOAT_TEST_INT_KEY), -2.25);
+
+    set_sfall_global(FLOAT_TEST_KEY, 0.0);
+    set_sfall_global(FLOAT_TEST_INT_KEY, 0.0);
+    call assertEquals("cleared float global", get_sfall_global_float(FLOAT_TEST_KEY), 0.0);
+
+    call report_test_results("get_sfall_global_float");
+    signal_close_game;
+end

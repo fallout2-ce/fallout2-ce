@@ -1,37 +1,56 @@
 #include "sfall_opcodes.h"
 
+#include <algorithm>
+#include <cstring>
 #include <math.h>
 #include <string.h>
 
 #include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
+#include "character_editor.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "critter.h"
 #include "dbox.h"
 #include "debug.h"
 #include "game.h"
+#include "game_dialog.h"
+#include "game_movie.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
+#include "inventory.h"
 #include "item.h"
+#include "light.h"
+#include "map.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
+#include "obj_types.h"
 #include "object.h"
 #include "party_member.h"
+#include "perk.h"
 #include "proto.h"
+#include "proto_instance.h"
+#include "script_sound.h"
 #include "scripts.h"
+#include "sfall_animation.h"
 #include "sfall_arrays.h"
+#include "sfall_filesystem.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
 #include "sfall_kb_helpers.h"
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
+#include "sfall_script_hooks.h"
+#include "skill.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -51,6 +70,40 @@ typedef enum ExplosionMetarule {
 static constexpr int kVersionMajor = 4;
 static constexpr int kVersionMinor = 3;
 static constexpr int kVersionPatch = 4;
+
+static void op_art_exists(Program* program)
+{
+    const FrmId frmId = FrmId(programStackPopInteger(program));
+    programStackPushInteger(program, frmId.exist());
+}
+
+static void op_obj_is_carrying_obj(Program* program)
+{
+    Object* itemObj = static_cast<Object*>(programStackPopPointer(program));
+    Object* invenObj = static_cast<Object*>(programStackPopPointer(program));
+
+    int count = 0;
+    if (invenObj != nullptr && itemObj != nullptr) {
+        Inventory* inventory = &(invenObj->data.inventory);
+        for (int index = 0; index < inventory->length; index++) {
+            InventoryItem* inventoryItem = &(inventory->items[index]);
+            if (inventoryItem->item == itemObj) {
+                if (inventoryItem->quantity <= 0) {
+                    debugPrint("%s: obj_is_carrying_obj found non-positive inventory quantity for item %p in owner %p",
+                        program->name,
+                        itemObj,
+                        invenObj);
+                    count = 1;
+                } else {
+                    count = inventoryItem->quantity;
+                }
+                break;
+            }
+        }
+    }
+
+    programStackPushInteger(program, count);
+}
 
 // read_byte
 static void op_read_byte(Program* program)
@@ -77,7 +130,7 @@ static void op_set_pc_base_stat(Program* program)
     // dude's proto, without calling |critterSetBaseStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     critterSetBaseStat(gDude, stat, value);
 }
 
@@ -87,7 +140,7 @@ static void op_set_critter_base_stat(Program* program)
     // dude's proto, without calling |critterSetBaseStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBaseStat(obj, stat, value);
 }
@@ -99,7 +152,7 @@ static void op_set_pc_bonus_stat(Program* program)
     // dude's proto, without calling |critterSetBonusStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     critterSetBonusStat(gDude, stat, value);
 }
 
@@ -109,9 +162,65 @@ static void op_set_critter_extra_stat(Program* program)
     // dude's proto, without calling |critterSetBonusStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBonusStat(obj, stat, value);
+}
+
+static void op_set_skill_max(Program* program)
+{
+    skillSetMaximum(programStackPopInteger(program));
+}
+
+// eax_available
+// NOTE: Deprecated in sfall (EAX is not supported); always returns 0.
+static void op_eax_available(Program* program)
+{
+    programStackPushInteger(program, 0);
+}
+
+static void op_set_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+    statSetNpcMinimum(stat, minimum);
+}
+
+static void op_set_pc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+}
+
+static void op_set_pc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+}
+
+static void op_set_npc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_npc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMinimum(stat, minimum);
 }
 
 // get_pc_base_stat
@@ -120,7 +229,7 @@ static void op_get_pc_base_stat(Program* program)
     // CE: Implementation is different. Sfall obtains value directly from
     // dude's proto. This can have unforeseen consequences when dealing with
     // current stats.
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     programStackPushInteger(program, critterGetBaseStat(gDude, stat));
 }
 
@@ -129,7 +238,7 @@ static void op_get_critter_base_stat(Program* program)
     // CE: Implementation is different. Sfall obtains value directly from
     // dude's proto. This can have unforeseen consequences when dealing with
     // current stats.
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPushInteger(program, critterGetBaseStat(obj, stat));
 }
@@ -137,14 +246,14 @@ static void op_get_critter_base_stat(Program* program)
 // get_pc_extra_stat
 static void op_get_pc_bonus_stat(Program* program)
 {
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     int value = critterGetBonusStat(gDude, stat);
     programStackPushInteger(program, value);
 }
 
 static void op_get_critter_extra_stat(Program* program)
 {
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     int value = critterGetBonusStat(obj, stat);
     programStackPushInteger(program, value);
@@ -165,6 +274,31 @@ static void op_get_year(Program* program)
     programStackPushInteger(program, year);
 }
 
+static void op_set_movie_path(Program* program)
+{
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
+    const char* fileName = programStackPopString(program);
+    if (!gameMovieExtendedIsValid(movie) || fileName == nullptr) {
+        programPrintError("set_movie_path: invalid argument");
+        return;
+    }
+
+    if (strlen(fileName) > 64) {
+        programPrintError("set_movie_path: filename exceeds 64 characters");
+        return;
+    }
+
+    if (!gameMovieSetPath(movie, fileName)) {
+        programPrintError("set_movie_path: invalid filename");
+    }
+}
+
+static void op_mark_movie_played(Program* program)
+{
+    GameMovie movie = programStackPopEnum<GameMovie>(program);
+    gameMovieMarkSeen(movie);
+}
+
 // game_loaded
 static void op_game_loaded(Program* program)
 {
@@ -172,11 +306,216 @@ static void op_game_loaded(Program* program)
     programStackPushInteger(program, loaded ? 1 : 0);
 }
 
+static void op_sneak_success(Program* program)
+{
+    programStackPushInteger(program, dudeIsSneaking() ? 1 : 0);
+}
+
 // set_global_script_repeat
 static void op_set_global_script_repeat(Program* program)
 {
     int frames = programStackPopInteger(program);
     sfall_gl_scr_set_repeat(program, frames);
+}
+
+static void op_get_perk_owed(Program* program)
+{
+    programStackPushInteger(program, characterEditorGetPerkOwed());
+}
+
+static void op_set_perk_owed(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetPerkOwed(value);
+}
+
+static void op_set_perk_freq(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetPerkFrequency(value);
+}
+
+static void opSetPerkProperty(Program* program, PerkProperty property)
+{
+    int value = programStackPopInteger(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetProperty(perk, property, value)) {
+        programPrintError("set_perk_*: invalid argument");
+    }
+}
+
+static void op_set_perk_image(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::FrmId);
+}
+
+static void op_set_perk_ranks(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::MaxRank);
+}
+
+static void op_set_perk_level(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::MinLevel);
+}
+
+static void op_set_perk_stat(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Stat);
+}
+
+static void op_set_perk_stat_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::StatModifier);
+}
+
+static void op_set_perk_skill1(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Param1);
+}
+
+static void op_set_perk_skill1_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Value1);
+}
+
+static void op_set_perk_type(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::ParamMode);
+}
+
+static void op_set_perk_skill2(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Param2);
+}
+
+static void op_set_perk_skill2_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Value2);
+}
+
+static void op_set_perk_str(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Strength);
+}
+
+static void op_set_perk_per(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Perception);
+}
+
+static void op_set_perk_end(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Endurance);
+}
+
+static void op_set_perk_chr(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Charisma);
+}
+
+static void op_set_perk_int(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Intelligence);
+}
+
+static void op_set_perk_agl(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Agility);
+}
+
+static void op_set_perk_lck(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Luck);
+}
+
+static void op_set_perk_name(Program* program)
+{
+    const char* value = programStackPopString(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetName(perk, value)) {
+        programPrintError("set_perk_name: invalid argument");
+    }
+}
+
+static void op_set_perk_desc(Program* program)
+{
+    const char* value = programStackPopString(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetDescription(perk, value)) {
+        programPrintError("set_perk_desc: invalid argument");
+    }
+}
+
+static void op_set_available_skill_points(Program* program)
+{
+    int value = programStackPopInteger(program);
+    pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, std::clamp(value, 0, 99));
+}
+
+static void op_get_available_skill_points(Program* program)
+{
+    programStackPushInteger(program, pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS));
+}
+
+static void op_set_critter_skill_points(Program* program)
+{
+    int value = programStackPopInteger(program);
+    int skill = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (!skillIsValid(skill)) {
+        programPrintError("set_critter_skill_points: invalid skill %d", skill);
+        return;
+    }
+
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_skill_points: obj is not a critter");
+        return;
+    }
+
+    Proto* proto;
+    if (protoGetProto(protoId, &proto) == -1) {
+        programPrintError("set_critter_skill_points: failed to get proto for pid %d", protoId.pid());
+        return;
+    }
+
+    proto->critter.data.skills[skill] = value;
+}
+
+static void op_get_critter_skill_points(Program* program)
+{
+    int skill = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (!skillIsValid(skill)) {
+        programPrintError("get_critter_skill_points: invalid skill %d", skill);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    const ProtoId protoId = critter;
+    if (protoId.objectType() != OBJ_TYPE_CRITTER) {
+        programPrintError("get_critter_skill_points: obj is not a critter");
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    Proto* proto;
+    if (protoGetProto(protoId, &proto) == -1) {
+        programPrintError("get_critter_skill_points: failed to get proto for pid %d", protoId.pid());
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, proto->critter.data.skills[skill]);
+}
+
+static void op_mod_skill_points_per_level(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetSkillPointsPerLevelModifier(value);
 }
 
 // key_pressed
@@ -196,8 +535,8 @@ static void op_in_world_map(Program* program)
 // force_encounter
 static void op_force_encounter(Program* program)
 {
-    int map = programStackPopInteger(program);
-    wmForceEncounter(map, 0);
+    Map map = programStackPopEnum<Map>(program);
+    wmForceEncounter(map, ENCOUNTER_FLAG_NONE);
 }
 
 // set_world_map_pos
@@ -237,6 +576,89 @@ static void op_active_hand(Program* program)
     programStackPushInteger(program, interfaceGetCurrentHand());
 }
 
+static void op_get_critter_current_ap(Program* program)
+{
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    int actionPoints = 0;
+    if (critter != nullptr && FrmId(critter).objectType() == OBJ_TYPE_CRITTER) {
+        actionPoints = critter->data.critter.combat.ap;
+    }
+
+    programStackPushInteger(program, actionPoints);
+}
+
+static void op_set_critter_current_ap(Program* program)
+{
+    int actionPoints = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (critter == nullptr || FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_current_ap: expected critter object");
+        return;
+    }
+
+    if (actionPoints < 0) {
+        actionPoints = 0;
+    }
+
+    critter->data.critter.combat.ap = actionPoints;
+    if (critter == gDude && isInCombat()) {
+        interfaceRenderActionPoints(actionPoints, _combat_free_move);
+    }
+}
+
+static void op_set_critter_burst_disable(Program* program)
+{
+    int disable = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (critter == nullptr || FrmId(critter).objectType() != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_burst_disable: expected critter object");
+        return;
+    }
+
+    aiSetBurstDisabled(critter, disable != 0);
+}
+
+static void refreshUnspentApArmorClass()
+{
+    if (isInCombat() && _combat_whose_turn() != gDude) {
+        interfaceRenderArmorClass(false);
+    }
+}
+
+static void op_set_unspent_ap_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApBonus());
+}
+
+static void op_set_unspent_ap_perk_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApPerkBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_perk_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApPerkBonus());
+}
+
+static void op_set_inven_ap_cost(Program* program)
+{
+    int cost = programStackPopInteger(program);
+    cost = std::clamp(cost, 0, 100);
+    inventorySetInvenApCost(cost);
+}
+
 // toggle_active_hand
 static void op_toggle_active_hand(Program* program)
 {
@@ -256,11 +678,19 @@ static void op_set_sfall_global(Program* program)
     ProgramValue value = programStackPopValue(program);
     ProgramValue variable = programStackPopValue(program);
 
+    int rawValue;
+    if (value.isFloat()) {
+        static_assert(sizeof(rawValue) == sizeof(value.floatValue));
+        std::memcpy(&rawValue, &value.floatValue, sizeof(rawValue));
+    } else {
+        rawValue = value.integerValue;
+    }
+
     if ((variable.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_STRING) {
         const char* key = programGetString(program, variable.opcode, variable.integerValue);
-        sfall_gl_vars_store(key, value.integerValue);
+        sfall_gl_vars_store(key, rawValue);
     } else if (variable.opcode == VALUE_TYPE_INT) {
-        sfall_gl_vars_store(variable.integerValue, value.integerValue);
+        sfall_gl_vars_store(variable.integerValue, rawValue);
     }
 }
 
@@ -280,6 +710,25 @@ static void op_get_sfall_global_int(Program* program)
     programStackPushInteger(program, value);
 }
 
+// get_sfall_global_float
+static void op_get_sfall_global_float(Program* program)
+{
+    ProgramValue variable = programStackPopValue(program);
+
+    int rawValue = 0;
+    if ((variable.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_STRING) {
+        const char* key = programGetString(program, variable.opcode, variable.integerValue);
+        sfall_gl_vars_fetch(key, rawValue);
+    } else if (variable.opcode == VALUE_TYPE_INT) {
+        sfall_gl_vars_fetch(variable.integerValue, rawValue);
+    }
+
+    float value;
+    static_assert(sizeof(value) == sizeof(rawValue));
+    std::memcpy(&value, &rawValue, sizeof(value));
+    programStackPushFloat(program, value);
+}
+
 // get_game_mode
 static void op_get_game_mode(Program* program)
 {
@@ -289,29 +738,86 @@ static void op_get_game_mode(Program* program)
 // get_uptime
 static void op_get_uptime(Program* program)
 {
-    programStackPushInteger(program, getTicks());
+    programStackPushInteger(program, getRealTicks());
 }
 
 // set_car_current_town
 static void op_set_car_current_town(Program* program)
 {
-    int area = programStackPopInteger(program);
+    City area = programStackPopEnum<City>(program);
     wmCarSetCurrentArea(area);
 }
 
 // get_bodypart_hit_modifier
 static void op_get_bodypart_hit_modifier(Program* program)
 {
-    int hit_location = programStackPopInteger(program);
-    programStackPushInteger(program, combat_get_hit_location_penalty(hit_location));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    programStackPushInteger(program, combat_get_hit_location_penalty(hitLocation));
 }
 
 // set_bodypart_hit_modifier
 static void op_set_bodypart_hit_modifier(Program* program)
 {
     int penalty = programStackPopInteger(program);
-    int hit_location = programStackPopInteger(program);
-    combat_set_hit_location_penalty(hit_location, penalty);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    combat_set_hit_location_penalty(hitLocation, penalty);
+}
+
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, KillType killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
+{
+    if (!killTypeOverrideIsValid(killType)
+        || !hitLocationIsValid(hitLocation)
+        || !criticalEffectIsValid(effect)
+        || !criticalHitDataMemberIsValid(dataMember)) {
+        programPrintError("%s: argument values out of range", opcodeName);
+        return false;
+    }
+
+    return true;
+}
+
+static void op_set_critical_table(Program* program)
+{
+    int value = programStackPopInteger(program);
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
+
+    if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsSetValue(killType, hitLocation, effect, dataMember, value);
+}
+
+static void op_get_critical_table(Program* program)
+{
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
+
+    if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, criticalsGetValue(killType, hitLocation, effect, dataMember));
+}
+
+static void op_reset_critical_table(Program* program)
+{
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
+
+    if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsResetValue(killType, hitLocation, effect, dataMember);
 }
 
 // sqrt
@@ -404,26 +910,121 @@ static void op_exponent(Program* program)
 static void op_get_script(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
-    programStackPushInteger(program, obj->scriptIndex + 1);
+    if (obj == nullptr) {
+        programStackPushInteger(program, -1);
+        return;
+    }
+
+    if (obj->sid == -1) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(obj->sid, &script) == -1 || script->index < 0) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, script->index + 1);
+}
+
+// remove_script
+static void op_remove_script(Program* program)
+{
+    Object* obj = static_cast<Object*>(programStackPopPointer(program));
+    if (obj == nullptr || obj->sid == -1) {
+        return;
+    }
+
+    scriptRemove(obj->sid);
+    obj->sid = -1;
+    obj->scriptIndex = -1;
+}
+
+// set_script
+static void op_set_script(Program* program)
+{
+    int scriptId = programStackPopInteger(program);
+    Object* obj = static_cast<Object*>(programStackPopPointer(program));
+
+    if (obj == nullptr) {
+        return;
+    }
+
+    unsigned int rawScriptId = static_cast<unsigned int>(scriptId);
+    // sfall encodes set_script() ids as a 1-based script index in the low
+    // 28 bits, with the upper bits reserved for flags. The top bit
+    // (0x80000000) suppresses map_enter_p_proc after start().
+    int scriptIndex = static_cast<int>(rawScriptId & ~0xF0000000u);
+    if (scriptIndex == 0) {
+        programPrintError("set_script: invalid script index number %d.", scriptIndex);
+        return;
+    }
+
+    scriptIndex--;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("set_script: invalid script index (engine) number %d.", scriptIndex);
+        return;
+    }
+
+    if (obj->sid != -1) {
+        scriptRemove(obj->sid);
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+    }
+
+    ScriptType scriptType = (ProtoId(obj).objectType() == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(obj->sid, &script) == -1) {
+        scriptRemove(obj->sid);
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+        return;
+    }
+
+    int sid = obj->sid;
+    script->owner = obj;
+    obj->scriptIndex = scriptIndex;
+
+    scriptExecProc(sid, SCRIPT_PROC_START);
+    if ((rawScriptId & 0x80000000u) == 0) {
+        // note: if map_enter_p_proc is missing, START gets executed again
+        scriptExecProc(sid, SCRIPT_PROC_MAP_ENTER);
+    }
 }
 
 // get_proto_data
 static void op_get_proto_data(Program* program)
 {
-    size_t offset = static_cast<size_t>(programStackPopInteger(program));
-    int pid = programStackPopInteger(program);
+    int rawOffset = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) != 0) {
-        debugPrint("op_get_proto_data: bad proto %d", pid);
+    if (protoGetProto(protoId, &proto) != 0) {
+        programPrintError("get_proto_data: bad proto %d", protoId.pid());
         programStackPushInteger(program, -1);
         return;
     }
 
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
-    if (offset + sizeof(int) > proto_size(PID_TYPE(pid)) || offset % sizeof(int) != 0) {
-        debugPrint("op_get_proto_data: bad offset %d", offset);
+    if (rawOffset < 0 || rawOffset % static_cast<int>(sizeof(int)) != 0) {
+        programPrintError("get_proto_data: bad offset %d", rawOffset);
+        programStackPushInteger(program, -1);
+        return;
+    }
+
+    size_t offset = static_cast<size_t>(rawOffset);
+    size_t size = proto_size(protoId.objectType());
+    if (offset > size || size - offset < sizeof(int)) {
+        programPrintError("get_proto_data: bad offset %zu", offset);
         programStackPushInteger(program, -1);
         return;
     }
@@ -436,21 +1037,26 @@ static void op_get_proto_data(Program* program)
 static void op_set_proto_data(Program* program)
 {
     int value = programStackPopInteger(program);
-    size_t offset = static_cast<size_t>(programStackPopInteger(program));
-    int pid = programStackPopInteger(program);
+    int rawOffset = programStackPopInteger(program);
+    const ProtoId protoId = programStackPopProtoId(program);
 
     Proto* proto;
-    if (protoGetProto(pid, &proto) != 0) {
-        debugPrint("op_set_proto_data: bad proto %d", pid);
-        programStackPushInteger(program, -1);
+    if (protoGetProto(protoId, &proto) != 0) {
+        programPrintError("set_proto_data: bad proto %d", protoId.pid());
         return;
     }
 
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
-    if (offset + sizeof(int) > proto_size(PID_TYPE(pid)) || offset % sizeof(int) != 0) {
-        debugPrint("op_set_proto_data: bad offset %d", offset);
-        programStackPushInteger(program, -1);
+    if (rawOffset < 0 || rawOffset % static_cast<int>(sizeof(int)) != 0) {
+        programPrintError("set_proto_data: bad offset %d", rawOffset);
+        return;
+    }
+
+    size_t offset = static_cast<size_t>(rawOffset);
+    size_t size = proto_size(protoId.objectType());
+    if (offset > size || size - offset < sizeof(int)) {
+        programPrintError("set_proto_data: bad offset %zu", offset);
         return;
     }
 
@@ -462,18 +1068,13 @@ static void op_set_self(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int sid = scriptGetSid(program);
-
-    Script* scr;
-    if (scriptGetScript(sid, &scr) == 0) {
-        scr->overriddenSelf = obj;
-    }
+    scriptContextSetOverrideSelf(program, obj);
 }
 
 // list_begin
 static void op_list_begin(Program* program)
 {
-    int listType = programStackPopInteger(program);
+    ListType listType = programStackPopEnum<ListType>(program);
     int listId = sfallListsCreate(listType);
     programStackPushInteger(program, listId);
 }
@@ -516,21 +1117,21 @@ static void op_get_weapon_ammo_pid(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int pid = -1;
-    if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                pid = weaponGetAmmoTypePid(obj);
-                break;
-            case ITEM_TYPE_MISC:
-                pid = miscItemGetPowerTypePid(obj);
-                break;
-            }
+    ProtoId protoId = ProtoId::Empty();
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            protoId = weaponGetAmmoTypeProtoId(obj);
+            break;
+        case ITEM_TYPE_MISC:
+            protoId = miscItemGetPowerTypeProtoId(obj);
+            break;
+        default:
+            break;
         }
     }
 
-    programStackPushInteger(program, pid);
+    programStackPushInteger(program, protoId.pid());
 }
 
 // There are two problems with this function.
@@ -543,16 +1144,16 @@ static void op_get_weapon_ammo_pid(Program* program)
 // set_weapon_ammo_pid
 static void op_set_weapon_ammo_pid(Program* program)
 {
-    int ammoTypePid = programStackPopInteger(program);
+    const ProtoId ammoTypeProtoId = programStackPopProtoId(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_WEAPON:
-                obj->data.item.weapon.ammoTypePid = ammoTypePid;
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_WEAPON:
+            obj->data.item.weapon.ammoTypePid = ammoTypeProtoId.pid();
+            break;
+        default:
+            break;
         }
     }
 }
@@ -564,17 +1165,17 @@ static void op_get_weapon_ammo_count(Program* program)
 
     // CE: Implementation is different.
     int ammoQuantityOrCharges = 0;
-    if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_AMMO:
-            case ITEM_TYPE_WEAPON:
-                ammoQuantityOrCharges = ammoGetQuantity(obj);
-                break;
-            case ITEM_TYPE_MISC:
-                ammoQuantityOrCharges = miscItemGetCharges(obj);
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_AMMO:
+        case ITEM_TYPE_WEAPON:
+            ammoQuantityOrCharges = ammoGetQuantity(obj);
+            break;
+        case ITEM_TYPE_MISC:
+            ammoQuantityOrCharges = miscItemGetCharges(obj);
+            break;
+        default:
+            break;
         }
     }
 
@@ -588,17 +1189,17 @@ static void op_set_weapon_ammo_count(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     // CE: Implementation is different.
-    if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
-            switch (itemGetType(obj)) {
-            case ITEM_TYPE_AMMO:
-            case ITEM_TYPE_WEAPON:
-                ammoSetQuantity(obj, ammoQuantityOrCharges);
-                break;
-            case ITEM_TYPE_MISC:
-                miscItemSetCharges(obj, ammoQuantityOrCharges);
-                break;
-            }
+    if (ProtoId(obj).objectType() == OBJ_TYPE_ITEM) {
+        switch (itemGetType(obj)) {
+        case ITEM_TYPE_AMMO:
+        case ITEM_TYPE_WEAPON:
+            ammoSetQuantity(obj, ammoQuantityOrCharges);
+            break;
+        case ITEM_TYPE_MISC:
+            miscItemSetCharges(obj, ammoQuantityOrCharges);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -626,7 +1227,12 @@ static void op_get_mouse_buttons(Program* program)
 {
     // CE: Implementation is slightly different - it does not handle middle
     // mouse button.
-    programStackPushInteger(program, mouse_get_last_buttons());
+    programStackPushInteger(program, static_cast<int>(mouse_get_last_buttons()));
+}
+
+static void op_get_window_under_mouse(Program* program)
+{
+    programStackPushInteger(program, _win_last_button_winID());
 }
 
 // get_screen_width
@@ -639,6 +1245,46 @@ static void op_get_screen_width(Program* program)
 static void op_get_screen_height(Program* program)
 {
     programStackPushInteger(program, screenGetHeight());
+}
+
+// get_light_level
+static void op_get_light_level(Program* program)
+{
+    programStackPushInteger(program, lightGetAmbientIntensity());
+}
+
+// note: might need to be updated when Hero Appearance is implemented
+static void op_refresh_pc_art(Program* program)
+{
+    if (gDude == nullptr) {
+        return;
+    }
+
+    Rect rect;
+    objectGetRect(gDude, &rect);
+
+    const FrmId dudeFrmId = FrmId(gDude);
+    AnimationType anim = dudeFrmId.animationType();
+    Rotation rotation = dudeFrmId.rotation();
+
+    _proto_dude_update_gender();
+
+    const FrmId frmId = inventoryComputeCritterFrmId(gDude,
+        gDude,
+        critterGetItem2(gDude),
+        critterGetItem1(gDude),
+        critterGetArmor(gDude),
+        interfaceGetCurrentHand(),
+        anim,
+        rotation);
+
+    // CE: When changing gender, the refreshed rect can be smaller than the original one,
+    // which can leave a momentary ghost.  We union with old rect to avoid that.
+    Rect newRect;
+    objectSetFrmId(gDude, frmId, nullptr);
+    objectGetRect(gDude, &newRect);
+    rectUnion(&rect, &newRect, &rect);
+    tileWindowRefreshRect(&rect, gDude->elevation);
 }
 
 // create_message_window
@@ -673,9 +1319,9 @@ static void op_create_message_window(Program* program)
         count,
         192,
         116,
-        _colorTable[32328],
+        COLOR_AMBER,
         nullptr,
-        _colorTable[32328],
+        COLOR_AMBER,
         DIALOG_BOX_LARGE);
     showing = false;
 
@@ -685,7 +1331,7 @@ static void op_create_message_window(Program* program)
 // get_attack_type
 static void op_get_attack_type(Program* program)
 {
-    int hit_mode;
+    HitMode hit_mode;
     if (interface_get_current_attack_mode(&hit_mode)) {
         programStackPushInteger(program, hit_mode);
     } else {
@@ -693,18 +1339,53 @@ static void op_get_attack_type(Program* program)
     }
 }
 
+static void op_force_aimed_shots(Program* program)
+{
+    const ProtoId protoId = programStackPopProtoId(program);
+    forceAimedShots(protoId);
+}
+
+static void op_disable_aimed_shots(Program* program)
+{
+    const ProtoId protoId = programStackPopProtoId(program);
+    disableAimedShots(protoId);
+}
+
+static void op_play_sfall_sound(Program* program)
+{
+    int mode = programStackPopInteger(program);
+    const char* path = programStackPopString(program);
+
+    int soundId = 0;
+    if (mode >= 0) {
+        int volumeReduction = (mode & 0x7FFF0000) >> 16;
+        ScriptSoundMode soundMode = static_cast<ScriptSoundMode>(mode & 0xF);
+        soundId = scriptSoundPlay(path, soundMode, volumeReduction);
+    } else {
+        programPrintError("play_sfall_sound: invalid script sound mode %d.", mode);
+    }
+
+    programStackPushInteger(program, soundId);
+}
+
+static void op_stop_sfall_sound(Program* program)
+{
+    int soundId = programStackPopInteger(program);
+    scriptSoundStop(soundId);
+}
+
 // force_encounter_with_flags
 static void op_force_encounter_with_flags(Program* program)
 {
-    unsigned int flags = programStackPopInteger(program);
-    int map = programStackPopInteger(program);
+    EncounterFlag flags = static_cast<EncounterFlag>(programStackPopInteger(program));
+    Map map = programStackPopEnum<Map>(program);
     wmForceEncounter(map, flags);
 }
 
 // list_as_array
 static void op_list_as_array(Program* program)
 {
-    int type = programStackPopInteger(program);
+    ListType type = programStackPopEnum<ListType>(program);
     int arrayId = ListAsArray(type);
     programStackPushInteger(program, arrayId);
 }
@@ -732,6 +1413,53 @@ static void op_tile_under_cursor(Program* program)
 
     int tile = tileFromScreenXY(x, y);
     programStackPushInteger(program, tile);
+}
+
+// gdialog_get_barter_mod
+static void op_gdialog_get_barter_mod(Program* program)
+{
+    programStackPushInteger(program, gameDialogGetBarterModifier());
+}
+
+// get_tile_fid
+static void op_get_tile_fid(Program* program)
+{
+    int tileData = programStackPopInteger(program);
+    int tile = tileData & 0xFFFFFF;
+    MapElevation elevation = static_cast<MapElevation>((tileData >> 24) & 0x0F);
+    int mode = tileData >> 28;
+
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
+        debugPrint("%s: op_get_tile_fid invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    int squareTile = squareTileFromTile(tile);
+    if (!squareGridTileIsValid(squareTile)) {
+        debugPrint("%s: op_get_tile_fid failed to map tile=%d to square index", program->name, tile);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    int squareData = _square[elevation]->tileFid[squareTile];
+
+    // Sfall's FRM Limit patch extended FrameId from 12 bits (mask 0xFFF) to 14 bits (mask 0x3FFF), but code doesn't support it yet.
+    // Check the sfall versions prior 4.3.9
+    switch (mode) {
+    case 1:
+        // roof tile frame id
+        programStackPushInteger(program, RoofTileFrmId(squareData).frameId());
+        break;
+    case 2:
+        // floor tile and roof tile fid
+        programStackPushInteger(program, squareData);
+        break;
+    default:
+        // floor tile frame id
+        programStackPushInteger(program, FloorTileFrmId(squareData).frameId());
+        break;
+    }
 }
 
 // substr
@@ -798,14 +1526,14 @@ static void op_explosions_metarule(Program* program)
     switch (metarule) {
     case EXPL_FORCE_EXPLOSION_PATTERN:
         if (param1 != 0) {
-            explosionSetPattern(2, 4);
+            explosionSetPattern(ROTATION_SE, ROTATION_W);
         } else {
-            explosionSetPattern(0, 6);
+            explosionSetPattern(ROTATION_FIRST, ROTATION_COUNT);
         }
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_ART:
-        explosionSetFrm(param1);
+        explosionSetFrmId(static_cast<MiscFrameId>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_RADIUS:
@@ -813,7 +1541,10 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_DMGTYPE:
-        explosionSetDamageType(param1);
+        if (!damageTypeIsValid(param1)) {
+            debugPrint("\n%s: explosions_metarule: EXPL_FORCE_EXPLOSION_DMGTYPE invalid damage type %d", program->name, param1);
+        }
+        explosionSetDamageType(static_cast<DamageType>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_STATIC_EXPLOSION_RADIUS:
@@ -825,7 +1556,7 @@ static void op_explosions_metarule(Program* program)
         if (1) {
             int minDamage;
             int maxDamage;
-            explosiveGetDamage(param1, &minDamage, &maxDamage);
+            explosiveGetDamage(ProtoId(param1), &minDamage, &maxDamage);
 
             ArrayId arrayId = CreateTempArray(2, 0);
             SetArray(arrayId, ProgramValue { 0 }, ProgramValue { minDamage }, false, program);
@@ -835,10 +1566,10 @@ static void op_explosions_metarule(Program* program)
         }
         break;
     case EXPL_SET_DYNAMITE_EXPLOSION_DAMAGE:
-        explosiveSetDamage(PROTO_ID_DYNAMITE_I, param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::Dynamite, param1, param2);
         break;
     case EXPL_SET_PLASTIC_EXPLOSION_DAMAGE:
-        explosiveSetDamage(PROTO_ID_PLASTIC_EXPLOSIVES_I, param1, param2);
+        explosiveSetDamage(ItemProtoTypeId::PlasticExplosives, param1, param2);
         break;
     case EXPL_SET_EXPLOSION_MAX_TARGET:
         explosionSetMaxTargets(param1);
@@ -853,6 +1584,34 @@ static void op_get_message(Program* program)
     int messageListId = programStackPopInteger(program);
     char* text = messageListRepositoryGetMsg(messageListId, messageId);
     programStackPushString(program, text);
+}
+
+// save_array
+static void op_save_array(Program* program)
+{
+    auto arrayId = static_cast<ArrayId>(programStackPopInteger(program));
+    auto key = programStackPopValue(program);
+    auto result = SaveArray(key, arrayId, program);
+    switch (result) {
+    case SaveArrayResult::InvalidId:
+        programPrintError("save_array: array with id %d doesn't exist.", arrayId);
+        break;
+    case SaveArrayResult::ReservedKey:
+        programPrintError("save_array: trying to save array under reserved key.");
+        break;
+    case SaveArrayResult::InvalidKeyType:
+        programPrintError("save_array: invalid key type: %s.", key.typeDebugString());
+        break;
+    default:;
+        // OK
+    }
+}
+
+// load_array
+static void op_load_array(Program* program)
+{
+    auto key = programStackPopValue(program);
+    programStackPushInteger(program, static_cast<int>(LoadArray(key, program)));
 }
 
 // array_key
@@ -878,6 +1637,14 @@ static void op_temp_array(Program* program)
 {
     auto flags = programStackPopInteger(program);
     auto len = programStackPopInteger(program);
+
+    // Special case for array sub-expressions.
+    if ((flags & SFALL_ARRAYFLAG_EXPR_POP) != 0) {
+        PopExpressionArray();
+        programStackPushInteger(program, 0);
+        return;
+    }
+
     auto arrayId = CreateTempArray(len, flags);
     programStackPushInteger(program, arrayId);
 }
@@ -907,13 +1674,15 @@ static void op_set_array(Program* program)
     SetArray(arrayId, key, value, true, program);
 }
 
+// This special opcode is used to implement array expressions.
+// It should always push 0 on the stack.
 // arrayexpr
-static void op_stack_array(Program* program)
+static void op_arrayexpr(Program* program)
 {
     auto value = programStackPopValue(program);
     auto key = programStackPopValue(program);
-    auto returnValue = StackArray(key, value, program);
-    programStackPushInteger(program, returnValue);
+    SetArrayFromExpression(key, value, program);
+    programStackPushInteger(program, 0);
 }
 
 // scan_array
@@ -968,6 +1737,30 @@ static void op_resize_array(Program* program)
     auto newLen = programStackPopInteger(program);
     auto arrayId = programStackPopInteger(program);
     ResizeArray(arrayId, newLen);
+}
+
+// get_npc_level
+static void op_get_npc_level(Program* program)
+{
+    ProgramValue value = programStackPopValue(program);
+    int level = -1;
+    if (value.isString()) {
+        level = partyMemberGetNpcLevel(kPartyMemberLookupByName, programGetString(program, value.opcode, value.integerValue));
+    } else if (value.isInt()) {
+        level = partyMemberGetNpcLevel(value.integerValue);
+    }
+    programStackPushInteger(program, level);
+}
+
+// inc_npc_level
+static void op_inc_npc_level(Program* program)
+{
+    ProgramValue value = programStackPopValue(program);
+    if (value.isString()) {
+        partyMemberIncNpcLevel(kPartyMemberLookupByName, programGetString(program, value.opcode, value.integerValue));
+    } else if (value.isInt()) {
+        partyMemberIncNpcLevel(value.integerValue);
+    }
 }
 
 // party_member_list
@@ -1042,14 +1835,14 @@ static void op_make_straight_path(Program* program)
 static void op_obj_blocking_at(Program* program)
 {
     int type = programStackPopInteger(program);
-    int elevation = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
     int tile = programStackPopInteger(program);
 
     PathBuilderCallback* func = get_blocking_func(type);
     Object* obstacle = func(nullptr, tile, elevation);
     if (obstacle != nullptr) {
         if (type == BLOCKING_TYPE_SHOOT) {
-            if ((obstacle->flags & OBJECT_SHOOT_THRU) != 0) {
+            if ((obstacle->flags & OBJECT_SHOOT_THRU) != OBJECT_NONE) {
                 obstacle = nullptr;
             }
         }
@@ -1057,13 +1850,107 @@ static void op_obj_blocking_at(Program* program)
     programStackPushPointer(program, obstacle);
 }
 
-// art_exists
-static void op_art_exists(Program* program)
+// create_spatial
+static void op_create_spatial(Program* program)
 {
-    int fid = programStackPopInteger(program);
-    programStackPushInteger(program, artExists(fid));
+    int radius = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
+    int tile = programStackPopInteger(program);
+    int scriptId = programStackPopInteger(program);
+
+    if (scriptId <= 0) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    int scriptIndex = scriptId - 1;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (!hexGridTileIsValid(tile)) {
+        programPrintError("create_spatial: invalid tile number %d.", tile);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (elevation < 0 || elevation >= ELEVATION_COUNT) {
+        programPrintError("create_spatial: invalid elevation number %d.", elevation);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    Object* spatial = scriptCreateSpatial(scriptIndex, tile, elevation, radius);
+    if (spatial == nullptr) {
+        programPrintError("create_spatial: failed to create spatial script.");
+    }
+
+    programStackPushPointer(program, spatial);
 }
 
+// tile_light
+static void op_tile_light(Program* program)
+{
+    int tile = programStackPopInteger(program);
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
+    programStackPushInteger(program, lightGetTileIntensity(elevation, tile));
+}
+
+// tile_get_objs
+static void op_tile_get_objects(Program* program)
+{
+    MapElevation elevation = programStackPopEnum<MapElevation>(program);
+    int tile = programStackPopInteger(program);
+    ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
+
+    if (!hexGridTileIsValid(tile) || !elevationIsValid(elevation)) {
+        debugPrint("%s: op_tile_get_objects invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    int index = 0;
+    for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
+        ResizeArray(arrayId, index + 1);
+        SetArray(arrayId, ProgramValue(index++), ProgramValue(object), false, program);
+    }
+
+    programStackPushInteger(program, arrayId);
+}
+
+// path_find_to
+static void op_make_path(Program* program)
+{
+    int type = programStackPopInteger(program);
+    int dest = programStackPopInteger(program);
+    Object* object = static_cast<Object*>(programStackPopPointer(program));
+    ArrayId arrayId = CreateTempArray(0, 0);
+
+    if (object == nullptr
+        || !hexGridTileIsValid(dest)
+        || object->elevation < 0
+        || object->elevation >= ELEVATION_COUNT
+        || !hexGridTileIsValid(object->tile)) {
+        debugPrint("%s: op_make_path invalid input: object=%p dest=%d elevation=%d", program->name, object, dest, object != nullptr ? object->elevation : -1);
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    // sfall only requires an empty destination tile when the source object is a critter.
+    int requireEmptyDest = ProtoId(object).objectType() == OBJ_TYPE_CRITTER;
+
+    unsigned char rotations[kPathfinderMaxPathLength];
+    int pathLength = pathfinderFindPath(object, object->tile, dest, rotations, requireEmptyDest, get_blocking_func(type));
+    ResizeArray(arrayId, pathLength);
+    for (int index = 0; index < pathLength; index++) {
+        SetArray(arrayId, ProgramValue(index), ProgramValue(static_cast<int>(rotations[index])), false, program);
+    }
+
+    programStackPushInteger(program, arrayId);
+}
 // sfall_func0
 static void op_sfall_func0(Program* program)
 {
@@ -1142,11 +2029,28 @@ static void op_div(Program* program)
 
 static void op_sprintf(Program* program)
 {
-    auto arg1 = programStackPopValue(program);
-    auto arg2 = programStackPopString(program);
-    programStackPushValue(program, arg1);
-    programStackPushString(program, arg2);
-    sprintf_lite(program, 2, "op_sprintf");
+    static constexpr MetaruleInfo kSprintfStringFormatScaffold = {
+        "string_format",
+        mf_string_format,
+        2,
+        2,
+        0,
+        { ARG_STRING, ARG_ANY },
+    };
+
+    ProgramValue args[2];
+    args[0] = programStackPopValue(program);
+    args[1] = programStackPopValue(program);
+
+    OpcodeContext ctx(program, &kSprintfStringFormatScaffold, 2, args);
+    if (!ctx.validateArguments()) {
+        ctx.setReturn("");
+        ctx.pushReturnValue();
+        return;
+    }
+
+    mf_string_format(ctx);
+    ctx.pushReturnValue();
 }
 
 static void op_charcode(Program* program)
@@ -1159,58 +2063,232 @@ static void op_charcode(Program* program)
     }
 }
 
-static void op_show_iface_tag(fallout::Program* program)
+static void op_set_fake_trait(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    char* desc = programStackPopString(program);
+    int image = programStackPopInteger(program);
+    int active = programStackPopInteger(program);
+    char* name = programStackPopString(program);
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        dudeEnableState(tag);
-        break;
-    default:
-        debugPrint("op_show_iface_tag: custom tag %d is not handled", tag);
-    }
+    programPrintError("set_fake_trait: not implemented!");
 }
 
-static void op_hide_iface_tag(fallout::Program* program)
+static void op_show_iface_tag(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    int tag = programStackPopInteger(program);
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        dudeDisableState(tag);
-        break;
-    default:
-        debugPrint("op_hide_iface_tag: custom tag %d is not handled", tag);
+    if (dudeStateIsValid(tag)) {
+        DudeState state = static_cast<DudeState>(tag);
+        switch (state) {
+        case DUDE_STATE_SNEAKING:
+        case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        case DUDE_STATE_ADDICTED:
+            dudeEnableState(state);
+            return;
+        default:
+            programPrintError("unsupported tag %d", tag);
+            return;
+        }
     }
+
+    interfaceTagShow(tag);
 }
 
-static void op_is_iface_tag_active(fallout::Program* program)
+static void op_hide_iface_tag(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    int tag = programStackPopInteger(program);
+
+    if (dudeStateIsValid(tag)) {
+        DudeState state = static_cast<DudeState>(tag);
+        switch (state) {
+        case DUDE_STATE_SNEAKING:
+        case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        case DUDE_STATE_ADDICTED:
+            dudeDisableState(state);
+            return;
+        default:
+            programPrintError("unsupported tag %d", tag);
+            return;
+        }
+    }
+
+    interfaceTagHide(tag);
+}
+
+static void op_is_iface_tag_active(Program* program)
+{
+    int tag = programStackPopInteger(program);
     bool isActive = false;
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        isActive = fallout::dudeHasState(tag);
-        break;
-    case 1: // POISONED
-        isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
-        break;
-    case 2: // RADIATED
-        isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
-        break;
-    default:
-        debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
+    if (dudeStateIsValid(tag)) {
+        isActive = dudeHasState(static_cast<DudeState>(tag));
+    } else {
+        isActive = interfaceTagIsActive(tag);
     }
 
-    fallout::programStackPushInteger(program, isActive ? 1 : 0);
+    programStackPushInteger(program, isActive ? 1 : 0);
+}
+
+// TODO: move opcodes into several files
+// TODO: reduce code duplication by introducing something like OpcodeContext in sfall
+
+static void op_register_hook(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook";
+
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    if (!sfall_gl_scr_is_global_script(program)) {
+        programPrintError("%s: can only be called from global scripts", opcodeName);
+        return;
+    }
+    int startProcIndex = programFindProcedure(program, gScriptProcNames[SCRIPT_PROC_START]);
+    if (startProcIndex == -1) {
+        programPrintError("%s: 'start' procedure not found", opcodeName);
+        return;
+    }
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), startProcIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, startProcIndex);
+    }
+}
+
+static void op_register_hook_proc(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook_proc";
+
+    int procedureIndex = programStackPopInteger(program);
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    if (!sfall_gl_scr_is_global_script(program)) {
+        programPrintError("%s: can only be called from global scripts", opcodeName);
+        return;
+    }
+    if (procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
+        programPrintError("%s: procedure index %d is out of range [0; %d]", opcodeName, procedureIndex, program->procedureCount());
+        return;
+    }
+
+    // Note: in sfall, register_hook_proc by default adds the next hook to the beginning of the hook order.
+    // Meaning the last script to be registered will be executed first.
+    // There was a special opcode `register_hook_proc_spec` that adds to the end of hook order instead.
+    // In CE we assume that this order shouldn't matter, and giving script a choice like that doesn't solve anything, since several scripts from different mods can use either opcode.
+
+    // Global script order is entirely based off script file name sorting and when user installs scripts from different mods, there's no way to ensure a "proper" order,
+    // without some kind of script-dependency system, which we don't have.
+    // So let's just simply use the direct order.
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), procedureIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, procedureIndex);
+    }
+}
+
+ScriptHookCall* hookOpcodeGetCurrentCall(const char* opcodeName)
+{
+    const auto hookCall = ScriptHookCall::current();
+    if (hookCall == nullptr) {
+        programPrintError("%s: called outside of a script hook", opcodeName);
+    }
+    return hookCall;
+}
+
+static void op_get_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_arg";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript(program) : ProgramValue(0));
+}
+
+static void op_get_sfall_args(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_args";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    ArrayId result = 0;
+    if (hookCall != nullptr) {
+        result = CreateTempArray(hookCall->numArgs(), 0);
+        for (int i = 0; i < hookCall->numArgs(); ++i) {
+            SetArray(result, i, hookCall->getArgAt(i, program), false, program);
+        }
+    }
+    programStackPushInteger(program, static_cast<int>(result));
+}
+
+static void op_set_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_arg";
+
+    const ProgramValue value = programStackPopValue(program);
+    const int argNum = programStackPopInteger(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (argNum < 0 || argNum >= hookCall->numArgs()) {
+        programPrintError("%s: argNum %d out of range [0, %d]", opcodeName, argNum, hookCall->numArgs() - 1);
+        return;
+    }
+    hookCall->setArgAt(argNum, program, value);
+}
+
+static void op_set_sfall_return(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_return";
+
+    const ProgramValue value = programStackPopValue(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (hookCall->numScriptReturnValues() >= hookCall->maxReturnValues()) {
+        programPrintError("%s: trying to add next return value while only %d is expected", opcodeName, hookCall->maxReturnValues());
+        return;
+    }
+    hookCall->addReturnValueFromScript(program, value);
+}
+
+static void op_fs_copy(Program* program)
+{
+    char* source = programStackPopString(program);
+    char* path = programStackPopString(program);
+    programStackPushInteger(program, sfallFileSystemCopy(path, source));
+}
+
+static void op_fs_find(Program* program)
+{
+    char* path = programStackPopString(program);
+    programStackPushInteger(program, sfallFileSystemFind(path));
+}
+
+static void op_fs_create(Program* program)
+{
+    int size = programStackPopInteger(program);
+    char* path = programStackPopString(program);
+    programPrintError("fs_create: not implemented!");
+    programStackPushInteger(program, -1);
+}
+
+static void op_fs_delete(Program* program)
+{
+    int id = programStackPopInteger(program);
+    sfallFileSystemDelete(id);
+}
+
+static void op_set_hero_style(Program* program)
+{
+    int style = programStackPopInteger(program);
+    programPrintError("set_hero_style: not implemented!");
+}
+
+static void op_set_hero_race(Program* program)
+{
+    int race = programStackPopInteger(program);
+    programPrintError("set_hero_race: not implemented!");
 }
 
 // Note: opcodes should pop arguments off the stack in reverse order
@@ -1241,35 +2319,46 @@ void sfallOpcodesInit()
     // ^ 0x81da - int   call_offset_r3(int address, int arg1, int arg2, int arg3)
     // ^ 0x81db - int   call_offset_r4(int address, int arg1, int arg2, int arg3, int arg4)
 
-    // 0x815a - void set_pc_base_stat(int StatID, int value)
+    // 0x815a - void set_pc_base_stat(Stat stat, int value)
     interpreterRegisterOpcode(0x815A, op_set_pc_base_stat);
-    // 0x815b - void set_pc_extra_stat(int StatID, int value)
+    // 0x815b - void set_pc_extra_stat(Stat stat, int value)
     interpreterRegisterOpcode(0x815B, op_set_pc_bonus_stat);
-    // 0x815c - int  get_pc_base_stat(int StatID)
+    // 0x815c - int  get_pc_base_stat(Stat stat)
     interpreterRegisterOpcode(0x815C, op_get_pc_base_stat);
-    // 0x815d - int  get_pc_extra_stat(int StatID)
+    // 0x815d - int  get_pc_extra_stat(Stat stat)
     interpreterRegisterOpcode(0x815D, op_get_pc_bonus_stat);
 
-    // 0x815e - void set_critter_base_stat(object, int StatID, int value)
+    // 0x815e - void set_critter_base_stat(object, Stat stat, int value)
     interpreterRegisterOpcode(0x815E, op_set_critter_base_stat);
-    // 0x815f - void set_critter_extra_stat(object, int StatID, int value)
+    // 0x815f - void set_critter_extra_stat(object, Stat stat, int value)
     interpreterRegisterOpcode(0x815F, op_set_critter_extra_stat);
-    // 0x8160 - int  get_critter_base_stat(object, int StatID)
+    // 0x8160 - int  get_critter_base_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8160, op_get_critter_base_stat);
-    // 0x8161 - int  get_critter_extra_stat(object, int StatID)
+    // 0x8161 - int  get_critter_extra_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
-    // 0x8242 - void set_critter_skill_points(int critter, int skill, int value)
-    // 0x8243 - int  get_critter_skill_points(int critter, int skill)
+    // 0x8242 - void set_critter_skill_points(object critter, Skill skill, int value)
+    interpreterRegisterOpcode(0x8242, op_set_critter_skill_points);
+    // 0x8243 - int  get_critter_skill_points(object critter, Skill skill)
+    interpreterRegisterOpcode(0x8243, op_get_critter_skill_points);
     // 0x8244 - void set_available_skill_points(int value)
+    interpreterRegisterOpcode(0x8244, op_set_available_skill_points);
     // 0x8245 - int  get_available_skill_points()
+    interpreterRegisterOpcode(0x8245, op_get_available_skill_points);
     // 0x8246 - void mod_skill_points_per_level(int value)
+    interpreterRegisterOpcode(0x8246, op_mod_skill_points_per_level);
 
-    // 0x81b4 - void set_stat_max(int stat, int value)
-    // 0x81b5 - void set_stat_min(int stat, int value)
-    // 0x81b7 - void set_pc_stat_max(int stat, int value)
-    // 0x81b8 - void set_pc_stat_min(int stat, int value)
-    // 0x81b9 - void set_npc_stat_max(int stat, int value)
-    // 0x81ba - void set_npc_stat_min(int stat, int value)
+    // 0x81b4 - void set_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B4, op_set_stat_max);
+    // 0x81b5 - void set_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B5, op_set_stat_min);
+    // 0x81b7 - void set_pc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B7, op_set_pc_stat_max);
+    // 0x81b8 - void set_pc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B8, op_set_pc_stat_min);
+    // 0x81b9 - void set_npc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B9, op_set_npc_stat_max);
+    // 0x81ba - void set_npc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81BA, op_set_npc_stat_min);
 
     // 0x816b - int  input_funcs_available() // deprecated; do not implement
     // 0x816c - int  key_pressed(int dxScancode)
@@ -1283,6 +2372,7 @@ void sfallOpcodesInit()
     // 0x821e - int  get_mouse_buttons()
     interpreterRegisterOpcode(0x821E, op_get_mouse_buttons);
     // 0x821f - int  get_window_under_mouse()
+    interpreterRegisterOpcode(0x821F, op_get_window_under_mouse);
 
     // 0x8163 - int get_year()
     interpreterRegisterOpcode(0x8163, op_get_year);
@@ -1330,27 +2420,48 @@ void sfallOpcodesInit()
     // 0x8175 - void set_dm_model(string name)
     // 0x8176 - void set_df_model(string name)
     // 0x8177 - void set_movie_path(string filename, int movieid)
+    interpreterRegisterOpcode(0x8177, op_set_movie_path);
 
-    // 0x8178 - void set_perk_image(int perkID, int value)
-    // 0x8179 - void set_perk_ranks(int perkID, int value)
-    // 0x817a - void set_perk_level(int perkID, int value)
-    // 0x817b - void set_perk_stat(int perkID, int value)
-    // 0x817c - void set_perk_stat_mag(int perkID, int value)
-    // 0x817d - void set_perk_skill1(int perkID, int value)
-    // 0x817e - void set_perk_skill1_mag(int perkID, int value)
-    // 0x817f - void set_perk_type(int perkID, int value)
-    // 0x8180 - void set_perk_skill2(int perkID, int value)
-    // 0x8181 - void set_perk_skill2_mag(int perkID, int value)
-    // 0x8182 - void set_perk_str(int perkID, int value)
-    // 0x8183 - void set_perk_per(int perkID, int value)
-    // 0x8184 - void set_perk_end(int perkID, int value)
-    // 0x8185 - void set_perk_chr(int perkID, int value)
-    // 0x8196 - void set_perk_int(int perkID, int value)
-    // 0x8187 - void set_perk_agl(int perkID, int value)
-    // 0x8188 - void set_perk_lck(int perkID, int value)
-    // 0x8189 - void set_perk_name(int perkID, string value)
-    // 0x818a - void set_perk_desc(int perkID, string value)
+    // 0x8178 - void set_perk_image(Perk perk, int value)
+    interpreterRegisterOpcode(0x8178, op_set_perk_image);
+    // 0x8179 - void set_perk_ranks(Perk perk, int value)
+    interpreterRegisterOpcode(0x8179, op_set_perk_ranks);
+    // 0x817a - void set_perk_level(Perk perk, int value)
+    interpreterRegisterOpcode(0x817A, op_set_perk_level);
+    // 0x817b - void set_perk_stat(Perk perk, int value)
+    interpreterRegisterOpcode(0x817B, op_set_perk_stat);
+    // 0x817c - void set_perk_stat_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x817C, op_set_perk_stat_mag);
+    // 0x817d - void set_perk_skill1(Perk perk, int value)
+    interpreterRegisterOpcode(0x817D, op_set_perk_skill1);
+    // 0x817e - void set_perk_skill1_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x817E, op_set_perk_skill1_mag);
+    // 0x817f - void set_perk_type(Perk perk, int value)
+    interpreterRegisterOpcode(0x817F, op_set_perk_type);
+    // 0x8180 - void set_perk_skill2(Perk perk, int value)
+    interpreterRegisterOpcode(0x8180, op_set_perk_skill2);
+    // 0x8181 - void set_perk_skill2_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x8181, op_set_perk_skill2_mag);
+    // 0x8182 - void set_perk_str(Perk perk, int value)
+    interpreterRegisterOpcode(0x8182, op_set_perk_str);
+    // 0x8183 - void set_perk_per(Perk perk, int value)
+    interpreterRegisterOpcode(0x8183, op_set_perk_per);
+    // 0x8184 - void set_perk_end(Perk perk, int value)
+    interpreterRegisterOpcode(0x8184, op_set_perk_end);
+    // 0x8185 - void set_perk_chr(Perk perk, int value)
+    interpreterRegisterOpcode(0x8185, op_set_perk_chr);
+    // 0x8186 - void set_perk_int(Perk perk, int value)
+    interpreterRegisterOpcode(0x8186, op_set_perk_int);
+    // 0x8187 - void set_perk_agl(Perk perk, int value)
+    interpreterRegisterOpcode(0x8187, op_set_perk_agl);
+    // 0x8188 - void set_perk_lck(Perk perk, int value)
+    interpreterRegisterOpcode(0x8188, op_set_perk_lck);
+    // 0x8189 - void set_perk_name(Perk perk, string value)
+    interpreterRegisterOpcode(0x8189, op_set_perk_name);
+    // 0x818a - void set_perk_desc(Perk perk, string value)
+    interpreterRegisterOpcode(0x818A, op_set_perk_desc);
     // 0x8247 - void set_perk_freq(int value)
+    interpreterRegisterOpcode(0x8247, op_set_perk_freq);
 
     // 0x818b - void set_pipboy_available(int available)
 
@@ -1358,11 +2469,15 @@ void sfallOpcodesInit()
     // 0x818d - void mod_kill_counter(int critterType, int amount)
 
     // 0x818e - int get_perk_owed()
+    interpreterRegisterOpcode(0x818E, op_get_perk_owed);
     // 0x818f - void set_perk_owed(int value)
-    // 0x8190 - int get_perk_available(int perk)
+    interpreterRegisterOpcode(0x818F, op_set_perk_owed);
+    // 0x8190 - int get_perk_available(Perk perk)
 
     // 0x8191 - int get_critter_current_ap(object critter)
+    interpreterRegisterOpcode(0x8191, op_get_critter_current_ap);
     // 0x8192 - void set_critter_current_ap(object critter, int ap)
+    interpreterRegisterOpcode(0x8192, op_set_critter_current_ap);
 
     // 0x8193 - int  active_hand()
     interpreterRegisterOpcode(0x8193, op_active_hand);
@@ -1381,6 +2496,7 @@ void sfallOpcodesInit()
     // 0x819e - int   get_sfall_global_int(string/int varname)
     interpreterRegisterOpcode(0x819E, op_get_sfall_global_int);
     // 0x819f - float get_sfall_global_float(string/int varname)
+    interpreterRegisterOpcode(0x819F, op_get_sfall_global_float);
     // 0x822d - int   create_array(int element_count, int flags)
     interpreterRegisterOpcode(0x822D, op_create_array);
     // 0x822e - void  set_array(int array, any element, any value)
@@ -1400,15 +2516,18 @@ void sfallOpcodesInit()
     // 0x8239 - int   scan_array(int array, int/float var)
     interpreterRegisterOpcode(0x8239, op_scan_array);
     // 0x8254 - void  save_array(any key, int array)
+    interpreterRegisterOpcode(0x8254, op_save_array);
     // 0x8255 - int   load_array(any key)
+    interpreterRegisterOpcode(0x8255, op_load_array);
     // 0x8256 - int   array_key(int array, int index)
     interpreterRegisterOpcode(0x8256, op_get_array_key);
     // 0x8257 - int   arrayexpr(any key, any value)
-    interpreterRegisterOpcode(0x8257, op_stack_array);
+    interpreterRegisterOpcode(0x8257, op_arrayexpr);
 
     // 0x81a0 - void set_pickpocket_max(int percentage)
     // 0x81a1 - void set_hit_chance_max(int percentage)
     // 0x81a2 - void set_skill_max(int value)
+    interpreterRegisterOpcode(0x81A2, op_set_skill_max);
     // 0x81aa - void set_xp_mod(int percentage)
     // 0x81ab - void set_perk_level_mod(int levels)
 
@@ -1419,12 +2538,17 @@ void sfallOpcodesInit()
     // 0x81c9 - void set_critter_pickpocket_mod(object, int max, int mod)
     // 0x81ca - void set_base_pickpocket_mod(int max, int mod)
 
-    // note: these are deprecated; do not implement
-    // 0x81a3 - int  eax_available()
+    // 0x81a3 - int eax_available()
+    // NOTE: Deprecated in sfall (EAX is not supported); always returns 0.
+    interpreterRegisterOpcode(0x81A3, op_eax_available);
+
+    // note: this is deprecated; do not implement
     // 0x81a4 - void set_eax_environment(int environment)
 
     // 0x81a5 - void inc_npc_level(int pid/string name)
+    interpreterRegisterOpcode(0x81A5, op_inc_npc_level);
     // 0x8241 - int  get_npc_level(int pid/string name)
+    interpreterRegisterOpcode(0x8241, op_get_npc_level);
 
     // 0x81a6 - int get_viewport_x()
     // 0x81a7 - int get_viewport_y()
@@ -1447,6 +2571,7 @@ void sfallOpcodesInit()
 
     // 0x81bb - void set_fake_perk(string name, int level, int image, string desc)
     // 0x81bc - void set_fake_trait(string name, int active, int image, string desc)
+    interpreterRegisterOpcode(0x81BC, op_set_fake_trait);
     // 0x81bd - void set_selectable_perk(string name, int active, int image, string desc)
     // 0x81be - void set_perkbox_title(string title)
     // 0x81bf - void hide_real_perks()
@@ -1455,7 +2580,7 @@ void sfallOpcodesInit()
     // 0x81c2 - int has_fake_trait(string name)
     // 0x81c3 - void perk_add_mode(int type)
     // 0x81c4 - void clear_selectable_perks()
-    // 0x8225 - void remove_trait(int traitID)
+    // 0x8225 - void remove_trait(Trait trait)
 
     // 0x81cb - void set_pyromaniac_mod(int bonus)
     // 0x81cc - void apply_heaveho_fix()
@@ -1475,19 +2600,34 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x81E0, op_set_bodypart_hit_modifier);
 
     // 0x81e1 - void set_critical_table(int crittertype, int bodypart, int level, int valuetype, int value)
+    interpreterRegisterOpcode(0x81E1, op_set_critical_table);
     // 0x81e2 - int  get_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E2, op_get_critical_table);
     // 0x81e3 - void reset_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E3, op_reset_critical_table);
 
     // 0x81e4 - int   get_sfall_arg()
+    interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
+
     // 0x823c - array get_sfall_args()
+    interpreterRegisterOpcode(0x823c, op_get_sfall_args);
+
     // 0x823d - void  set_sfall_arg(int argnum, int value)
+    interpreterRegisterOpcode(0x823d, op_set_sfall_arg);
+
     // 0x81e5 - void  set_sfall_return(any value)
-    // 0x81ea - int   init_hook()
+    interpreterRegisterOpcode(0x81e5, op_set_sfall_return);
+
+    // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E6, op_set_unspent_ap_bonus);
     // 0x81e7 - int  get_unspent_ap_bonus()
+    interpreterRegisterOpcode(0x81E7, op_get_unspent_ap_bonus);
     // 0x81e8 - void set_unspent_ap_perk_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E8, op_set_unspent_ap_perk_bonus);
     // 0x81e9 - int  get_unspent_ap_perk_bonus()
+    interpreterRegisterOpcode(0x81E9, op_get_unspent_ap_perk_bonus);
 
     // 0x81ec - float sqrt(float)
     interpreterRegisterOpcode(0x81EC, op_sqrt);
@@ -1517,15 +2657,20 @@ void sfallOpcodesInit()
     // 0x81f2 - void set_palette(string path)
 
     // 0x81f3 - void remove_script(object)
+    interpreterRegisterOpcode(0x81F3, op_remove_script);
     // 0x81f4 - void set_script(object, int scriptid)
+    interpreterRegisterOpcode(0x81F4, op_set_script);
     // 0x81f5 - int get_script(object)
     interpreterRegisterOpcode(0x81F5, op_get_script);
 
     // 0x81f6 - int nb_create_char() // deprecated; do not implement
 
     // 0x81f7 - int   fs_create(string path, int size)
+    interpreterRegisterOpcode(0x81f7, op_fs_create);
     // 0x81f8 - int   fs_copy(string path, string source)
+    interpreterRegisterOpcode(0x81f8, op_fs_copy);
     // 0x81f9 - int   fs_find(string path)
+    interpreterRegisterOpcode(0x81f9, op_fs_find);
     // 0x81fa - void  fs_write_byte(int id, int data)
     // 0x81fb - void  fs_write_short(int id, int data)
     // 0x81fc - void  fs_write_int(int id, int data)
@@ -1537,6 +2682,7 @@ void sfallOpcodesInit()
     // 0x820b - int   fs_read_int(int id)
     // 0x820c - float fs_read_float(int id)
     // 0x81ff - void  fs_delete(int id)
+    interpreterRegisterOpcode(0x81ff, op_fs_delete);
     // 0x8200 - int   fs_size(int id)
     // 0x8201 - int   fs_pos(int id)
     // 0x8202 - void  fs_seek(int id, int pos)
@@ -1550,6 +2696,7 @@ void sfallOpcodesInit()
     // 0x8206 - void set_self(object)
     interpreterRegisterOpcode(0x8206, op_set_self);
     // 0x8207 - void register_hook(int hook)
+    interpreterRegisterOpcode(0x8207, op_register_hook);
 
     // 0x820d - int   list_begin(int type)
     interpreterRegisterOpcode(0x820D, op_list_begin);
@@ -1569,9 +2716,12 @@ void sfallOpcodesInit()
 
     // 0x8213 - void hero_select_win(int)
     // 0x8214 - void set_hero_race(int style)
+    interpreterRegisterOpcode(0x8214, op_set_hero_race);
     // 0x8215 - void set_hero_style(int style)
+    interpreterRegisterOpcode(0x8215, op_set_hero_style);
 
     // 0x8216 - void set_critter_burst_disable(object critter, int disable)
+    interpreterRegisterOpcode(0x8216, op_set_critter_burst_disable);
 
     // 0x8217 - int  get_weapon_ammo_pid(object weapon)
     interpreterRegisterOpcode(0x8217, op_get_weapon_ammo_pid);
@@ -1593,14 +2743,18 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8224, op_create_message_window);
 
     // 0x8226 - int get_light_level()
+    interpreterRegisterOpcode(0x8226, op_get_light_level);
 
     // 0x8227 - void refresh_pc_art()
+    interpreterRegisterOpcode(0x8227, op_refresh_pc_art);
 
     // 0x8228 - int get_attack_type()
     interpreterRegisterOpcode(0x8228, op_get_attack_type);
 
     // 0x822b - int  play_sfall_sound(string file, int mode)
+    interpreterRegisterOpcode(0x822B, op_play_sfall_sound);
     // 0x822c - void stop_sfall_sound(int soundID)
+    interpreterRegisterOpcode(0x822C, op_stop_sfall_sound);
 
     // 0x8235 - array string_split(string string, string split)
     interpreterRegisterOpcode(0x8235, op_string_split);
@@ -1620,13 +2774,18 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8253, op_type_of);
 
     // 0x823a - int get_tile_fid(int tileData)
+    interpreterRegisterOpcode(0x823A, op_get_tile_fid);
 
     // 0x823b - int modified_ini() // deprecated: do not implement
 
     // 0x823e - void force_aimed_shots(int pid)
+    interpreterRegisterOpcode(0x823E, op_force_aimed_shots);
+
     // 0x823f - void disable_aimed_shots(int pid)
+    interpreterRegisterOpcode(0x823F, op_disable_aimed_shots);
 
     // 0x8240 - void mark_movie_played(int id)
+    interpreterRegisterOpcode(0x8240, op_mark_movie_played);
 
     // 0x8248 - object get_last_target(object critter)
     // 0x8249 - object get_last_attacker(object critter)
@@ -1635,37 +2794,53 @@ void sfallOpcodesInit()
     // 0x824b - int tile_under_cursor()
     interpreterRegisterOpcode(0x824B, op_tile_under_cursor);
     // 0x824c - int gdialog_get_barter_mod()
+    interpreterRegisterOpcode(0x824C, op_gdialog_get_barter_mod);
     // 0x824d - void set_inven_ap_cost(int cost)
+    interpreterRegisterOpcode(0x824D, op_set_inven_ap_cost);
 
-    // 0x825c - void reg_anim_combat_check(int enable)
     // 0x825a - void reg_anim_destroy(object object)
+    interpreterRegisterOpcode(0x825A, op_reg_anim_destroy);
     // 0x825b - void reg_anim_animate_and_hide(object object, int animID, int delay)
+    interpreterRegisterOpcode(0x825B, op_reg_anim_animate_and_hide);
+    // 0x825c - void reg_anim_combat_check(int enable)
+    interpreterRegisterOpcode(0x825C, op_reg_anim_combat_check);
     // 0x825d - void reg_anim_light(object object, int radius, int delay)
+    interpreterRegisterOpcode(0x825D, op_reg_anim_light);
     // 0x825e - void reg_anim_change_fid(object object, int FID, int delay)
+    interpreterRegisterOpcode(0x825E, op_reg_anim_change_fid);
     // 0x825f - void reg_anim_take_out(object object, int holdFrameID, int delay)
+    interpreterRegisterOpcode(0x825F, op_reg_anim_take_out);
     // 0x8260 - void reg_anim_turn_towards(object object, int tile/targetObj, int delay)
+    interpreterRegisterOpcode(0x8260, op_reg_anim_turn_towards);
 
     // 0x8261 - int metarule2_explosions(object object)
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
 
     // 0x8262 - void register_hook_proc(int hook, procedure proc)
+    interpreterRegisterOpcode(0x8262, op_register_hook_proc);
 
     // 0x826b - string message_str_game(int fileId, int messageId)
     interpreterRegisterOpcode(0x826B, op_get_message);
     // 0x826c - int sneak_success()
+    interpreterRegisterOpcode(0x826C, op_sneak_success);
     // 0x826d - int tile_light(int elevation, int tileNum)
+    interpreterRegisterOpcode(0x826D, op_tile_light);
     // 0x826e - object obj_blocking_line(object objFrom, int tileTo, int blockingType)
     interpreterRegisterOpcode(0x826E, op_make_straight_path);
     // 0x826f - object obj_blocking_tile(int tileNum, int elevation, int blockingType)
     interpreterRegisterOpcode(0x826F, op_obj_blocking_at);
     // 0x8270 - array tile_get_objs(int tileNum, int elevation)
+    interpreterRegisterOpcode(0x8270, op_tile_get_objects);
     // 0x8271 - array party_member_list(int includeHidden)
     interpreterRegisterOpcode(0x8271, op_party_member_list);
     // 0x8272 - array path_find_to(object objFrom, int tileTo, int blockingType)
+    interpreterRegisterOpcode(0x8272, op_make_path);
     // 0x8273 - object create_spatial(int scriptID, int tile, int elevation, int radius)
+    interpreterRegisterOpcode(0x8273, op_create_spatial);
     // 0x8274 - int art_exists(int artFID)
     interpreterRegisterOpcode(0x8274, op_art_exists);
     // 0x8275 - int obj_is_carrying_obj(object invenObj, object itemObj)
+    interpreterRegisterOpcode(0x8275, op_obj_is_carrying_obj);
 
     // 0x8276 - any sfall_func0(string funcName)
     interpreterRegisterOpcode(0x8276, op_sfall_func0);
@@ -1687,7 +2862,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8281, op_sfall_func8);
 
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
+    interpreterRegisterOpcode(0x827d, op_register_hook_proc);
     // 0x827e - void reg_anim_callback(procedure proc)
+    interpreterRegisterOpcode(0x827e, op_reg_anim_callback);
 }
 
 void sfallOpcodesExit()

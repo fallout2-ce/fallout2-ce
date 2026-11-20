@@ -1,14 +1,31 @@
 #include "mapper/mp_scrpt.h"
 
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "art.h"
+#include "color.h"
+#include "db.h"
+#include "debug.h"
+#include "geometry.h"
+#include "map.h"
+#include "map_defs.h"
+#include "memory.h"
+#include "mouse.h"
 #include "object.h"
+#include "proto_instance.h"
 #include "scripts.h"
+#include "settings.h"
+#include "svga.h"
+#include "text_object.h"
 #include "tile.h"
+#include "window_manager_private.h"
 
 namespace fallout {
 
 // 0x49B170
-int map_scr_remove_spatial(int tile, int elevation)
+int map_scr_remove_spatial(int tile, MapElevation elevation)
 {
     Script* scr;
     Object* obj;
@@ -28,7 +45,7 @@ int map_scr_remove_spatial(int tile, int elevation)
 
     obj = objectFindFirstAtElevation(elevation);
     while (obj != NULL) {
-        if (obj->tile == tile && buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0, 0) == obj->fid) {
+        if (obj->tile == tile && FrmId(obj) == InterfaceFrameId::ExitGridMarker) {
             objectDestroy(obj, &rect);
             tileWindowRefreshRect(&rect, elevation);
 
@@ -45,12 +62,11 @@ int map_scr_remove_spatial(int tile, int elevation)
 // 0x49B214
 int map_scr_remove_all_spatials()
 {
-    int elevation;
     Script* scr;
     Object* obj;
     int sid;
 
-    for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         scr = scriptGetFirstSpatialScript(elevation);
         while (scr != NULL) {
             scriptRemove(scr->sid);
@@ -60,7 +76,7 @@ int map_scr_remove_all_spatials()
 
         obj = objectFindFirstAtElevation(elevation);
         while (obj != NULL) {
-            if (buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0, 0) == obj->fid) {
+            if (FrmId(obj) == InterfaceFrameId::ExitGridMarker) {
                 objectDestroy(obj, NULL);
 
                 obj = objectFindFirstAtElevation(elevation);
@@ -76,7 +92,7 @@ int map_scr_remove_all_spatials()
     for (sid = 0; sid < 15000; sid++) {
         if (scriptGetScript(sid, &scr) != -1) {
             if (scr->owner != NULL) {
-                if (scr->owner->pid == 0x500000C) {
+                if (ProtoId(scr->owner) == MiscProtoTypeId::Id0x0C) {
                     scr->owner->sid = -1;
                     scriptRemove(sid);
                 }
@@ -85,6 +101,356 @@ int map_scr_remove_all_spatials()
     }
 
     return 0;
+}
+
+static int _scr_show_toggled = 0;
+
+// 0x4C26D0
+void map_scr_toggle_hexes()
+{
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
+
+    if (!_scr_show_toggled) {
+        // REMOVE mode: erase all existing spatial marker objects
+        for (MapElevation elev = ELEVATION_FIRST; elev < ELEVATION_COUNT; elev++) {
+            Object* obj = objectFindFirstAtElevation(elev);
+            while (obj != nullptr) {
+                if (obj->fid == kMarkerFrmId.fid()) {
+                    objectDestroy(obj, nullptr);
+                    obj = objectFindFirstAtElevation(elev);
+                    continue;
+                }
+                obj = objectFindNextAtElevation();
+            }
+        }
+    } else {
+        // SHOW mode: iterate spatial scripts (SID 0x1000000..0x10002BC)
+        for (int sid = 0; sid < 700; sid++) {
+            Script* scr;
+            if (scriptGetScript(0x1000000 | sid, &scr) != -1) {
+                int builtTile = scr->sp.built_tile;
+                if (builtTile == -1 || builtTile == 0) {
+                    debugPrint("\nError: Spatial Script has invalid hex location...deleting!");
+                    continue;
+                }
+
+                Object* obj;
+                if (objectCreateWithFrmIdProtoId(&obj, kMarkerFrmId, ProtoId::Empty()) != -1) {
+                    obj->flags |= OBJECT_NO_SAVE;
+                    Rect rect;
+                    _obj_toggle_flat(obj, &rect);
+                    objectSetLocation(obj,
+                        builtTileGetTile(builtTile),
+                        builtTileGetElevation(builtTile),
+                        &rect);
+                }
+            }
+        }
+    }
+
+    _scr_show_toggled = 1 - _scr_show_toggled;
+    tileWindowRefresh();
+}
+
+// =========================================================================
+// Script selection dialog
+// =========================================================================
+
+// scr_find_str_index_ — case-insensitive lookup
+static int scr_find_index(const char* name, int count)
+{
+    for (int i = 0; i < count; i++) {
+        char nameBuf[32];
+        scriptsGetFileName(i, nameBuf, sizeof(nameBuf));
+        char* dot = strchr(nameBuf, '.');
+        if (dot != nullptr) *dot = '\0';
+        if (compat_stricmp(nameBuf, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int scr_choose(ScriptType scriptType)
+{
+    constexpr ColorWithFlags kDialogColor = static_cast<ColorWithFlags>(0x10104);
+    static const char* kScriptTypeNames[] = { "s_system", "s_spatial", "s_time", "s_item", "s_critter" };
+
+    int count = scriptsGetListLength();
+    if (count == 0) {
+        return -1;
+    }
+
+    ScriptType type = scriptType;
+    if (type == SCRIPT_TYPE_INVALID) {
+        type = static_cast<ScriptType>(_win_list_select("Script Type", kScriptTypeNames, 5, nullptr, 100, 100, kDialogColor));
+        if (type == SCRIPT_TYPE_INVALID) {
+            type = SCRIPT_TYPE_SYSTEM;
+        }
+    }
+
+    char path[COMPAT_MAX_PATH];
+    _script_make_path(path);
+    strcat(path, "scripts.lst");
+
+    File* stream = fileOpen(path, "rt");
+    if (stream == nullptr) {
+        return -1;
+    }
+
+    char** strlist = (char**)internal_malloc(sizeof(char*) * count);
+    if (strlist == nullptr) {
+        fileClose(stream);
+        return -1;
+    }
+
+    char buf[520];
+    int lineCount;
+    for (lineCount = 0; lineCount < count; lineCount++) {
+        if (fileReadString(buf, sizeof(buf), stream) == nullptr) {
+            debugPrint("\nError! in mp_scrpt!");
+            break;
+        }
+
+        char* pound = strchr(buf, '#');
+        if (pound != nullptr) {
+            *pound = '\0';
+        }
+
+        strlist[lineCount] = (char*)internal_malloc(520);
+        if (strlist[lineCount] == nullptr) {
+            fileClose(stream);
+            for (int i = 0; i < lineCount; i++) {
+                internal_free(strlist[i]);
+            }
+            internal_free(strlist);
+            return -1;
+        }
+
+        strcpy(strlist[lineCount], buf);
+
+        char* dot = strchr(strlist[lineCount], '.');
+        if (dot != nullptr) {
+            for (int j = 0; j < 4; j++) {
+                dot[j] = ' ';
+            }
+        }
+    }
+
+    fileClose(stream);
+
+    int result = -1;
+
+    if (lineCount == count) {
+        if (settings.mapper.sort_script_list) {
+            qsort(strlist, lineCount, sizeof(char*), [](const void* a, const void* b) -> int {
+                return strcmp(*(const char**)a, *(const char**)b);
+            });
+        }
+
+        int selection = _win_list_select("Script", strlist, lineCount, nullptr, 50, 100, kDialogColor);
+
+        if (selection >= 0) {
+            char* p = strchr(strlist[selection], ' ');
+            if (p != nullptr) {
+                *p = '\0';
+            }
+
+            int foundIndex = scr_find_index(strlist[selection], count);
+            if (foundIndex >= 0) {
+                result = foundIndex | (type << 24);
+            }
+        } else if (selection == -1) {
+            char typedName[14] = {};
+            _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
+            compat_strupr(typedName);
+
+            char* intStr = strstr(typedName, ".INT");
+            if (intStr != nullptr) {
+                *intStr = '\0';
+            }
+
+            if (strcmp(typedName, "NO SCRIPT") == 0 || strcmp(typedName, "NONE") == 0) {
+                result = -2;
+            } else {
+                int foundIndex = scr_find_index(typedName, count);
+                if (foundIndex >= 0) {
+                    result = foundIndex | (type << 24);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < lineCount; i++) {
+        internal_free(strlist[i]);
+    }
+    internal_free(strlist);
+
+    return result;
+}
+
+int map_scr_add_spatial(int tile, MapElevation elevation)
+{
+    int chosenSid = scr_choose(SCRIPT_TYPE_SPATIAL);
+    if (chosenSid < 0) {
+        return -1;
+    }
+
+    int radius = 3;
+    if (win_get_num_i(&radius, 0, 50, false, "Radius:", 100, 100) == -1) {
+        return -1;
+    }
+
+    int sid;
+    if (scriptAdd(&sid, SCRIPT_TYPE_SPATIAL) == -1) {
+        return -1;
+    }
+
+    Script* scr;
+    if (scriptGetScript(sid, &scr) == -1) {
+        return -1;
+    }
+
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
+    Object* obj;
+    if (objectCreateWithFrmIdProtoId(&obj, kMarkerFrmId, ProtoId::Empty()) != -1) {
+        obj->flags |= OBJECT_NO_SAVE;
+        Rect rect;
+        _obj_toggle_flat(obj, &rect);
+        objectSetLocation(obj, tile, elevation, &rect);
+        tileWindowRefreshRect(&rect, elevation);
+    }
+
+    scr->sp.built_tile = builtTileCreate(tile, elevation);
+    scr->index = scriptIdFromSid(chosenSid);
+    scr->sp.radius = radius;
+    _scr_find_str_run_info(scriptIdFromSid(chosenSid), nullptr, sid);
+
+    return 0;
+}
+
+// 1-based script index, 0 means no script
+void map_set_script(int scriptIndex)
+{
+    int newIndex = scriptIndex < 0 ? 0 : scriptIndex;
+    gMapHeader.scriptIndex = newIndex;
+    if (gMapSid != -1) {
+        scriptRemove(gMapSid);
+        gMapSid = -1;
+    }
+    if (newIndex <= 0 || scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM) == -1) return;
+
+    Object* obj;
+    objectCreateWithFrmIdProtoId(&obj, MiscFrameId::ScrollBlocker, ProtoId::Empty());
+    obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
+    objectSetLocation(obj, 1, ELEVATION_FIRST, nullptr);
+    obj->sid = gMapSid;
+    scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
+    Script* script;
+    scriptGetScript(gMapSid, &script);
+    script->index = gMapHeader.scriptIndex - 1;
+    script->flags |= SCRIPT_FLAG_NO_SAVE;
+    obj->id = scriptsNewObjectId();
+    script->ownerId = obj->id;
+    script->owner = obj;
+}
+
+void map_show_script()
+{
+    char info[256];
+    snprintf(info, sizeof(info), "Map script SID: %d\nMap name: %s",
+        gMapSid, gMapHeader.name);
+    _win_msg(info, 80, 80, static_cast<ColorWithFlags>(0x10104));
+}
+
+static void scr_label_object(Object* obj, const char* scriptName)
+{
+    Rect rect;
+    objectGetRect(obj, &rect);
+
+    const int kScreenWidth = rectGetWidth(&_scr_size);
+    const int kScreenHeight = rectGetHeight(&_scr_size);
+    if (rect.left < 0 || rect.right >= kScreenWidth || rect.bottom >= kScreenHeight) {
+        return;
+    }
+
+    char nameBuf[64];
+    if (scriptName[0] == '\0') {
+        strcpy(nameBuf, "<ERROR>");
+    } else {
+        strcpy(nameBuf, scriptName);
+        char* dot = strchr(nameBuf, '.');
+        if (dot) *dot = '\0';
+    }
+
+    textObjectAdd(obj, nameBuf, 101, COLOR_LIGHT_YELLOW, COLOR_BLACK, &rect);
+    tileWindowRefreshRect(&rect, gElevation);
+}
+
+static void scr_label_script(Script* scr)
+{
+    char nameBuf[32];
+    if (scriptsGetFileName(scr->index, nameBuf, sizeof(nameBuf)) == 0) {
+        scr_label_object(scr->owner, nameBuf);
+    } else {
+        scr_label_object(scr->owner, "");
+    }
+}
+
+// 0x4C285C
+void scr_debug_print_scripts()
+{
+    debugPrint("\n\n\t<<< SCRIPT DEBUG DUMP >>>\n");
+
+    textObjectsReset();
+
+    constexpr int kMaxScriptId = 32000;
+
+    // Phase 1: Scripts WITH owners on current elevation — label on owner
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
+        for (int id = 0; id < kMaxScriptId; id++) {
+            int sid = (type << 24) | id;
+            Script* scr;
+            if (scriptGetScript(sid, &scr) != -1 && scr->owner != nullptr) {
+                if (scr->owner->elevation == gElevation) {
+                    scr_label_script(scr);
+                }
+            }
+        }
+    }
+
+    // Phase 2: Scripts WITHOUT owners — find marker object at script's built_tile
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
+    for (ScriptType type = SCRIPT_TYPE_FIRST; type < SCRIPT_TYPE_COUNT; type++) {
+        for (int id = 0; id < kMaxScriptId; id++) {
+            int sid = (type << 24) | id;
+            Script* scr;
+            if (scriptGetScript(sid, &scr) != -1 && scr->owner == nullptr) {
+                int builtTile = scr->sp.built_tile;
+                if (builtTile == -1 || builtTile == 0) continue;
+
+                int tile = builtTileGetTile(builtTile);
+                MapElevation elevation = builtTileGetElevation(builtTile);
+                if (tile == -1 || elevation != gElevation) continue;
+
+                Object* obj = objectFindFirstAtLocation(elevation, tile);
+                while (obj != nullptr) {
+                    if (obj->fid == kMarkerFrmId.fid()) break;
+                    obj = objectFindNextAtLocation();
+                }
+
+                if (obj != nullptr) {
+                    char nameBuf[32];
+                    scriptsGetFileName(scr->index, nameBuf, sizeof(nameBuf));
+                    scr_label_object(obj, nameBuf);
+                } else {
+                    debugPrint("\n\n\t\t\t<ERROR>\n\n");
+                }
+            }
+        }
+    }
+
+    debugPrint("\n");
 }
 
 } // namespace fallout

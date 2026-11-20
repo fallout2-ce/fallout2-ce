@@ -1,81 +1,31 @@
 #ifndef ART_H
 #define ART_H
 
+#include <cassert>
+#include <cstddef>
+#include <cstring>
+#include <memory>
+#include <type_traits>
+
+#include "animation_defs.h"
+#include "art_defs.h"
 #include "cache.h"
-#include "db.h"
-#include "heap.h"
+#include "draw.h"
+#include "memory.h"
 #include "obj_types.h"
-#include "platform_compat.h"
 #include "proto_types.h"
 
 namespace fallout {
 
-typedef enum Head {
-    HEAD_INVALID,
-    HEAD_MARCUS,
-    HEAD_MYRON,
-    HEAD_ELDER,
-    HEAD_LYNETTE,
-    HEAD_HAROLD,
-    HEAD_TANDI,
-    HEAD_COM_OFFICER,
-    HEAD_SULIK,
-    HEAD_PRESIDENT,
-    HEAD_HAKUNIN,
-    HEAD_BOSS,
-    HEAD_DYING_HAKUNIN,
-    HEAD_COUNT,
-} Head;
-
-typedef enum HeadAnimation {
-    HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
-    FIDGET_GOOD = 1,
-    HEAD_ANIMATION_GOOD_TO_NEUTRAL = 2,
-    HEAD_ANIMATION_NEUTRAL_TO_GOOD = 3,
-    FIDGET_NEUTRAL = 4,
-    HEAD_ANIMATION_NEUTRAL_TO_BAD = 5,
-    HEAD_ANIMATION_BAD_TO_NEUTRAL = 6,
-    FIDGET_BAD = 7,
-    HEAD_ANIMATION_VERY_BAD_REACTION = 8,
-    HEAD_ANIMATION_GOOD_PHONEMES = 9,
-    HEAD_ANIMATION_NEUTRAL_PHONEMES = 10,
-    HEAD_ANIMATION_BAD_PHONEMES = 11,
-} HeadAnimation;
-
-typedef enum Background {
-    BACKGROUND_0,
-    BACKGROUND_1,
-    BACKGROUND_2,
-    BACKGROUND_HUB,
-    BACKGROUND_NECROPOLIS,
-    BACKGROUND_BROTHERHOOD,
-    BACKGROUND_MILITARY_BASE,
-    BACKGROUND_JUNK_TOWN,
-    BACKGROUND_CATHEDRAL,
-    BACKGROUND_SHADY_SANDS,
-    BACKGROUND_VAULT,
-    BACKGROUND_MASTER,
-    BACKGROUND_FOLLOWER,
-    BACKGROUND_RAIDERS,
-    BACKGROUND_CAVE,
-    BACKGROUND_ENCLAVE,
-    BACKGROUND_WASTELAND,
-    BACKGROUND_BOSS,
-    BACKGROUND_PRESIDENT,
-    BACKGROUND_TENT,
-    BACKGROUND_ADOBE,
-    BACKGROUND_COUNT,
-} Background;
-
 typedef struct Art {
-    int field_0;
+    int version;
     short framesPerSecond;
     short actionFrame;
     short frameCount;
-    short xOffsets[6];
-    short yOffsets[6];
-    int dataOffsets[6];
-    int padding[6];
+    short xOffsets[ROTATION_COUNT];
+    short yOffsets[ROTATION_COUNT];
+    int dataOffsets[ROTATION_COUNT];
+    int padding[ROTATION_COUNT];
     int dataSize;
 } Art;
 
@@ -87,89 +37,592 @@ typedef struct ArtFrame {
     short y;
 } ArtFrame;
 
-typedef enum WeaponAnimation {
-    WEAPON_ANIMATION_NONE,
-    WEAPON_ANIMATION_KNIFE, // d
-    WEAPON_ANIMATION_CLUB, // e
-    WEAPON_ANIMATION_HAMMER, // f
-    WEAPON_ANIMATION_SPEAR, // g
-    WEAPON_ANIMATION_PISTOL, // h
-    WEAPON_ANIMATION_SMG, // i
-    WEAPON_ANIMATION_SHOTGUN, // j
-    WEAPON_ANIMATION_LASER_RIFLE, // k
-    WEAPON_ANIMATION_MINIGUN, // l
-    WEAPON_ANIMATION_LAUNCHER, // m
-    WEAPON_ANIMATION_COUNT,
-} WeaponAnimation;
-
-typedef enum DudeNativeLook {
-    // Hero looks as one the tribals (before finishing Temple of Trails).
-    DUDE_NATIVE_LOOK_TRIBAL,
-
-    // Hero have finished Temple of Trails and received Vault Jumpsuit.
-    DUDE_NATIVE_LOOK_JUMPSUIT,
-    DUDE_NATIVE_LOOK_COUNT,
-} DudeNativeLook;
-
-extern int _art_vault_guy_num;
-extern int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+extern CritterFrameId _art_vault_guy_num;
+extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 extern Cache gArtCache;
+
+#define ART_NAME_SIZE (13)
+
+class NamedCacheEntry;
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
+template <typename T>
+struct MapFrameIdToObjectType;
+
+template <>
+struct MapFrameIdToObjectType<SceneryFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_SCENERY;
+};
+template <>
+struct MapFrameIdToObjectType<WallFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_WALL;
+};
+template <>
+struct MapFrameIdToObjectType<ItemFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_ITEM;
+};
+template <>
+struct MapFrameIdToObjectType<TileFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_TILE;
+};
+template <>
+struct MapFrameIdToObjectType<SkillDexFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_SKILLDEX;
+};
+template <>
+struct MapFrameIdToObjectType<InterfaceFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_INTERFACE;
+};
+template <>
+struct MapFrameIdToObjectType<BackgroundFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_BACKGROUND;
+};
+template <>
+struct MapFrameIdToObjectType<MiscFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_MISC;
+};
+template <>
+struct MapFrameIdToObjectType<HeadFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_HEAD;
+};
+template <>
+struct MapFrameIdToObjectType<CritterFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_CRITTER;
+};
+
+class FrmId {
+public:
+    static constexpr int kEmptyFid = -1;
+    static constexpr short kInvalidFrameId = -1;
+    static constexpr short kMinFrameId = 0;
+    static constexpr short kMaxFrameId = 4095;
+
+    constexpr FrmId()
+        : FrmId(
+              OBJ_TYPE_INVALID,
+              kEmptyFid,
+              kInvalidFrameId,
+              nullptr)
+    {
+    }
+
+    static const FrmId& Empty()
+    {
+        static const FrmId emptyInstance {};
+        return emptyInstance;
+    }
+
+    constexpr explicit FrmId(int fid)
+        : FrmId(
+              fid == kEmptyFid ? OBJ_TYPE_INVALID : objectTypeFromFid(fid),
+              fid,
+              fid,
+              nullptr)
+    {
+    }
+
+    constexpr FrmId(Proto* proto)
+        : FrmId(proto == nullptr ? kEmptyFid : proto->fid)
+    {
+    }
+
+    constexpr FrmId(Object* object)
+        : FrmId(object == nullptr ? kEmptyFid : object->fid)
+    {
+    }
+
+    constexpr FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
+        : FrmId(
+              OBJ_TYPE_MISC,
+              buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType),
+              static_cast<int>(misc),
+              nullptr)
+    {
+    }
+
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr FrmId(TFrameId frameId)
+        : FrmId(
+              MapFrameIdToObjectType<TFrameId>::value,
+              buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId)),
+              static_cast<int>(frameId),
+              nullptr)
+    {
+        static_assert(
+            MapFrameIdToObjectType<TFrameId>::value != OBJ_TYPE_CRITTER,
+            "FrmId(CritterFrameId) is not supported, use other overload!");
+    }
+
+    // cannot be made constexpr as internally calls FrmId::exist and that checks file system
+    FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE);
+    explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE);
+
+    explicit FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation);
+    explicit FrmId(Object* object, AnimationType animType, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType);
+
+    constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HeadAnimation::VeryGoodReaction, HeadFidgetAnimation fidgetAnimation = HeadFidgetAnimation::None)
+        : FrmId(
+              OBJ_TYPE_HEAD,
+              buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), static_cast<unsigned char>(headAnimation), static_cast<unsigned char>(fidgetAnimation)),
+              static_cast<int>(head),
+              nullptr)
+    {
+    }
+
+    constexpr FrmId(ObjectType objType, const char* path)
+        : FrmId(
+              objType,
+              kEmptyFid,
+              kInvalidFrameId,
+              path)
+    {
+        assert(objectTypeIsValid(objType));
+    }
+
+    constexpr bool hasFid() const { return _fid > kEmptyFid; }
+    constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
+    constexpr bool hasWeaponAnimation() const { return hasFid() && weaponAnimationIsValid(weaponAnimationFromFid(_fid)); }
+    constexpr bool hasRotation() const { return hasFid() && rotationIsValid(rotationFromFid(_fid)); }
+    constexpr bool hasAnimationType() const { return hasFid() && animationTypeIsValid(animationTypeFromFid(_fid)); }
+
+    bool valid() const { return !empty() && hasObjectType() && ((_frameId >= kMinFrameId && _frameId <= kMaxFrameId) || _path != nullptr); }
+
+    bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
+
+    constexpr int fid() const { return _fid; }
+    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
+    constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
+    constexpr int frameId() const { return _frameId; }
+
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr TFrameId frameId() const
+    {
+        if (hasFid()) {
+            assert(_objectType == MapFrameIdToObjectType<TFrameId>::value && "FrmId::frameId<TFrameId>() object type doesn't match the TFrameId type!");
+            if (_objectType == MapFrameIdToObjectType<TFrameId>::value) {
+                return static_cast<TFrameId>(_frameId);
+            }
+        }
+
+        return static_cast<TFrameId>(kInvalidFrameId);
+    }
+
+    constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WeaponAnimation::None; }
+    constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
+    constexpr AnimationType animationType() const { return hasAnimationType() ? animationTypeFromFid(_fid) : ANIM_INVALID; }
+
+    bool operator==(const FrmId& other) const
+    {
+        if (_fid != other._fid) return false;
+        if (_objectType != other._objectType) return false;
+        if (_path == nullptr && other._path == nullptr) return true;
+        if (_path == nullptr || other._path == nullptr) return false;
+
+        return std::strcmp(_path, other._path) == 0;
+    }
+
+    bool operator!=(const FrmId& other) const
+    {
+        return !(*this == other);
+    }
+
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator==(TFrameId frameId) const
+    {
+        // Path-backed IDs are not comparable to enum FrameIds via FID.
+        return _path == nullptr && _fid == buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId));
+    }
+
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator!=(TFrameId frameId) const
+    {
+        return !(*this == frameId);
+    }
+
+protected:
+    static constexpr int kFrameIdMask = 0x00000FFF;
+    static constexpr int kWeaponAnimationMask = 0x0000F000;
+    static constexpr int kAnimationTypeMask = 0x00FF0000;
+    static constexpr int kObjectTypeMask = 0x0F000000;
+    static constexpr int kRotationMask = 0x70000000;
+
+    static constexpr int kWeaponAnimationMaskPosition = 12;
+    static constexpr int kAnimationTypeMaskPosition = 16;
+    static constexpr int kObjectTypeMaskPosition = 24;
+    static constexpr int kRotationMaskPosition = 28;
+
+    constexpr FrmId(ObjectType objectType, int fid, int frameId, const char* path)
+        : _objectType(objectType)
+        , _fid(fid)
+        , _frameId(frameId < kMinFrameId ? kInvalidFrameId : frameIdFromFid(frameId))
+        , _path(path)
+    {
+    }
+
+private:
+    ObjectType _objectType;
+    int _fid;
+    int _frameId;
+
+    const char* _path;
+    mutable char _builtPath[COMPAT_MAX_PATH] {};
+
+    bool empty() const { return (*this) == Empty(); }
+
+    static constexpr int frameIdFromFid(int fid) { return fid & kFrameIdMask; }
+    static constexpr WeaponAnimation weaponAnimationFromFid(int fid) { return static_cast<WeaponAnimation>((fid & kWeaponAnimationMask) >> kWeaponAnimationMaskPosition); }
+    static constexpr AnimationType animationTypeFromFid(int fid) { return static_cast<AnimationType>((fid & kAnimationTypeMask) >> kAnimationTypeMaskPosition); }
+    static constexpr ObjectType objectTypeFromFid(int fid) { return static_cast<ObjectType>((fid & kObjectTypeMask) >> kObjectTypeMaskPosition); }
+    static constexpr Rotation rotationFromFid(int fid) { return static_cast<Rotation>((fid & kRotationMask) >> kRotationMaskPosition); }
+
+    /* FID Structure:
+        3 bits for rotation
+        4 bits for object type
+        8 bits for animation type
+        4 bits for weapon code
+        12 bits for frame ID
+
+        animType doesn't have to be of AnimationType enum only but also HeadAnimation
+        weaponAnimation doesn't have to be WeaponAnimation enum only but also Fidget or TileFlags
+    */
+    static constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
+    {
+        if (!objectTypeIsValid(objectType) || !rotationIsValid(rotation) || frmId < kMinFrameId) {
+            return kEmptyFid;
+        }
+
+        assert(frmId <= kMaxFrameId && "FrameId overflow, possible mismatch with Fid!");
+
+        return ((rotation << kRotationMaskPosition) & kRotationMask) | (objectType << kObjectTypeMaskPosition) & kObjectTypeMask | ((animType << kAnimationTypeMaskPosition) & kAnimationTypeMask) | ((weaponAnimation << kWeaponAnimationMaskPosition) & kWeaponAnimationMask) | (frmId & kFrameIdMask);
+    }
+
+    static int buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponCode, Rotation rotation);
+
+    static int buildAliasFid(int fid);
+
+    static char* buildPath(int fid, char* path);
+
+    static bool exist(int fid);
+
+    static bool exist(int fid, char* path);
+};
+
+template <ObjectType ObjType, typename TFrameId>
+class TypedFrmId : public FrmId {
+public:
+    static_assert(
+        MapFrameIdToObjectType<TFrameId>::value == ObjType,
+        "TypedFrmId can only be instantiated with a supported frame id type");
+
+    constexpr TypedFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr TypedFrmId(TFrameId frameId)
+        : FrmId(frameId)
+    {
+    }
+
+    constexpr TypedFrmId(const char* path)
+        : FrmId(ObjType, path)
+    {
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
+
+using SceneryFrmId = TypedFrmId<OBJ_TYPE_SCENERY, SceneryFrameId>;
+using WallFrmId = TypedFrmId<OBJ_TYPE_WALL, WallFrameId>;
+using ItemFrmId = TypedFrmId<OBJ_TYPE_ITEM, ItemFrameId>;
+using SkillDexFrmId = TypedFrmId<OBJ_TYPE_SKILLDEX, SkillDexFrameId>;
+using InterfaceFrmId = TypedFrmId<OBJ_TYPE_INTERFACE, InterfaceFrameId>;
+using BackgroundFrmId = TypedFrmId<OBJ_TYPE_BACKGROUND, BackgroundFrameId>;
+
+constexpr int kFloorTileFidShift = 0;
+constexpr int kRoofTileFidShift = 16;
+
+template <int FidShift>
+class HalfTileFrmId : public FrmId {
+public:
+    static_assert(
+        FidShift == kFloorTileFidShift || FidShift == kRoofTileFidShift,
+        "Only 0 and 16 bit shifts are supported");
+
+    constexpr HalfTileFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr explicit HalfTileFrmId(int fid)
+        : FrmId(
+              OBJ_TYPE_TILE,
+              (fid >> FidShift) & kHalfFidMask,
+              (fid >> FidShift) & kHalfFidMask,
+              nullptr)
+    {
+    }
+
+    constexpr explicit HalfTileFrmId(TileFrameId tile, TileFlags flags)
+        : FrmId(
+              OBJ_TYPE_TILE,
+              buildHalfFid(tile, flags),
+              static_cast<int>(tile),
+              nullptr)
+    {
+    }
+
+    constexpr TileFlags flags() const
+    {
+        if (!hasFid()) {
+            return TileFlags::None;
+        }
+
+        int flags = (fid() & kFlagsMask) >> kFlagsPosition;
+        return static_cast<TileFlags>(flags);
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+
+private:
+    static constexpr int kHalfFidMask = 0xFFFF;
+    static constexpr int kFlagsMask = 0xF000;
+    static constexpr int kFlagsPosition = 12;
+
+    /* Tile Half FID Structure:
+        12 bits for floor tile frame id
+         4 bits for floor tile flags
+    */
+    static constexpr int buildHalfFid(TileFrameId frameId, TileFlags flags)
+    {
+        return ((static_cast<int>(frameId) & kFrameIdMask) | ((static_cast<int>(flags) & 0xF) << kFlagsPosition)) & kHalfFidMask;
+    }
+};
+
+using FloorTileFrmId = HalfTileFrmId<kFloorTileFidShift>;
+using RoofTileFrmId = HalfTileFrmId<kRoofTileFidShift>;
+
+class TileFrmId : public FrmId {
+public:
+    constexpr TileFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr explicit TileFrmId(const FloorTileFrmId& floorFid, const RoofTileFrmId& roofFid)
+        : FrmId(
+              OBJ_TYPE_TILE,
+              buildFid(floorFid, roofFid),
+              floorFid.frameId(),
+              nullptr)
+    {
+    }
+
+    constexpr TileFrmId(TileFrameId tile)
+        : FrmId(tile)
+    {
+    }
+
+    constexpr TileFrmId(const char* path)
+        : FrmId(OBJ_TYPE_TILE, path)
+    {
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+
+private:
+    /* Tile FID Structure:
+        12 bits for floor tile frame id
+         4 bits for floor tile flags
+        12 bits for roof tile frame id
+         4 bits for roof tile flags
+    */
+    static constexpr int buildFid(const FloorTileFrmId& floorFrmId, const RoofTileFrmId& roofFrmId)
+    {
+        return static_cast<int>(static_cast<unsigned int>(floorFrmId.fid()) | (static_cast<unsigned int>(roofFrmId.fid()) << kRoofTileFidShift));
+    }
+};
+
+class CritterFrmId : public FrmId {
+public:
+    constexpr CritterFrmId()
+        : FrmId()
+    {
+    }
+
+    // cannot be made constexpr as internally calls artExists which cannot be constexpr
+    CritterFrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WeaponAnimation::None, Rotation rotation = ROTATION_NE)
+        : FrmId(critter, animType, weaponAnimation, rotation)
+    {
+    }
+
+    constexpr CritterFrmId(const char* path)
+        : FrmId(OBJ_TYPE_CRITTER, path)
+    {
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
+
+class HeadFrmId : public FrmId {
+public:
+    constexpr HeadFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr HeadFrmId(HeadFrameId head, HeadFidget headFidget, HeadFidgetAnimation fidgetAnimation = HeadFidgetAnimation::None)
+        : HeadFrmId(head, headAnimationFromHeadFidget(headFidget), fidgetAnimation)
+    {
+    }
+
+    constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HeadAnimation::VeryGoodReaction, HeadFidgetAnimation fidgetAnimation = HeadFidgetAnimation::None)
+        : FrmId(head, headAnimation, fidgetAnimation)
+    {
+    }
+
+    constexpr HeadFrmId(const char* path)
+        : FrmId(OBJ_TYPE_HEAD, path)
+    {
+    }
+
+    constexpr HeadFidget fidget() const
+    {
+        if (!hasFid()) {
+            return HeadFidget::Invalid;
+        }
+        int fidget = (fid() & kAnimationTypeMask) >> kAnimationTypeMaskPosition;
+        return static_cast<HeadFidget>(fidget);
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+
+private:
+    static constexpr HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
+    {
+        return fidget != HeadFidget::Invalid ? static_cast<HeadAnimation>(fidget) : HeadAnimation::VeryGoodReaction;
+    }
+};
+
+class MiscFrmId : public FrmId {
+public:
+    constexpr MiscFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr MiscFrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
+        : FrmId(misc, animType)
+    {
+    }
+
+    constexpr MiscFrmId(const char* path)
+        : FrmId(OBJ_TYPE_MISC, path)
+    {
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
 
 int artInit();
 void artReset();
 void artExit();
-char* artGetObjectTypeName(int objectType);
-int artIsObjectTypeHidden(int objectType);
-int artGetFidgetCount(int headFid);
-void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
-int art_list_str(int fid, char* name);
-Art* artLock(int fid, CacheEntry** cache_entry);
-unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** out_cache_entry);
-unsigned char* artLockFrameDataReturningSize(int fid, CacheEntry** out_cache_entry, int* widthPtr, int* heightPtr);
+char* artGetObjectTypeName(ObjectType objectType);
+int artIsObjectTypeHidden(ObjectType objectType);
+void artToggleObjectTypeHidden(ObjectType objectType);
+int artGetFidgetCount(const HeadFrmId& frmId);
+void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch);
+
+// works for fid based FrmIds only, to be replaced by FrmImage::lock
+Art* artLock(const FrmId& frmId, CacheEntry** handlePtr);
+
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(int objectType, int id, char* dest);
-int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* animationCodePtr);
-char* artBuildFilePath(int fid);
+int artCopyFileName(const FrmId& frmId, char* dest);
+int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
 int artGetFrameCount(Art* art);
-int artGetWidth(Art* art, int frame, int direction);
-int artGetHeight(Art* art, int frame, int direction);
-int artGetSize(Art* art, int frame, int direction, int* out_width, int* out_height);
-int artGetFrameOffsets(Art* art, int frame, int direction, int* xPtr, int* yPtr);
-int artGetRotationOffsets(Art* art, int rotation, int* out_offset_x, int* out_offset_y);
-unsigned char* artGetFrameData(Art* art, int frame, int direction);
-ArtFrame* artGetFrame(Art* art, int frame, int direction);
-bool artExists(int fid);
-bool _art_fid_valid(int fid);
-int _art_alias_num(int index);
-int artCritterFidShouldRun(int fid);
-int artAliasFid(int fid);
-int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotation);
+int artGetWidth(Art* art, int frame = 0, Rotation rotation = ROTATION_NE);
+int artGetHeight(Art* art, int frame = 0, Rotation rotation = ROTATION_NE);
+int artGetSize(Art* art, int frame, Rotation rotation, int* out_width, int* out_height);
+int artGetFrameOffsets(const Art* art, int frame, Rotation rotation, int* xPtr, int* yPtr);
+int artGetRotationOffsets(Art* art, Rotation rotation, int* out_offset_x, int* out_offset_y);
+unsigned char* artGetFrameData(Art* art, int frame = 0, Rotation rotation = ROTATION_NE);
+unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr);
+ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
+CritterFrameId _art_alias_num(CritterFrameId index);
+int artCritterFrmIdShouldRun(const FrmId& frmId);
+int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
-int artRead(const char* path, unsigned char* data);
+int artRead(const char* path, unsigned char* data, size_t size);
 int artWrite(const char* path, unsigned char* data);
 
+using ArtPtr = InternalPtr<Art>;
+
+class NamedCacheEntry;
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
+// RAII helper for locking one selected frame from FID-backed or path-backed art.
+// lock/unlock use caches instead of just loading/unloading directly.
 class FrmImage {
 public:
     FrmImage();
     ~FrmImage();
 
-    bool isLocked() const { return _key != nullptr; }
-    bool lock(unsigned int fid);
+    FrmImage(const FrmImage&) = delete;
+    FrmImage& operator=(const FrmImage&) = delete;
+
+    FrmImage(FrmImage&& other) noexcept;
+
+    FrmImage& operator=(FrmImage&& other) noexcept;
+
+    bool isLocked() const { return _key != nullptr || _namedKey; }
+    bool lock(const FrmId& frmId, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(const char* frmPath, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(ObjectType objType, const char* frmRelativePath, int frame = 0, Rotation rotation = ROTATION_NE);
     void unlock();
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
+    int getXOffset() const { return _xOffset; }
+    int getYOffset() const { return _yOffset; }
+    // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
+    ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
+
 private:
-    CacheEntry* _key;
-    unsigned char* _data;
-    int _width;
-    int _height;
+    bool lock(unsigned int fid, int frame = 0, Rotation rotation = ROTATION_NE);
+    void resetInternal();
+    bool setFrame(const Art* art, int frame, Rotation rotation);
+
+    std::shared_ptr<NamedCacheEntry> _namedKey;
+    CacheEntry* _key = nullptr;
+    unsigned char* _data = nullptr;
+    int _width = 0;
+    int _height = 0;
+    int _xOffset = 0;
+    int _yOffset = 0;
 };
 
 } // namespace fallout

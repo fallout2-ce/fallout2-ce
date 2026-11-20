@@ -5,20 +5,23 @@
 
 namespace fallout {
 
-typedef enum MovieFlags {
-    MOVIE_FLAG_0x01 = 0x01,
-    MOVIE_FLAG_0x02 = 0x02,
-    MOVIE_FLAG_0x04 = 0x04,
-    MOVIE_FLAG_0x08 = 0x08,
-} MovieFlags;
+enum class MovieFlags : unsigned int {
+    None = 0x00,
+    Scale = 0x01,
+    Direct = 0x02,
+    DirectCentered = 0x04,
+    Subtitles = 0x08,
+};
 
-typedef enum MovieExtendedFlags {
-    MOVIE_EXTENDED_FLAG_0x01 = 0x01,
-    MOVIE_EXTENDED_FLAG_0x02 = 0x02,
-    MOVIE_EXTENDED_FLAG_0x04 = 0x04,
-    MOVIE_EXTENDED_FLAG_0x08 = 0x08,
-    MOVIE_EXTENDED_FLAG_0x10 = 0x10,
-} MovieExtendedFlags;
+constexpr inline MovieFlags operator&(MovieFlags lhs, MovieFlags rhs)
+{
+    return static_cast<MovieFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline MovieFlags operator|(MovieFlags lhs, MovieFlags rhs)
+{
+    return static_cast<MovieFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 typedef char* MovieBuildSubtitleFilePathProc(char* movieFilePath);
 typedef void MovieSetPaletteEntriesProc(unsigned char* palette, int start, int end);
@@ -28,7 +31,7 @@ typedef int(MovieBlitFunc)(int win, unsigned char* data, int width, int height, 
 void movieInit();
 void movieExit();
 void _movieStop();
-int movieSetFlags(int flags);
+int movieSetFlags(MovieFlags flags);
 void _movieSetPaletteFunc(MovieSetPaletteEntriesProc* proc);
 void movieSetPaletteProc(MovieSetPaletteProc* proc);
 int _movieRun(int win, char* filePath);
@@ -37,6 +40,9 @@ void movieSetBuildSubtitleFilePathProc(MovieBuildSubtitleFilePathProc* proc);
 void movieSetVolume(int volume);
 void _movieUpdate();
 int _moviePlaying();
+void movieHandleRendererReset();
+void movieHandleFocusGained();
+void movieRenderDirectOverlay();
 
 } // namespace fallout
 

@@ -27,40 +27,40 @@ namespace fallout {
 
 #define CREDITS_WINDOW_SCROLLING_DELAY (38)
 
-static bool creditsFileParseNextLine(char* dest, int* font, int* color);
+static bool creditsFileParseNextLine(char* dest, int* font, Color* color);
 
-// 0x56D740
+// 0x56D740 credits_file
 static File* gCreditsFile;
 
-// 0x56D744
-static int gCreditsWindowNameColor;
+// 0x56D744 name_color
+static Color gCreditsWindowNameColor;
 
-// 0x56D748
+// 0x56D748 title_font
 static int gCreditsWindowTitleFont;
 
-// 0x56D74C
+// 0x56D74C name_font
 static int gCreditsWindowNameFont;
 
-// 0x56D750
-static int gCreditsWindowTitleColor;
+// 0x56D750 title_color
+static Color gCreditsWindowTitleColor;
 
-// 0x42C860
-void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
+// 0x42C860 credits
+void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bool useReversedStyle)
 {
     int oldFont = fontGetCurrent();
 
     colorPaletteLoad("color.pal");
 
     if (useReversedStyle) {
-        gCreditsWindowTitleColor = _colorTable[18917];
+        gCreditsWindowTitleColor = COLOR_DARK_YELLOW_3;
         gCreditsWindowNameFont = 103;
         gCreditsWindowTitleFont = 104;
-        gCreditsWindowNameColor = _colorTable[13673];
+        gCreditsWindowNameColor = COLOR_DULL_BROWN;
     } else {
-        gCreditsWindowTitleColor = _colorTable[13673];
+        gCreditsWindowTitleColor = COLOR_DULL_BROWN;
         gCreditsWindowNameFont = 104;
         gCreditsWindowTitleFont = 103;
-        gCreditsWindowNameColor = _colorTable[18917];
+        gCreditsWindowNameColor = COLOR_DARK_YELLOW_3;
     }
 
     soundContinueAll();
@@ -81,20 +81,19 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 
             int windowWidth = screenGetWidth();
             int windowHeight = screenGetHeight();
-            int window = windowCreate(0, 0, windowWidth, windowHeight, _colorTable[0], 20);
+            int window = windowCreate(0, 0, windowWidth, windowHeight, COLOR_BLACK, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
             soundContinueAll();
             if (window != -1) {
                 unsigned char* windowBuffer = windowGetBuffer(window);
                 if (windowBuffer != nullptr) {
-                    unsigned char* backgroundBuffer = (unsigned char*)internal_malloc(windowWidth * windowHeight);
+                    unsigned char* backgroundBuffer = (unsigned char*)internal_malloc(static_cast<size_t>(windowWidth) * windowHeight);
                     if (backgroundBuffer) {
                         soundContinueAll();
 
-                        memset(backgroundBuffer, _colorTable[0], windowWidth * windowHeight);
-
-                        if (backgroundFid != -1) {
+                        memset(backgroundBuffer, COLOR_BLACK, static_cast<size_t>(windowWidth) * windowHeight);
+                        if (backgroundFrmId.valid()) {
                             FrmImage backgroundFrmImage;
-                            if (backgroundFrmImage.lock(backgroundFid)) {
+                            if (backgroundFrmImage.lock(backgroundFrmId)) {
                                 blitBufferToBuffer(backgroundFrmImage.getData(),
                                     backgroundFrmImage.getWidth(),
                                     backgroundFrmImage.getHeight(),
@@ -105,9 +104,9 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
                             }
                         }
 
-                        unsigned char* intermediateBuffer = (unsigned char*)internal_malloc(windowWidth * windowHeight);
+                        unsigned char* intermediateBuffer = (unsigned char*)internal_malloc(static_cast<size_t>(windowWidth) * windowHeight);
                         if (intermediateBuffer != nullptr) {
-                            memset(intermediateBuffer, 0, windowWidth * windowHeight);
+                            memset(intermediateBuffer, 0, static_cast<size_t>(windowWidth) * windowHeight);
 
                             fontSetCurrent(gCreditsWindowTitleFont);
                             int titleFontLineHeight = fontGetLineHeight();
@@ -132,7 +131,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 
                                 char str[260];
                                 int font;
-                                int color;
+                                Color color;
                                 unsigned int tick = 0;
                                 bool stop = false;
                                 while (creditsFileParseNextLine(str, &font, &color)) {
@@ -253,8 +252,8 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
     fontSetCurrent(oldFont);
 }
 
-// 0x42CE6C
-static bool creditsFileParseNextLine(char* dest, int* font, int* color)
+// 0x42CE6C credits_get_next_line
+static bool creditsFileParseNextLine(char* dest, int* font, Color* color)
 {
     char string[256];
     while (fileReadString(string, 256, gCreditsFile)) {
@@ -267,7 +266,7 @@ static bool creditsFileParseNextLine(char* dest, int* font, int* color)
             pch = string + 1;
         } else if (string[0] == '#') {
             *font = gCreditsWindowNameFont;
-            *color = _colorTable[17969];
+            *color = COLOR_GREY;
             pch = string + 1;
         } else {
             *font = gCreditsWindowNameFont;

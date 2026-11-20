@@ -1,0 +1,98 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+#include "../test_utils.h"
+
+variable itemdamage_mode := 0;
+variable itemdamage_seen := 0;
+variable itemdamage_last_min := 0;
+variable itemdamage_last_max := 0;
+variable itemdamage_last_hit_mode := 0;
+variable itemdamage_last_is_melee_weapon := 0;
+variable itemdamage_last_weapon_pid := -1;
+variable itemdamage_last_weapon_name := "<none>";
+
+procedure itemdamage_mode_name begin
+    if (itemdamage_mode == 1) then return "fixed-42";
+    if (itemdamage_mode == 2) then return "range-30-30";
+    return "engine";
+end
+
+procedure itemdamage_weapon_name(variable weapon) begin
+    if (weapon == 0) then return "<unarmed>";
+    return obj_name(weapon);
+end
+
+procedure itemdamage_handler begin
+    variable
+        args := get_sfall_args,
+        weapon := args[2];
+
+    call assertEquals("itemdamage arg count", len_array(args), 6);
+    call assertTrue("itemdamage min <= max", args[0] <= args[1]);
+    call assertTrue("itemdamage melee flag", args[5] == 0 or args[5] == 1);
+
+    itemdamage_seen := itemdamage_seen + 1;
+    itemdamage_last_min := args[0];
+    itemdamage_last_max := args[1];
+    itemdamage_last_hit_mode := args[4];
+    itemdamage_last_is_melee_weapon := args[5];
+    itemdamage_last_weapon_name := itemdamage_weapon_name(weapon);
+
+    if (weapon == 0) then
+        itemdamage_last_weapon_pid := -1;
+    else
+        itemdamage_last_weapon_pid := obj_pid(weapon);
+
+    display_msg(string_format6("itemdamage mode=%s min=%d max=%d weapon=%s hit=%d melee=%d",
+        itemdamage_mode_name,
+        args[0],
+        args[1],
+        itemdamage_last_weapon_name,
+        itemdamage_last_hit_mode,
+        itemdamage_last_is_melee_weapon));
+
+    if (itemdamage_mode == 1) then begin
+        set_sfall_return(42);
+    end else if (itemdamage_mode == 2) then begin
+        set_sfall_return(30);
+        set_sfall_return(30);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_J) then begin
+        itemdamage_mode := itemdamage_mode + 1;
+        if (itemdamage_mode > 2) then itemdamage_mode := 0;
+        display_msg(string_format1("itemdamage mode -> %s", itemdamage_mode_name));
+    end else if (key == DIK_K) then begin
+        display_msg(string_format7("itemdamage summary mode=%s seen=%d last=%d-%d weapon=%s pid=%d melee=%d",
+            itemdamage_mode_name,
+            itemdamage_seen,
+            itemdamage_last_min,
+            itemdamage_last_max,
+            itemdamage_last_weapon_name,
+            itemdamage_last_weapon_pid,
+            itemdamage_last_is_melee_weapon));
+        call assertTrue("itemdamage observed", itemdamage_seen > 0);
+        call report_test_results("itemdamage");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("itemdamage manual test ready:");
+    display_msg("press J to cycle engine/fixed-42/range-30-30");
+    display_msg("attack with fists, melee weapons, and ranged weapons");
+    display_msg("press K to report after HOOK_ITEMDAMAGE fires");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_ITEMDAMAGE, itemdamage_handler);
+end

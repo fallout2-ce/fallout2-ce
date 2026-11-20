@@ -5,6 +5,9 @@ on:
     types:
       - closed
 
+permissions:
+  contents: read
+
 jobs:
   delete_pr_preview:
     name: Delete PR preview from gh-pages

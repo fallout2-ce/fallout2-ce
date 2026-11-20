@@ -9,45 +9,42 @@
 
 namespace fallout {
 
-// 20% of max light per "Night Vision" rank
-#define LIGHT_LEVEL_NIGHT_VISION_BONUS (65536 / 5)
-
-// 0x51923C
+// 0x51923C ambient_light
 static int gAmbientIntensity = LIGHT_INTENSITY_MAX;
 
 // light intensity per elevation per tile
-// 0x59E994
+// 0x59E994 tile_intensity
 static int gTileIntensity[ELEVATION_COUNT][HEX_GRID_SIZE];
 
-// 0x47A8F0
+// 0x47A8F0 light_init
 int lightInit()
 {
     lightResetTileIntensity();
     return 0;
 }
 
-// 0x47A8F0
+// 0x47A8F0 light_init
 void lightReset()
 {
     lightResetTileIntensity();
 }
 
-// 0x47A8F0
+// 0x47A8F0 light_init
 void lightExit()
 {
     lightResetTileIntensity();
 }
 
-// 0x47A8F8
+// 0x47A8F8 light_get_ambient
 int lightGetAmbientIntensity()
 {
     return gAmbientIntensity;
 }
 
-// 0x47A908
+// 0x47A908 light_set_ambient
 void lightSetAmbientIntensity(int intensity, bool shouldUpdateScreen)
 {
-    int adjustedIntensity = intensity + perkGetRank(gDude, PERK_NIGHT_VISION) * LIGHT_LEVEL_NIGHT_VISION_BONUS;
+    int adjustedIntensity = intensity + perkGetRank(gDude, PERK_NIGHT_VISION) * ((LIGHT_INTENSITY_MAX * perkGetNightVisionBonus()) / 100);
     int normalizedIntensity = std::clamp(adjustedIntensity, LIGHT_INTENSITY_MIN, LIGHT_INTENSITY_MAX);
 
     int oldAmbientIntensity = gAmbientIntensity;
@@ -60,8 +57,8 @@ void lightSetAmbientIntensity(int intensity, bool shouldUpdateScreen)
     }
 }
 
-// 0x47A980
-int lightGetTileIntensity(int elevation, int tile)
+// 0x47A980 light_get_tile
+int lightGetTileIntensity(MapElevation elevation, int tile)
 {
     if (!elevationIsValid(elevation)) {
         return 0;
@@ -74,8 +71,8 @@ int lightGetTileIntensity(int elevation, int tile)
     return std::min(gTileIntensity[elevation][tile], LIGHT_INTENSITY_MAX);
 }
 
-// 0x47A9C4
-int lightGetTrueTileIntensity(int elevation, int tile)
+// 0x47A9C4 light_get_tile_true
+int lightGetTrueTileIntensity(MapElevation elevation, int tile)
 {
     if (!elevationIsValid(elevation)) {
         return 0;
@@ -88,8 +85,8 @@ int lightGetTrueTileIntensity(int elevation, int tile)
     return gTileIntensity[elevation][tile];
 }
 
-// 0x47A9EC
-void lightSetTileIntensity(int elevation, int tile, int intensity)
+// 0x47A9EC light_set_tile
+void lightSetTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -102,8 +99,8 @@ void lightSetTileIntensity(int elevation, int tile, int intensity)
     gTileIntensity[elevation][tile] = intensity;
 }
 
-// 0x47AA10
-void lightIncreaseTileIntensity(int elevation, int tile, int intensity)
+// 0x47AA10 light_add_to_tile
+void lightIncreaseTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -116,8 +113,8 @@ void lightIncreaseTileIntensity(int elevation, int tile, int intensity)
     gTileIntensity[elevation][tile] += intensity;
 }
 
-// 0x47AA48
-void lightDecreaseTileIntensity(int elevation, int tile, int intensity)
+// 0x47AA48 light_subtract_from_tile
+void lightDecreaseTileIntensity(MapElevation elevation, int tile, int intensity)
 {
     if (!elevationIsValid(elevation)) {
         return;
@@ -130,14 +127,24 @@ void lightDecreaseTileIntensity(int elevation, int tile, int intensity)
     gTileIntensity[elevation][tile] -= intensity;
 }
 
-// 0x47AA84
+// 0x47AA84 light_reset_tiles
 void lightResetTileIntensity()
 {
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         for (int tile = 0; tile < HEX_GRID_SIZE; tile++) {
             gTileIntensity[elevation][tile] = 655;
         }
     }
+}
+
+void lightDecreaseAmbient(int val)
+{
+    lightSetAmbientIntensity(gAmbientIntensity - val, true);
+}
+
+void lightIncreaseAmbient(int val)
+{
+    lightSetAmbientIntensity(gAmbientIntensity + val, true);
 }
 
 } // namespace fallout

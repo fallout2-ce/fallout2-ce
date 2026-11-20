@@ -1,5 +1,25 @@
 #include "test_utils.h"
 #include "sfall.h"
+#include "dik.h"
+
+variable signal_close_game_test_done := false;
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_J) then return;
+
+    if (signal_close_game_test_done) then begin
+        display_msg("signal_close_game test already triggered");
+        return;
+    end
+
+    signal_close_game_test_done := true;
+    display_msg("signal_close_game test triggered");
+    signal_close_game;
+end
 
 procedure start begin
     // TODO: move this to a more suitable place, once we have more functions implemented
@@ -10,6 +30,8 @@ procedure start begin
     call assertEquals("active_hand toggled", active_hand, 1 - hand);
     toggle_active_hand;
     call assertEquals("active_hand toggled", active_hand, hand);
-    
+
     call report_test_results("misc");
+    display_msg("signal_close_game manual test ready: press J");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
 end

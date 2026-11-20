@@ -3,6 +3,7 @@
 
 #include "db.h"
 #include "map_defs.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -16,7 +17,9 @@ namespace fallout {
 
 // View options for rendering automap for map window. These are stored in
 // [gAutomapFlags] and is saved in save game file.
-typedef enum AutomapFlags {
+enum AutomapFlags : int {
+    AUTOMAP_NONE = 0x00,
+
     // NOTE: This is a special flag to denote the map is activated in the game (as
     // opposed to the mapper). It's always on. Turning it off produces nice color
     // coded map with all objects and their types visible, however there is no way
@@ -28,7 +31,24 @@ typedef enum AutomapFlags {
 
     // Scanner is active.
     AUTOMAP_WITH_SCANNER = 0x04,
-} AutomapFlags;
+};
+
+constexpr inline AutomapFlags operator~(AutomapFlags rhs)
+{
+    return static_cast<AutomapFlags>(~static_cast<int>(rhs));
+}
+
+inline AutomapFlags& operator&=(AutomapFlags& lhs, AutomapFlags rhs)
+{
+    lhs = static_cast<AutomapFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+    return lhs;
+}
+
+inline AutomapFlags& operator|=(AutomapFlags& lhs, AutomapFlags rhs)
+{
+    lhs = static_cast<AutomapFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    return lhs;
+}
 
 typedef struct AutomapHeader {
     unsigned char version;
@@ -52,11 +72,12 @@ int automapLoad(File* stream);
 int automapSave(File* stream);
 int _automapDisplayMap(int map);
 void automapShow(bool isInGame, bool isUsingScanner);
-int automapRenderInPipboyWindow(int win, int map, int elevation);
+int automapRenderInPipboyWindow(int win, Map map, MapElevation elevation);
 int automapSaveCurrent();
 int automapGetHeader(AutomapHeader** automapHeaderPtr);
+int automapGetWindow();
 
-void automapSetDisplayMap(int map, bool available);
+void automapSetDisplayMap(Map map, bool available);
 
 } // namespace fallout
 

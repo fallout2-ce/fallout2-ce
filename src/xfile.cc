@@ -11,6 +11,7 @@
 #include <unistd.h>
 #endif
 
+#include "debug.h"
 #include "file_find.h"
 
 namespace fallout {
@@ -34,14 +35,16 @@ static int xbaseMakeDirectory(const char* path);
 static void xbaseCloseAll();
 static void xbaseExitHandler(void);
 static bool xlistEnumerateHandler(XListEnumerationContext* context);
+static bool xlistEnumerateDirectoriesHandler(XListEnumerationContext* context);
+static bool xlistAppend(XList* xlist, const char* name);
 
-// 0x6B24D0
+// 0x6B24D0 paths
 static XBase* gXbaseHead;
 
-// 0x6B24D4
+// 0x6B24D4 init
 static bool gXbaseExitHandlerRegistered;
 
-// 0x4DED6C
+// 0x4DED6C xfclose
 int xfileClose(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 112
@@ -67,7 +70,7 @@ int xfileClose(XFile* stream)
     return rc;
 }
 
-// 0x4DEE2C
+// 0x4DEE2C xfopen
 XFile* xfileOpen(const char* filePath, const char* mode)
 {
     assert(filePath); // "filename", "xfile.c", 162
@@ -158,7 +161,7 @@ XFile* xfileOpen(const char* filePath, const char* mode)
     return stream;
 }
 
-// 0x4DF11C
+// 0x4DF11C xfprintf
 int xfilePrintFormatted(XFile* stream, const char* format, ...)
 {
     assert(format); // "format", "xfile.c", 305
@@ -175,7 +178,7 @@ int xfilePrintFormatted(XFile* stream, const char* format, ...)
 
 // [vfprintf].
 //
-// 0x4DF1AC
+// 0x4DF1AC xvfprintf
 int xfilePrintFormattedArgs(XFile* stream, const char* format, va_list args)
 {
     assert(stream); // "stream", "xfile.c", 332
@@ -198,7 +201,7 @@ int xfilePrintFormattedArgs(XFile* stream, const char* format, va_list args)
     return rc;
 }
 
-// 0x4DF22C
+// 0x4DF22C xfgetc
 int xfileReadChar(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 354
@@ -220,7 +223,7 @@ int xfileReadChar(XFile* stream)
     return ch;
 }
 
-// 0x4DF280
+// 0x4DF280 xfgets
 char* xfileReadString(char* string, int size, XFile* stream)
 {
     assert(string); // "s", "xfile.c", 375
@@ -244,7 +247,7 @@ char* xfileReadString(char* string, int size, XFile* stream)
     return result;
 }
 
-// 0x4DF320
+// 0x4DF320 xfputc
 int xfileWriteChar(int ch, XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 399
@@ -266,7 +269,7 @@ int xfileWriteChar(int ch, XFile* stream)
     return rc;
 }
 
-// 0x4DF380
+// 0x4DF380 xfputs
 int xfileWriteString(const char* string, XFile* stream)
 {
     assert(string); // "s", "xfile.c", 421
@@ -289,7 +292,7 @@ int xfileWriteString(const char* string, XFile* stream)
     return rc;
 }
 
-// 0x4DF44C
+// 0x4DF44C xfread
 size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
 {
     assert(ptr); // "ptr", "xfile.c", 421
@@ -306,8 +309,14 @@ size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
         // [fread] returns number of elements read, but [gzwrite] have no such
         // concept, it works with bytes, and returns number of bytes read.
         // Depending on the [size] and [count] parameters this function can
-        // return wrong result.
-        elementsRead = gzread(stream->gzfile, ptr, size * count);
+        // return wrong result.  We attempt to fix this roughly here.
+        // In practice unlikely to matter since GZFILE type isn't used.
+        if (size == 0 || count == 0) {
+            elementsRead = 0;
+        } else {
+            int bytesRead = gzread(stream->gzfile, ptr, size * count);
+            elementsRead = bytesRead > 0 ? static_cast<size_t>(bytesRead) / size : 0;
+        }
         break;
     default:
         elementsRead = fread(ptr, size, count, stream->file);
@@ -317,7 +326,7 @@ size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
     return elementsRead;
 }
 
-// 0x4DF4E8
+// 0x4DF4E8 xfwrite
 size_t xfileWrite(const void* ptr, size_t size, size_t count, XFile* stream)
 {
     assert(ptr); // "ptr", "xfile.c", 504
@@ -345,7 +354,7 @@ size_t xfileWrite(const void* ptr, size_t size, size_t count, XFile* stream)
     return elementsWritten;
 }
 
-// 0x4DF5D8
+// 0x4DF5D8 xfseek
 int xfileSeek(XFile* stream, long offset, int origin)
 {
     assert(stream); // "stream", "xfile.c", 547
@@ -367,7 +376,7 @@ int xfileSeek(XFile* stream, long offset, int origin)
     return result;
 }
 
-// 0x4DF690
+// 0x4DF690 xftell
 long xfileTell(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 588
@@ -389,7 +398,7 @@ long xfileTell(XFile* stream)
     return pos;
 }
 
-// 0x4DF6E4
+// 0x4DF6E4 xrewind
 void xfileRewind(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 608
@@ -407,7 +416,7 @@ void xfileRewind(XFile* stream)
     }
 }
 
-// 0x4DF780
+// 0x4DF780 xfeof
 int xfileEof(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 648
@@ -429,7 +438,7 @@ int xfileEof(XFile* stream)
     return rc;
 }
 
-// 0x4DF828
+// 0x4DF828 xfilelength
 long xfileGetSize(XFile* stream)
 {
     assert(stream); // "stream", "xfile.c", 690
@@ -456,7 +465,7 @@ long xfileGetSize(XFile* stream)
 // [paths] is a set of paths separated by semicolon. Can be NULL, in this case
 // all open xbases are simply closed.
 //
-// 0x4DF878
+// 0x4DF878 xsetpath
 bool xbaseReopenAll(char* paths)
 {
     // NOTE: Uninline.
@@ -475,7 +484,7 @@ bool xbaseReopenAll(char* paths)
     return true;
 }
 
-// 0x4DF938
+// 0x4DF938 xaddpath
 bool xbaseOpen(const char* path)
 {
     assert(path); // "path", "xfile.c", 747
@@ -521,7 +530,8 @@ bool xbaseOpen(const char* path)
         return false;
     }
 
-    DBase* dbase = dbaseOpen(path);
+    int dbaseErrorFlags = 0;
+    DBase* dbase = dbaseOpen(path, &dbaseErrorFlags);
     if (dbase != nullptr) {
         xbase->isDbase = true;
         xbase->dbase = dbase;
@@ -530,27 +540,67 @@ bool xbaseOpen(const char* path)
         return true;
     }
 
-    char workingDirectory[COMPAT_MAX_PATH];
-    if (getcwd(workingDirectory, COMPAT_MAX_PATH) == nullptr) {
-        free(xbase->path);
-        free(xbase);
-        return false;
+    if (dbaseErrorFlags != 0) {
+        if (dbaseErrorFlags & DBASE_ERROR_EMPTY) {
+            debugPrint("[xfile] %s: empty archive\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ZIP64) {
+            debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_MULTI_DISK) {
+            debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ENCRYPTED) {
+            debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_DESCRIPTORS) {
+            debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
+            debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
+        }
     }
 
-    if (chdir(path) == 0) {
-        chdir(workingDirectory);
+    if (compat_is_dir(path)) {
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
     }
 
-    // Cleanup if chdir(path) failed
+    // Cleanup on failure.
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load
 }
 
-// 0x4DFB3C
+bool xbaseIsValidDirectory(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    auto trimmedLength = [](const char* p) {
+        size_t len = strlen(p);
+        while (len > 0 && (p[len - 1] == '\\' || p[len - 1] == '/')) {
+            len--;
+        }
+        return len;
+    };
+
+    size_t targetLen = trimmedLength(path);
+    for (XBase* curr = gXbaseHead; curr != nullptr; curr = curr->next) {
+        if (curr->isDbase || curr->path == nullptr) {
+            continue;
+        }
+        size_t currLen = trimmedLength(curr->path);
+        if (currLen == targetLen && compat_strnicmp(curr->path, path, targetLen) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// 0x4DFB3C xenumfiles
 static bool xlistEnumerate(const char* pattern, XListEnumerationHandler* handler, XList* xlist)
 {
     assert(pattern); // "filespec", "xfile.c", 845
@@ -670,14 +720,20 @@ static bool xlistEnumerate(const char* pattern, XListEnumerationHandler* handler
     return findFindClose(&directoryFileFindData);
 }
 
-// 0x4DFF28
+// 0x4DFF28 xbuild_filelist
 bool xlistInit(const char* pattern, XList* xlist)
 {
     xlistEnumerate(pattern, xlistEnumerateHandler, xlist);
     return xlist->fileNamesLength != -1;
 }
 
-// 0x4DFF48
+bool xlistInitDirectories(const char* pattern, XList* xlist)
+{
+    xlistEnumerate(pattern, xlistEnumerateDirectoriesHandler, xlist);
+    return xlist->fileNamesLength != -1;
+}
+
+// 0x4DFF48 xfree_filelist
 void xlistFree(XList* xlist)
 {
     assert(xlist); // "list", "xfile.c", 949
@@ -695,7 +751,7 @@ void xlistFree(XList* xlist)
 
 // Recursively creates specified file path.
 //
-// 0x4DFFAC
+// 0x4DFFAC xmkdir
 static int xbaseMakeDirectory(const char* filePath)
 {
     char workingDirectory[COMPAT_MAX_PATH];
@@ -766,7 +822,7 @@ static int xbaseMakeDirectory(const char* filePath)
 //
 // NOTE: Inlined.
 //
-// 0x4E01F8
+// 0x4E01F8 xclearpath
 static void xbaseCloseAll()
 {
     XBase* curr = gXbaseHead;
@@ -793,15 +849,27 @@ static void xbaseExitHandler(void)
     xbaseCloseAll();
 }
 
-// 0x4E0278
+// 0x4E0278 xlistenumfunc
 static bool xlistEnumerateHandler(XListEnumerationContext* context)
 {
     if (context->type == XFILE_ENUMERATION_ENTRY_TYPE_DIRECTORY) {
         return true;
     }
 
-    XList* xlist = context->xlist;
+    return xlistAppend(context->xlist, context->name);
+}
 
+static bool xlistEnumerateDirectoriesHandler(XListEnumerationContext* context)
+{
+    if (context->type != XFILE_ENUMERATION_ENTRY_TYPE_DIRECTORY) {
+        return true;
+    }
+
+    return xlistAppend(context->xlist, context->name);
+}
+
+static bool xlistAppend(XList* xlist, const char* name)
+{
     char** fileNames = (char**)realloc(xlist->fileNames, sizeof(*fileNames) * (xlist->fileNamesLength + 1));
     if (fileNames == nullptr) {
         xlistFree(xlist);
@@ -811,7 +879,7 @@ static bool xlistEnumerateHandler(XListEnumerationContext* context)
 
     xlist->fileNames = fileNames;
 
-    fileNames[xlist->fileNamesLength] = compat_strdup(context->name);
+    fileNames[xlist->fileNamesLength] = compat_strdup(name);
     if (fileNames[xlist->fileNamesLength] == nullptr) {
         xlistFree(xlist);
         xlist->fileNamesLength = -1;

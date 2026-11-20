@@ -16,18 +16,12 @@
 
 #include <SDL.h>
 
+#include "audio.h"
 #include "audio_engine.h"
 #include "debug.h"
 #include "platform_compat.h"
 
 namespace fallout {
-
-typedef enum SoundStatusFlags {
-    SOUND_STATUS_DONE = 0x01,
-    SOUND_STATUS_IS_PLAYING = 0x02,
-    SOUND_STATUS_IS_FADING = 0x04,
-    SOUND_STATUS_IS_PAUSED = 0x08,
-} SoundStatusFlags;
 
 typedef char*(SoundFileNameMangler)(char*);
 
@@ -49,40 +43,40 @@ static long soundFileSize(int fileHandle);
 static long soundTellData(int fileHandle);
 static int soundWriteData(int fileHandle, const void* buf, unsigned int size);
 static int soundReadData(int fileHandle, void* buf, unsigned int size);
-static int soundOpenData(const char* filePath, int* sampleRate);
+static int soundOpenData(const char* filePath, AudioFileInfo* openInfo, bool* isMemoryBackedPtr);
 static long soundSeekData(int fileHandle, long offset, int origin);
 static int soundCloseData(int fileHandle);
 static char* soundFileManglerDefaultImpl(char* fname);
 static void _refreshSoundBuffers(Sound* sound);
-static int _preloadBuffers(Sound* sound);
-static int _soundRewind(Sound* sound);
-static int _addSoundData(Sound* sound, unsigned char* buf, int size);
-static int _soundSetData(Sound* sound, unsigned char* buf, int size);
-static int soundContinue(Sound* sound);
-static int _soundGetVolume(Sound* sound);
+static SoundError _preloadBuffers(Sound* sound);
+static SoundError _soundRewind(Sound* sound);
+static SoundError _addSoundData(Sound* sound, unsigned char* buf, int size);
+static SoundError _soundSetData(Sound* sound, unsigned char* buf, int size);
+static SoundError soundContinue(Sound* sound);
+static SoundError _soundGetVolume(Sound* sound, int* volume);
 static void soundDeleteInternal(Sound* sound);
 static Uint32 _doTimerEvent(Uint32 interval, void* param);
 static void _removeTimedEvent(SDL_TimerID* timerId);
 static void _removeFadeSound(FadeSound* fadeSound);
 static void _fadeSounds();
-static int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause);
+static SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause);
 
-// 0x51D478
+// 0x51D478 fadeHead
 static FadeSound* _fadeHead = nullptr;
 
-// 0x51D47C
+// 0x51D47C fadeFreeList
 static FadeSound* _fadeFreeList = nullptr;
 
-// 0x51D488
+// 0x51D488 mallocPtr_2
 static MallocProc* gSoundMallocProc = soundMallocProcDefaultImpl;
 
-// 0x51D48C
+// 0x51D48C reallocPtr_2
 static ReallocProc* gSoundReallocProc = soundReallocProcDefaultImpl;
 
-// 0x51D490
+// 0x51D490 freePtr_2
 static FreeProc* gSoundFreeProc = soundFreeProcDefaultImpl;
 
-// 0x51D494
+// 0x51D494 defaultStream
 static SoundFileIO gSoundDefaultFileIO = {
     soundOpenData,
     soundCloseData,
@@ -94,10 +88,10 @@ static SoundFileIO gSoundDefaultFileIO = {
     -1,
 };
 
-// 0x51D4B4
+// 0x51D4B4 nameMangler
 static SoundFileNameMangler* gSoundFileNameMangler = soundFileManglerDefaultImpl;
 
-// 0x51D4B8
+// 0x51D4B8 errorMsgs
 static const char* gSoundErrorDescriptions[SOUND_ERR_COUNT] = {
     "sound.c: No error",
     "sound.c: SOS driver not loaded",
@@ -134,33 +128,33 @@ static const char* gSoundErrorDescriptions[SOUND_ERR_COUNT] = {
     "sound.c: unknown error",
 };
 
-// 0x668150
-static int gSoundLastError;
+// 0x668150 soundErrorno
+static SoundError gSoundLastError;
 
-// 0x668154
+// 0x668154 masterVol
 static int _masterVol;
 
-// 0x66815C
+// 0x66815C sampleRate
 static int _sampleRate;
 
 // Number of sounds currently playing.
 //
-// 0x668160
+// 0x668160 numSounds
 static int _numSounds;
 
-// 0x668164
+// 0x668164 deviceInit
 static int _deviceInit;
 
-// 0x668168
+// 0x668168 dataSize
 static int _dataSize;
 
-// 0x66816C
+// 0x66816C numBuffers
 static int _numBuffers;
 
-// 0x668170
+// 0x668170 shouldUseSound
 static bool gSoundInitialized;
 
-// 0x668174
+// 0x668174 soundMgrList
 static Sound* gSoundListHead;
 
 static SDL_TimerID gFadeSoundsTimerId = 0;
@@ -223,7 +217,7 @@ static int soundReadData(int fileHandle, void* buf, unsigned int size)
 }
 
 // 0x4AC768
-static int soundOpenData(const char* filePath, int* sampleRate)
+static int soundOpenData(const char* filePath, AudioFileInfo* openInfo, bool* isMemoryBackedPtr)
 {
     int flags;
 
@@ -254,14 +248,19 @@ char* soundFileManglerDefaultImpl(char* fname)
     return fname;
 }
 
+const char* soundGetLastErrorDescription()
+{
+    return soundGetErrorDescription(gSoundLastError);
+}
+
 // 0x4AC790
-const char* soundGetErrorDescription(int err)
+const char* soundGetErrorDescription(SoundError err)
 {
     if (err == -1) {
         err = gSoundLastError;
     }
 
-    if (err < 0 || err > SOUND_UNKNOWN_ERROR) {
+    if (err < SOUND_NO_ERROR || err >= SOUND_ERR_COUNT) {
         err = SOUND_UNKNOWN_ERROR;
     }
 
@@ -288,9 +287,9 @@ void _refreshSoundBuffers(Sound* sound)
         sound->numBytesRead += readPos - sound->lastPosition;
     }
 
-    if ((sound->soundFlags & SOUND_FLAG_0x100) != 0) {
-        if ((sound->type & SOUND_TYPE_0x20) != 0) {
-            if ((sound->soundFlags & SOUND_FLAG_0x200) != 0) {
+    if ((sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
+        if ((sound->type & SOUND_TYPE_0x20) != SOUND_TYPE_NONE) {
+            if ((sound->soundFlags & SOUND_FLAG_0x200) != SOUND_FLAG_NONE) {
                 sound->soundFlags |= SOUND_FLAG_0x80;
             }
         } else {
@@ -352,7 +351,7 @@ void _refreshSoundBuffers(Sound* sound)
     int audioBytes = audioBytes1;
     while (--v53 != -1) {
         int bytesRead;
-        if ((sound->soundFlags & SOUND_FLAG_0x200) != 0) {
+        if ((sound->soundFlags & SOUND_FLAG_0x200) != SOUND_FLAG_NONE) {
             bytesRead = sound->dataSize;
             memset(sound->data, 0, bytesRead);
         } else {
@@ -366,7 +365,7 @@ void _refreshSoundBuffers(Sound* sound)
 
             bytesRead = sound->io.read(sound->io.fd, sound->data, bytesToRead);
             if (bytesRead < sound->dataSize) {
-                if ((sound->soundFlags & SOUND_LOOPING) == 0 || (sound->soundFlags & SOUND_FLAG_0x100) != 0) {
+                if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE || (sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
                     memset(sound->data + bytesRead, 0, sound->dataSize - bytesRead);
                     sound->soundFlags |= SOUND_FLAG_0x200;
                     bytesRead = sound->dataSize;
@@ -441,9 +440,9 @@ void _refreshSoundBuffers(Sound* sound)
 }
 
 // 0x4ACC58
-int soundInit(int _, int numBuffers, int __, int dataSize, int rate)
+SoundError soundInit(int _, int numBuffers, int __, int dataSize, int rate, int channelCount)
 {
-    if (!audioEngineInit()) {
+    if (!audioEngineInit(channelCount)) {
         debugPrint("soundInit: Unable to init audio engine\n");
 
         gSoundLastError = SOUND_SOS_DETECTION_FAILURE;
@@ -488,7 +487,7 @@ void soundExit()
 }
 
 // 0x4AD0FC
-Sound* soundAllocate(int type, int soundFlags)
+Sound* soundAllocate(SoundType type, SoundFlags soundFlags)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -500,11 +499,11 @@ Sound* soundAllocate(int type, int soundFlags)
 
     memcpy(&(sound->io), &gSoundDefaultFileIO, sizeof(gSoundDefaultFileIO));
 
-    if ((soundFlags & SOUND_FLAG_0x02) == 0) {
+    if ((soundFlags & SOUND_FLAG_0x02) == SOUND_FLAG_NONE) {
         soundFlags |= SOUND_FLAG_0x02;
     }
 
-    sound->bitsPerSample = (soundFlags & SOUND_16BIT) != 0 ? 16 : 8;
+    sound->bitsPerSample = (soundFlags & SOUND_16BIT) != SOUND_FLAG_NONE ? 16 : 8;
     sound->channels = 1;
     sound->rate = _sampleRate;
 
@@ -513,11 +512,11 @@ Sound* soundAllocate(int type, int soundFlags)
     sound->dataSize = _dataSize;
     sound->numBytesRead = 0;
     sound->soundBuffer = -1;
-    sound->statusFlags = 0;
+    sound->statusFlags = SOUND_STATUS_NONE;
     sound->numBuffers = _numBuffers;
     sound->readLimit = sound->dataSize * _numBuffers;
 
-    if ((type & SOUND_TYPE_INFINITE) != 0) {
+    if ((type & SOUND_TYPE_INFINITE) != SOUND_TYPE_NONE) {
         sound->loops = -1;
         sound->soundFlags |= SOUND_LOOPING;
     }
@@ -539,11 +538,11 @@ Sound* soundAllocate(int type, int soundFlags)
 }
 
 // 0x4AD308
-int _preloadBuffers(Sound* sound)
+SoundError _preloadBuffers(Sound* sound)
 {
     unsigned char* buf;
     int bytes_read;
-    int result;
+    SoundError result;
     int v15;
     unsigned char* v14;
     int size;
@@ -551,8 +550,8 @@ int _preloadBuffers(Sound* sound)
     size = sound->io.filelength(sound->io.fd);
     sound->fileSize = size;
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
-        if ((sound->soundFlags & SOUND_LOOPING) == 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
+        if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE) {
             sound->soundFlags |= SOUND_FLAG_0x100 | SOUND_LOOPING;
         }
 
@@ -571,7 +570,7 @@ int _preloadBuffers(Sound* sound)
     buf = (unsigned char*)gSoundMallocProc(size);
     bytes_read = sound->io.read(sound->io.fd, buf, size);
     if (bytes_read != size) {
-        if ((sound->soundFlags & SOUND_LOOPING) == 0 || (sound->soundFlags & SOUND_FLAG_0x100) != 0) {
+        if ((sound->soundFlags & SOUND_LOOPING) == SOUND_FLAG_NONE || (sound->soundFlags & SOUND_FLAG_0x100) != SOUND_FLAG_NONE) {
             memset(buf + bytes_read, 0, size - bytes_read);
         } else {
             v14 = buf + bytes_read;
@@ -591,7 +590,7 @@ int _preloadBuffers(Sound* sound)
     result = _soundSetData(sound, buf, size);
     gSoundFreeProc(buf);
 
-    if ((sound->type & SOUND_TYPE_MEMORY) != 0) {
+    if ((sound->type & SOUND_TYPE_MEMORY) != SOUND_TYPE_NONE) {
         sound->io.close(sound->io.fd);
         sound->io.fd = -1;
     } else {
@@ -604,7 +603,7 @@ int _preloadBuffers(Sound* sound)
 }
 
 // 0x4AD498
-int soundLoad(Sound* sound, char* filePath)
+SoundError soundLoad(Sound* sound, char* filePath)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -616,17 +615,34 @@ int soundLoad(Sound* sound, char* filePath)
         return gSoundLastError;
     }
 
-    sound->io.fd = sound->io.open(gSoundFileNameMangler(filePath), &(sound->rate));
+    char* mangledFilePath = gSoundFileNameMangler(filePath);
+
+    AudioFileInfo openInfo = {
+        sound->channels,
+        sound->rate,
+        sound->bitsPerSample,
+    };
+    bool isMemoryBacked = (sound->type & SOUND_TYPE_MEMORY) != SOUND_TYPE_NONE;
+
+    sound->io.fd = sound->io.open(mangledFilePath, &openInfo, &isMemoryBacked);
     if (sound->io.fd == -1) {
         gSoundLastError = SOUND_FILE_NOT_FOUND;
         return gSoundLastError;
+    }
+
+    sound->channels = openInfo.channels;
+    sound->rate = openInfo.sampleRate;
+    sound->bitsPerSample = openInfo.bitsPerSample;
+    if (isMemoryBacked) {
+        sound->type &= ~SOUND_TYPE_STREAMING;
+        sound->type |= SOUND_TYPE_MEMORY;
     }
 
     return _preloadBuffers(sound);
 }
 
 // 0x4AD504
-int _soundRewind(Sound* sound)
+SoundError _soundRewind(Sound* sound)
 {
     bool hr;
 
@@ -640,7 +656,7 @@ int _soundRewind(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
         sound->io.seek(sound->io.fd, 0, SEEK_SET);
         sound->lastUpdate = 0;
         sound->lastPosition = 0;
@@ -664,7 +680,7 @@ int _soundRewind(Sound* sound)
 }
 
 // 0x4AD5C8
-int _addSoundData(Sound* sound, unsigned char* buf, int size)
+SoundError _addSoundData(Sound* sound, unsigned char* buf, int size)
 {
     bool hr;
     void* audioPtr1;
@@ -695,7 +711,7 @@ int _addSoundData(Sound* sound, unsigned char* buf, int size)
 }
 
 // 0x4AD6C0
-int _soundSetData(Sound* sound, unsigned char* buf, int size)
+SoundError _soundSetData(Sound* sound, unsigned char* buf, int size)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -719,7 +735,7 @@ int _soundSetData(Sound* sound, unsigned char* buf, int size)
 }
 
 // 0x4AD73C
-int soundPlay(Sound* sound)
+SoundError soundPlay(Sound* sound)
 {
     bool hr;
     unsigned int readPos;
@@ -735,7 +751,7 @@ int soundPlay(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_DONE) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE) {
         _soundRewind(sound);
     }
 
@@ -760,7 +776,7 @@ int soundPlay(Sound* sound)
 }
 
 // 0x4AD828
-int soundStop(Sound* sound)
+SoundError soundStop(Sound* sound)
 {
     bool hr;
 
@@ -774,7 +790,7 @@ int soundStop(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
@@ -793,7 +809,7 @@ int soundStop(Sound* sound)
 }
 
 // 0x4AD8DC
-int soundDelete(Sound* sample)
+SoundError soundDelete(Sound* sample)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -817,7 +833,7 @@ int soundDelete(Sound* sample)
 }
 
 // 0x4AD948
-int soundContinue(Sound* sound)
+SoundError soundContinue(Sound* sound)
 {
     bool hr;
     unsigned int status;
@@ -837,17 +853,17 @@ int soundContinue(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_DONE) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_UNKNOWN_ERROR;
         return gSoundLastError;
     }
@@ -860,23 +876,23 @@ int soundContinue(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->soundFlags & SOUND_FLAG_0x80) == 0 && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != 0) {
-        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0 && (sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->soundFlags & SOUND_FLAG_0x80) == SOUND_FLAG_NONE && (status & (AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING | AUDIO_ENGINE_SOUND_BUFFER_STATUS_LOOPING)) != SOUND_FLAG_NONE) {
+        if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE && (sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
             _refreshSoundBuffers(sound);
         }
-    } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
+    } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE) {
         if (sound->callback != nullptr) {
             sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
             sound->callback = nullptr;
         }
 
-        if ((sound->type & SOUND_TYPE_FIRE_AND_FORGET) != 0) {
+        if ((sound->type & SOUND_TYPE_FIRE_AND_FORGET) != SOUND_TYPE_NONE) {
             sound->callback = nullptr;
             soundDelete(sound);
         } else {
             sound->statusFlags |= SOUND_STATUS_DONE;
 
-            if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0) {
+            if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE) {
                 --_numSounds;
             }
 
@@ -903,7 +919,7 @@ bool soundIsPlaying(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0;
+    return (sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADAC4
@@ -919,7 +935,7 @@ bool _soundDone(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_DONE) != 0;
+    return (sound->statusFlags & SOUND_STATUS_DONE) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADB44
@@ -935,27 +951,27 @@ bool soundIsPaused(Sound* sound)
         return false;
     }
 
-    return (sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0;
+    return (sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE;
 }
 
 // 0x4ADBC4
-int _soundType(Sound* sound, int type)
+bool soundIsType(Sound* sound, SoundType type)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
-        return 0;
+        return false;
     }
 
     if (sound == nullptr || sound->soundBuffer == -1) {
         gSoundLastError = SOUND_NO_SOUND;
-        return 0;
+        return false;
     }
 
-    return sound->type & type;
+    return (sound->type & type) != SOUND_TYPE_NONE;
 }
 
 // 0x4ADC04
-int soundGetDuration(Sound* sound)
+SoundError soundGetDuration(Sound* sound, int* duration)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -967,7 +983,7 @@ int soundGetDuration(Sound* sound)
         return gSoundLastError;
     }
 
-    int bytesPerSec = sound->bitsPerSample / 8 * sound->rate;
+    int bytesPerSec = sound->bitsPerSample / 8 * sound->channels * sound->rate;
     int v3 = sound->fileSize;
     int v4 = v3 % bytesPerSec;
     int result = v3 / bytesPerSec;
@@ -975,11 +991,15 @@ int soundGetDuration(Sound* sound)
         result += 1;
     }
 
-    return result;
+    if (duration != nullptr) {
+        *duration = result;
+    }
+
+    return SOUND_NO_ERROR;
 }
 
 // 0x4ADD00
-int soundSetLooping(Sound* sound, int loops)
+SoundError soundSetLooping(Sound* sound, int loops)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1021,7 +1041,7 @@ int _soundVolumeHMItoDirectSound(int volume)
 }
 
 // 0x4ADE0C
-int soundSetVolume(Sound* sound, int volume)
+SoundError soundSetVolume(Sound* sound, int volume)
 {
     int normalizedVolume;
     bool hr;
@@ -1056,7 +1076,7 @@ int soundSetVolume(Sound* sound, int volume)
 }
 
 // 0x4ADE80
-int _soundGetVolume(Sound* sound)
+SoundError _soundGetVolume(Sound* sound, int* volume)
 {
     if (!_deviceInit) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1068,11 +1088,15 @@ int _soundGetVolume(Sound* sound)
         return gSoundLastError;
     }
 
-    return sound->volume;
+    if (volume != nullptr) {
+        *volume = sound->volume;
+    }
+
+    return SOUND_NO_ERROR;
 }
 
 // 0x4ADFF0
-int soundSetCallback(Sound* sound, SoundCallback* callback, void* userData)
+SoundError soundSetCallback(Sound* sound, SoundCallback* callback, void* userData)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1092,7 +1116,7 @@ int soundSetCallback(Sound* sound, SoundCallback* callback, void* userData)
 }
 
 // 0x4AE02C
-int soundSetChannels(Sound* sound, int channels)
+SoundError soundSetChannels(Sound* sound, int channels)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1113,7 +1137,7 @@ int soundSetChannels(Sound* sound, int channels)
 }
 
 // 0x4AE0B0
-int soundSetReadLimit(Sound* sound, int readLimit)
+SoundError soundSetReadLimit(Sound* sound, int readLimit)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1121,7 +1145,7 @@ int soundSetReadLimit(Sound* sound, int readLimit)
     }
 
     if (sound == nullptr) {
-        gSoundLastError = SOUND_NO_DEVICE;
+        gSoundLastError = SOUND_NO_SOUND;
         return gSoundLastError;
     }
 
@@ -1134,7 +1158,7 @@ int soundSetReadLimit(Sound* sound, int readLimit)
 // TODO: Check, looks like it uses couple of inlined functions.
 //
 // 0x4AE0E4
-int soundPause(Sound* sound)
+SoundError soundPause(Sound* sound)
 {
     bool hr;
     unsigned int readPos;
@@ -1155,12 +1179,12 @@ int soundPause(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PLAYING;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_ALREADY_PAUSED;
         return gSoundLastError;
     }
@@ -1180,7 +1204,7 @@ int soundPause(Sound* sound)
 // TODO: Check, looks like it uses couple of inlined functions.
 //
 // 0x4AE1F0
-int soundResume(Sound* sound)
+SoundError soundResume(Sound* sound)
 {
     bool hr;
 
@@ -1194,12 +1218,12 @@ int soundResume(Sound* sound)
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PLAYING) != SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PAUSED;
         return gSoundLastError;
     }
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == SOUND_STATUS_NONE) {
         gSoundLastError = SOUND_NOT_PAUSED;
         return gSoundLastError;
     }
@@ -1217,7 +1241,7 @@ int soundResume(Sound* sound)
 }
 
 // 0x4AE2FC
-int soundSetFileIO(Sound* sound, SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc)
+SoundError soundSetFileIO(Sound* sound, SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1267,7 +1291,7 @@ void soundDeleteInternal(Sound* sound)
     Sound* next;
     Sound* prev;
 
-    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != SOUND_STATUS_NONE) {
         FadeSound* fadeSound = _fadeHead;
 
         while (fadeSound != nullptr) {
@@ -1283,12 +1307,13 @@ void soundDeleteInternal(Sound* sound)
 
     if (sound->soundBuffer != -1) {
         // NOTE: Uninline.
-        if (!soundIsPlaying(sound)) {
+        if (soundIsPlaying(sound)) {
             soundStop(sound);
         }
 
         if (sound->callback != nullptr) {
             sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
+            sound->callback = nullptr;
         }
 
         audioEngineSoundBufferRelease(sound->soundBuffer);
@@ -1320,7 +1345,7 @@ void soundDeleteInternal(Sound* sound)
 }
 
 // 0x4AE578
-int _soundSetMasterVolume(int volume)
+SoundError _soundSetMasterVolume(int volume)
 {
     if (volume < VOLUME_MIN || volume > VOLUME_MAX) {
         gSoundLastError = SOUND_UNKNOWN_ERROR;
@@ -1362,7 +1387,7 @@ void _removeTimedEvent(SDL_TimerID* timerId)
 }
 
 // 0x4AE634
-int _soundGetPosition(Sound* sound)
+SoundError _soundGetPosition(Sound* sound, int* position)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1378,19 +1403,27 @@ int _soundGetPosition(Sound* sound)
     unsigned int writePos;
     audioEngineSoundBufferGetCurrentPosition(sound->soundBuffer, &readPos, &writePos);
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
-        if (readPos < sound->lastPosition) {
-            readPos += sound->numBytesRead + sound->numBuffers * sound->dataSize - sound->lastPosition;
+    if (position != nullptr) {
+        if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
+            int offset;
+            // Original code uses <=, but equality can also mean the cursor has not
+            // advanced. Match _refreshSoundBuffers by treating only < as wrap.
+            if (readPos < sound->lastPosition) {
+                offset = readPos + sound->numBuffers * sound->dataSize - sound->lastPosition;
+            } else {
+                offset = readPos - sound->lastPosition;
+            }
+            *position = sound->numBytesRead + offset;
         } else {
-            readPos -= sound->lastPosition + sound->numBytesRead;
+            *position = readPos;
         }
     }
 
-    return readPos;
+    return SOUND_NO_ERROR;
 }
 
 // 0x4AE6CC
-int _soundSetPosition(Sound* sound, int pos)
+SoundError _soundSetPosition(Sound* sound, int pos)
 {
     if (!gSoundInitialized) {
         gSoundLastError = SOUND_NOT_INITIALIZED;
@@ -1407,15 +1440,15 @@ int _soundSetPosition(Sound* sound, int pos)
         return gSoundLastError;
     }
 
-    if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+    if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
         int section = pos / sound->dataSize % sound->numBuffers;
 
         audioEngineSoundBufferSetCurrentPosition(sound->soundBuffer, section * sound->dataSize + pos % sound->dataSize);
 
-        sound->io.seek(sound->io.fd, section * sound->dataSize, SEEK_SET);
+        sound->io.seek(sound->io.fd, static_cast<long>(section) * sound->dataSize, SEEK_SET);
         int bytesRead = sound->io.read(sound->io.fd, sound->data, sound->dataSize);
         if (bytesRead < sound->dataSize) {
-            if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+            if ((sound->type & SOUND_TYPE_STREAMING) != SOUND_TYPE_NONE) {
                 sound->io.seek(sound->io.fd, 0, SEEK_SET);
                 sound->io.read(sound->io.fd, sound->data + bytesRead, sound->dataSize - bytesRead);
             } else {
@@ -1456,7 +1489,7 @@ void _removeFadeSound(FadeSound* fadeSound)
         return;
     }
 
-    if ((fadeSound->sound->statusFlags & SOUND_STATUS_IS_FADING) == 0) {
+    if ((fadeSound->sound->statusFlags & SOUND_STATUS_IS_FADING) == SOUND_STATUS_NONE) {
         return;
     }
 
@@ -1487,6 +1520,8 @@ void _fadeSounds()
 
     fadeSound = _fadeHead;
     while (fadeSound != nullptr) {
+        FadeSound* next = fadeSound->next;
+
         if ((fadeSound->currentVolume > fadeSound->targetVolume || fadeSound->currentVolume + fadeSound->deltaVolume < fadeSound->targetVolume) && (fadeSound->currentVolume < fadeSound->targetVolume || fadeSound->currentVolume + fadeSound->deltaVolume > fadeSound->targetVolume)) {
             fadeSound->currentVolume += fadeSound->deltaVolume;
             soundSetVolume(fadeSound->sound, fadeSound->currentVolume);
@@ -1496,7 +1531,7 @@ void _fadeSounds()
                     soundPause(fadeSound->sound);
                     soundSetVolume(fadeSound->sound, fadeSound->initialVolume);
                 } else {
-                    if ((fadeSound->sound->type & SOUND_TYPE_FIRE_AND_FORGET) != 0) {
+                    if ((fadeSound->sound->type & SOUND_TYPE_FIRE_AND_FORGET) != SOUND_TYPE_NONE) {
                         soundDelete(fadeSound->sound);
                     } else {
                         soundStop(fadeSound->sound);
@@ -1512,6 +1547,8 @@ void _fadeSounds()
 
             _removeFadeSound(fadeSound);
         }
+
+        fadeSound = next;
     }
 
     if (_fadeHead == nullptr) {
@@ -1521,7 +1558,7 @@ void _fadeSounds()
 }
 
 // 0x4AE988
-int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
+SoundError _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
 {
     FadeSound* fadeSound;
 
@@ -1535,8 +1572,14 @@ int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
         return gSoundLastError;
     }
 
+    int initialVolume;
+    SoundError rc = _soundGetVolume(sound, &initialVolume);
+    if (rc != SOUND_NO_ERROR) {
+        return rc;
+    }
+
     fadeSound = nullptr;
-    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != 0) {
+    if ((sound->statusFlags & SOUND_STATUS_IS_FADING) != SOUND_STATUS_NONE) {
         fadeSound = _fadeHead;
         while (fadeSound != nullptr) {
             if (fadeSound->sound == sound) {
@@ -1573,7 +1616,7 @@ int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
     }
 
     fadeSound->targetVolume = targetVolume;
-    fadeSound->initialVolume = _soundGetVolume(sound);
+    fadeSound->initialVolume = initialVolume;
     fadeSound->currentVolume = fadeSound->initialVolume;
     fadeSound->pause = pause;
     // TODO: Check.
@@ -1584,7 +1627,7 @@ int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
     bool shouldPlay;
     if (gSoundInitialized) {
         if (sound->soundBuffer != -1) {
-            shouldPlay = (sound->statusFlags & SOUND_STATUS_IS_PLAYING) == 0;
+            shouldPlay = (sound->statusFlags & SOUND_STATUS_IS_PLAYING) == SOUND_STATUS_NONE;
         } else {
             gSoundLastError = SOUND_NO_SOUND;
             shouldPlay = true;
@@ -1614,7 +1657,7 @@ int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause)
 }
 
 // 0x4AEB0C
-int _soundFade(Sound* sound, int duration, int targetVolume)
+SoundError _soundFade(Sound* sound, int duration, int targetVolume)
 {
     return _internalSoundFade(sound, duration, targetVolume, false);
 }
@@ -1640,7 +1683,7 @@ void soundContinueAll()
 }
 
 // 0x4AEC00
-int soundSetDefaultFileIO(SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc)
+SoundError soundSetDefaultFileIO(SoundOpenProc* openProc, SoundCloseProc* closeProc, SoundReadProc* readProc, SoundWriteProc* writeProc, SoundSeekProc* seekProc, SoundTellProc* tellProc, SoundFileLengthProc* fileLengthProc)
 {
     if (openProc != nullptr) {
         gSoundDefaultFileIO.open = openProc;

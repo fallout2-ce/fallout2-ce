@@ -1,0 +1,22 @@
+#include "sfall.h"
+#include "../test_utils.h"
+
+variable descriptionobj_calls := 0;
+
+procedure descriptionobj_handler begin
+    variable object := get_sfall_arg_at(0);
+
+    descriptionobj_calls++;
+    call assertTrue("descriptionobj object is set", object != 0);
+
+    set_sfall_return(string_format1("HOOK_DESCRIPTIONOBJ: %s", obj_name(object)));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("descriptionobj manual test ready");
+    display_msg("examine an object; its description should be HOOK_DESCRIPTIONOBJ: <object name>");
+
+    register_hook_proc(HOOK_DESCRIPTIONOBJ, descriptionobj_handler);
+end

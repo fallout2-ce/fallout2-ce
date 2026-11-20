@@ -9,7 +9,7 @@ namespace fallout {
 
 // Due to bad design of |ListType| it's |LIST_ITEMS| and |LIST_CRITTERS| do not
 // match |OBJ_TYPE_CRITTER| and |OBJ_TYPE_ITEM|.
-static constexpr int kObjectTypeToListType[] = {
+static constexpr ListType kObjectTypeToListType[] = {
     /*    OBJ_TYPE_ITEM */ LIST_ITEMS,
     /* OBJ_TYPE_CRITTER */ LIST_CRITTERS,
     /* OBJ_TYPE_SCENERY */ LIST_SCENERY,
@@ -60,7 +60,7 @@ void sfallListsExit()
     }
 }
 
-int sfallListsCreate(int listType)
+int sfallListsCreate(ListType listType)
 {
     int listId = _state->nextListId++;
     List& list = _state->lists[listId];
@@ -91,7 +91,7 @@ void sfallListsDestroy(int listId)
     }
 }
 
-void sfall_lists_fill(int type, std::vector<Object*>& objects)
+void sfall_lists_fill(ListType type, std::vector<Object*>& objects)
 {
     if (type == LIST_TILES) {
         // For unknown reason this list type is not implemented in Sfall.
@@ -101,7 +101,7 @@ void sfall_lists_fill(int type, std::vector<Object*>& objects)
     objects.reserve(100);
 
     if (type == LIST_SPATIAL) {
-        for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             Script* script = scriptGetFirstSpatialScript(elevation);
             while (script != nullptr) {
                 Object* obj = script->owner;
@@ -130,9 +130,10 @@ void sfall_lists_fill(int type, std::vector<Object*>& objects)
         } else {
             Object* obj = objectFindFirst();
             while (obj != nullptr) {
-                int objectType = PID_TYPE(obj->pid);
-                if (objectType < kObjectTypeToListTypeSize
-                    && kObjectTypeToListType[objectType] == type) {
+                const ProtoId protoId = obj;
+                if (protoId.valid()
+                    && protoId.objectType() < kObjectTypeToListTypeSize
+                    && kObjectTypeToListType[protoId.objectType()] == type) {
                     objects.push_back(obj);
                 }
                 obj = objectFindNext();

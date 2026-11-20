@@ -1,0 +1,80 @@
+#include "define_lite.h"
+#include "sfall.h"
+#include "test_utils.h"
+
+procedure start begin
+    variable original_extra;
+    variable original_value;
+    variable original_pc_max;
+    variable original_pc_min;
+    variable original_npc_max;
+    variable original_npc_min;
+    variable original_npc_luck_max;
+    variable test_npc;
+    variable test_npc_extra;
+    variable test_npc_luck;
+
+    if (not game_loaded) then return;
+
+    display_msg("Testing stat min/max...");
+    test_suite_errors := 0;
+
+    original_extra := get_pc_extra_stat(STAT_rad_resist);
+    original_value := get_critter_stat(dude_obj, STAT_rad_resist);
+    original_pc_max := get_pc_stat_max(STAT_rad_resist);
+    original_pc_min := get_pc_stat_min(STAT_rad_resist);
+    original_npc_max := get_npc_stat_max(STAT_rad_resist);
+    original_npc_min := get_npc_stat_min(STAT_rad_resist);
+
+    set_stat_max(STAT_rad_resist, 101);
+    call assertEquals("set_stat_max changes PC bound", get_pc_stat_max(STAT_rad_resist), 101);
+    call assertEquals("set_stat_max changes NPC bound", get_npc_stat_max(STAT_rad_resist), 101);
+
+    set_stat_min(STAT_rad_resist, -10);
+    call assertEquals("set_stat_min changes PC bound", get_pc_stat_min(STAT_rad_resist), -10);
+    call assertEquals("set_stat_min changes NPC bound", get_npc_stat_min(STAT_rad_resist), -10);
+
+    set_pc_extra_stat(STAT_rad_resist, 200);
+    set_pc_stat_max(STAT_rad_resist, 100);
+    call assertEquals("PC maximum changed independently", get_pc_stat_max(STAT_rad_resist), 100);
+    call assertEquals("NPC maximum unchanged by PC setter", get_npc_stat_max(STAT_rad_resist), 101);
+    call assertEquals("radiation resistance capped at 100", get_critter_stat(dude_obj, STAT_rad_resist), 100);
+
+    set_pc_extra_stat(STAT_rad_resist, -200);
+    set_pc_stat_min(STAT_rad_resist, -5);
+    call assertEquals("PC minimum changed independently", get_pc_stat_min(STAT_rad_resist), -5);
+    call assertEquals("NPC minimum unchanged by PC setter", get_npc_stat_min(STAT_rad_resist), -10);
+    call assertEquals("radiation resistance clamped to PC minimum", get_critter_stat(dude_obj, STAT_rad_resist), -5);
+
+    set_npc_stat_max(STAT_rad_resist, 99);
+    call assertEquals("NPC maximum changed independently", get_npc_stat_max(STAT_rad_resist), 99);
+    call assertEquals("PC maximum unchanged by NPC setter", get_pc_stat_max(STAT_rad_resist), 100);
+
+    set_npc_stat_min(STAT_rad_resist, -4);
+    call assertEquals("NPC minimum changed independently", get_npc_stat_min(STAT_rad_resist), -4);
+    call assertEquals("PC minimum unchanged by NPC setter", get_pc_stat_min(STAT_rad_resist), -5);
+
+    test_npc := create_object_sid(0x01000001, 0, 0, -1);
+    test_npc_extra := get_critter_extra_stat(test_npc, STAT_rad_resist);
+    set_critter_extra_stat(test_npc, STAT_rad_resist, 200);
+    call assertEquals("NPC radiation resistance uses NPC maximum", get_critter_stat(test_npc, STAT_rad_resist), 99);
+    set_critter_extra_stat(test_npc, STAT_rad_resist, test_npc_extra);
+
+    test_npc_luck := get_critter_base_stat(test_npc, STAT_lu);
+    original_npc_luck_max := get_npc_stat_max(STAT_lu);
+    set_npc_stat_max(STAT_lu, test_npc_luck - 1);
+    set_critter_base_stat(test_npc, STAT_lu, test_npc_luck + 1);
+    call assertEquals("NPC base stat rejects value above configured maximum", get_critter_base_stat(test_npc, STAT_lu), test_npc_luck);
+    set_npc_stat_max(STAT_lu, original_npc_luck_max);
+    destroy_object(test_npc);
+
+    set_pc_stat_max(STAT_rad_resist, original_pc_max);
+    set_pc_stat_min(STAT_rad_resist, original_pc_min);
+    set_npc_stat_max(STAT_rad_resist, original_npc_max);
+    set_npc_stat_min(STAT_rad_resist, original_npc_min);
+    set_pc_extra_stat(STAT_rad_resist, original_extra);
+    call assertEquals("original radiation resistance restored", get_critter_stat(dude_obj, STAT_rad_resist), original_value);
+
+    call report_test_results("stat min/max");
+    signal_close_game;
+end

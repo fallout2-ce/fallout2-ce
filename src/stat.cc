@@ -1,11 +1,16 @@
 #include "stat.h"
 
+#include <charconv>
 #include <stdio.h>
 
 #include <algorithm>
+#include <string_view>
 
 #include "art.h"
+#include "art_defs.h"
+#include "character_editor.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "display_monitor.h"
 #include "game.h"
@@ -32,102 +37,145 @@ namespace fallout {
 typedef struct StatDescription {
     char* name;
     char* description;
-    int frmId;
+    SkillDexFrameId frmId;
     int minimumValue;
     int maximumValue;
     int defaultValue;
 } StatDescription;
 
-// 0x51D53C
+// 0x51D53C stat_data
 static StatDescription gStatDescriptions[STAT_COUNT] = {
-    { nullptr, nullptr, 0, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 1, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 2, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 3, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 4, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 5, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 6, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
-    { nullptr, nullptr, 10, 0, 999, 0 },
-    { nullptr, nullptr, 75, 1, 99, 0 },
-    { nullptr, nullptr, 18, 0, 999, 0 },
-    { nullptr, nullptr, 31, 0, INT_MAX, 0 },
-    { nullptr, nullptr, 32, 0, 500, 0 },
-    { nullptr, nullptr, 20, 0, 999, 0 },
-    { nullptr, nullptr, 24, 0, 60, 0 },
-    { nullptr, nullptr, 25, 0, 30, 0 },
-    { nullptr, nullptr, 26, 0, 100, 0 },
-    { nullptr, nullptr, 94, -60, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 22, 0, 90, 0 },
-    { nullptr, nullptr, 0, 0, 90, 0 },
-    { nullptr, nullptr, 0, 0, 90, 0 },
-    { nullptr, nullptr, 0, 0, 90, 0 },
-    { nullptr, nullptr, 0, 0, 90, 0 },
-    { nullptr, nullptr, 0, 0, 100, 0 },
-    { nullptr, nullptr, 0, 0, 90, 0 },
-    { nullptr, nullptr, 83, 0, 95, 0 },
-    { nullptr, nullptr, 23, 0, 95, 0 },
-    { nullptr, nullptr, 0, 16, 101, 25 },
-    { nullptr, nullptr, 0, 0, 1, 0 },
-    { nullptr, nullptr, 10, 0, 2000, 0 },
-    { nullptr, nullptr, 11, 0, 2000, 0 },
-    { nullptr, nullptr, 12, 0, 2000, 0 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_STRENGTH
+    { nullptr, nullptr, SkillDexFrameId::Perception, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_PERCEPTION
+    { nullptr, nullptr, SkillDexFrameId::Endurance, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_ENDURANCE
+    { nullptr, nullptr, SkillDexFrameId::Charisma, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_CHARISMA
+    { nullptr, nullptr, SkillDexFrameId::Intelligence, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_INTELLIGENCE
+    { nullptr, nullptr, SkillDexFrameId::Agility, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_AGILITY
+    { nullptr, nullptr, SkillDexFrameId::Luck, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_LUCK
+    { nullptr, nullptr, SkillDexFrameId::HitPoints, 0, 999, 0 }, // STAT_MAXIMUM_HIT_POINTS
+    { nullptr, nullptr, SkillDexFrameId::BonusMove, 1, 99, 0 }, // STAT_MAXIMUM_ACTION_POINTS
+    { nullptr, nullptr, SkillDexFrameId::ArmorClass, 0, 999, 0 }, // STAT_ARMOR_CLASS
+    { nullptr, nullptr, SkillDexFrameId::Unarmed, 0, INT_MAX, 0 }, // STAT_UNARMED_DAMAGE
+    { nullptr, nullptr, SkillDexFrameId::MeleeWeapons, 0, 500, 0 }, // STAT_MELEE_DAMAGE
+    { nullptr, nullptr, SkillDexFrameId::CarryWeight, 0, 999, 0 }, // STAT_CARRY_WEIGHT
+    { nullptr, nullptr, SkillDexFrameId::Sequence, 0, 60, 0 }, // STAT_SEQUENCE
+    { nullptr, nullptr, SkillDexFrameId::HealingRate, 0, 30, 0 }, // STAT_HEALING_RATE
+    { nullptr, nullptr, SkillDexFrameId::CriticalChance, 0, 100, 0 }, // STAT_CRITICAL_CHANCE
+    { nullptr, nullptr, SkillDexFrameId::Empathy, -60, 100, 0 }, // STAT_BETTER_CRITICALS
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_LASER
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_FIRE
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_PLASMA
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_ELECTRICAL
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EMP
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EXPLOSION
+    { nullptr, nullptr, SkillDexFrameId::DamageResistance, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_LASER
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_FIRE
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_PLASMA
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_ELECTRICAL
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 100, 0 }, // STAT_DAMAGE_RESISTANCE_EMP
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_EXPLOSION
+    { nullptr, nullptr, SkillDexFrameId::RadResistance, 0, 95, 0 }, // STAT_RADIATION_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::PoisonResistance, 0, 95, 0 }, // STAT_POISON_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::Strength, 16, 101, 25 }, // STAT_AGE
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, 1, 0 }, // STAT_GENDER
+    { nullptr, nullptr, SkillDexFrameId::HitPoints, 0, 2000, 0 }, // STAT_CURRENT_HIT_POINTS
+    { nullptr, nullptr, SkillDexFrameId::Poisoned, 0, 2000, 0 }, // STAT_CURRENT_POISON_LEVEL
+    { nullptr, nullptr, SkillDexFrameId::Radiated, 0, 2000, 0 }, // STAT_CURRENT_RADIATION_LEVEL
 };
 
-// 0x51D8CC
+// 0x51D8CC pc_stat_data
 static StatDescription gPcStatDescriptions[PC_STAT_COUNT] = {
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, 0, 1, PC_LEVEL_MAX, 1 },
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, 0, -20, 20, 0 },
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, 1, PC_LEVEL_MAX, 1 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, -20, 20, 0 },
+    { nullptr, nullptr, SkillDexFrameId::Strength, 0, INT_MAX, 0 },
 };
 
-// 0x66817C
+// 0x66817C stat_message_file
 static MessageList gStatsMessageList;
 
 // 0x668184
 static char* gStatValueDescriptions[PRIMARY_STAT_RANGE];
 
-// 0x6681AC
+// 0x6681AC curr_pc_stat
 static int gPcStatValues[PC_STAT_COUNT];
+
+static int pcStatMaximums[SAVEABLE_STAT_COUNT];
+static int pcStatMinimums[SAVEABLE_STAT_COUNT];
+static int npcStatMaximums[SAVEABLE_STAT_COUNT];
+static int npcStatMinimums[SAVEABLE_STAT_COUNT];
+
+static int unspentApBonus = 4;
+static int unspentApPerkBonus = 4;
+static int xpTable[PC_LEVEL_MAX];
+static int xpTableThresholds = 0;
+
+static void pcExperienceTableInit();
+static int pcGetMaxLevel();
+static int pcGetLevelForExperience(int xp);
+
+static std::string_view pcExperienceTableTrimToken(std::string_view token)
+{
+    size_t first = token.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    size_t last = token.find_last_not_of(" \t\r\n");
+    return token.substr(first, last - first + 1);
+}
+
+static bool pcExperienceTableParseToken(std::string_view token, int* value)
+{
+    token = pcExperienceTableTrimToken(token);
+    if (token.empty()) {
+        return false;
+    }
+
+    auto result = std::from_chars(token.data(), token.data() + token.size(), *value);
+    return result.ec == std::errc() && result.ptr == token.data() + token.size();
+}
+
+static void statResetBounds();
+static int statGetMaximum(Object* critter, Stat stat);
+static int statGetMinimum(Object* critter, Stat stat);
 
 // 0x4AED70
 int statsInit()
 {
     MessageListItem messageListItem;
 
+    statResetBounds();
+
     // NOTE: Uninline.
     pcStatsReset();
+    pcExperienceTableInit();
 
     if (!messageListInit(&gStatsMessageList)) {
         return -1;
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "stat.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "stat.msg");
 
     if (!messageListLoad(&gStatsMessageList, path)) {
         return -1;
     }
 
-    for (int stat = 0; stat < STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < STAT_COUNT; stat++) {
         gStatDescriptions[stat].name = getmsg(&gStatsMessageList, &messageListItem, 100 + stat);
         gStatDescriptions[stat].description = getmsg(&gStatsMessageList, &messageListItem, 200 + stat);
     }
 
-    for (int pcStat = 0; pcStat < PC_STAT_COUNT; pcStat++) {
+    for (PcStat pcStat = PC_STAT_FIRST; pcStat < PC_STAT_COUNT; pcStat++) {
         gPcStatDescriptions[pcStat].name = getmsg(&gStatsMessageList, &messageListItem, 400 + pcStat);
         gPcStatDescriptions[pcStat].description = getmsg(&gStatsMessageList, &messageListItem, 500 + pcStat);
     }
 
-    for (int index = 0; index < PRIMARY_STAT_RANGE; index++) {
+    for (int index = PRIMARY_STAT_MIN - 1; index < PRIMARY_STAT_RANGE; index++) {
         gStatValueDescriptions[index] = getmsg(&gStatsMessageList, &messageListItem, 301 + index);
     }
 
@@ -141,6 +189,8 @@ int statsReset()
 {
     // NOTE: Uninline.
     pcStatsReset();
+    statResetBounds();
+    statResetUnspentApBonuses();
 
     return 0;
 }
@@ -178,20 +228,112 @@ int statsSave(File* stream)
     return 0;
 }
 
-// 0x4AEF48
-int critterGetStat(Object* critter, int stat)
+void statResetUnspentApBonuses()
 {
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    unspentApBonus = 4;
+    unspentApPerkBonus = 4;
+}
+
+void statSetUnspentApBonus(int multiplier)
+{
+    unspentApBonus = multiplier;
+}
+
+int statGetUnspentApBonus()
+{
+    return unspentApBonus;
+}
+
+void statSetUnspentApPerkBonus(int multiplier)
+{
+    unspentApPerkBonus = multiplier;
+}
+
+int statGetUnspentApPerkBonus()
+{
+    return unspentApPerkBonus;
+}
+
+static void statResetBounds()
+{
+    for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
+        pcStatMaximums[stat] = gStatDescriptions[stat].maximumValue;
+        pcStatMinimums[stat] = gStatDescriptions[stat].minimumValue;
+        npcStatMaximums[stat] = gStatDescriptions[stat].maximumValue;
+        npcStatMinimums[stat] = gStatDescriptions[stat].minimumValue;
+    }
+}
+
+static int statGetMaximum(Object* critter, Stat stat)
+{
+    return critter == gDude ? pcStatMaximums[stat] : npcStatMaximums[stat];
+}
+
+static int statGetMinimum(Object* critter, Stat stat)
+{
+    return critter == gDude ? pcStatMinimums[stat] : npcStatMinimums[stat];
+}
+
+int statGetConfiguredMaximum(Stat stat, bool npc)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        return npc ? npcStatMaximums[stat] : pcStatMaximums[stat];
+    }
+
+    return 0;
+}
+
+int statGetConfiguredMinimum(Stat stat, bool npc)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        return npc ? npcStatMinimums[stat] : pcStatMinimums[stat];
+    }
+
+    return 0;
+}
+
+void statSetPcMaximum(Stat stat, int maximum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        pcStatMaximums[stat] = maximum;
+    }
+}
+
+void statSetPcMinimum(Stat stat, int minimum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        pcStatMinimums[stat] = minimum;
+    }
+}
+
+void statSetNpcMaximum(Stat stat, int maximum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        npcStatMaximums[stat] = maximum;
+    }
+}
+
+void statSetNpcMinimum(Stat stat, int minimum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        npcStatMinimums[stat] = minimum;
+    }
+}
+
+// 0x4AEF48
+int critterGetStat(Object* critter, Stat stat)
+{
+    if (ProtoId(critter).objectType() != OBJ_TYPE_CRITTER) {
         return 0;
     }
     int value;
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         value = critterGetBaseStatWithTraitModifier(critter, stat);
         value += critterGetBonusStat(critter, stat);
 
         switch (stat) {
         case STAT_PERCEPTION:
-            if ((critter->data.critter.combat.results & DAM_BLIND) != 0) {
+            if ((critter->data.critter.combat.results & DAM_BLIND) != DAM_NONE) {
                 value -= 5;
             }
             break;
@@ -206,8 +348,7 @@ int critterGetStat(Object* critter, int stat)
         case STAT_ARMOR_CLASS:
             if (isInCombat()) {
                 if (_combat_whose_turn() != critter) {
-                    int actionPointsMultiplier = 1;
-                    int hthEvadeBonus = 0;
+                    int armorClassBonus = critter->data.critter.combat.ap * unspentApBonus;
 
                     if (critter == gDude) {
                         if (perkHasRank(gDude, PERK_HTH_EVADE)) {
@@ -216,7 +357,7 @@ int critterGetStat(Object* critter, int stat)
                             Object* item2 = critterGetItem2(gDude);
                             if (item2 != nullptr) {
                                 if (itemGetType(item2) == ITEM_TYPE_WEAPON) {
-                                    if (weaponGetAnimationCode(item2) != WEAPON_ANIMATION_NONE) {
+                                    if (weaponGetAnimationCode(item2) != WeaponAnimation::None) {
                                         hasWeapon = true;
                                     }
                                 }
@@ -226,7 +367,7 @@ int critterGetStat(Object* critter, int stat)
                                 Object* item1 = critterGetItem1(gDude);
                                 if (item1 != nullptr) {
                                     if (itemGetType(item1) == ITEM_TYPE_WEAPON) {
-                                        if (weaponGetAnimationCode(item1) != WEAPON_ANIMATION_NONE) {
+                                        if (weaponGetAnimationCode(item1) != WeaponAnimation::None) {
                                             hasWeapon = true;
                                         }
                                     }
@@ -234,18 +375,19 @@ int critterGetStat(Object* critter, int stat)
                             }
 
                             if (!hasWeapon) {
-                                actionPointsMultiplier = 2;
-                                hthEvadeBonus = skillGetValue(gDude, SKILL_UNARMED) / 12;
+                                armorClassBonus += critter->data.critter.combat.ap * perkGetRank(gDude, PERK_HTH_EVADE) * unspentApPerkBonus;
+                                value += skillGetValue(gDude, SKILL_UNARMED) / 12;
                             }
                         }
                     }
-                    value += hthEvadeBonus;
-                    value += critter->data.critter.combat.ap * actionPointsMultiplier;
+                    value += armorClassBonus / 4;
                 }
             }
             break;
         case STAT_AGE:
             value += gameTimeGetTime() / GAME_TIME_TICKS_PER_YEAR;
+            break;
+        default:
             break;
         }
 
@@ -281,12 +423,12 @@ int critterGetStat(Object* critter, int stat)
                     bool hasMirrorShades = false;
 
                     Object* item2 = critterGetItem2(critter);
-                    if (item2 != nullptr && item2->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item2) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 
                     Object* item1 = critterGetItem1(critter);
-                    if (item1 != nullptr && item1->pid == PROTO_ID_MIRRORED_SHADES) {
+                    if (ProtoId(item1) == ItemProtoTypeId::MirroredShades) {
                         hasMirrorShades = true;
                     }
 
@@ -361,15 +503,29 @@ int critterGetStat(Object* critter, int stat)
                 }
                 break;
             case STAT_RADIATION_RESISTANCE:
+                if (perkGetRank(critter, PERK_VAULT_CITY_INOCULATIONS)) {
+                    value += perkGetVaultCityInoculationsRadBonus();
+                }
+                break;
             case STAT_POISON_RESISTANCE:
                 if (perkGetRank(critter, PERK_VAULT_CITY_INOCULATIONS)) {
-                    value += 10;
+                    value += perkGetVaultCityInoculationsPoisonBonus();
                 }
+                break;
+            default:
                 break;
             }
         }
 
-        value = std::clamp(value, gStatDescriptions[stat].minimumValue, gStatDescriptions[stat].maximumValue);
+        int minimum = statGetMinimum(critter, stat);
+        if (value < minimum) {
+            value = minimum;
+        } else {
+            int maximum = statGetMaximum(critter, stat);
+            if (value > maximum) {
+                value = maximum;
+            }
+        }
     } else {
         switch (stat) {
         case STAT_CURRENT_HIT_POINTS:
@@ -393,7 +549,7 @@ int critterGetStat(Object* critter, int stat)
 // Returns base stat value (accounting for traits if critter is dude).
 //
 // 0x4AF3E0
-int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
+int critterGetBaseStatWithTraitModifier(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -405,33 +561,33 @@ int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
 }
 
 // 0x4AF408
-int critterGetBaseStat(Object* critter, int stat)
+int critterGetBaseStat(Object* critter, Stat stat)
 {
     Proto* proto;
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
-        protoGetProto(critter->pid, &proto);
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
+        protoGetProto(critter, &proto);
         return proto->critter.data.baseStats[stat];
-    } else {
-        switch (stat) {
-        case STAT_CURRENT_HIT_POINTS:
-            return critterGetHitPoints(critter);
-        case STAT_CURRENT_POISON_LEVEL:
-            return critterGetPoison(critter);
-        case STAT_CURRENT_RADIATION_LEVEL:
-            return critterGetRadiation(critter);
-        }
     }
 
-    return 0;
+    switch (stat) {
+    case STAT_CURRENT_HIT_POINTS:
+        return critterGetHitPoints(critter);
+    case STAT_CURRENT_POISON_LEVEL:
+        return critterGetPoison(critter);
+    case STAT_CURRENT_RADIATION_LEVEL:
+        return critterGetRadiation(critter);
+    default:
+        return 0;
+    }
 }
 
 // 0x4AF474
-int critterGetBonusStat(Object* critter, int stat)
+int critterGetBonusStat(Object* critter, Stat stat)
 {
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         Proto* proto;
-        protoGetProto(critter->pid, &proto);
+        protoGetProto(critter, &proto);
         return proto->critter.data.bonusStats[stat];
     }
 
@@ -439,7 +595,7 @@ int critterGetBonusStat(Object* critter, int stat)
 }
 
 // 0x4AF4BC
-int critterSetBaseStat(Object* critter, int stat, int value)
+int critterSetBaseStat(Object* critter, Stat stat, int value)
 {
     Proto* proto;
 
@@ -447,7 +603,7 @@ int critterSetBaseStat(Object* critter, int stat, int value)
         return -5;
     }
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         if (stat > STAT_LUCK && stat <= STAT_POISON_RESISTANCE) {
             // Cannot change base value of derived stats.
             return -1;
@@ -457,15 +613,15 @@ int critterSetBaseStat(Object* critter, int stat, int value)
             value -= traitGetStatModifier(stat);
         }
 
-        if (value < gStatDescriptions[stat].minimumValue) {
+        if (value < statGetMinimum(critter, stat)) {
             return -2;
         }
 
-        if (value > gStatDescriptions[stat].maximumValue) {
+        if (value > statGetMaximum(critter, stat)) {
             return -3;
         }
 
-        protoGetProto(critter->pid, &proto);
+        protoGetProto(critter, &proto);
         proto->critter.data.baseStats[stat] = value;
 
         if (stat >= STAT_STRENGTH && stat <= STAT_LUCK) {
@@ -482,14 +638,14 @@ int critterSetBaseStat(Object* critter, int stat, int value)
         return critterAdjustPoison(critter, value - critterGetPoison(critter));
     case STAT_CURRENT_RADIATION_LEVEL:
         return critterAdjustRadiation(critter, value - critterGetRadiation(critter));
+    default:
+        // Should be unreachable
+        return 0;
     }
-
-    // Should be unreachable
-    return 0;
 }
 
 // 0x4AF5D4
-int critterIncBaseStat(Object* critter, int stat)
+int critterIncBaseStat(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -501,7 +657,7 @@ int critterIncBaseStat(Object* critter, int stat)
 }
 
 // 0x4AF608
-int critterDecBaseStat(Object* critter, int stat)
+int critterDecBaseStat(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -513,15 +669,15 @@ int critterDecBaseStat(Object* critter, int stat)
 }
 
 // 0x4AF63C
-int critterSetBonusStat(Object* critter, int stat, int value)
+int critterSetBonusStat(Object* critter, Stat stat, int value)
 {
     if (!statIsValid(stat)) {
         return -5;
     }
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         Proto* proto;
-        protoGetProto(critter->pid, &proto);
+        protoGetProto(critter, &proto);
         proto->critter.data.bonusStats[stat] = value;
 
         if (stat >= STAT_STRENGTH && stat <= STAT_LUCK) {
@@ -529,25 +685,25 @@ int critterSetBonusStat(Object* critter, int stat, int value)
         }
 
         return 0;
-    } else {
-        switch (stat) {
-        case STAT_CURRENT_HIT_POINTS:
-            return critterAdjustHitPoints(critter, value);
-        case STAT_CURRENT_POISON_LEVEL:
-            return critterAdjustPoison(critter, value);
-        case STAT_CURRENT_RADIATION_LEVEL:
-            return critterAdjustRadiation(critter, value);
-        }
     }
 
-    // Should be unreachable
-    return -1;
+    switch (stat) {
+    case STAT_CURRENT_HIT_POINTS:
+        return critterAdjustHitPoints(critter, value);
+    case STAT_CURRENT_POISON_LEVEL:
+        return critterAdjustPoison(critter, value);
+    case STAT_CURRENT_RADIATION_LEVEL:
+        return critterAdjustRadiation(critter, value);
+    default:
+        // Should be unreachable
+        return -1;
+    }
 }
 
 // 0x4AF6CC
 void protoCritterDataResetStats(CritterProtoData* data)
 {
-    for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < SAVEABLE_STAT_COUNT; stat++) {
         data->baseStats[stat] = gStatDescriptions[stat].defaultValue;
         data->bonusStats[stat] = 0;
     }
@@ -564,7 +720,7 @@ void critterUpdateDerivedStats(Object* critter)
     int luck = critterGetStat(critter, STAT_LUCK);
 
     Proto* proto;
-    protoGetProto(critter->pid, &proto);
+    protoGetProto(critter, &proto);
     CritterProtoData* data = &(proto->critter.data);
 
     data->baseStats[STAT_MAXIMUM_HIT_POINTS] = critterGetBaseStatWithTraitModifier(critter, STAT_STRENGTH) + critterGetBaseStatWithTraitModifier(critter, STAT_ENDURANCE) * 2 + 15;
@@ -581,13 +737,13 @@ void critterUpdateDerivedStats(Object* critter)
 }
 
 // 0x4AF854
-char* statGetName(int stat)
+char* statGetName(Stat stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].name : nullptr;
 }
 
 // 0x4AF898
-char* statGetDescription(int stat)
+char* statGetDescription(Stat stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].description : nullptr;
 }
@@ -605,13 +761,13 @@ char* statGetValueDescription(int value)
 }
 
 // 0x4AF8FC
-int pcGetStat(int pcStat)
+int pcGetStat(PcStat pcStat)
 {
     return pcStatIsValid(pcStat) ? gPcStatValues[pcStat] : 0;
 }
 
 // 0x4AF910
-int pcSetStat(int pcStat, int value)
+int pcSetStat(PcStat pcStat, int value)
 {
     int result;
 
@@ -623,7 +779,8 @@ int pcSetStat(int pcStat, int value)
         return -2;
     }
 
-    if (value > gPcStatDescriptions[pcStat].maximumValue) {
+    int maximumValue = pcStat == PC_STAT_LEVEL ? pcGetMaxLevel() : gPcStatDescriptions[pcStat].maximumValue;
+    if (value > maximumValue) {
         return -3;
     }
 
@@ -646,9 +803,66 @@ int pcSetStat(int pcStat, int value)
 // 0x4AF980
 void pcStatsReset()
 {
-    for (int pcStat = 0; pcStat < PC_STAT_COUNT; pcStat++) {
+    for (PcStat pcStat = PC_STAT_FIRST; pcStat < PC_STAT_COUNT; pcStat++) {
         gPcStatValues[pcStat] = gPcStatDescriptions[pcStat].defaultValue;
     }
+}
+
+static void pcExperienceTableInit()
+{
+    xpTable[0] = 0;
+    xpTableThresholds = 0;
+
+    char* value;
+    if (!configGetString(&gContentConfig, CONTENT_CONFIG_STATS_SECTION, "xp_table", &value) || value[0] == '\0') {
+        return;
+    }
+
+    std::string_view remaining(value);
+
+    while (!remaining.empty() && xpTableThresholds < PC_LEVEL_MAX - 1) {
+        size_t comma = remaining.find(',');
+        std::string_view token = comma == std::string_view::npos
+            ? remaining
+            : remaining.substr(0, comma);
+
+        int xp;
+        if (pcExperienceTableParseToken(token, &xp)) {
+            xpTableThresholds++;
+            xpTable[xpTableThresholds] = xp;
+        }
+
+        if (comma == std::string_view::npos) {
+            break;
+        }
+
+        remaining.remove_prefix(comma + 1);
+    }
+}
+
+static int pcGetMaxLevel()
+{
+    if (xpTableThresholds == 0) {
+        return PC_LEVEL_MAX;
+    }
+
+    return xpTableThresholds + 1;
+}
+
+static int pcGetLevelForExperience(int xp)
+{
+    int level = 1;
+    int maxLevel = pcGetMaxLevel();
+    while (level < maxLevel) {
+        int nextLevelXp = pcGetExperienceForLevel(level + 1);
+        if (nextLevelXp == -1 || xp < nextLevelXp) {
+            break;
+        }
+
+        level++;
+    }
+
+    return level;
 }
 
 // Returns experience to reach next level.
@@ -664,8 +878,12 @@ int pcGetExperienceForNextLevel()
 // 0x4AF9A8
 int pcGetExperienceForLevel(int level)
 {
-    if (level >= PC_LEVEL_MAX) {
+    if (level < 1 || level > pcGetMaxLevel()) {
         return -1;
+    }
+
+    if (xpTableThresholds != 0) {
+        return xpTable[level - 1];
     }
 
     int halfLevel = level / 2;
@@ -677,21 +895,21 @@ int pcGetExperienceForLevel(int level)
 }
 
 // 0x4AF9F4
-char* pcStatGetName(int pcStat)
+char* pcStatGetName(PcStat pcStat)
 {
-    return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].name : nullptr;
+    return pcStatIsValid(pcStat) ? gPcStatDescriptions[pcStat].name : nullptr;
 }
 
 // 0x4AFA14
-char* pcStatGetDescription(int pcStat)
+char* pcStatGetDescription(PcStat pcStat)
 {
-    return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].description : nullptr;
+    return pcStatIsValid(pcStat) ? gPcStatDescriptions[pcStat].description : nullptr;
 }
 
 // 0x4AFA34
-int statGetFrmId(int stat)
+SkillDexFrmId statGetFrmId(Stat stat)
 {
-    return statIsValid(stat) ? gStatDescriptions[stat].frmId : 0;
+    return statIsValid(stat) ? gStatDescriptions[stat].frmId : SkillDexFrameId::Invalid;
 }
 
 // Roll D10 against specified stat.
@@ -708,7 +926,7 @@ int statGetFrmId(int stat)
 // `NULL` if you're not interested in this value.
 //
 // 0x4AFA78
-int statRoll(Object* critter, int stat, int modifier, int* howMuch)
+Roll statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
 {
     int value = critterGetStat(critter, stat) + modifier;
     int chance = randomBetween(PRIMARY_STAT_MIN, PRIMARY_STAT_MAX);
@@ -718,10 +936,10 @@ int statRoll(Object* critter, int stat, int modifier, int* howMuch)
     }
 
     if (chance <= value) {
-        return ROLL_SUCCESS;
+        return Roll::Success;
     }
 
-    return ROLL_FAILURE;
+    return Roll::Failure;
 }
 
 // 0x4AFAA8
@@ -749,12 +967,14 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
 
     gPcStatValues[PC_STAT_EXPERIENCE] = newXp;
 
-    while (gPcStatValues[PC_STAT_LEVEL] < PC_LEVEL_MAX) {
+    while (gPcStatValues[PC_STAT_LEVEL] < pcGetMaxLevel()) {
         if (newXp < pcGetExperienceForNextLevel()) {
             break;
         }
 
         if (pcSetStat(PC_STAT_LEVEL, gPcStatValues[PC_STAT_LEVEL] + 1) == 0) {
+            characterEditorHandleLevelUp(gPcStatValues[PC_STAT_LEVEL]);
+
             int maxHpBefore = critterGetStat(gDude, STAT_MAXIMUM_HIT_POINTS);
 
             // You have gone up a level.
@@ -772,7 +992,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
             int endurance = critterGetBaseStatWithTraitModifier(gDude, STAT_ENDURANCE);
 
             int hpPerLevel = endurance / 2 + 2;
-            hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * 4;
+            hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * perkGetLifegiverBonus();
 
             int bonusHp = critterGetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS);
             critterSetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS, bonusHp + hpPerLevel);
@@ -783,12 +1003,12 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
             interfaceRenderHitPoints(false);
 
             // SFALL: Update unarmed attack after leveling up.
-            int leftItemAction;
-            int rightItemAction;
+            InterfaceItemAction leftItemAction;
+            InterfaceItemAction rightItemAction;
             interfaceGetItemActions(&leftItemAction, &rightItemAction);
             interfaceUpdateItems(false, leftItemAction, rightItemAction);
 
-            if (doParty) {
+            if (doParty && partyMemberEngineLevelUpEnabled()) {
                 _partyMemberIncLevels();
             }
         }
@@ -807,21 +1027,23 @@ int pcSetExperience(int xp)
     int oldLevel = gPcStatValues[PC_STAT_LEVEL];
     gPcStatValues[PC_STAT_EXPERIENCE] = xp;
 
-    int level = 1;
-    do {
-        level += 1;
-    } while (xp >= pcGetExperienceForLevel(level) && level < PC_LEVEL_MAX);
-
-    int newLevel = level - 1;
+    int newLevel = pcGetLevelForExperience(xp);
 
     pcSetStat(PC_STAT_LEVEL, newLevel);
+
+    if (newLevel > oldLevel) {
+        for (int levelToGrant = oldLevel + 1; levelToGrant <= newLevel; levelToGrant++) {
+            characterEditorHandleLevelUp(levelToGrant);
+        }
+    }
+
     dudeDisableState(DUDE_STATE_LEVEL_UP_AVAILABLE);
 
     // NOTE: Uninline.
     int endurance = critterGetBaseStatWithTraitModifier(gDude, STAT_ENDURANCE);
 
     int hpPerLevel = endurance / 2 + 2;
-    hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * 4;
+    hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * perkGetLifegiverBonus();
 
     int deltaHp = (oldLevel - newLevel) * hpPerLevel;
     critterAdjustHitPoints(gDude, -deltaHp);

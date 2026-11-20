@@ -13,17 +13,17 @@
 
 namespace fallout {
 
-typedef enum MovieEffectType {
-    MOVIE_EFFECT_TYPE_NONE = 0,
-    MOVIE_EFFECT_TYPE_FADE_IN = 1,
-    MOVIE_EFFECT_TYPE_FADE_OUT = 2,
-} MovieEffectFadeType;
+enum class MovieEffectType : unsigned char {
+    None = 0,
+    FadeIn = 1,
+    FadeOut = 2,
+};
 
 typedef struct MovieEffect {
     int startFrame;
     int endFrame;
     int steps;
-    unsigned char fadeType;
+    MovieEffectType fadeType;
     // range 0-63
     unsigned char r;
     // range 0-63
@@ -37,19 +37,19 @@ static void _moviefx_callback_func(int frame);
 static void _moviefx_palette_func(unsigned char* palette, int start, int end);
 static void movieEffectsClear();
 
-// 0x5195F0
+// 0x5195F0 moviefx_initialized
 static bool gMovieEffectsInitialized = false;
 
-// 0x5195F4
+// 0x5195F4 moviefx_effects_list
 static MovieEffect* gMovieEffectHead = nullptr;
 
-// 0x638EC4
+// 0x638EC4 source_palette
 static unsigned char _source_palette[768];
 
-// 0x6391C4
+// 0x6391C4 inside_fade
 static bool _inside_fade;
 
-// 0x487CC0
+// 0x487CC0 moviefx_init
 int movieEffectsInit()
 {
     if (gMovieEffectsInitialized) {
@@ -63,7 +63,7 @@ int movieEffectsInit()
     return 0;
 }
 
-// 0x487CF4
+// 0x487CF4 moviefx_reset
 void movieEffectsReset()
 {
     if (!gMovieEffectsInitialized) {
@@ -79,7 +79,7 @@ void movieEffectsReset()
     memset(_source_palette, 0, sizeof(_source_palette));
 }
 
-// 0x487D30
+// 0x487D30 moviefx_exit
 void movieEffectsExit()
 {
     if (!gMovieEffectsInitialized) {
@@ -93,9 +93,11 @@ void movieEffectsExit()
     _inside_fade = false;
 
     memset(_source_palette, 0, sizeof(_source_palette));
+
+    gMovieEffectsInitialized = false;
 }
 
-// 0x487D7C
+// 0x487D7C moviefx_start
 int movieEffectsLoad(const char* filePath)
 {
     if (!gMovieEffectsInitialized) {
@@ -112,13 +114,6 @@ int movieEffectsLoad(const char* filePath)
         return -1;
     }
 
-    Config config;
-    if (!configInit(&config)) {
-        return -1;
-    }
-
-    int rc = -1;
-
     char path[COMPAT_MAX_PATH];
     strcpy(path, filePath);
 
@@ -129,102 +124,105 @@ int movieEffectsLoad(const char* filePath)
 
     strcpy(path + strlen(path), ".cfg");
 
-    int* movieEffectFrameList;
-
-    if (!configRead(&config, path, true)) {
-        goto out;
+    ScopedConfig config(path, true);
+    if (!config) {
+        return -1;
     }
 
     int movieEffectsLength;
-    if (!configGetInt(&config, "info", "total_effects", &movieEffectsLength)) {
-        goto out;
+    if (!configGetInt(config.get(), "info", "total_effects", &movieEffectsLength)) {
+        return -1;
     }
 
-    movieEffectFrameList = (int*)internal_malloc(sizeof(*movieEffectFrameList) * movieEffectsLength);
+    if (movieEffectsLength <= 0) {
+        return -1;
+    }
+
+    int* movieEffectFrameList = (int*)internal_malloc(sizeof(*movieEffectFrameList) * movieEffectsLength);
     if (movieEffectFrameList == nullptr) {
-        goto out;
+        return -1;
     }
 
     bool frameListRead;
     if (movieEffectsLength >= 2) {
-        frameListRead = configGetIntList(&config, "info", "effect_frames", movieEffectFrameList, movieEffectsLength);
+        frameListRead = configGetIntList(config.get(), "info", "effect_frames", movieEffectFrameList, movieEffectsLength);
     } else {
-        frameListRead = configGetInt(&config, "info", "effect_frames", &(movieEffectFrameList[0]));
+        frameListRead = configGetInt(config.get(), "info", "effect_frames", &(movieEffectFrameList[0]));
     }
 
-    if (frameListRead) {
-        int movieEffectsCreated = 0;
-        for (int index = 0; index < movieEffectsLength; index++) {
-            char section[20];
-            compat_itoa(movieEffectFrameList[index], section, 10);
+    if (!frameListRead) {
+        internal_free(movieEffectFrameList);
+        return -1;
+    }
 
-            char* fadeTypeString;
-            if (!configGetString(&config, section, "fade_type", &fadeTypeString)) {
-                continue;
-            }
+    int rc = -1;
+    int movieEffectsCreated = 0;
+    for (int index = 0; index < movieEffectsLength; index++) {
+        char section[20];
+        compat_itoa(movieEffectFrameList[index], section, 10);
 
-            int fadeType = MOVIE_EFFECT_TYPE_NONE;
-            if (compat_stricmp(fadeTypeString, "in") == 0) {
-                fadeType = MOVIE_EFFECT_TYPE_FADE_IN;
-            } else if (compat_stricmp(fadeTypeString, "out") == 0) {
-                fadeType = MOVIE_EFFECT_TYPE_FADE_OUT;
-            }
-
-            if (fadeType == MOVIE_EFFECT_TYPE_NONE) {
-                continue;
-            }
-
-            int fadeColor[3];
-            if (!configGetIntList(&config, section, "fade_color", fadeColor, 3)) {
-                continue;
-            }
-
-            int steps;
-            if (!configGetInt(&config, section, "fade_steps", &steps)) {
-                continue;
-            }
-
-            MovieEffect* movieEffect = (MovieEffect*)internal_malloc(sizeof(*movieEffect));
-            if (movieEffect == nullptr) {
-                continue;
-            }
-
-            memset(movieEffect, 0, sizeof(*movieEffect));
-            movieEffect->startFrame = movieEffectFrameList[index];
-            movieEffect->endFrame = movieEffect->startFrame + steps - 1;
-            movieEffect->steps = steps;
-            movieEffect->fadeType = fadeType & 0xFF;
-            movieEffect->r = fadeColor[0] & 0xFF;
-            movieEffect->g = fadeColor[1] & 0xFF;
-            movieEffect->b = fadeColor[2] & 0xFF;
-
-            if (movieEffect->startFrame <= 1) {
-                _inside_fade = true;
-            }
-
-            movieEffect->next = gMovieEffectHead;
-            gMovieEffectHead = movieEffect;
-
-            movieEffectsCreated++;
+        char* fadeTypeString;
+        if (!configGetString(config.get(), section, "fade_type", &fadeTypeString)) {
+            continue;
         }
 
-        if (movieEffectsCreated != 0) {
-            movieSetPaletteProc(_moviefx_callback_func);
-            _movieSetPaletteFunc(_moviefx_palette_func);
-            rc = 0;
+        MovieEffectType fadeType = MovieEffectType::None;
+        if (compat_stricmp(fadeTypeString, "in") == 0) {
+            fadeType = MovieEffectType::FadeIn;
+        } else if (compat_stricmp(fadeTypeString, "out") == 0) {
+            fadeType = MovieEffectType::FadeOut;
         }
+
+        if (fadeType == MovieEffectType::None) {
+            continue;
+        }
+
+        int fadeColor[3];
+        if (!configGetIntList(config.get(), section, "fade_color", fadeColor, 3)) {
+            continue;
+        }
+
+        int steps;
+        if (!configGetInt(config.get(), section, "fade_steps", &steps)) {
+            continue;
+        }
+
+        MovieEffect* movieEffect = (MovieEffect*)internal_malloc(sizeof(*movieEffect));
+        if (movieEffect == nullptr) {
+            continue;
+        }
+
+        memset(movieEffect, 0, sizeof(*movieEffect));
+        movieEffect->startFrame = movieEffectFrameList[index];
+        movieEffect->endFrame = movieEffect->startFrame + steps - 1;
+        movieEffect->steps = steps;
+        movieEffect->fadeType = fadeType;
+        movieEffect->r = fadeColor[0] & 0xFF;
+        movieEffect->g = fadeColor[1] & 0xFF;
+        movieEffect->b = fadeColor[2] & 0xFF;
+
+        if (movieEffect->startFrame <= 1) {
+            _inside_fade = true;
+        }
+
+        movieEffect->next = gMovieEffectHead;
+        gMovieEffectHead = movieEffect;
+
+        movieEffectsCreated++;
+    }
+
+    if (movieEffectsCreated != 0) {
+        movieSetPaletteProc(_moviefx_callback_func);
+        _movieSetPaletteFunc(_moviefx_palette_func);
+        rc = 0;
     }
 
     internal_free(movieEffectFrameList);
 
-out:
-
-    configFree(&config);
-
     return rc;
 }
 
-// 0x4880F0
+// 0x4880F0 moviefx_stop
 void _moviefx_stop()
 {
     if (!gMovieEffectsInitialized) {
@@ -240,7 +238,7 @@ void _moviefx_stop()
     memset(_source_palette, 0, sizeof(_source_palette));
 }
 
-// 0x488144
+// 0x488144 moviefx_callback_func
 static void _moviefx_callback_func(int frame)
 {
     MovieEffect* movieEffect = gMovieEffectHead;
@@ -255,13 +253,13 @@ static void _moviefx_callback_func(int frame)
         unsigned char palette[768];
         int step = frame - movieEffect->startFrame + 1;
 
-        if (movieEffect->fadeType == MOVIE_EFFECT_TYPE_FADE_IN) {
+        if (movieEffect->fadeType == MovieEffectType::FadeIn) {
             for (int index = 0; index < 256; index++) {
                 palette[index * 3] = movieEffect->r - (step * (movieEffect->r - _source_palette[index * 3]) / movieEffect->steps);
                 palette[index * 3 + 1] = movieEffect->g - (step * (movieEffect->g - _source_palette[index * 3 + 1]) / movieEffect->steps);
                 palette[index * 3 + 2] = movieEffect->b - (step * (movieEffect->b - _source_palette[index * 3 + 2]) / movieEffect->steps);
             }
-        } else {
+        } else if (movieEffect->fadeType == MovieEffectType::FadeOut) {
             for (int index = 0; index < 256; index++) {
                 palette[index * 3] = _source_palette[index * 3] - (step * (_source_palette[index * 3] - movieEffect->r) / movieEffect->steps);
                 palette[index * 3 + 1] = _source_palette[index * 3 + 1] - (step * (_source_palette[index * 3 + 1] - movieEffect->g) / movieEffect->steps);
@@ -275,7 +273,7 @@ static void _moviefx_callback_func(int frame)
     _inside_fade = movieEffect != nullptr;
 }
 
-// 0x4882AC
+// 0x4882AC moviefx_palette_func
 static void _moviefx_palette_func(unsigned char* palette, int start, int end)
 {
     memcpy(_source_palette + 3 * start, palette, 3 * (end - start + 1));
@@ -285,7 +283,7 @@ static void _moviefx_palette_func(unsigned char* palette, int start, int end)
     }
 }
 
-// 0x488310
+// 0x488310 moviefx_remove_all
 static void movieEffectsClear()
 {
     MovieEffect* movieEffect = gMovieEffectHead;

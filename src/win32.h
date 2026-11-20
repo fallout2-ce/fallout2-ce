@@ -1,6 +1,8 @@
 #ifndef WIN32_H
 #define WIN32_H
 
+#include "platform_compat.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -12,6 +14,10 @@ extern bool gProgramIsActive;
 extern HANDLE GNW95_mutex;
 #else
 extern bool gProgramIsActive;
+#endif
+
+#if __APPLE__
+const char* getMacOsBundleResourcesPath();
 #endif
 
 } // namespace fallout

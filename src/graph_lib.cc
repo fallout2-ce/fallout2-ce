@@ -1,12 +1,13 @@
 #include "graph_lib.h"
 
-#include <string.h>
-
 #include <algorithm>
+#include <cstring>
 
 #include "color.h"
+#include "db.h"
 #include "debug.h"
 #include "memory.h"
+#include "palette.h"
 
 namespace fallout {
 
@@ -14,35 +15,35 @@ static void _InitTree();
 static void _InsertNode(int a1);
 static void _DeleteNode(int a1);
 
-// 0x596D90
-static unsigned char _GreyTable[256];
+// 0x596D90 GreyTable
+static Color _GreyTable[COLOR_COUNT];
 
-// 0x596E90
+// 0x596E90 dad_2
 static int* _dad_2;
 
-// 0x596E94
+// 0x596E94 match_length
 static int _match_length;
 
-// 0x596E98
+// 0x596E98 textsize
 static int _textsize;
 
-// 0x596E9C
+// 0x596E9C rson
 static int* _rson;
 
-// 0x596EA0
+// 0x596EA0 lson
 static int* _lson;
 
-// 0x596EA4
+// 0x596EA4 text_buf
 static unsigned char* _text_buf;
 
-// 0x596EA8
+// 0x596EA8 codesize
 static int _codesize;
 
-// 0x596EAC
+// 0x596EAC match_position
 static int _match_position;
 
 // 0x44EBC0
-unsigned char HighRGB(unsigned char color)
+unsigned char HighRGB(Color color)
 {
     int rgb = Color2RGB(color);
     int r = (rgb & 0x7C00) >> 10;
@@ -53,10 +54,156 @@ unsigned char HighRGB(unsigned char color)
 }
 
 // 0x44ED98
-int load_lbm_to_buf(const char* path, unsigned char* buffer, int a3, int a4, int a5, int a6, int a7)
+// Loads LBM image file into a dstBuffer.
+// Returns image width on success, -1 on error.
+int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yMin, int xMax, int yMax)
 {
-    // TODO: Incomplete.
+    File* stream = fileOpen(path, "rb");
+    if (stream == nullptr) {
+        debugPrint("load_lbm_to_buf(%s): fileOpen failed\n", path);
+        return -1;
+    }
 
+    unsigned char form[4];
+    unsigned int formSize;
+    unsigned char ilbm[4];
+    if (fileRead(form, 1, 4, stream) != 4
+        || memcmp(form, "FORM", 4) != 0
+        || fileReadUInt32(stream, &formSize) == -1
+        || fileRead(ilbm, 1, 4, stream) != 4) {
+        debugPrint("load_lbm_to_buf(%s): incorrect LBM header\n", path);
+        fileClose(stream);
+        return -1;
+    }
+
+    int imgWidth = 0, imgHeight = 0;
+
+    // NOTE: The original ASM's sliding-window scanner consumes the BMHD
+    // chunk size as a 4-byte skip, reads only the 2-byte width, and then
+    // lets the scanner drift through the remaining BMHD fields (height,
+    // nPlanes, masking, comp, etc.) while searching for the next tag.
+    // Height and compression are therefore never stored by the original.
+    // The BODY decoder always runs as PackBits unconditionally.
+
+    // paletteRemap[i] = system-palette index that best matches LBM colour i.
+    // Built from CMAP via colorTable.  Index 0 is populated but never used
+    // (pixel value 0 is always output as 0 — the transparent colour).
+    Color paletteRemap[COLOR_COUNT] = {};
+
+    while (true) {
+        unsigned char chunkType[4];
+        unsigned int chunkSize;
+        if (fileRead(chunkType, 1, 4, stream) != 4
+            || fileReadUInt32(stream, &chunkSize) == -1) {
+            break;
+        }
+
+        unsigned int aligned = (chunkSize + 1) & ~1u;
+
+        if (memcmp(chunkType, "BMHD", 4) == 0) {
+            // Original reads only w (2 bytes); h is read here to advance the
+            // file position but its value is intentionally discarded.
+            unsigned short w, h;
+            if (fileReadUInt16(stream, &w) == -1
+                || fileReadUInt16(stream, &h) == -1) break;
+            imgWidth = w;
+            imgHeight = h;
+
+            // Skip every remaining BMHD field — the original never reads them.
+            unsigned int bmhdRemaining = aligned - 4; // already consumed w + h
+            if (bmhdRemaining > 0) fileSeek(stream, bmhdRemaining, SEEK_CUR);
+
+        } else if (memcmp(chunkType, "CMAP", 4) == 0) {
+            // The game DOES use its own palette, but it reconciles the two
+            // by mapping each LBM color through colorTable (RGB555 → nearest
+            // system index), storing the result in paletteRemap[].
+            int entries = static_cast<int>(std::min(chunkSize / 3u, 256u));
+            for (int i = 0; i < entries; i++) {
+                unsigned char r, g, b;
+                if (fileReadUInt8(stream, &r) == -1
+                    || fileReadUInt8(stream, &g) == -1
+                    || fileReadUInt8(stream, &b) == -1) {
+                    fileClose(stream);
+                    return -1;
+                }
+                int rgb555 = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+                paletteRemap[i] = _colorTable[rgb555];
+            }
+            unsigned int cmapRemaining = aligned - static_cast<unsigned int>(entries * 3);
+            if (cmapRemaining > 0) fileSeek(stream, cmapRemaining, SEEK_CUR);
+
+        } else if (memcmp(chunkType, "BODY", 4) == 0) {
+            // Decompression, palette remapping, and clipped output in a single pass with no intermediate pixel buffer.
+            // Output rules:
+            //   pixel == 0  ->  write 0 unconditionally (transparent)
+            //   pixel != 0  ->  write paletteRemap[pixel]
+            //
+            // The run-length case pre-remaps the pixel value once before the repeat loop.
+
+            unsigned char* dst = dstBuffer;
+            int col = 0; // current column - wraps at imgWidth
+            int row = 0; // current row    - increments on wrap
+
+            // Advance the pixel cursor by one position.
+            auto advance = [&]() {
+                if (++col == imgWidth) {
+                    col = 0;
+                    ++row;
+                }
+            };
+
+            // Emit one pixel, respecting the clip rectangle.
+            // Used for literal-run pixels where the remap must occur per byte.
+            auto emit = [&](unsigned char raw) {
+                if (col >= xMin && col <= xMax && row >= yMin && row <= yMax)
+                    *dst++ = (raw == 0) ? 0 : paletteRemap[raw];
+                advance();
+            };
+
+            // PackBits RLE — always, regardless of BMHD compression field.
+            bool eof = false;
+            unsigned char ctrl;
+            while (!eof && fileReadUInt8(stream, &ctrl) != -1) {
+                if (ctrl < 0x80) {
+                    // Literal run: the next (ctrl + 1) bytes are distinct pixels.
+                    int count = ctrl + 1;
+                    for (int i = 0; i < count && !eof; i++) {
+                        unsigned char px;
+                        if (fileReadUInt8(stream, &px) == -1)
+                            eof = true;
+                        else
+                            emit(px);
+                    }
+                } else {
+                    // Run: repeat the next single pixel (257 − ctrl) times.
+                    int count = 257 - static_cast<int>(ctrl);
+                    unsigned char px;
+                    if (fileReadUInt8(stream, &px) == -1) {
+                        eof = true;
+                    } else {
+                        // Remap once for the whole run (mirrors var_10 in the ASM).
+                        unsigned char mapped = (px == 0) ? 0 : paletteRemap[px];
+                        for (int i = 0; i < count; i++) {
+                            if (col >= xMin && col <= xMax && row >= yMin && row <= yMax)
+                                *dst++ = mapped;
+                            advance();
+                        }
+                    }
+                }
+            }
+
+            // Reaching the end of BODY data (normally or via EOF) is the
+            // success path.
+            fileClose(stream);
+            debugPrint("load_lbm_to_buf: loaded %dx%d OK\n", imgWidth, imgHeight);
+            return imgWidth;
+
+        } else {
+            if (aligned > 0) fileSeek(stream, aligned, SEEK_CUR);
+        }
+    }
+
+    fileClose(stream);
     return -1;
 }
 
@@ -150,12 +297,13 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
             v11 = 0;
             if (v36 != 0) {
                 for (;;) {
-                    v4++;
-                    *a2++ = v29[v11 + 1];
-                    if (v4 > a3) {
+                    if (v4 >= a3) {
                         rc = -1;
                         break;
                     }
+
+                    v4++;
+                    *a2++ = v29[v11 + 1];
 
                     v11++;
                     if (v11 >= v36) {
@@ -209,13 +357,14 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
 
     if (rc != -1) {
         for (int v23 = 0; v23 < v36; v23++) {
-            v4++;
-            v10++;
-            *a2++ = v29[v23 + 1];
-            if (v10 > a3) {
+            if (v4 >= a3) {
                 rc = -1;
                 break;
             }
+
+            v4++;
+            v10++;
+            *a2++ = v29[v23 + 1];
         }
 
         _codesize += v36;
@@ -352,8 +501,12 @@ static void _DeleteNode(int a1)
 }
 
 // 0x44F92C
-int graphDecompress(unsigned char* src, unsigned char* dest, int length)
+int graphDecompress(const unsigned char* src, int srcSize, unsigned char* dest, int destSize)
 {
+    if (src == nullptr || srcSize <= 0 || dest == nullptr || destSize < 0) {
+        return -1;
+    }
+
     _text_buf = (unsigned char*)internal_malloc(sizeof(*_text_buf) * 4122);
     if (_text_buf == nullptr) {
         debugPrint("\nGRAPHLIB: Error allocating decompression buffer!\n");
@@ -363,18 +516,29 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
     int v8 = 4078;
     memset(_text_buf, ' ', v8);
 
-    int v21 = 0;
-    int index = 0;
-    while (index < length) {
-        v21 >>= 1;
-        if ((v21 & 0x100) == 0) {
-            v21 = *src++;
-            v21 |= 0xFF00;
+    int flags = 0;
+    int srcIndex = 0;
+    int destIndex = 0;
+    while (destIndex < destSize) {
+        flags >>= 1;
+        if ((flags & 0x100) == 0) {
+            if (srcIndex >= srcSize) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            flags = src[srcIndex++];
+            flags |= 0xFF00;
         }
 
-        if ((v21 & 0x01) == 0) {
-            int v10 = *src++;
-            int v11 = *src++;
+        if ((flags & 0x01) == 0) {
+            if (srcSize - srcIndex < 2) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            int v10 = src[srcIndex++];
+            int v11 = src[srcIndex++];
 
             v10 |= (v11 & 0xF0) << 4;
             v11 &= 0x0F;
@@ -385,23 +549,26 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
 
                 unsigned char ch = _text_buf[v17];
                 _text_buf[v8] = ch;
-                *dest++ = ch;
+                dest[destIndex] = ch;
 
                 v8 = (v8 + 1) & 0xFFF;
 
-                index++;
-                if (index >= length) {
+                destIndex++;
+                if (destIndex >= destSize) {
                     break;
                 }
             }
         } else {
-            unsigned char ch = *src++;
+            if (srcIndex >= srcSize) {
+                internal_free(_text_buf);
+                return -1;
+            }
+
+            unsigned char ch = src[srcIndex++];
             _text_buf[v8] = ch;
-            *dest++ = ch;
+            dest[destIndex++] = ch;
 
             v8 = (v8 + 1) & 0xFFF;
-
-            index++;
         }
     }
 
@@ -411,20 +578,20 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
 }
 
 // 0x44FA78
-void grayscalePaletteUpdate(int a1, int a2)
+void grayscalePaletteUpdate(Color lowColor, Color highColor)
 {
-    if (a1 >= 0 && a2 <= 255) {
-        for (int index = a1; index <= a2; index++) {
-            // NOTE: Calls `Color2RGB` many times due to `min` and `max` macro
-            // uses.
-            int v1 = std::max((Color2RGB(index) & 0x7C00) >> 10, std::max((Color2RGB(index) & 0x3E0) >> 5, Color2RGB(index) & 0x1F));
-            int v2 = std::min((Color2RGB(index) & 0x7C00) >> 10, std::min((Color2RGB(index) & 0x3E0) >> 5, Color2RGB(index) & 0x1F));
-            int v3 = v1 + v2;
-            int v4 = (int)((double)v3 * 240.0 / 510.0);
+    for (int index = lowColor; index <= highColor; index++) {
+        Color indexColor = static_cast<Color>(index & COLOR_LAST);
 
-            int paletteIndex = ((v4 & 0xFF) << 10) | ((v4 & 0xFF) << 5) | (v4 & 0xFF);
-            _GreyTable[index] = _colorTable[paletteIndex];
-        }
+        // NOTE: Calls `Color2RGB` many times due to `min` and `max` macro
+        // uses.
+        int v1 = std::max((Color2RGB(indexColor) & 0x7C00) >> 10, std::max((Color2RGB(indexColor) & 0x3E0) >> 5, Color2RGB(indexColor) & 0x1F));
+        int v2 = std::min((Color2RGB(indexColor) & 0x7C00) >> 10, std::min((Color2RGB(indexColor) & 0x3E0) >> 5, Color2RGB(indexColor) & 0x1F));
+        int v3 = v1 + v2;
+        int v4 = (int)((double)v3 * 240.0 / 510.0);
+
+        int paletteIndex = ((v4 & 0xFF) << 10) | ((v4 & 0xFF) << 5) | (v4 & 0xFF);
+        _GreyTable[index] = _colorTable[paletteIndex];
     }
 }
 

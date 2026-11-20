@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "audio_channels.h"
 #include "cache.h"
 #include "db.h"
 #include "memory.h"
@@ -46,27 +47,30 @@ static int soundEffectsCacheSoundDecoderReadHandler(void* data, void* buf, unsig
 static const char* off_50DE04 = "";
 
 // sfxc_initialized
-// 0x51C8F0
+// 0x51C8F0 sfxc_initialized
 static bool gSoundEffectsCacheInitialized = false;
 
-// 0x51C8F4
+// 0x51C8F4 sfxc_cmpr
 static int _sfxc_cmpr = 1;
 
 // sfxc_pcache
-// 0x51C8EC
+// 0x51C8EC sfxc_pcache
 static Cache* gSoundEffectsCache = nullptr;
 
 // sfxc_dlevel
-// 0x51C8DC
+// 0x51C8DC sfxc_dlevel
 static int gSoundEffectsCacheDebugLevel = INT_MAX;
 
-// 0x51C8E0
+// 0x51C8E0 sfxc_effect_path
 static char* gSoundEffectsCacheEffectsPath = nullptr;
 
-// 0x51C8E4
+// 0x51C8E4 sfxc_handle_list
 static SoundEffect* gSoundEffects = nullptr;
 
-// 0x51C8E8
+// Number of entries in [gSoundEffects], one per SFX audio channel.
+static int soundEffectsCapacity = 0;
+
+// 0x51C8E8 sfxc_files_open
 static int _sfxc_files_open = 0;
 
 // sfxc_init
@@ -75,7 +79,7 @@ int soundEffectsCacheInit(int cacheSize, const char* effectsPath)
 {
     gSoundEffectsCacheDebugLevel = settings.sound.debug_sfxc;
 
-    if (cacheSize <= SOUND_EFFECTS_CACHE_MIN_SIZE) {
+    if (cacheSize < SOUND_EFFECTS_CACHE_MIN_SIZE) {
         return -1;
     }
 
@@ -154,9 +158,9 @@ void soundEffectsCacheFlush()
 
 // sfxc_cached_open
 // 0x4A915C
-int soundEffectsCacheFileOpen(const char* fname, int* sampleRate)
+int soundEffectsCacheFileOpen(const char* fname, AudioFileInfo* openInfo, bool* isMemoryBackedPtr)
 {
-    if (_sfxc_files_open >= SOUND_EFFECTS_MAX_COUNT) {
+    if (_sfxc_files_open >= soundEffectsCapacity) {
         return -1;
     }
 
@@ -202,11 +206,9 @@ int soundEffectsCacheFileClose(int handle)
         return -1;
     }
 
-    // FIXME: This is check is redundant and implemented incorrectly. There is
-    // an overflow when handle == SOUND_EFFECTS_MAX_COUNT, but thanks to
-    // [soundEffectsIsValidHandle] handle will always be less than
-    // [SOUND_EFFECTS_MAX_COUNT].
-    if (handle <= SOUND_EFFECTS_MAX_COUNT) {
+    // NOTE: Original code checked `handle <= SOUND_EFFECTS_MAX_COUNT` here,
+    // which is redundant since [soundEffectsIsValidHandle] already bounds it.
+    if (handle < soundEffectsCapacity) {
         soundEffect->used = false;
     }
 
@@ -333,7 +335,7 @@ long soundEffectsCacheFileLength(int handle)
 static int soundEffectsCacheGetFileSizeImpl(int tag, int* sizePtr)
 {
     int size;
-    if (soundEffectsListGetFileSize(tag, &size) == -1) {
+    if (soundEffectsListGetFileSize(tag, &size) != SFXL_OK) {
         return -1;
     }
 
@@ -376,12 +378,14 @@ static void soundEffectsCacheFreeImpl(void* ptr)
 // 0x4A94D4
 static int soundEffectsCacheCreateHandles()
 {
-    gSoundEffects = (SoundEffect*)internal_malloc(sizeof(*gSoundEffects) * SOUND_EFFECTS_MAX_COUNT);
+    soundEffectsCapacity = audioChannelsGetCount(AUDIO_CHANNEL_SFX);
+    gSoundEffects = (SoundEffect*)internal_malloc(sizeof(*gSoundEffects) * soundEffectsCapacity);
     if (gSoundEffects == nullptr) {
+        soundEffectsCapacity = 0;
         return -1;
     }
 
-    for (int index = 0; index < SOUND_EFFECTS_MAX_COUNT; index++) {
+    for (int index = 0; index < soundEffectsCapacity; index++) {
         SoundEffect* soundEffect = &(gSoundEffects[index]);
         soundEffect->used = false;
     }
@@ -395,34 +399,36 @@ static int soundEffectsCacheCreateHandles()
 static void soundEffectsCacheFreeHandles()
 {
     if (_sfxc_files_open) {
-        for (int index = 0; index < SOUND_EFFECTS_MAX_COUNT; index++) {
+        for (int index = 0; index < soundEffectsCapacity; index++) {
             SoundEffect* soundEffect = &(gSoundEffects[index]);
-            if (!soundEffect->used) {
+            if (soundEffect->used) {
                 soundEffectsCacheFileClose(index);
             }
         }
     }
 
     internal_free(gSoundEffects);
+    gSoundEffects = nullptr;
+    soundEffectsCapacity = 0;
 }
 
 // 0x4A9550
 static int soundEffectsCreate(int* handlePtr, int tag, void* data, CacheEntry* cacheHandle)
 {
-    if (_sfxc_files_open >= SOUND_EFFECTS_MAX_COUNT) {
+    if (_sfxc_files_open >= soundEffectsCapacity) {
         return -1;
     }
 
     SoundEffect* soundEffect;
     int index;
-    for (index = 0; index < SOUND_EFFECTS_MAX_COUNT; index++) {
+    for (index = 0; index < soundEffectsCapacity; index++) {
         soundEffect = &(gSoundEffects[index]);
         if (!soundEffect->used) {
             break;
         }
     }
 
-    if (index == SOUND_EFFECTS_MAX_COUNT) {
+    if (index == soundEffectsCapacity) {
         return -1;
     }
 
@@ -446,7 +452,7 @@ static int soundEffectsCreate(int* handlePtr, int tag, void* data, CacheEntry* c
 // 0x4A961C
 static bool soundEffectsIsValidHandle(int handle)
 {
-    if (handle >= SOUND_EFFECTS_MAX_COUNT) {
+    if (handle < 0 || handle >= soundEffectsCapacity) {
         return false;
     }
 

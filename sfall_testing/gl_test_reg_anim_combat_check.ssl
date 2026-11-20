@@ -1,0 +1,234 @@
+#include "sfall.h"
+#include "dik.h"
+#include "command_lite.h"
+#include "define_extra.h"
+#include "test_utils.h"
+
+#define REG_ANIM_BEGIN 1
+#define REG_ANIM_END 3
+#define ANIMATION_REQUEST_UNRESERVED 1
+#define TEST_ITEM_PID 40
+#define TEST_FID_SOURCE_PID 76
+#define TEST_LIGHT_VALUE 0x12340002
+#define TEST_TAKE_OUT_FRAME WPN_ANIM_PISTOL
+#define TEST_STAND_ANIM 0
+#define TEST_WALK_ANIM 1
+
+#define reg_anim_begin() reg_anim_func(REG_ANIM_BEGIN, ANIMATION_REQUEST_UNRESERVED)
+#define reg_anim_end() reg_anim_func(REG_ANIM_END, 0)
+
+variable hook_registered := false;
+variable pending_test := 0;
+variable pending_frames := 0;
+
+variable test_move_critter_obj := 0;
+variable test_takeout_critter_obj := 0;
+variable test_light_obj := 0;
+variable test_fid_obj := 0;
+variable test_fid_source_obj := 0;
+variable test_hide_obj := 0;
+variable test_destroy_obj := 0;
+
+variable expected_turn_tile := 0;
+variable expected_move_tile := 0;
+variable initial_rotation := 0;
+variable initial_tile := 0;
+variable initial_fid := 0;
+variable expected_fid := 0;
+variable initial_hide_visibility := 0;
+variable initial_destroy_visibility := 0;
+variable test_objects_ready := false;
+variable pending_timeout_frames := 0;
+variable noncombat_test_completed := false;
+
+// Manual checks:
+// X:
+// - No registered animation should run in combat.
+// - The temp critters should not move or draw a weapon.
+// V:
+// - `reg_anim_combat_check(0)` should allow the registered animations in combat.
+// N:
+// - Outside combat, the full opcode surface should run and be checked.
+
+procedure setup_test_objects begin
+    variable elev := elevation(dude_obj);
+
+    test_move_critter_obj := create_object_sid(obj_pid(dude_obj), tile_num_in_direction(dude_tile, dude_cur_rot, 3), elev, -1);
+    test_takeout_critter_obj := create_object_sid(obj_pid(dude_obj), tile_num_in_direction(dude_tile, (dude_cur_rot + 1) % 6, 3), elev, -1);
+    test_light_obj := create_object_sid(TEST_ITEM_PID, tile_num_in_direction(dude_tile, (dude_cur_rot + 2) % 6, 4), elev, -1);
+    test_fid_obj := create_object_sid(TEST_ITEM_PID, tile_num_in_direction(dude_tile, (dude_cur_rot + 3) % 6, 4), elev, -1);
+    test_fid_source_obj := create_object_sid(TEST_FID_SOURCE_PID, tile_num_in_direction(dude_tile, (dude_cur_rot + 4) % 6, 4), elev, -1);
+    test_hide_obj := create_object_sid(TEST_ITEM_PID, tile_num_in_direction(dude_tile, (dude_cur_rot + 5) % 6, 4), elev, -1);
+    test_destroy_obj := create_object_sid(TEST_ITEM_PID, tile_num_in_direction(dude_tile, dude_cur_rot, 5), elev, -1);
+
+    initial_rotation := obj_get_rot(test_move_critter_obj);
+    initial_tile := tile_num(test_move_critter_obj);
+    expected_turn_tile := tile_num_in_direction(initial_tile, (initial_rotation + 3) % 6, 1);
+    expected_move_tile := tile_num_in_direction(initial_tile, initial_rotation, 1);
+    initial_fid := get_object_data(test_fid_obj, OBJ_DATA_FID);
+    expected_fid := get_object_data(test_fid_source_obj, OBJ_DATA_FID);
+    initial_hide_visibility := obj_is_visible_flag(test_hide_obj);
+    initial_destroy_visibility := obj_is_visible_flag(test_destroy_obj);
+    pending_frames := 0;
+    test_objects_ready := true;
+end
+
+procedure ensure_test_objects begin
+    if (test_objects_ready) then return;
+    call setup_test_objects();
+end
+
+procedure queue_full_sequence begin
+    reg_anim_begin();
+    reg_anim_turn_towards(test_move_critter_obj, expected_turn_tile, -1);
+    reg_anim_take_out(test_takeout_critter_obj, TEST_TAKE_OUT_FRAME, -1);
+    reg_anim_light(test_light_obj, TEST_LIGHT_VALUE, -1);
+    reg_anim_change_fid(test_fid_obj, expected_fid, -1);
+    reg_anim_animate_and_hide(test_hide_obj, TEST_STAND_ANIM, -1);
+    reg_anim_destroy(test_destroy_obj);
+    reg_anim_animate_and_move(test_move_critter_obj, expected_move_tile, TEST_WALK_ANIM, -1);
+    reg_anim_end();
+end
+
+procedure start_blocked_test begin
+    pending_test := 1;
+    pending_timeout_frames := 30;
+    call ensure_test_objects();
+    call queue_full_sequence();
+    display_msg("Started blocked-case test.");
+end
+
+procedure start_enabled_test begin
+    pending_test := 2;
+    pending_timeout_frames := 120;
+    call ensure_test_objects();
+    reg_anim_combat_check(0);
+    call queue_full_sequence();
+    display_msg("Started enabled-case test.");
+end
+
+procedure start_noncombat_test begin
+    pending_test := 3;
+    pending_timeout_frames := 120;
+    call ensure_test_objects();
+    call queue_full_sequence();
+    display_msg("Started non-combat opcode test.");
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (pending_test != 0) then begin
+        if (key == DIK_X or key == DIK_V or key == DIK_N) then
+            display_msg("A reg_anim_combat_check test is already running.");
+        return;
+    end
+
+    if (combat_data and key == DIK_X) then begin
+        display_msg("X: combat should block all reg_anim calls in this sequence.");
+        call start_blocked_test();
+    end else if (combat_data and key == DIK_V) then begin
+        display_msg("V: reg_anim_combat_check(0) should allow the registered animations in combat.");
+        call start_enabled_test();
+    end else if ((not combat_data) and key == DIK_N) then begin
+        if (noncombat_test_completed) then begin
+            display_msg("N already ran once. Reload the map or game before running it again.");
+            return;
+        end
+        display_msg("N: outside combat, the full reg_anim opcode sequence should run.");
+        call start_noncombat_test();
+    end else if (key == DIK_X or key == DIK_V) then begin
+        display_msg("Enter combat before running X or V.");
+    end else if (key == DIK_N) then begin
+        display_msg("Leave combat before running N.");
+    end
+end
+
+procedure report_blocked_results begin
+    variable errors_before := test_suite_errors;
+
+    call assertEquals("turn_towards blocked", obj_get_rot(test_move_critter_obj), initial_rotation);
+    call assertEquals("animate_and_move blocked", tile_num(test_move_critter_obj), initial_tile);
+    call assertEquals("change_fid blocked", get_object_data(test_fid_obj, OBJ_DATA_FID), initial_fid);
+    call assertEquals("animate_and_hide blocked", obj_is_visible_flag(test_hide_obj), initial_hide_visibility);
+    call assertEquals("destroy blocked", obj_is_visible_flag(test_destroy_obj), initial_destroy_visibility);
+
+    if (test_suite_errors == errors_before) then
+        display_msg("PASS blocked automatic checks");
+    else
+        display_msg("FAIL blocked automatic checks");
+
+    call report_test_results("reg_anim_combat_check_blocked");
+end
+
+procedure report_enabled_results begin
+    variable errors_before := test_suite_errors;
+
+    call assertNotEquals("turn_towards runs in combat when enabled", obj_get_rot(test_move_critter_obj), initial_rotation);
+    call assertEquals("animate_and_move runs in combat when enabled", tile_num(test_move_critter_obj), expected_move_tile);
+    call assertEquals("change_fid runs in combat when enabled", get_object_data(test_fid_obj, OBJ_DATA_FID), expected_fid);
+
+    if (test_suite_errors == errors_before) then
+        display_msg("PASS enabled automatic checks");
+    else
+        display_msg("FAIL enabled automatic checks");
+
+    call report_test_results("reg_anim_combat_check_enabled");
+end
+
+procedure report_noncombat_results begin
+    variable errors_before := test_suite_errors;
+
+    noncombat_test_completed := true;
+
+    call assertNotEquals("turn_towards outside combat", obj_get_rot(test_move_critter_obj), initial_rotation);
+    call assertEquals("animate_and_move outside combat", tile_num(test_move_critter_obj), expected_move_tile);
+    call assertEquals("change_fid outside combat", get_object_data(test_fid_obj, OBJ_DATA_FID), expected_fid);
+    call assertEquals("animate_and_hide outside combat", obj_is_visible_flag(test_hide_obj), 0);
+
+    if (test_suite_errors == errors_before) then
+        display_msg("PASS non-combat automatic checks");
+    else
+        display_msg("FAIL non-combat automatic checks");
+
+    call report_test_results("reg_anim_full_noncombat");
+    display_msg("Manual check: outside combat, the other clone should play take out, light should visibly apply if supported by the object type, and destroy_obj should be gone.");
+end
+
+procedure poll_pending_test begin
+    if (pending_test == 0) then return;
+
+    pending_frames += 1;
+
+    if (pending_frames < pending_timeout_frames) then return;
+
+    variable current_test := pending_test;
+    pending_test := 0;
+    pending_frames := 0;
+    pending_timeout_frames := 0;
+
+    if (current_test == 1) then begin
+        call report_blocked_results();
+    end else if (current_test == 2) then begin
+        call report_enabled_results();
+    end else if (current_test == 3) then begin
+        call report_noncombat_results();
+    end
+end
+
+procedure start begin
+    set_global_script_repeat(1);
+
+    if (not hook_registered and game_loaded) then begin
+        hook_registered := true;
+        call ensure_test_objects();
+        register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+        display_msg("reg_anim_combat_check test loaded. Enter combat for X/V, or stay out of combat for N (one-shot).");
+    end
+
+    call poll_pending_test();
+end

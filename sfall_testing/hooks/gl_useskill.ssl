@@ -1,0 +1,145 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+#include "../test_utils.h"
+
+variable useskill_mode := 0;
+variable useskillon_calls := 0;
+variable useskill_calls := 0;
+variable last_useskillon_skill := -1;
+variable last_useskill_skill := -1;
+
+procedure skill_name(variable skill) begin
+    if (skill == SKILL_FIRST_AID) then return "first_aid";
+    if (skill == SKILL_DOCTOR) then return "doctor";
+    if (skill == SKILL_LOCKPICK) then return "lockpick";
+    if (skill == SKILL_STEAL) then return "steal";
+    if (skill == SKILL_TRAPS) then return "traps";
+    if (skill == SKILL_SCIENCE) then return "science";
+    if (skill == SKILL_REPAIR) then return "repair";
+    if (skill == SKILL_SNEAK) then return "sneak";
+    return string_format1("skill_%d", skill);
+end
+
+procedure obj_name_safe(variable obj) begin
+    if (obj == 0) then return "<null>";
+    return obj_name(obj);
+end
+
+procedure useskill_mode_name(variable mode) begin
+    if (mode == 1) then return "useskillon_cancel";
+    if (mode == 2) then return "useskillon_user_override";
+    if (mode == 3) then return "useskillon_allow_combat";
+    if (mode == 4) then return "useskill_override";
+    if (mode == 5) then return "useskill_cancel_steal";
+    return "vanilla";
+end
+
+procedure print_mode begin
+    display_msg(string_format1("useskill mode -> %s", useskill_mode_name(useskill_mode)));
+end
+
+procedure useskillon_handler begin
+    variable
+        args := get_sfall_args,
+        user := args[0],
+        target := args[1],
+        skill := args[2];
+
+    useskillon_calls++;
+    last_useskillon_skill := skill;
+
+    display_msg(string_format("useskillon mode=%s user=%s target=%s skill=%s",
+        useskill_mode_name(useskill_mode),
+        obj_name_safe(user),
+        obj_name_safe(target),
+        skill_name(skill)));
+    display_msg(string_format1("useskillon args=%s", debug_array_str(args)));
+
+    call assertEquals("useskillon arg count", len_array(args), 3);
+    call assertTrue("useskillon user is set", user != 0);
+    call assertTrue("useskillon target is set", target != 0);
+
+    if (useskill_mode == 1) then begin
+        display_msg("useskillon cancelling skill action");
+        set_sfall_return(-1);
+    end else if (useskill_mode == 2) then begin
+        if (skill == SKILL_STEAL) then begin
+            display_msg("useskillon returning dude_obj for Steal; engine should ignore this return value");
+        end else begin
+            display_msg("useskillon returning dude_obj as user override");
+        end
+        set_sfall_return(dude_obj);
+    end else if (useskill_mode == 3) then begin
+        display_msg("useskillon allowing combat use");
+        set_sfall_return(0);
+        set_sfall_return(1);
+    end
+end
+
+procedure useskill_handler begin
+    variable
+        args := get_sfall_args,
+        user := args[0],
+        target := args[1],
+        skill := args[2],
+        skill_bonus := args[3];
+
+    useskill_calls++;
+    last_useskill_skill := skill;
+
+    display_msg(string_format("useskill mode=%s user=%s target=%s skill=%s bonus=%d",
+        useskill_mode_name(useskill_mode),
+        obj_name_safe(user),
+        obj_name_safe(target),
+        skill_name(skill),
+        skill_bonus));
+    display_msg(string_format1("useskill args=%s", debug_array_str(args)));
+
+    call assertEquals("useskill arg count", len_array(args), 4);
+    call assertTrue("useskill user is set", user != 0);
+    call assertTrue("useskill target is set", target != 0);
+
+    if (useskill_mode == 4) then begin
+        display_msg("useskill overriding hard-coded handler with result 1");
+        set_sfall_return(1);
+    end else if (useskill_mode == 5) then begin
+        if (skill == SKILL_STEAL) then begin
+            display_msg("useskill canceling steal by overriding hard-coded handler with result 0");
+            set_sfall_return(0);
+        end
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_U) then begin
+        useskill_mode += 1;
+        if (useskill_mode > 5) then useskill_mode := 0;
+        call print_mode;
+    end else if (key == DIK_Y) then begin
+        display_msg(string_format("useskill stats: on=%d skill=%s, handler=%d skill=%s",
+            useskillon_calls,
+            skill_name(last_useskillon_skill),
+            useskill_calls,
+            skill_name(last_useskill_skill)));
+        call report_test_results("hook_useskill");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("useskill manual test ready");
+    display_msg("press U to cycle modes: vanilla / useskillon_cancel / useskillon_user_override / useskillon_allow_combat / useskill_override / useskill_cancel_steal");
+    display_msg("use a Skilldex skill or a medical kit on a valid target; press Y to report assertions");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_USESKILLON, useskillon_handler);
+    register_hook_proc(HOOK_USESKILL, useskill_handler);
+end

@@ -1,46 +1,76 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 
+#include "animation_defs.h"
+#include "art.h"
 #include "obj_types.h"
+#include "proto_types.h"
 
 namespace fallout {
 
-typedef enum Hand {
+enum class InvenSlot : int;
+
+#define INVENTORY_SLOT_WIDTH 64
+#define INVENTORY_SLOT_HEIGHT 48
+
+// Extra slots per scroller added by the expanded barter/trade window.
+constexpr int kExpandedBarterExtraSlots = 1;
+
+enum Hand : int {
     // Item1 (Punch)
     HAND_LEFT,
     // Item2 (Kick)
     HAND_RIGHT,
     HAND_COUNT,
-} Hand;
+};
 
-typedef void InventoryPrintItemDescriptionHandler(char* string);
+typedef void InventoryPrintItemDescriptionHandler(const char* string);
 
 void inventoryResetDude();
+void inventorySetDude(Object* obj, const ProtoId& protoId);
 void inventoryOpen();
+int inventoryGetInvenApCost();
+void inventorySetInvenApCost(int cost);
+void inventoryResetInvenApCost();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
+FrmId inventoryComputeCritterFrmId(Object* critter, const ProtoId& baseProtoId, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation);
 void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);
 Object* critterGetArmor(Object* critter);
-Object* objectGetCarriedObjectByPid(Object* obj, int pid);
-int objectGetCarriedQuantityByPid(Object* obj, int pid);
-Object* inventoryFindByType(Object* obj, int itemType, int* indexPtr);
+void critterRestoreLightWithoutFlare(Object* critter);
+
+struct CritterEquipped {
+    Object* leftHand = nullptr;
+    Object* rightHand = nullptr;
+    Object* armor = nullptr;
+    int weight = 0;
+};
+CritterEquipped critterStripEquipped(Object* critter);
+void critterRestoreEquipped(Object* critter, CritterEquipped& equipped);
+Object* objectGetCarriedObjectByProtoId(Object* obj, const ProtoId& protoId);
+int objectGetCarriedQuantityByProtoId(Object* obj, const ProtoId& protoId);
+Object* inventoryFindByType(Object* obj, ItemType itemType, int* indexPtr);
 Object* inventoryFindById(Object* obj, int id);
 Object* inventoryItemByIndex(Object* obj, int index);
 // Makes critter equip a given item in a given hand slot with an animation.
 // 0 - left hand, 1 - right hand. If item is armor, hand value is ignored.
-int inventoryEquip(Object* critter, Object* item, int hand);
+int inventoryEquip(Object* critter, Object* item, Hand hand);
 // Same as inven_wield but allows to wield item without animation.
-int inventoryEquipFunc(Object* critter, Object* item, int hand, bool animate);
+int inventoryEquipFunc(Object* critter, Object* item, Hand hand, bool animate);
 // Makes critter unequip an item in a given hand slot with an animation.
-int inventoryUnequip(Object* critter, int hand);
+int inventoryUnequip(Object* critter, Hand hand);
 // Same as inven_unwield but allows to unwield item without animation.
-int inventoryUnequipFunc(Object* critter, int hand, bool animate);
+int inventoryUnequipFunc(Object* critter, Hand hand, bool animate);
 int inventoryOpenLooting(Object* looter, Object* target);
 int inventoryOpenStealing(Object* thief, Object* target);
-void inventoryOpenTrade(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
+void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
 int inventorySetTimer(Object* item);
+int inventoryGetWindow();
+void inventoryDisplayStats();
+void inventoryRedraw(int redrawSide);
 Object* inventoryGetTargetObject();
+int inventoryUnwieldSlot(Object* critter, InvenSlot slot);
 
 } // namespace fallout
 

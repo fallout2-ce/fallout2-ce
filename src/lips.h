@@ -9,10 +9,38 @@ namespace fallout {
 
 #define PHONEME_COUNT (42)
 
-typedef enum LipsFlags {
-    LIPS_FLAG_0x01 = 0x01,
-    LIPS_FLAG_0x02 = 0x02,
-} LipsFlags;
+enum class LipsFlags : unsigned int {
+    None = 0x00,
+    Looping = 0x01,
+    Playing = 0x02,
+};
+
+constexpr inline LipsFlags operator&(LipsFlags lhs, LipsFlags rhs)
+{
+    return static_cast<LipsFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline LipsFlags operator|(LipsFlags lhs, LipsFlags rhs)
+{
+    return static_cast<LipsFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline LipsFlags operator~(LipsFlags rhs)
+{
+    return static_cast<LipsFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline LipsFlags& operator&=(LipsFlags& lhs, LipsFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline LipsFlags& operator|=(LipsFlags& lhs, LipsFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef struct SpeechMarker {
     int marker;
@@ -22,16 +50,16 @@ typedef struct SpeechMarker {
 typedef struct LipsData {
     int version;
     int field_4;
-    int flags;
+    LipsFlags flags;
     Sound* sound;
     int field_10;
     void* field_14;
     unsigned char* phonemes;
     int field_1C;
-    int field_20;
-    int field_24;
+    int startOffset;
+    int phonemeCount;
     int field_28;
-    int field_2C;
+    int markerCount;
     SpeechMarker* markers;
     int field_34;
     int field_38;
@@ -40,10 +68,10 @@ typedef struct LipsData {
     int field_44;
     int field_48;
     int field_4C;
-    char file_name[8];
-    char field_58[4];
-    char field_5C[4];
-    char field_60[4];
+    char fileName[8];
+    char audioExtension[4];
+    char textExtension[4];
+    char lipExtension[4];
     char field_64[260];
 } LipsData;
 

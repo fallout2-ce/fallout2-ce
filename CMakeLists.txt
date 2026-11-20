@@ -20,7 +20,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+endif()
+
 option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
+option(FALLOUT_AUDIO_OGG "Enable OGG decoding with stb_vorbis when available" ON)
+
+set(FALLOUT_STB_VORBIS_DIR "" CACHE PATH "Directory containing stb_vorbis.c")
 
 if(ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
@@ -31,23 +38,29 @@ endif()
 # Git Info
 include("cmake/gitver.cmake")
 
-target_sources(${EXECUTABLE_NAME} PUBLIC
+# Shared engine sources — used by both game and mapper targets.
+# Excludes main.cc/main.h (game-only entry logic).
+set(FALLOUT_ENGINE_SOURCES
     "src/actions.cc"
     "src/actions.h"
+    "src/animation_defs.h"
     "src/animation.cc"
     "src/animation.h"
+    "src/art_defs.h"
     "src/art.cc"
     "src/art.h"
-    "src/audio_file.cc"
-    "src/audio_file.h"
     "src/audio.cc"
     "src/audio.h"
+    "src/audio_channels.cc"
+    "src/audio_channels.h"
     "src/automap.cc"
     "src/automap.h"
     "src/autorun.cc"
     "src/autorun.h"
     "src/cache.cc"
     "src/cache.h"
+    "src/ce_save_game.cc"
+    "src/ce_save_game.h"
     "src/character_editor.cc"
     "src/character_editor.h"
     "src/character_selector.cc"
@@ -62,6 +75,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/combat.h"
     "src/config.cc"
     "src/config.h"
+    "src/content_config.cc"
+    "src/content_config.h"
     "src/credits.cc"
     "src/credits.h"
     "src/critter.cc"
@@ -102,6 +117,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/font_manager.h"
     "src/game_config.cc"
     "src/game_config.h"
+    "src/game_config_migration.cc"
+    "src/game_config_migration.h"
     "src/game_dialog.cc"
     "src/game_dialog.h"
     "src/game_memory.cc"
@@ -112,6 +129,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game_movie.h"
     "src/game_sound.cc"
     "src/game_sound.h"
+    "src/game_speed.cc"
+    "src/game_speed.h"
     "src/game_vars.h"
     "src/game.cc"
     "src/game.h"
@@ -143,13 +162,13 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/lips.h"
     "src/loadsave.cc"
     "src/loadsave.h"
-    "src/main.cc"
-    "src/main.h"
     "src/mainmenu.cc"
     "src/mainmenu.h"
     "src/map_defs.h"
     "src/map.cc"
     "src/map.h"
+    "src/map_edge.cc"
+    "src/map_edge.h"
     "src/memory_defs.h"
     "src/memory_manager.cc"
     "src/memory_manager.h"
@@ -172,8 +191,16 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/obj_types.h"
     "src/object.cc"
     "src/object.h"
+    "src/ogg_decoder.cc"
+    "src/ogg_decoder.h"
+    "src/opcode_context.cc"
+    "src/opcode_context.h"
     "src/options.cc"
     "src/options.h"
+    "src/options_schema.cc"
+    "src/options_schema.h"
+    "src/options_settings_model.cc"
+    "src/options_settings_model.h"
     "src/palette.cc"
     "src/palette.h"
     "src/party_member.cc"
@@ -239,6 +266,7 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/widget.h"
     "src/win32.cc"
     "src/win32.h"
+    "src/window_defs.h"
     "src/window_manager_private.cc"
     "src/window_manager_private.h"
     "src/window_manager.cc"
@@ -253,7 +281,7 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/xfile.h"
 )
 
-target_sources(${EXECUTABLE_NAME} PUBLIC
+set(FALLOUT_PLATFORM_SOURCES
     "src/audio_engine.cc"
     "src/audio_engine.h"
     "src/delay.cc"
@@ -272,6 +300,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/sfall_config.h"
     "src/sfall_ext.cc"
     "src/sfall_ext.h"
+    "src/sfall_filesystem.cc"
+    "src/sfall_filesystem.h"
     "src/sfall_global_vars.cc"
     "src/sfall_global_vars.h"
     "src/sfall_global_scripts.cc"
@@ -284,10 +314,17 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/sfall_lists.h"
     "src/sfall_metarules.cc"
     "src/sfall_metarules.h"
+    "src/sfall_object_name.cc"
+    "src/sfall_object_name.h"
     "src/sfall_opcodes.cc"
     "src/sfall_opcodes.h"
+    "src/sfall_script_hooks.cc"
+    "src/script_sound.cc"
+    "src/script_sound.h"
     "src/sfall_arrays.cc"
     "src/sfall_arrays.h"
+    "src/sfall_animation.cc"
+    "src/sfall_animation.h"
     "src/sfall_callbacks.cc"
     "src/sfall_callbacks.h"
     "src/touch.cc"
@@ -296,12 +333,49 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
 	"third_party/lodepng/lodepng.cpp"
 )
 
+target_sources(${EXECUTABLE_NAME} PUBLIC
+    ${FALLOUT_ENGINE_SOURCES}
+    "src/main.cc"
+    "src/main.h"
+)
+
+target_sources(${EXECUTABLE_NAME} PUBLIC ${FALLOUT_PLATFORM_SOURCES})
+
 target_include_directories(${EXECUTABLE_NAME} PUBLIC "third_party/lodepng")
+
+set(FALLOUT_HAVE_STB_VORBIS OFF)
+if(FALLOUT_AUDIO_OGG)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/stb_vorbis/stb_vorbis.c")
+        set(_fallout_stb_vorbis_dir "${CMAKE_SOURCE_DIR}/third_party/stb_vorbis")
+    else()
+        set(_fallout_stb_vorbis_dir "${FALLOUT_STB_VORBIS_DIR}")
+        if(NOT _fallout_stb_vorbis_dir)
+            find_path(_fallout_stb_vorbis_dir
+                NAMES "stb_vorbis.c"
+                DOC "Directory containing stb_vorbis.c")
+        endif()
+    endif()
+
+    if(_fallout_stb_vorbis_dir AND EXISTS "${_fallout_stb_vorbis_dir}/stb_vorbis.c")
+        set(FALLOUT_HAVE_STB_VORBIS ON)
+        target_include_directories(${EXECUTABLE_NAME} PRIVATE "${_fallout_stb_vorbis_dir}")
+    else()
+        message(STATUS "OGG support disabled: stb_vorbis.c not found")
+    endif()
+endif()
+
+if(FALLOUT_HAVE_STB_VORBIS)
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE HAVE_STB_VORBIS=1)
+else()
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE HAVE_STB_VORBIS=0)
+endif()
 
 if(IOS)
     target_sources(${EXECUTABLE_NAME} PUBLIC
         "src/platform/ios/paths.h"
         "src/platform/ios/paths.mm"
+        "src/platform/ios/quick_toolbar.h"
+        "src/platform/ios/quick_toolbar.cc"
     )
 endif()
 
@@ -315,11 +389,30 @@ if(WIN32)
     )
 endif()
 
+if(MINGW)
+     target_compile_definitions(${EXECUTABLE_NAME} PUBLIC
+        _USE_MATH_DEFINES
+    )
+endif()
+
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
+    )
+endif()
+
+if(MSVC)
+    target_link_libraries(${EXECUTABLE_NAME} 
         debug libcpmtd
         optimized libcpmt
+    )
+endif()
+
+if(MINGW)
+    target_link_options(${EXECUTABLE_NAME} PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++
     )
 endif()
 
@@ -353,6 +446,8 @@ if(APPLE)
         set(RESOURCES
             "os/macos/fallout2-ce.icns"
         )
+
+        target_link_libraries(${EXECUTABLE_NAME} "-framework CoreFoundation")
 
         target_sources(${EXECUTABLE_NAME} PUBLIC ${RESOURCES})
         set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
@@ -431,12 +526,191 @@ endif()
 
 add_subdirectory("third_party/fpattern")
 target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
+target_link_libraries(${EXECUTABLE_NAME} fpattern_windows::fpattern_windows)
 
 target_link_libraries(${EXECUTABLE_NAME} ${ZLIB_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
 
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${SDL2_MAIN_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
+
+if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
+    add_executable(ce-dat-tool
+        "tools/dat_tool.cc"
+        "tools/dat_archive.cc"
+        "tools/fo1_dat_lzss.cc"
+        "src/dfile.cc"
+        "src/platform_compat.cc"
+    )
+
+    if(APPLE)
+        set_target_properties(ce-dat-tool PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_link_libraries(ce-dat-tool
+        fpattern_windows::fpattern_windows
+        ${ZLIB_LIBRARIES}
+        ${SDL2_LIBRARIES}
+    )
+    if(WIN32)
+        target_link_libraries(ce-dat-tool winmm)
+    endif()
+    if(MINGW)
+        target_link_options(ce-dat-tool PRIVATE
+            -static
+            -static-libgcc
+            -static-libstdc++
+        )
+    endif()
+    target_include_directories(ce-dat-tool PRIVATE "src")
+    target_include_directories(ce-dat-tool PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(ce-dat-tool PRIVATE ${SDL2_INCLUDE_DIRS})
+
+    add_executable(ce-frm2png
+        "tools/ce_frm2png.cc"
+        "src/platform_compat.cc"
+        "third_party/lodepng/lodepng.cpp"
+    )
+
+    if(APPLE)
+        set_target_properties(ce-frm2png PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_include_directories(ce-frm2png PRIVATE "src")
+    target_include_directories(ce-frm2png PRIVATE "third_party/lodepng")
+    target_include_directories(ce-frm2png PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(ce-frm2png PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_link_libraries(ce-frm2png ${SDL2_LIBRARIES})
+    target_link_libraries(ce-frm2png ${ZLIB_LIBRARIES})
+    
+    if(MINGW)
+        target_link_options(ce-frm2png PRIVATE
+            -static
+            -static-libgcc
+            -static-libstdc++
+        )
+    endif()
+
+    if(APPLE)
+        file(GLOB_RECURSE CE_DAT_INPUTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/files/ce.dat/*")
+        set(CE_DAT_RESOURCE_PATH "${CMAKE_CURRENT_BINARY_DIR}/ce.dat")
+
+        add_custom_command(
+            OUTPUT "${CE_DAT_RESOURCE_PATH}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
+            COMMAND $<TARGET_FILE:ce-dat-tool> create "${CMAKE_SOURCE_DIR}/files/ce.dat" "${CE_DAT_RESOURCE_PATH}"
+            DEPENDS ce-dat-tool ${CE_DAT_INPUTS}
+            COMMENT "Generating ce.dat for app bundle"
+            VERBATIM
+        )
+
+        add_custom_target(ce-dat-resource DEPENDS "${CE_DAT_RESOURCE_PATH}")
+        add_dependencies(${EXECUTABLE_NAME} ce-dat-resource)
+
+        target_sources(${EXECUTABLE_NAME} PRIVATE "${CE_DAT_RESOURCE_PATH}")
+        set_source_files_properties("${CE_DAT_RESOURCE_PATH}" PROPERTIES
+            GENERATED TRUE
+            MACOSX_PACKAGE_LOCATION "Resources")
+    endif()
+endif()
+
+if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
+    if(WIN32)
+        add_executable(mapper-ce WIN32)
+    else()
+        add_executable(mapper-ce)
+    endif()
+
+    target_sources(mapper-ce PUBLIC
+        ${FALLOUT_ENGINE_SOURCES}
+        ${FALLOUT_PLATFORM_SOURCES}
+        "src/mapper/map_edge_setup.cc"
+        "src/mapper/map_edge_setup.h"
+        "src/mapper/map_func.cc"
+        "src/mapper/map_func.h"
+        "src/mapper/mapper.cc"
+        "src/mapper/mapper.h"
+        "src/mapper/mp_instance.cc"
+        "src/mapper/mp_instance.h"
+        "src/mapper/mp_proto.cc"
+        "src/mapper/mp_proto.h"
+        "src/mapper/mp_scrpt.cc"
+        "src/mapper/mp_scrpt.h"
+        "src/mapper/mp_targt.cc"
+        "src/mapper/mp_targt.h"
+        "src/mapper/mp_utils.cc"
+        "src/mapper/mp_utils.h"
+        "src/mapper/mp_text.cc"
+        "src/mapper/mp_text.h"
+    )
+
+    target_compile_definitions(mapper-ce PUBLIC FALLOUT_MAPPER)
+
+    if(WIN32)
+        target_compile_definitions(mapper-ce PUBLIC
+            _CRT_SECURE_NO_WARNINGS
+            _CRT_NONSTDC_NO_WARNINGS
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+            _STATIC_CPPLIB
+        )
+
+        if(MINGW)
+            target_compile_definitions(mapper-ce PUBLIC
+                _USE_MATH_DEFINES
+            )
+
+            target_link_options(mapper-ce PRIVATE
+                -static
+                -static-libgcc
+                -static-libstdc++
+            )
+        endif()
+
+        target_link_libraries(mapper-ce
+            winmm
+        )
+        
+        if(MSVC)
+            target_link_libraries(mapper-ce
+                debug libcpmtd
+                optimized libcpmt
+            )
+        endif()
+
+        target_sources(mapper-ce PUBLIC
+            "os/windows/fallout2-ce.rc"
+        )
+    endif()
+
+    if(APPLE)
+        target_link_libraries(mapper-ce "-framework CoreFoundation")
+        set_target_properties(mapper-ce PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_include_directories(mapper-ce PUBLIC "third_party/lodepng")
+    target_include_directories(mapper-ce PRIVATE "src")
+    target_include_directories(mapper-ce PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(mapper-ce PRIVATE ${SDL2_INCLUDE_DIRS})
+
+    target_link_libraries(mapper-ce
+        fpattern::fpattern
+        fpattern_windows::fpattern_windows
+        ${ZLIB_LIBRARIES}
+        ${SDL2_LIBRARIES}
+        ${SDL2_MAIN_LIBRARIES}
+    )
+endif()
 
 if(APPLE)
     if(IOS)

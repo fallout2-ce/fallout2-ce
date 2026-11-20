@@ -1,0 +1,136 @@
+#include "define_lite.h"
+#include "sfall.h"
+#include "dik.h"
+#include "define_extra.h"
+#include "lib.inven.h"
+#include "test_utils.h"
+
+#define TEST_ITEM_PID 40
+#define PARTY_UNIQUE_ID_LOWER_BOUND 18000
+#define UNIQUE_ID_LOWER_BOUND 0x10000000
+
+procedure find_random_inventory_item_for_unique_id begin
+    variable items;
+    variable length;
+    variable start;
+    variable scan;
+    variable index;
+    variable item;
+    variable item_id;
+
+    items := inven_as_array(dude_obj);
+    length := len_array(items);
+    if (length <= 0) then return 0;
+
+    start := random(0, length - 1);
+    scan := 0;
+    while (scan < length) do begin
+        index := start + scan;
+        if (index >= length) then index -= length;
+
+        item := items[index];
+        item_id := get_object_data(item, OBJ_DATA_ID);
+        if (item_id < PARTY_UNIQUE_ID_LOWER_BOUND) then begin
+            return item;
+        end
+
+        scan += 1;
+    end
+
+    return items[start];
+end
+
+procedure assign_unique_id_to_random_inventory_item begin
+    variable item;
+    variable old_id;
+    variable new_id;
+
+    item := find_random_inventory_item_for_unique_id;
+    if (item == 0) then begin
+        display_msg("unique_id manual test: inventory is empty");
+        return;
+    end
+
+    old_id := get_object_data(item, OBJ_DATA_ID);
+    new_id := set_unique_id(item);
+
+    if (new_id == old_id) then begin
+        display_msg(string_format3("unique_id manual U: %s pid=%d id unchanged=%d", obj_name(item), obj_pid(item), new_id));
+    end else begin
+        display_msg(string_format4("unique_id manual U: %s pid=%d %d->%d", obj_name(item), obj_pid(item), old_id, new_id));
+    end
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_U) then begin
+        call assign_unique_id_to_random_inventory_item();
+    end
+end
+
+procedure start begin
+    variable item_a;
+    variable item_b;
+    variable item_c;
+    variable baseline_total;
+    variable unique_id_a;
+    variable unique_id_a_again;
+    variable unique_id_c;
+    variable engine_id_a;
+    variable regular_count;
+    variable total;
+
+    if (not game_loaded) then return;
+
+    display_msg("Testing set_unique_id...");
+
+    call assertEquals("metarule exists", metarule_exist("set_unique_id"), 1);
+
+    baseline_total := obj_is_carrying_obj_pid(dude_obj, TEST_ITEM_PID);
+    item_a := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+    item_b := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+    item_c := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+
+    unique_id_a := set_unique_id(item_a);
+    call assertTrue("unique id lower bound", unique_id_a >= UNIQUE_ID_LOWER_BOUND);
+    call assertEquals("unique id stored on object", get_object_data(item_a, OBJ_DATA_ID), unique_id_a);
+
+    unique_id_a_again := set_unique_id(item_a);
+    call assertEquals("existing unique id reused", unique_id_a_again, unique_id_a);
+
+    add_obj_to_inven(dude_obj, item_a);
+    add_obj_to_inven(dude_obj, item_b);
+    call assertEquals("unique item stays separate", obj_is_carrying_obj(dude_obj, item_a), 1);
+    regular_count := obj_is_carrying_obj(dude_obj, item_b);
+    call assertTrue("regular item still exists after unique item add", regular_count >= 1);
+    total := obj_is_carrying_obj_pid(dude_obj, TEST_ITEM_PID);
+    call assertEquals("unique and regular items add two total items", total, baseline_total + 2);
+
+    unique_id_c := set_unique_id(item_c);
+    call assertNotEquals("second unique item gets new id", unique_id_c, unique_id_a);
+    add_obj_to_inven(dude_obj, item_c);
+    call assertEquals("second unique item stays separate", obj_is_carrying_obj(dude_obj, item_c), 1);
+
+    total := obj_is_carrying_obj_pid(dude_obj, TEST_ITEM_PID);
+    call assertEquals("pid total counts all three added items", total, baseline_total + 3);
+
+    engine_id_a := unset_unique_id(item_a);
+    call assertTrue("unset returns engine id", engine_id_a < UNIQUE_ID_LOWER_BOUND);
+    call assertNotEquals("unset replaces unique id", engine_id_a, unique_id_a);
+    call assertEquals("engine id stored on object", get_object_data(item_a, OBJ_DATA_ID), engine_id_a);
+
+    call assertEquals("remove unique item a", rm_mult_objs_from_inven(dude_obj, item_a, 1), 1);
+    call assertEquals("remove regular item b", rm_mult_objs_from_inven(dude_obj, item_b, 1), 1);
+    call assertEquals("remove unique item c", rm_mult_objs_from_inven(dude_obj, item_c, 1), 1);
+    destroy_object(item_a);
+    destroy_object(item_b);
+    destroy_object(item_c);
+
+    call report_test_results("unique_id");
+    display_msg("unique_id manual test ready: press U to assign/print a unique id for a random inventory item");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end

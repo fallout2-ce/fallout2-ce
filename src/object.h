@@ -1,6 +1,8 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "art.h"
+#include "color.h"
 #include "db.h"
 #include "geometry.h"
 #include "inventory.h"
@@ -10,14 +12,14 @@
 namespace fallout {
 
 typedef struct ObjectWithFlags {
-    int flags;
+    ObjectFlags flags;
     Object* object;
 } ObjectWithFlags;
 
-extern unsigned char* _wallBlendTable;
+extern Color* _wallBlendTable;
 extern Object* _moveBlockObj;
 
-extern unsigned char _commonGrayTable[256];
+extern Color _commonGrayTable[COLOR_COUNT];
 extern Object* gEgg;
 extern Object* gDude;
 
@@ -25,24 +27,25 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch);
 void objectsReset();
 void objectsExit();
 int objectRead(Object* obj, File* stream);
+bool objectIsSavable(Object* obj);
 int objectLoadAll(File* stream);
 int objectSaveAll(File* stream);
-void _obj_render_pre_roof(Rect* rect, int elevation);
-void _obj_render_post_roof(Rect* rect, int elevation);
-int objectCreateWithFidPid(Object** objectPtr, int fid, int pid);
-int objectCreateWithPid(Object** objectPtr, int pid);
+void _obj_render_pre_roof(Rect* rect, MapElevation elevation);
+void _obj_render_post_roof(Rect* rect, MapElevation elevation);
+int objectCreateWithFrmIdProtoId(Object** objectPtr, const FrmId& frmId, const ProtoId& protoId);
+int objectCreateWithProtoId(Object** objectPtr, const ProtoId& protoId);
 int _obj_copy(Object** a1, Object* a2);
-int _obj_connect(Object* obj, int tile_index, int elev, Rect* rect);
+int _obj_connect(Object* obj, int tile_index, MapElevation elev, Rect* rect);
 int _obj_disconnect(Object* obj, Rect* rect);
 int _obj_offset(Object* obj, int x, int y, Rect* rect);
-int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5);
-int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect);
+int _obj_move(Object* a1, int a2, int a3, MapElevation elevation, Rect* a5);
+int objectSetLocation(Object* obj, int tile, MapElevation elevation, Rect* rect);
 int _obj_reset_roof();
-int objectSetFid(Object* obj, int fid, Rect* rect);
+int objectSetFrmId(Object* obj, const FrmId& frmId, Rect* rect);
 int objectSetFrame(Object* obj, int frame, Rect* rect);
 int objectSetNextFrame(Object* obj, Rect* rect);
 int objectSetPrevFrame(Object* obj, Rect* rect);
-int objectSetRotation(Object* obj, int direction, Rect* rect);
+int objectSetRotation(Object* obj, Rotation rotation, Rect* rect);
 int objectRotateClockwise(Object* obj, Rect* rect);
 int objectRotateCounterClockwise(Object* obj, Rect* rect);
 void _obj_rebuild_all_light();
@@ -65,43 +68,75 @@ Object* objectGetOwner(Object* obj);
 void _obj_remove_all();
 Object* objectFindFirst();
 Object* objectFindNext();
-Object* objectFindFirstAtElevation(int elevation);
+Object* objectFindFirstAtElevation(MapElevation elevation);
 Object* objectFindNextAtElevation();
-Object* objectFindFirstAtLocation(int elevation, int tile);
+Object* objectFindFirstAtLocation(MapElevation elevation, int tile);
 Object* objectFindNextAtLocation();
 void objectGetRect(Object* obj, Rect* rect);
-bool _obj_occupied(int tile_num, int elev);
-Object* _obj_blocking_at(Object* excludeObj, int tile_num, int elev);
-Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev);
-Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation);
-int _obj_scroll_blocking_at(int tile_num, int elev);
-Object* _obj_sight_blocking_at(Object* excludeObj, int tile_num, int elev);
+bool _obj_occupied(int tile_num, MapElevation elev);
+Object* _obj_blocking_at(Object* excludeObj, int tile_num, MapElevation elev);
+Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, MapElevation elev);
+Object* _obj_ai_blocking_at(Object* excludeObj, int tile, MapElevation elevation);
+int _obj_scroll_blocking_at(int tile_num, MapElevation elev);
+Object* _obj_sight_blocking_at(Object* excludeObj, int tile_num, MapElevation elev);
 int objectGetDistanceBetween(Object* object1, Object* object2);
 int objectGetDistanceBetweenTiles(Object* object1, int tile1, Object* object2, int tile2);
 bool objectWithinWalkDistance(Object* critter, Object* target);
-int objectListCreate(int tile, int elevation, int objectType, Object*** objectsPtr);
+int objectListCreate(int tile, MapElevation elevation, ObjectType objectType, Object*** objectsPtr);
 void objectListFree(Object** objects);
-void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* a9, unsigned char* a10);
+void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, Color* blendTable, Color* colorTable);
 void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light);
-void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light, unsigned char* a10, unsigned char* a11);
+void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light, Color* blendTable, Color* colorTable);
 void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destPitch, unsigned char* mask, int maskPitch, int light);
-int objectSetOutline(Object* obj, int a2, Rect* rect);
+int objectSetOutline(Object* obj, OutlineType outlineType, Rect* rect);
 int objectClearOutline(Object* obj, Rect* rect);
-int _obj_intersects_with(Object* object, int x, int y);
-int _obj_create_intersect_list(int x, int y, int elevation, int objectType, ObjectWithFlags** entriesPtr);
+ObjectFlags _obj_intersects_with(Object* object, int x, int y);
+int _obj_create_intersect_list(int x, int y, MapElevation elevation, ObjectType objectType, ObjectWithFlags** entriesPtr);
 void _obj_delete_intersect_list(ObjectWithFlags** a1);
 void obj_set_seen(int tile);
 void _obj_clear_seen();
 void _obj_process_seen();
 char* objectGetName(Object* obj);
 char* objectGetDescription(Object* obj);
-void _obj_preload_art_cache(int flags);
+void _obj_preload_art_cache(MapHeaderFlags flags);
 int _obj_save_dude(File* stream);
 int _obj_load_dude(File* stream);
-void _obj_fix_violence_settings(int* fid);
+void _obj_fix_violence_settings(int* frmId);
 
-Object* objectTypedFindById(int id, int type);
-bool isExitGridAt(int tile, int elevation);
+Object* objectTypedFindById(int id, ObjectType type);
+bool isExitGridAt(int tile, MapElevation elevation);
+
+inline bool objectHasOutline(Object* obj)
+{
+    return obj != nullptr && (obj->outline & OUTLINE_TYPE_MAX) != OUTLINE_TYPE_NONE;
+}
+
+inline bool objectHasVisibleOutline(Object* obj)
+{
+    return objectHasOutline(obj) && (obj->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE;
+}
+
+// RAII wrapper for Object*.
+class UniqueObject {
+public:
+    UniqueObject() = default;
+    explicit UniqueObject(Object* ptr);
+    ~UniqueObject();
+    UniqueObject(const UniqueObject&) = delete;
+    UniqueObject& operator=(const UniqueObject&) = delete;
+    UniqueObject(UniqueObject&& other) noexcept;
+    UniqueObject& operator=(UniqueObject&& other) noexcept;
+    Object* get() const { return _ptr; }
+    Object* operator->() const { return _ptr; }
+    Object& operator*() const { return *_ptr; }
+    Object* release();
+    void reset(Object* p = nullptr);
+
+private:
+    Object* _ptr = nullptr;
+};
+
+int objectCreateWithFrmIdProtoId(UniqueObject& obj, const FrmId& frmId, const ProtoId& protoId);
 
 } // namespace fallout
 

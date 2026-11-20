@@ -5,13 +5,13 @@
 #endif
 
 #ifdef _WIN32
-// 0x530010
+// 0x530010 autorun_mutex
 static HANDLE gInterplayGenericAutorunMutex;
 #endif
 
 namespace fallout {
 
-// 0x4139C0
+// 0x4139C0 autorun_mutex_create
 bool autorunMutexCreate()
 {
 #ifdef _WIN32
@@ -25,7 +25,7 @@ bool autorunMutexCreate()
     return true;
 }
 
-// 0x413A00
+// 0x413A00 autorun_mutex_destroy
 void autorunMutexClose()
 {
 #ifdef _WIN32

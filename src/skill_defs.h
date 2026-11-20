@@ -9,7 +9,8 @@ namespace fallout {
 #define DEFAULT_TAGGED_SKILLS 3
 
 // Available skills.
-typedef enum Skill {
+enum Skill : int {
+    SKILL_INVALID = -1,
     SKILL_SMALL_GUNS,
     SKILL_BIG_GUNS,
     SKILL_ENERGY_WEAPONS,
@@ -29,7 +30,20 @@ typedef enum Skill {
     SKILL_GAMBLING,
     SKILL_OUTDOORSMAN,
     SKILL_COUNT,
-} Skill;
+    SKILL_FIRST = SKILL_SMALL_GUNS,
+};
+
+inline bool skillIsValid(int skill)
+{
+    return skill >= SKILL_FIRST && skill < SKILL_COUNT;
+}
+
+inline Skill operator++(Skill& e, int)
+{
+    Skill result = e;
+    e = static_cast<Skill>(static_cast<int>(e) + 1);
+    return result;
+}
 
 } // namespace fallout
 

@@ -2,8 +2,19 @@
 
 #include <SDL.h>
 
-/// Maps DirectInput DIK constants to SDL scancodes.
-static constexpr SDL_Scancode kDiks[256] = {
+#include "game.h"
+#include "sfall_script_hooks.h"
+#include "svga.h"
+
+#include <deque>
+#include <unordered_map>
+
+namespace fallout {
+
+constexpr size_t DIK_MAP_COUNT = 256;
+
+// Maps DirectInput DIK constants to SDL scancodes.
+static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
     SDL_SCANCODE_UNKNOWN,
     SDL_SCANCODE_ESCAPE, // DIK_ESCAPE
     SDL_SCANCODE_1, // DIK_1
@@ -262,14 +273,38 @@ static constexpr SDL_Scancode kDiks[256] = {
     SDL_SCANCODE_UNKNOWN,
 };
 
-/// Translates Sfall key code (DIK or VK constant) to SDL scancode.
+static std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
+static std::deque<std::pair<SDL_Scancode, bool>> syntheticKeyEvents;
+
+// Translates Sfall key code (DIK or VK constant) to SDL scancode.
 static SDL_Scancode get_scancode_from_key(int key)
 {
     return kDiks[key & 0xFF];
 }
 
+// Translates SDL scancode into DIK key constant, used by sfall.
+static int get_key_from_scancode(SDL_Scancode scanCode)
+{
+    if (kScanCodeToDik.empty()) {
+        for (int dik = DIK_MAP_COUNT - 1; dik >= 1; --dik) {
+            if (kDiks[dik] == SDL_SCANCODE_UNKNOWN) continue;
+
+            kScanCodeToDik[kDiks[dik]] = dik;
+        }
+    }
+    auto dikIt = kScanCodeToDik.find(scanCode);
+    if (dikIt == kScanCodeToDik.end()) {
+        return SDL_SCANCODE_UNKNOWN;
+    }
+    return dikIt->second;
+}
+
 bool sfall_kb_is_key_pressed(int key)
 {
+    // todo: sfall uses this condition to check for VK key instead of DIK:
+    /* if ((key & 0x80000000) > 0) { // special flag to check by VK code directly
+        return GetAsyncKeyState(key & 0xFFFF) & 0x8000;
+    }*/
     SDL_Scancode scancode = get_scancode_from_key(key);
     if (scancode == SDL_SCANCODE_UNKNOWN) {
         return false;
@@ -287,11 +322,64 @@ void sfall_kb_press_key(int key)
     }
 
     SDL_Event event;
-    event.key.keysym.scancode = scancode;
+    SDL_zero(event);
 
     event.type = SDL_KEYDOWN;
-    SDL_PushEvent(&event);
+    event.key.timestamp = SDL_GetTicks();
+    event.key.windowID = gSdlWindow != nullptr ? SDL_GetWindowID(gSdlWindow) : 0;
+    event.key.state = SDL_PRESSED;
+    event.key.repeat = 0;
+    event.key.keysym.scancode = scancode;
+    event.key.keysym.sym = SDL_GetKeyFromScancode(scancode);
+    event.key.keysym.mod = SDL_GetModState();
+    if (SDL_PushEvent(&event) == 1) {
+        syntheticKeyEvents.emplace_back(scancode, true);
+    }
 
     event.type = SDL_KEYUP;
-    SDL_PushEvent(&event);
+    event.key.timestamp = SDL_GetTicks();
+    event.key.state = SDL_RELEASED;
+    if (SDL_PushEvent(&event) == 1) {
+        syntheticKeyEvents.emplace_back(scancode, false);
+    }
 }
+
+bool sfall_kb_consume_synthetic_key_event(int sdlScanCode, bool pressed)
+{
+    if (syntheticKeyEvents.empty()) {
+        return false;
+    }
+
+    const auto& [expectedScanCode, expectedPressed] = syntheticKeyEvents.front();
+    if (expectedScanCode != static_cast<SDL_Scancode>(sdlScanCode) || expectedPressed != pressed) {
+        return false;
+    }
+
+    syntheticKeyEvents.pop_front();
+    return true;
+}
+
+void sfall_kb_clear_synthetic_key_events()
+{
+    syntheticKeyEvents.clear();
+}
+
+int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
+{
+    if (!gGameLoaded) return -1;
+
+    ScriptHookCall hook(HOOK_KEYPRESS, 1, {
+                                              pressed ? 1 : 0, get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode)),
+                                              0 // TODO: sfall uses VK_ codes here; not sure any mod actually used it. If so, maybe it is better to use Key values from kb.h?
+                                          });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return -1;
+    }
+
+    int overrideDxCode = hook.getReturnValueAt(0).asInt();
+    return get_scancode_from_key(overrideDxCode);
+}
+
+} // namespace fallout

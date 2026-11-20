@@ -1,5 +1,7 @@
 #include "draw.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <string.h>
 
 #include "color.h"
@@ -7,8 +9,11 @@
 
 namespace fallout {
 
+static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight, bool transparent);
+static int scaledCeilDiv(int value, int numerator, int denominator);
+
 // 0x4D2FC0
-void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, int color)
+void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, Color color)
 {
     int temp;
     int dx;
@@ -131,7 +136,7 @@ void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y
 }
 
 // 0x4D31A4
-void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color)
+void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, Color color)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, color);
     bufferDrawLine(buf, pitch, left, bottom, right, bottom, color);
@@ -140,7 +145,7 @@ void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right,
 }
 
 // 0x4D322C
-void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int ltColor, int rbColor)
+void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, Color ltColor, Color rbColor)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, ltColor);
     bufferDrawLine(buf, pitch, left, bottom, right, bottom, rbColor);
@@ -149,7 +154,7 @@ void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, in
 }
 
 // 0x4D33F0
-void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
+void blitBufferToBufferStretch(const unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
     int stepY = (destHeight << 16) / srcHeight;
@@ -158,7 +163,7 @@ void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, 
         int startDestY = (srcY * stepY) >> 16;
         int endDestY = ((srcY + 1) * stepY) >> 16;
 
-        unsigned char* currSrc = src + srcPitch * srcY;
+        const unsigned char* currSrc = src + srcPitch * srcY;
         for (int srcX = 0; srcX < srcWidth; srcX += 1) {
             int startDestX = (srcX * stepX) >> 16;
             int endDestX = ((srcX + 1) * stepX) >> 16;
@@ -176,7 +181,7 @@ void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, 
 }
 
 // 0x4D3560
-void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
+void blitBufferToBufferStretchTrans(const unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
     int stepY = (destHeight << 16) / srcHeight;
@@ -185,7 +190,7 @@ void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHei
         int startDestY = (srcY * stepY) >> 16;
         int endDestY = ((srcY + 1) * stepY) >> 16;
 
-        unsigned char* currSrc = src + srcPitch * srcY;
+        const unsigned char* currSrc = src + srcPitch * srcY;
         for (int srcX = 0; srcX < srcWidth; srcX += 1) {
             int startDestX = (srcX * stepX) >> 16;
             int endDestX = ((srcX + 1) * stepX) >> 16;
@@ -205,20 +210,203 @@ void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHei
 }
 
 // 0x4D36D4
-void blitBufferToBuffer(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
+void blitBufferToBuffer(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     srcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
 // 0x4D3704
-void blitBufferToBufferTrans(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
+void blitBufferToBufferTrans(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     transSrcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
-// 0x4D387C
-void bufferFill(unsigned char* buf, int width, int height, int pitch, int value)
+void blitBuffer2D(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY)
 {
+    blitBuffer2D(src, 0, 0, src.width, src.height, dst, dstX, dstY);
+}
+
+void blitBuffer2D(ConstBuffer2D src, int srcX, int srcY, int width, int height,
+    Buffer2D dst, int dstX, int dstY)
+{
+    // Clip source region to src bounds.
+    if (srcX < 0) {
+        width += srcX;
+        dstX -= srcX;
+        srcX = 0;
+    }
+    if (srcY < 0) {
+        height += srcY;
+        dstY -= srcY;
+        srcY = 0;
+    }
+    if (srcX + width > src.width) {
+        width = src.width - srcX;
+    }
+    if (srcY + height > src.height) {
+        height = src.height - srcY;
+    }
+
+    // Clip destination region to dst bounds.
+    if (dstX < 0) {
+        srcX -= dstX;
+        width += dstX;
+        dstX = 0;
+    }
+    if (dstY < 0) {
+        srcY -= dstY;
+        height += dstY;
+        dstY = 0;
+    }
+    if (dstX + width > dst.width) {
+        width = dst.width - dstX;
+    }
+    if (dstY + height > dst.height) {
+        height = dst.height - dstY;
+    }
+
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    srcCopy(
+        dst.data + dstY * dst.width + dstX, dst.width,
+        src.data + srcY * src.width + srcX, src.width,
+        width, height);
+}
+
+void blitBuffer2DScaled(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaled(src, 0, 0, src.width, src.height, dst, dstX, dstY, dstWidth, dstHeight);
+}
+
+void blitBuffer2DScaled(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, false);
+}
+
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, Buffer2D dst, Color backgroundColor, bool scaleUp)
+{
+    return blitBuffer2DCenteredAspectFit(src, 0, 0, src.width, src.height, dst, backgroundColor, scaleUp);
+}
+
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, Color backgroundColor, bool scaleUp)
+{
+    bufferFill2D(dst, backgroundColor);
+
+    Rect bounds = { 0, 0, -1, -1 };
+    if (!src || !dst || srcWidth <= 0 || srcHeight <= 0 || dst.width <= 0 || dst.height <= 0) {
+        return bounds;
+    }
+
+    int dstWidth = srcWidth;
+    int dstHeight = srcHeight;
+    if (scaleUp || srcWidth > dst.width || srcHeight > dst.height) {
+        if (static_cast<int64_t>(dst.height) * srcWidth >= static_cast<int64_t>(dst.width) * srcHeight) {
+            dstWidth = dst.width;
+            dstHeight = std::max(1, dst.width * srcHeight / srcWidth);
+        } else {
+            dstWidth = std::max(1, dst.height * srcWidth / srcHeight);
+            dstHeight = dst.height;
+        }
+    }
+
+    int dstX = dst.width > dstWidth ? (dst.width - dstWidth) / 2 : 0;
+    int dstY = dst.height > dstHeight ? (dst.height - dstHeight) / 2 : 0;
+
+    bounds.left = dstX;
+    bounds.top = dstY;
+    bounds.right = dstX + dstWidth - 1;
+    bounds.bottom = dstY + dstHeight - 1;
+
+    if (dstWidth == srcWidth && dstHeight == srcHeight) {
+        blitBuffer2D(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY);
+    } else {
+        blitBuffer2DScaled(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight);
+    }
+
+    return bounds;
+}
+
+void blitBuffer2DScaledTrans(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledTrans(src, 0, 0, src.width, src.height, dst, dstX, dstY, dstWidth, dstHeight);
+}
+
+void blitBuffer2DScaledTrans(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, true);
+}
+
+void bufferFill2D(Buffer2D dst, Color value)
+{
+    if (!dst || dst.width <= 0 || dst.height <= 0) {
+        return;
+    }
+
+    bufferFill(dst.data, dst.width, dst.height, dst.width, value);
+}
+
+static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight, bool transparent)
+{
+    if (!src || !dst || src.width <= 0 || src.height <= 0 || srcWidth <= 0 || srcHeight <= 0 || dstWidth <= 0 || dstHeight <= 0) {
+        return;
+    }
+
+    int clippedSrcLeft = std::max(srcX, 0);
+    int clippedSrcTop = std::max(srcY, 0);
+    int clippedSrcRight = std::min(srcX + srcWidth, src.width);
+    int clippedSrcBottom = std::min(srcY + srcHeight, src.height);
+    if (clippedSrcLeft >= clippedSrcRight || clippedSrcTop >= clippedSrcBottom) {
+        return;
+    }
+
+    int left = dstX + scaledCeilDiv(clippedSrcLeft - srcX, dstWidth, srcWidth);
+    int top = dstY + scaledCeilDiv(clippedSrcTop - srcY, dstHeight, srcHeight);
+    int right = dstX + scaledCeilDiv(clippedSrcRight - srcX, dstWidth, srcWidth);
+    int bottom = dstY + scaledCeilDiv(clippedSrcBottom - srcY, dstHeight, srcHeight);
+
+    left = std::max(left, 0);
+    top = std::max(top, 0);
+    right = std::min(right, dst.width);
+    bottom = std::min(bottom, dst.height);
+    if (left >= right || top >= bottom) {
+        return;
+    }
+
+    for (int destY = top; destY < bottom; destY++) {
+        int sourceY = srcY + ((destY - dstY) * srcHeight) / dstHeight;
+        sourceY = std::clamp(sourceY, srcY, srcY + srcHeight - 1);
+
+        unsigned char* destRow = dst.data + destY * dst.width;
+        const unsigned char* srcRow = src.data + sourceY * src.width;
+        for (int destX = left; destX < right; destX++) {
+            int sourceX = srcX + ((destX - dstX) * srcWidth) / dstWidth;
+            sourceX = std::clamp(sourceX, srcX, srcX + srcWidth - 1);
+
+            unsigned char value = srcRow[sourceX];
+            if (!transparent || value != 0) {
+                destRow[destX] = value;
+            }
+        }
+    }
+}
+
+static int scaledCeilDiv(int value, int numerator, int denominator)
+{
+    return static_cast<int>((static_cast<int64_t>(value) * numerator + denominator - 1) / denominator);
+}
+
+// 0x4D387C
+void bufferFill(unsigned char* buf, int width, int height, int pitch, Color value)
+{
+    if (buf == nullptr || width <= 0 || height <= 0) {
+        return;
+    }
+
     int y;
 
     for (y = 0; y < height; y++) {
@@ -260,16 +448,16 @@ void _lighten_buf(unsigned char* buf, int width, int height, int pitch)
 // Swaps two colors in the buffer.
 //
 // 0x4D3A8C
-void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int color1, int color2)
+void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, Color color1, Color color2)
 {
     int step = pitch - width;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int currentColor = *buf & 0xFF;
+            Color currentColor = static_cast<Color>(*buf & COLOR_LAST);
             if (currentColor == color1) {
-                *buf = color2 & 0xFF;
+                *buf = color2;
             } else if (currentColor == color2) {
-                *buf = color1 & 0xFF;
+                *buf = color1;
             }
             buf++;
         }
@@ -278,7 +466,7 @@ void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int c
 }
 
 // 0x4D3AE0
-void bufferOutline(unsigned char* buf, int width, int height, int pitch, int color)
+void bufferOutline(unsigned char* buf, int width, int height, int pitch, Color color)
 {
     unsigned char* ptr = buf + pitch;
 
@@ -288,10 +476,12 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 
         for (int x = 0; x < width; x++) {
             if (*ptr != 0 && cycle) {
-                *(ptr - 1) = color & 0xFF;
+                if (x != 0) {
+                    *(ptr - 1) = color;
+                }
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
-                *ptr = color & 0xFF;
+                *ptr = color;
                 cycle = true;
             }
 
@@ -307,11 +497,12 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 
         for (int y = 0; y < height; y++) {
             if (*ptr != 0 && cycle) {
-                // TODO: Check in debugger, might be a bug.
-                *(ptr - pitch) = color & 0xFF;
+                if (y != 0) {
+                    *(ptr - pitch) = color;
+                }
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
-                *ptr = color & 0xFF;
+                *ptr = color;
                 cycle = true;
             }
 
@@ -321,7 +512,7 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 }
 
 // 0x4E0DB0
-void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
+void srcCopy(unsigned char* dest, int destPitch, const unsigned char* src, int srcPitch, int width, int height)
 {
     for (int y = 0; y < height; y++) {
         memcpy(dest, src, width);
@@ -331,7 +522,7 @@ void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitc
 }
 
 // 0x4E0ED5
-void transSrcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
+void transSrcCopy(unsigned char* dest, int destPitch, const unsigned char* src, int srcPitch, int width, int height)
 {
     int destSkip = destPitch - width;
     int srcSkip = srcPitch - width;

@@ -1,0 +1,74 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "define_extra.h"
+#include "lib.arrays.h"
+
+variable afterhitroll_mode := 0;
+
+procedure afterhitroll_mode_name begin
+    if (afterhitroll_mode == 1) then return "force_hit";
+    if (afterhitroll_mode == 2) then return "force_eyes";
+    if (afterhitroll_mode == 3) then return "retarget_self";
+    return "log_only";
+end
+
+procedure afterhitroll_handler begin
+    variable
+        args := get_sfall_args,
+        roll := args[0],
+        attacker := args[1],
+        target := args[2],
+        bodypart := args[3],
+        hitChance := args[4],
+        attackerName := "<null>",
+        targetName := "<null>";
+
+    if (attacker) then attackerName := obj_name(attacker);
+    if (target) then targetName := obj_name(target);
+
+    display_msg(string_format("afterhitroll mode=%s roll=%d chance=%d %s -> %s body=%d",
+        afterhitroll_mode_name,
+        roll,
+        hitChance,
+        attackerName,
+        targetName,
+        bodypart));
+
+    if (attacker != dude_obj) then return;
+
+    if (afterhitroll_mode == 1) then begin
+        set_sfall_return(ROLL_SUCCESS);
+    end else if (afterhitroll_mode == 2) then begin
+        set_sfall_return(roll);
+        set_sfall_return(BODY_HIT_EYES);
+    end else if (afterhitroll_mode == 3) then begin
+        set_sfall_return(ROLL_SUCCESS);
+        set_sfall_return(BODY_HIT_TORSO);
+        set_sfall_return(dude_obj);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_J) then return;
+
+    afterhitroll_mode := afterhitroll_mode + 1;
+    if (afterhitroll_mode > 3) then afterhitroll_mode := 0;
+
+    display_msg(string_format1("afterhitroll mode -> %s", afterhitroll_mode_name));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("afterhitroll manual test ready: press J to cycle log_only / force_hit / force_eyes / retarget_self");
+    display_msg("attack something in combat and watch hook logs plus the overridden result");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_AFTERHITROLL, afterhitroll_handler);
+end

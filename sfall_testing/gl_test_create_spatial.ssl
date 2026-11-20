@@ -1,0 +1,126 @@
+#include "define_extra.h"
+#include "define_lite.h"
+#include "sfall.h"
+#include "test_utils.h"
+
+// Setup:
+// 1. Compile this file and Test0.ssl one at a time.
+// 2. Copy gl_test_create_spatial.int to the game's loose scripts folder.
+// 3. Package Test0.int in a DAT as scripts\Test0.int, copy the DAT to mods,
+//    and add it to mods_order.txt. Loose scripts\Test0.int does not override
+//    the stock DAT entry used through scripts.lst.
+//
+// Public script index 2 maps to Test0 in the stock scripts.lst used by the
+// local test setup.
+#define TEST_SPATIAL_SCRIPT_INDEX 2
+#define TEST_SPATIAL_RADIUS 0
+
+variable spatialObj := 0;
+variable moverObj := 0;
+variable testTile := -1;
+variable fromTile := -1;
+variable testElevation := 0;
+variable testRunning := false;
+
+procedure cleanup begin
+    if (moverObj) then begin
+        destroy_object(moverObj);
+        moverObj := 0;
+    end
+
+    if (spatialObj) then begin
+        destroy_object(spatialObj);
+        spatialObj := 0;
+    end
+end
+
+procedure reset_helper_state begin
+    set_sfall_global("CSPStart", 0);
+    set_sfall_global("CSPFired", 0);
+    set_sfall_global("CSPSrcOk", 0);
+    set_sfall_global("CSPSrcTl", -1);
+end
+
+procedure find_test_tiles begin
+    variable dudeTile := tile_num(dude_obj);
+    variable toDir;
+    variable fromDir;
+    variable candidateTo;
+    variable candidateFrom;
+
+    testTile := -1;
+    fromTile := -1;
+
+    for (toDir := 0; toDir < 6; toDir += 1) begin
+        candidateTo := tile_num_in_direction(dudeTile, toDir, 1);
+        if (candidateTo != dudeTile and obj_blocking_tile(candidateTo, testElevation, BLOCKING_TYPE_BLOCK) == 0) then begin
+            for (fromDir := 0; fromDir < 6; fromDir += 1) begin
+                candidateFrom := tile_num_in_direction(candidateTo, fromDir, 1);
+                if (candidateFrom != dudeTile and candidateFrom != candidateTo and obj_blocking_tile(candidateFrom, testElevation, BLOCKING_TYPE_BLOCK) == 0) then begin
+                    testTile := candidateTo;
+                    fromTile := candidateFrom;
+                    return;
+                end
+            end
+        end
+    end
+end
+
+procedure timed_event_p_proc begin
+    if (fixed_param != 1) then return;
+
+    call assertEquals("spatial_p_proc fired once", get_sfall_global_int("CSPFired"), 1);
+    call assertEquals("spatial source is test critter pid", get_sfall_global_int("CSPSrcOk"), 1);
+    call assertEquals("spatial source reached test tile", get_sfall_global_int("CSPSrcTl"), testTile);
+
+    call cleanup;
+    call report_test_results("create_spatial");
+    testRunning := false;
+    signal_close_game;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+    if (testRunning) then return;
+
+    testRunning := true;
+    test_suite_errors := 0;
+    display_msg("Testing create_spatial/spatial_radius...");
+
+    call cleanup;
+    call reset_helper_state;
+
+    testElevation := elevation(dude_obj);
+    call find_test_tiles;
+    call assertNotEquals("found spatial destination tile", testTile, -1);
+    call assertNotEquals("found mover source tile", fromTile, -1);
+
+    if (testTile == -1 or fromTile == -1) then begin
+        call report_test_results("create_spatial");
+        testRunning := false;
+        signal_close_game;
+        return;
+    end
+
+    spatialObj := create_spatial(TEST_SPATIAL_SCRIPT_INDEX, testTile, testElevation, TEST_SPATIAL_RADIUS);
+    call assertNotEquals("create_spatial returns object", spatialObj, 0);
+    if (spatialObj) then begin
+        call assertEquals("created spatial get_script", get_script(spatialObj), TEST_SPATIAL_SCRIPT_INDEX);
+        call assertEquals("created spatial radius", spatial_radius(spatialObj), TEST_SPATIAL_RADIUS);
+        call assertTrue("created spatial ran start", get_sfall_global_int("CSPStart") >= 1);
+    end
+
+    moverObj := create_object_sid(PID_PLAYER, fromTile, testElevation, -1);
+    call assertNotEquals("created mover critter", moverObj, 0);
+
+    if (not spatialObj or not moverObj) then begin
+        call cleanup;
+        call report_test_results("create_spatial");
+        testRunning := false;
+        signal_close_game;
+        return;
+    end
+
+    animate_move_obj_to_tile(moverObj, testTile, 0);
+    add_global_timer_event(game_ticks(2), 1);
+end

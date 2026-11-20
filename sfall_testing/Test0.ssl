@@ -1,0 +1,15 @@
+#include "define_extra.h"
+#include "sfall.h"
+
+procedure start;
+procedure spatial_p_proc;
+
+procedure start begin
+    set_sfall_global("CSPStart", get_sfall_global_int("CSPStart") + 1);
+end
+
+procedure spatial_p_proc begin
+    set_sfall_global("CSPFired", get_sfall_global_int("CSPFired") + 1);
+    set_sfall_global("CSPSrcOk", obj_pid(source_obj) == PID_PLAYER);
+    set_sfall_global("CSPSrcTl", tile_num(source_obj));
+end

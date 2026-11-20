@@ -1,0 +1,554 @@
+#include "game_config_migration.h"
+
+#include <algorithm>
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "content_config.h"
+#include "debug.h"
+#include "game_config.h"
+#include "game_movie.h"
+#include "platform_compat.h"
+#include "settings.h"
+#include "sfall_config.h"
+
+namespace fallout {
+
+namespace {
+
+#define F2_RES_CONFIG_FILE_NAME "f2_res.ini"
+#define F2_RES_MAIN_MENU_BUTTON_X 30
+#define F2_RES_MAIN_MENU_BUTTON_Y 19
+#define F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_X 16
+#define F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_Y 15
+
+    struct F2ResMigrationEntry {
+        const char* legacySection;
+        const char* legacyKey;
+        const char* targetSection;
+        const char* targetKey;
+    };
+
+    static bool gameConfigHasKey(Config* config, const char* section, const char* key);
+    static bool gameConfigNeedsF2ResMigration(Config* gameConfig);
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig);
+    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
+    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
+    static bool contentConfigMigrateF2ResMainMenuPanelOffsetKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey, int baseValue, int defaultValue);
+    static bool contentConfigMigrateF2ResBoolKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey);
+
+    static constexpr F2ResMigrationEntry kF2ResMigrationEntries[] = {
+        { "MAIN", "SCR_WIDTH", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY },
+        { "MAIN", "SCR_HEIGHT", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY },
+        { "MAIN", "WINDOWED", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY },
+        { "MAIN", "f2_res_dat", GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_F2_RES_DAT_KEY },
+        { "IFACE", "IFACE_BAR_MODE", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY },
+        { "IFACE", "IFACE_BAR_WIDTH", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY },
+        { "IFACE", "IFACE_BAR_SIDE_ART", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY },
+        { "IFACE", "IFACE_BAR_SIDES_ORI", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY },
+        { "MAPS", "IGNORE_PLAYER_SCROLL_LIMITS", GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_SCROLL_LIMIT_KEY },
+        { "IFACE", "ALTERNATE_AMMO_METRE", GAME_CONFIG_UI_KEY, GAME_CONFIG_ALTERNATE_AMMO_METER_KEY },
+        { "MAPS", "IGNORE_MAP_EDGES", GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY },
+        { "STATIC_SCREENS", "SPLASH_SCRN_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY },
+        { "STATIC_SCREENS", "DEATH_SCRN_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_DEATH_SCREEN_SIZE_KEY },
+        { "STATIC_SCREENS", "END_SLIDE_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_END_SLIDE_SIZE_KEY },
+        { "MOVIES", "MOVIE_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_MOVIE_ASPECT_FIT_KEY },
+    };
+
+    static bool gameConfigHasKey(Config* config, const char* section, const char* key)
+    {
+        char* value;
+        return configGetString(config, section, key, &value);
+    }
+
+    static bool gameConfigNeedsF2ResMigration(Config* gameConfig)
+    {
+        assert(gameConfig != nullptr);
+
+        return !gameConfigHasKey(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY);
+    }
+
+    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry)
+    {
+        assert(legacyConfig != nullptr && gameConfig != nullptr);
+
+        if (gameConfigHasKey(gameConfig, entry.targetSection, entry.targetKey)) {
+            return false;
+        }
+
+        char* value;
+        if (!configGetString(legacyConfig, entry.legacySection, entry.legacyKey, &value)) {
+            return false;
+        }
+
+        return configSetString(gameConfig, entry.targetSection, entry.targetKey, value);
+    }
+
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig)
+    {
+        assert(legacyConfig != nullptr && gameConfig != nullptr);
+
+        if (gameConfigHasKey(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY)) {
+            return false;
+        }
+
+        int scaleMode;
+        if (!configGetInt(legacyConfig, "MAINMENU", "MAIN_MENU_SIZE", &scaleMode)) {
+            return false;
+        }
+
+        bool legacyScaleButtonsAndText = false;
+        if (configGetBool(legacyConfig, "MAINMENU", "SCALE_BUTTONS_AND_TEXT_MENU", &legacyScaleButtonsAndText)
+            && legacyScaleButtonsAndText
+            && scaleMode != 0) {
+            scaleMode = 2;
+        }
+
+        return configSetInt(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY, scaleMode);
+    }
+
+    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig)
+    {
+        assert(legacyConfig != nullptr && gameConfig != nullptr);
+
+        if (gameConfigHasKey(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY)) {
+            return false;
+        }
+
+        int value;
+        if (!configGetInt(legacyConfig, "MAIN", "SCALE_2X", &value)) {
+            return false;
+        }
+
+        return configSetInt(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, value + 1);
+    }
+
+    static bool contentConfigMigrateF2ResMainMenuPanelOffsetKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey, int baseValue, int defaultValue)
+    {
+        assert(legacyConfig != nullptr && contentConfig != nullptr);
+
+        if (gameConfigHasKey(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey)) {
+            return false;
+        }
+
+        int value;
+        if (!configGetInt(legacyConfig, "MAINMENU", legacyKey, &value)) {
+            return false;
+        }
+
+        value += baseValue;
+        if (value == defaultValue) {
+            return false;
+        }
+
+        return configSetInt(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey, value);
+    }
+
+    static bool contentConfigMigrateF2ResBoolKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey)
+    {
+        assert(legacyConfig != nullptr && contentConfig != nullptr);
+
+        if (gameConfigHasKey(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey)) {
+            return false;
+        }
+
+        bool value;
+        if (!configGetBool(legacyConfig, "MAINMENU", legacyKey, &value)) {
+            return false;
+        }
+
+        return configSetBool(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey, value);
+    }
+} // namespace
+
+// Migrate settings F2_RES.INI to fallout2.cfg
+//
+// Only happens a single time, after which fallout2.cfg is the source of truth
+bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConfig)
+{
+    if (gameConfigFilePath == nullptr || gameConfig == nullptr) {
+        return false;
+    }
+
+    if (!gameConfigNeedsF2ResMigration(gameConfig)) {
+        return false;
+    }
+
+    char f2ResFilePath[COMPAT_MAX_PATH];
+    char drive[COMPAT_MAX_DRIVE];
+    char dir[COMPAT_MAX_DIR];
+    compat_splitpath(gameConfigFilePath, drive, dir, nullptr, nullptr);
+    compat_makepath(f2ResFilePath, drive, dir, F2_RES_CONFIG_FILE_NAME, nullptr);
+
+    ScopedConfig legacyConfig(f2ResFilePath, false);
+    if (!legacyConfig) {
+        return false;
+    }
+
+    bool migrated = false;
+    for (const auto& entry : kF2ResMigrationEntries) {
+        if (gameConfigMigrateStringKey(legacyConfig.get(), gameConfig, entry)) {
+            migrated = true;
+        }
+    }
+
+    if (gameConfigMigrateMainMenuScaleModeKey(legacyConfig.get(), gameConfig)) {
+        migrated = true;
+    }
+
+    if (gameConfigMigrateScaleKey(legacyConfig.get(), gameConfig)) {
+        migrated = true;
+    }
+
+    return migrated;
+}
+
+namespace {
+
+    constexpr char kSfallMisc[] = "Misc";
+    constexpr char kSfallInterface[] = "Interface";
+    constexpr char kSfallSound[] = "Sound";
+
+    struct SfallMigrationEntry {
+        const char* sfallSection;
+        const char* sfallKey;
+        const char* targetSection;
+        const char* targetKey;
+        // If the sfall value matches this string, skip migration (value is already the default).
+        // nullptr means always migrate when the key is present.
+        const char* defaultValue;
+    };
+
+    constexpr SfallMigrationEntry kSfallMigrationEntries[] = {
+        // [start]
+        { kSfallMisc, "StartingMap", CONTENT_CONFIG_START_SECTION, "map", "" },
+        { kSfallMisc, "StartXPos", CONTENT_CONFIG_START_SECTION, "worldmap_x", "-1" },
+        { kSfallMisc, "StartYPos", CONTENT_CONFIG_START_SECTION, "worldmap_y", "-1" },
+        { kSfallMisc, "ViewXPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_x", "-1" },
+        { kSfallMisc, "ViewYPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_y", "-1" },
+        { kSfallMisc, "MaleStartModel", CONTENT_CONFIG_START_SECTION, "model_male", "hmwarr" },
+        { kSfallMisc, "MaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_male_default", "hmjmps" },
+        { kSfallMisc, "FemaleStartModel", CONTENT_CONFIG_START_SECTION, "model_female", "hfprim" },
+        { kSfallMisc, "FemaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_female_default", "hfjmps" },
+        { kSfallMisc, "PipBoyAvailableAtGameStart", CONTENT_CONFIG_START_SECTION, "pipboy", "0" },
+        // [maps]
+        { kSfallMisc, "DisableSpecialMapIDs", CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", "0" },
+        // [karma]
+        { kSfallMisc, "KarmaFRMs", CONTENT_CONFIG_KARMA_SECTION, "frms" },
+        { kSfallMisc, "KarmaPoints", CONTENT_CONFIG_KARMA_SECTION, "points" },
+        // [items]
+        { kSfallMisc, "CanSellUsedGeiger", CONTENT_CONFIG_ITEMS_SECTION, "can_sell_used_geiger", "1" },
+        // [dialog]
+        { kSfallMisc, "DialogueFix", CONTENT_CONFIG_DIALOG_SECTION, "no_exit_hotkey", "1" },
+        { kSfallMisc, "DialogGenderWords", CONTENT_CONFIG_DIALOG_SECTION, "gender_words", "0" },
+        { kSfallMisc, "StartGDialogFix", CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", "0" },
+        // [main_menu]
+        { kSfallMisc, "VersionString", CONTENT_CONFIG_MAIN_MENU_SECTION, "version_string" },
+        { kSfallMisc, "MainMenuFontColour", CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", "0" },
+        { kSfallMisc, "MainMenuBigFontColour", CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", "0" },
+        { kSfallMisc, "MainMenuOffsetX", CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", "0" },
+        { kSfallMisc, "MainMenuOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", "0" },
+        { kSfallMisc, "MainMenuCreditsOffsetX", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", "0" },
+        { kSfallMisc, "MainMenuCreditsOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", "0" },
+        // [sound]
+        { kSfallSound, "MainMenuMusic", CONTENT_CONFIG_SOUND_SECTION, "main_menu_music", "07desert" },
+        { kSfallSound, "WorldMapMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_music", "23world" },
+        { kSfallSound, "WorldMapCarMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_car_music", "20car" },
+        { kSfallSound, "EndGameMovieMusic0", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music0", "akiss" },
+        { kSfallSound, "EndGameMovieMusic1", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music1", "10labone" },
+        { kSfallSound, "MapLoadingSound", CONTENT_CONFIG_SOUND_SECTION, "map_loading_sound", "wind2" },
+        // [movies]
+        { kSfallMisc, "MovieTimer_artimer1", CONTENT_CONFIG_MOVIES_SECTION, "artimer1", "90" },
+        { kSfallMisc, "MovieTimer_artimer2", CONTENT_CONFIG_MOVIES_SECTION, "artimer2", "180" },
+        { kSfallMisc, "MovieTimer_artimer3", CONTENT_CONFIG_MOVIES_SECTION, "artimer3", "270" },
+        { kSfallMisc, "MovieTimer_artimer4", CONTENT_CONFIG_MOVIES_SECTION, "artimer4", "360" },
+        // [combat]
+        { kSfallMisc, "DamageFormula", CONTENT_CONFIG_COMBAT_SECTION, "damage_formula", "0" },
+        { kSfallMisc, "BonusHtHDamageFix", CONTENT_CONFIG_COMBAT_SECTION, "bonus_hth_damage_fix", "1" },
+        { kSfallMisc, "RemoveCriticalTimelimits", CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", "0" },
+        { kSfallMisc, "ScienceOnCritters", CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", "0" },
+        { kSfallMisc, "CheckWeaponAmmoCost", CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", nullptr },
+        { kSfallMisc, "InventoryApCost", CONTENT_CONFIG_COMBAT_SECTION, "inventory_ap_cost", "4" },
+        { kSfallMisc, "QuickPocketsApCostReduction", CONTENT_CONFIG_COMBAT_SECTION, "quick_pockets_ap_cost_reduction", "2" },
+        { kSfallMisc, "ComputeSprayMod", CONTENT_CONFIG_COMBAT_SECTION, "burst_enabled", "0" },
+        { kSfallMisc, "ComputeSpray_CenterMult", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_mult", "1" },
+        { kSfallMisc, "ComputeSpray_CenterDiv", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_div", "3" },
+        { kSfallMisc, "ComputeSpray_TargetMult", CONTENT_CONFIG_COMBAT_SECTION, "burst_target_mult", "1" },
+        { kSfallMisc, "ComputeSpray_TargetDiv", CONTENT_CONFIG_COMBAT_SECTION, "burst_target_div", "2" },
+        // [explosions]
+        { kSfallMisc, "ExplosionsEmitLight", CONTENT_CONFIG_EXPLOSIONS_SECTION, "emit_light", "0" },
+        { kSfallMisc, "Dynamite_DmgMax", CONTENT_CONFIG_EXPLOSIONS_SECTION, "dynamite_max", "50" },
+        { kSfallMisc, "Dynamite_DmgMin", CONTENT_CONFIG_EXPLOSIONS_SECTION, "dynamite_min", "30" },
+        { kSfallMisc, "PlasticExplosive_DmgMax", CONTENT_CONFIG_EXPLOSIONS_SECTION, "plastic_explosive_max", "80" },
+        { kSfallMisc, "PlasticExplosive_DmgMin", CONTENT_CONFIG_EXPLOSIONS_SECTION, "plastic_explosive_min", "40" },
+        // [skilldex]
+        { kSfallMisc, "Lockpick", CONTENT_CONFIG_SKILLDEX_SECTION, "lockpick", "293" },
+        { kSfallMisc, "Steal", CONTENT_CONFIG_SKILLDEX_SECTION, "steal", "293" },
+        { kSfallMisc, "Traps", CONTENT_CONFIG_SKILLDEX_SECTION, "traps", "293" },
+        { kSfallMisc, "FirstAid", CONTENT_CONFIG_SKILLDEX_SECTION, "first_aid", "293" },
+        { kSfallMisc, "Doctor", CONTENT_CONFIG_SKILLDEX_SECTION, "doctor", "293" },
+        { kSfallMisc, "Science", CONTENT_CONFIG_SKILLDEX_SECTION, "science", "293" },
+        { kSfallMisc, "Repair", CONTENT_CONFIG_SKILLDEX_SECTION, "repair", "293" },
+        // [worldmap]
+        { kSfallMisc, "TownMapHotkeysFix", CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", "1" },
+        { kSfallMisc, "DisableHorrigan", CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", "0" },
+        { kSfallMisc, "CityRepsList", CONTENT_CONFIG_WORLDMAP_SECTION, "city_reputation_list" },
+        { kSfallInterface, "WorldMapTravelMarkers", CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", "0" },
+        { kSfallInterface, "WorldMapTerrainInfo", CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", "0" },
+        // [characters]
+        { kSfallMisc, "PremadePaths", CONTENT_CONFIG_CHARACTERS_SECTION, "premade_paths" },
+        { kSfallMisc, "PremadeFIDs", CONTENT_CONFIG_CHARACTERS_SECTION, "premade_fids" },
+        // [text]
+        { kSfallMisc, "ExtraGameMsgFileList", CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list" },
+        // [stats]
+        { kSfallMisc, "XPTable", CONTENT_CONFIG_STATS_SECTION, "xp_table" },
+    };
+
+    static bool contentConfigMigrateSfallMovieOverrides(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool migrated = false;
+        for (GameMovie index = MOVIE_FIRST; index < GAME_MOVIE_MAX_COUNT; index++) {
+            char sfallKey[16];
+            snprintf(sfallKey, sizeof(sfallKey), "Movie%d", index + 1);
+
+            char* value;
+            if (!configGetString(sfallConfig, kSfallMisc, sfallKey, &value) || value[0] == '\0') {
+                continue;
+            }
+
+            const char* defaultFileName = gameMovieGetDefaultFileName(index);
+            if (defaultFileName != nullptr && strcmp(value, defaultFileName) == 0) {
+                continue;
+            }
+
+            char targetKey[16];
+            snprintf(targetKey, sizeof(targetKey), "movie%d", index + 1);
+
+            if (gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey)) {
+                continue;
+            }
+
+            configSetString(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey, value);
+            migrated = true;
+        }
+
+        return migrated;
+    }
+
+    static bool contentConfigMigrateSfallFallout1MovieBehavior(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool enabled = false;
+        if (!configGetBool(sfallConfig, kSfallMisc, "Fallout1Behavior", &enabled) || !enabled) {
+            return false;
+        }
+
+        bool migrated = false;
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_play_after_slideshow")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_play_after_slideshow", 0);
+            migrated = true;
+        }
+
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_male")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_male", 10);
+            migrated = true;
+        }
+
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_female")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_female", 11);
+            migrated = true;
+        }
+
+        return migrated;
+    }
+
+} // anonymous namespace
+
+// Migrate sfall settings from ddraw.ini to game.cfg.
+//
+// Runs once when no local game.cfg exists at contentConfigFilePath.
+// Writes only the settings found in sfallConfig to a new local file.
+static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* contentConfigFilePath)
+{
+    assert(sfallConfig != nullptr && contentConfigFilePath != nullptr);
+
+    // Skip if a local game.cfg already exists (already migrated or user-managed).
+    if (compat_file_exists(contentConfigFilePath)) {
+        return false;
+    }
+
+    ScopedConfig migratedConfig;
+    if (!migratedConfig) {
+        return false;
+    }
+
+    bool migrated = false;
+
+    bool worldMapFpsPatch;
+    if (configGetBool(sfallConfig, kSfallMisc, "WorldMapFPSPatch", &worldMapFpsPatch)
+        && worldMapFpsPatch) {
+        int travelDelay = 66;
+        configGetInt(sfallConfig, kSfallMisc, "WorldMapDelay2", &travelDelay);
+        travelDelay = std::clamp(travelDelay, 1, 150);
+        configSetInt(migratedConfig.get(), CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
+        migrated = true;
+    }
+
+    // Migrate start date/time only when explicitly set (not the sfall -1 sentinel).
+    auto migrateStartInt = [&](const char* sfallKey, const char* targetKey, int defaultValue) {
+        int value;
+        configGetIntBase(sfallConfig, kSfallMisc, sfallKey, &value, -1, 10);
+        if (value >= 0 && value != defaultValue) {
+            configSetInt(migratedConfig.get(), CONTENT_CONFIG_START_SECTION, targetKey, value);
+            migrated = true;
+        }
+    };
+    migrateStartInt("StartYear", "year", 2241);
+    migrateStartInt("StartMonth", "month", 6);
+    migrateStartInt("StartDay", "day", 24);
+    migrateStartInt("StartTime", "time", 824);
+
+    for (const auto& entry : kSfallMigrationEntries) {
+        char* value;
+        if (configGetString(sfallConfig, entry.sfallSection, entry.sfallKey, &value)) {
+            if (value[0] == '\0' || entry.defaultValue != nullptr && strcmp(value, entry.defaultValue) == 0) {
+                continue;
+            }
+            configSetString(migratedConfig.get(), entry.targetSection, entry.targetKey, value);
+            migrated = true;
+        }
+    }
+
+    if (contentConfigMigrateSfallMovieOverrides(sfallConfig, migratedConfig.get())) {
+        migrated = true;
+    }
+
+    if (contentConfigMigrateSfallFallout1MovieBehavior(sfallConfig, migratedConfig.get())) {
+        migrated = true;
+    }
+
+    if (migrated) {
+        // Ensure all directory components exist before writing.
+        char drive[COMPAT_MAX_DRIVE];
+        char dirPart[COMPAT_MAX_DIR];
+        char pathWithoutFile[COMPAT_MAX_PATH];
+        compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
+        compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
+        compat_mkdir_recursive(pathWithoutFile);
+
+        if (!configWrite(migratedConfig.get(), contentConfigFilePath, false)) {
+            debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
+        }
+    }
+
+    return migrated;
+}
+
+static bool contentConfigEnsureDirectory(const char* contentConfigFilePath)
+{
+    char drive[COMPAT_MAX_DRIVE];
+    char dirPart[COMPAT_MAX_DIR];
+    char pathWithoutFile[COMPAT_MAX_PATH];
+    compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
+    compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
+    return compat_is_dir(pathWithoutFile)
+        || compat_mkdir_recursive(pathWithoutFile) == 0
+        || compat_is_dir(pathWithoutFile);
+}
+
+static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* contentConfigFilePath)
+{
+    assert(legacyConfig != nullptr && contentConfigFilePath != nullptr);
+
+    Config migratedConfig;
+    if (!configInit(&migratedConfig)) {
+        return false;
+    }
+
+    configRead(&migratedConfig, contentConfigFilePath, false);
+
+    bool migrated = false;
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_X", "main_menu_panel_offset_x", F2_RES_MAIN_MENU_BUTTON_X, F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_X)) {
+        migrated = true;
+    }
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_Y", "main_menu_panel_offset_y", F2_RES_MAIN_MENU_BUTTON_Y, F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_Y)) {
+        migrated = true;
+    }
+    if (contentConfigMigrateF2ResBoolKey(legacyConfig, &migratedConfig, "SCALE_BUTTONS_AND_TEXT_MENU", "scale_buttons_and_text")) {
+        migrated = true;
+    }
+
+    if (migrated) {
+        if (contentConfigEnsureDirectory(contentConfigFilePath)) {
+            if (!configWriteEx(&migratedConfig, contentConfigFilePath, ConfigFlags::RetainAll)) {
+                debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
+            }
+        } else {
+            debugPrint("Failed to create directory for migrated settings at %s!\n", contentConfigFilePath);
+        }
+    }
+
+    configFree(&migratedConfig);
+    return migrated;
+}
+
+void contentConfigTryMigrateFromF2Res(const char* contentConfigPath)
+{
+    const auto& masterPatches = settings.system.master_patches_path;
+    if (masterPatches.empty()) {
+        debugPrint("Failed to migrate from f2_res.ini: no master_patches is set.\n");
+        return;
+    }
+    if (!compat_is_dir(masterPatches.c_str())) {
+        return;
+    }
+
+    char f2ResFilePath[COMPAT_MAX_PATH];
+    char drive[COMPAT_MAX_DRIVE];
+    char dir[COMPAT_MAX_DIR];
+    compat_splitpath(gGameConfigFilePath, drive, dir, nullptr, nullptr);
+    compat_makepath(f2ResFilePath, drive, dir, F2_RES_CONFIG_FILE_NAME, nullptr);
+
+    Config legacyConfig;
+    if (!configInit(&legacyConfig)) {
+        return;
+    }
+
+    if (configRead(&legacyConfig, f2ResFilePath, false)) {
+        char contentCfgPath[COMPAT_MAX_PATH];
+        snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", masterPatches.c_str(), contentConfigPath);
+        if (contentConfigMigrateFromF2Res(&legacyConfig, contentCfgPath)) {
+            debugPrint("Migrated settings from f2_res.ini to %s.\n", contentCfgPath);
+        }
+    }
+
+    configFree(&legacyConfig);
+}
+
+void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
+{
+    if (!gSfallConfig.isInitialized() || gSfallConfig.entriesLength == 0) {
+        // Nothing to migrate.
+        return;
+    }
+    const auto& masterPatches = settings.system.master_patches_path;
+    if (masterPatches.empty()) {
+        debugPrint("Failed to migrate from ddraw.ini: no master_patches is set.\n");
+        return;
+    }
+    if (!compat_is_dir(masterPatches.c_str())) {
+        // master_patches must point to an existing folder. Don't migrate when it's missing or not a directory.
+        return;
+    }
+    char contentCfgPath[COMPAT_MAX_PATH];
+    snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", masterPatches.c_str(), contentConfigPath);
+    if (contentConfigMigrateFromSfall(&gSfallConfig, contentCfgPath)) {
+        debugPrint("Migrated settings from ddraw.ini to game.cfg.\n");
+    }
+}
+
+} // namespace fallout

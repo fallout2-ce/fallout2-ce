@@ -5,16 +5,23 @@
 
 #include "audio_engine.h"
 #include "color.h"
+#include "debug.h"
 #include "delay.h"
 #include "dinput.h"
 #include "draw.h"
+#include "game.h"
+#include "game_speed.h"
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
+#include "movie.h"
+#include "sfall_kb_helpers.h"
+#include "sfall_script_hooks.h"
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
 #include "win32.h"
+#include "window_manager.h"
 
 namespace fallout {
 
@@ -43,16 +50,18 @@ static int dequeueInputEvent();
 static void screenshotBlitter(unsigned char* src, int src_pitch, int a3, int x, int y, int width, int height, int dest_x, int dest_y);
 static void buildNormalizedQwertyKeys();
 static void _GNW95_process_key(KeyboardData* data);
+static int inputGetHookMouseButton(int sdlButton);
+static void inputHandleMouseClickHook(int sdlButton, bool pressed);
 
-// 0x51E23C
+// 0x51E23C GNW95_repeat_rate
 static int gKeyboardKeyRepeatRate = 80;
 
-// 0x51E240
+// 0x51E240 GNW95_repeat_delay
 static int gKeyboardKeyRepeatDelay = 500;
 
 // A map of SDL_SCANCODE_* constants normalized for QWERTY keyboard.
 //
-// 0x6ABC70
+// 0x6ABC70 GNW95_key_map
 static int gNormalizedQwertyKeys[SDL_NUM_SCANCODES];
 
 // Ring buffer of input events.
@@ -60,44 +69,75 @@ static int gNormalizedQwertyKeys[SDL_NUM_SCANCODES];
 // Looks like this buffer does not support overwriting of values. Once the
 // buffer is full it will not overwrite values until they are dequeued.
 //
-// 0x6ABD70
+// 0x6ABD70 input_buffer
 static InputEvent gInputEventQueue[40];
 
-// 0x6ABF50
+// 0x6ABF50 GNW95_key_time_stamps
 static RepeatInfo _GNW95_key_time_stamps[SDL_NUM_SCANCODES];
 
-// 0x6AC750
+// 0x6AC750 input_mx
 static int _input_mx;
 
-// 0x6AC754
+// 0x6AC754 input_my
 static int _input_my;
 
-// 0x6AC760
+// 0x6AC760 screendump_key
 static int gScreenshotKeyCode;
 
-// 0x6AC76C
+// 0x6AC76C screendump_func
 static ScreenshotHandler* gScreenshotHandler;
 
-// 0x6AC770
+// 0x6AC770 input_get
 static int gInputEventQueueReadIndex;
 
-// 0x6AC774
+// 0x6AC774 screendump_buf
 static unsigned char* gScreenshotBuffer;
 
-// 0x6AC77C
+// 0x6AC77C input_put
 static int gInputEventQueueWriteIndex;
 
-// 0x6AC780
+// 0x6AC780 bk_disabled
 static bool gRunLoopDisabled;
 
-// 0x6AC784
+// 0x6AC784 bk_list
 static TickerListNode* gTickerListHead;
 
-// 0x6AC788
+// 0x6AC788 bk_process_time
 static unsigned int gTickerLastTimestamp;
 
 // global for inventoryOpenUseItemOn inventory to prevent click through bug
 bool gBlockMouseUpEvent = false;
+
+static int inputGetHookMouseButton(int sdlButton)
+{
+    switch (sdlButton) {
+    case SDL_BUTTON_LEFT:
+        return 0;
+    case SDL_BUTTON_RIGHT:
+        return 1;
+    case SDL_BUTTON_MIDDLE:
+        return 2;
+    case SDL_BUTTON_X1:
+        return 3;
+    case SDL_BUTTON_X2:
+        return 4;
+    default:
+        if (sdlButton >= 6 && sdlButton <= 8) {
+            return sdlButton - 1;
+        }
+        return -1;
+    }
+}
+
+static void inputHandleMouseClickHook(int sdlButton, bool pressed)
+{
+    if (!gGameLoaded) return;
+
+    int hookButton = inputGetHookMouseButton(sdlButton);
+    if (hookButton == -1) return;
+
+    ScriptHookCall(HOOK_MOUSECLICK, 0, { pressed ? 1 : 0, hookButton }).call();
+}
 
 // 0x4C8A70
 int inputInit()
@@ -163,7 +203,7 @@ int inputGetInput()
     _process_bk();
 
     v3 = dequeueInputEvent();
-    if (v3 == -1 && mouseGetEvent() & 0x33) {
+    if (v3 == -1 && (mouseGetEvent() & (MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonUp)) != MouseButtonEvent::None) {
         mouseGetPosition(&_input_mx, &_input_my);
         return -2;
     } else {
@@ -268,6 +308,7 @@ void inputEventQueueReset()
     gInputEventQueueWriteIndex = 0;
     SDL_Event e;
     while (SDL_PollEvent(&e)) { } // Clear all input events
+    sfall_kb_clear_synthetic_key_events();
 }
 
 // 0x4C8D1C
@@ -277,7 +318,7 @@ void tickersExecute()
         return;
     }
 
-    gTickerLastTimestamp = SDL_GetTicks();
+    gTickerLastTimestamp = getTicks();
 
     TickerListNode* curr = gTickerListHead;
     TickerListNode** currPtr = &(gTickerListHead);
@@ -347,7 +388,7 @@ void takeScreenshot()
 {
     int width = _scr_size.right - _scr_size.left + 1;
     int height = _scr_size.bottom - _scr_size.top + 1;
-    gScreenshotBuffer = (unsigned char*)internal_malloc(width * height);
+    gScreenshotBuffer = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
     if (gScreenshotBuffer == nullptr) {
         return;
     }
@@ -367,7 +408,9 @@ void takeScreenshot()
     _mouse_blit = old_mouse;
     _scr_blit = old_src;
 
-    unsigned char* palette = _getSystemPalette();
+    // Save screenshots with the palette currently presented on screen so the
+    // exported colors match brightness-adjusted rendering.
+    unsigned char* palette = gSdlSurface != nullptr ? directDrawGetPalette() : _getSystemPalette();
     gScreenshotHandler(width, height, gScreenshotBuffer, palette);
     internal_free(gScreenshotBuffer);
 }
@@ -557,6 +600,11 @@ void screenshotHandlerConfigure(int keyCode, ScreenshotHandler* handler)
 // 0x4C9370
 unsigned int getTicks()
 {
+    return gameSpeedGetTicks();
+}
+
+unsigned int getRealTicks()
+{
     return SDL_GetTicks();
 }
 
@@ -582,13 +630,16 @@ void inputPauseForTocks(unsigned int delay)
 // 0x4C93B8
 void inputBlockForTocks(unsigned int ms)
 {
-    delay_ms(ms);
+    unsigned int start = getTicks();
+    while (getTicksSince(start) < ms) {
+        delay_ms(1);
+    }
 }
 
 // 0x4C93E0
 unsigned int getTicksSince(unsigned int start)
 {
-    unsigned int end = SDL_GetTicks();
+    unsigned int end = getTicks();
 
     // NOTE: Uninline.
     return getTicksBetween(end, start);
@@ -932,6 +983,7 @@ static void buildNormalizedQwertyKeys()
     keys[SDL_SCANCODE_RIGHT] = SDL_SCANCODE_RIGHT;
     keys[SDL_SCANCODE_END] = SDL_SCANCODE_END;
     keys[SDL_SCANCODE_DOWN] = SDL_SCANCODE_DOWN;
+    keys[SDL_SCANCODE_PAGEUP] = SDL_SCANCODE_PAGEUP;
     keys[SDL_SCANCODE_PAGEDOWN] = SDL_SCANCODE_PAGEDOWN;
     keys[SDL_SCANCODE_INSERT] = SDL_SCANCODE_INSERT;
     keys[SDL_SCANCODE_DELETE] = SDL_SCANCODE_DELETE;
@@ -961,6 +1013,9 @@ void _GNW95_process_message()
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
         case SDL_MOUSEWHEEL:
+            if (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) {
+                inputHandleMouseClickHook(e.button.button, e.type == SDL_MOUSEBUTTONDOWN);
+            }
             handleMouseEvent(&e);
             break;
         case SDL_FINGERDOWN:
@@ -973,13 +1028,24 @@ void _GNW95_process_message()
             touch_handle_end(&(e.tfinger));
             break;
         case SDL_KEYDOWN:
-        case SDL_KEYUP:
+        case SDL_KEYUP: {
+            keyboardData.key = e.key.keysym.scancode;
+            keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
+            bool syntheticSfallKey = sfall_kb_consume_synthetic_key_event(keyboardData.key, keyboardData.down);
             if (!keyboardIsDisabled()) {
-                keyboardData.key = e.key.keysym.scancode;
-                keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
+                if (!e.key.repeat && !syntheticSfallKey) {
+                    int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
+                    if (keyOverride == SDL_SCANCODE_UNKNOWN) {
+                        break;
+                    }
+                    if (keyOverride != -1) {
+                        keyboardData.key = keyOverride;
+                    }
+                }
                 _GNW95_process_key(&keyboardData);
             }
             break;
+        }
         case SDL_WINDOWEVENT:
             switch (e.window.event) {
             case SDL_WINDOWEVENT_EXPOSED:
@@ -990,11 +1056,16 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
+                movieHandleFocusGained();
+                if (!mouseDeviceInitMode()) {
+                    debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());
+                }
                 windowRefreshAll(&_scr_size);
                 audioEngineResume();
                 break;
             case SDL_WINDOWEVENT_FOCUS_LOST:
                 gProgramIsActive = false;
+                mouseDeviceInitMode();
                 audioEnginePause();
                 break;
             }
@@ -1009,7 +1080,7 @@ void _GNW95_process_message()
 
     if (gProgramIsActive && !keyboardIsDisabled()) {
         // NOTE: Uninline
-        int tick = getTicks();
+        int tick = getRealTicks();
 
         for (int key = 0; key < SDL_NUM_SCANCODES; key++) {
             RepeatInfo* ptr = &(_GNW95_key_time_stamps[key]);
@@ -1049,7 +1120,7 @@ static void _GNW95_process_key(KeyboardData* data)
 
     RepeatInfo* ptr = &(_GNW95_key_time_stamps[scanCode]);
     if (data->down == 1) {
-        ptr->tick = getTicks();
+        ptr->tick = getRealTicks();
         ptr->repeatCount = 0;
     } else {
         ptr->tick = -1;

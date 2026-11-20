@@ -1,6 +1,7 @@
 #ifndef GAME_DIALOG_H
 #define GAME_DIALOG_H
 
+#include "art.h"
 #include "interpreter.h"
 #include "obj_types.h"
 
@@ -8,36 +9,43 @@ namespace fallout {
 
 extern Object* gGameDialogSpeaker;
 extern bool gGameDialogSpeakerIsPartyMember;
-extern int gGameDialogHeadFid;
+extern HeadFrmId gGameDialogHeadFrmId;
 extern int gGameDialogSid;
 
 int gameDialogInit();
 int gameDialogReset();
 int gameDialogExit();
 bool _gdialogActive();
-void gameDialogEnter(Object* speaker, int a2);
+bool gameDialogWindowActive();
+void gameDialogEnter(Object* speaker, int mode);
 void _gdialogSystemEnter();
-void gameDialogStartLips(const char* a1);
+void gameDialogStartLips(const char* audioFileName);
 int gameDialogEnable();
 int gameDialogDisable();
-int _gdialogInitFromScript(int headFid, int reaction);
+int _gdialogInitFromScript(const HeadFrmId& headFrmId, HeadFidget reaction);
 int _gdialogExitFromScript();
-void gameDialogSetBackground(int a1);
-void gameDialogRenderSupplementaryMessage(char* msg);
+void gameDialogSetBackground(const BackgroundFrmId& background);
+void gameDialogRenderSupplementaryMessage(const char* msg);
 int _gdialogStart();
 int _gdialogSayMessage();
-int gameDialogAddMessageOptionWithProcIdentifier(int messageListId, int messageId, const char* a3, int reaction);
-int gameDialogAddTextOptionWithProcIdentifier(int messageListId, const char* text, const char* a3, int reaction);
+int gameDialogAddMessageOptionWithProcIdentifier(int messageListId, int messageId, const char* procName, int reaction);
+int gameDialogAddTextOptionWithProcIdentifier(int messageListId, const char* text, const char* procName, int reaction);
 int gameDialogAddMessageOptionWithProc(int messageListId, int messageId, int proc, int reaction);
 int gameDialogAddTextOptionWithProc(int messageListId, const char* text, int proc, int reaction);
-int gameDialogSetMessageReply(Program* a1, int a2, int a3);
-int gameDialogSetTextReply(Program* a1, int a2, const char* a3);
+int gameDialogSetMessageReply(Program* program, int messageListId, int messageId);
+int gameDialogSetTextReply(Program* program, int messageListId, const char* text);
 int _gdialogGo();
 void _gdialogUpdatePartyStatus();
-void _talk_to_critter_reacts(int a1);
+void _talk_to_critter_reacts(int reaction);
+int gameDialogGetBarterModifier();
 void gameDialogSetBarterModifier(int modifier);
 int gameDialogBarter(int modifier);
-void _barter_end_to_talk_to();
+void gameDialogEndBarter();
+bool gameDialogIsBarterWindowExpanded();
+int gameDialogGetWindow();
+int gameDialogGetBackgroundWindow();
+void gameDialogSetPartyMemberCcMsgIds(const ProtoId& protoId, int startMsgId, int endMsgId);
+void gameDialogResetPartyMemberCcMsgIds();
 
 } // namespace fallout
 

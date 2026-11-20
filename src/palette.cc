@@ -7,25 +7,26 @@
 #include "debug.h"
 #include "game_sound.h"
 #include "input.h"
+#include "settings.h"
 #include "svga.h"
 
 namespace fallout {
 
 static void _palette_reset_();
 
-// 0x6639D0
+// 0x6639D0 current_palette
 static unsigned char gPalette[256 * 3];
 
-// 0x663CD0
+// 0x663CD0 white_palette
 unsigned char gPaletteWhite[256 * 3];
 
-// 0x663FD0
+// 0x663FD0 black_palette
 unsigned char gPaletteBlack[256 * 3];
 
-// 0x6642D0
+// 0x6642D0 fade_steps
 static int gPaletteFadeSteps;
 
-// 0x493A00
+// 0x493A00 palette_init
 void paletteInit()
 {
     memset(gPaletteBlack, 0, 256 * 3);
@@ -37,7 +38,8 @@ void paletteInit()
         colorPaletteSetTransitionCallback(soundContinueAll);
     }
 
-    colorPaletteFadeBetween(gPalette, gPalette, 60);
+    constexpr int referenceFadeSteps = 60;
+    colorPaletteFadeBetween(gPalette, gPalette, referenceFadeSteps);
 
     colorPaletteSetTransitionCallback(nullptr);
 
@@ -45,10 +47,13 @@ void paletteInit()
     // frame rate throttling.
     unsigned int actualFadeDuration = getTicksSince(tick);
 
-    // Calculate fade steps needed to perform fading in about 700 ms.
-    gPaletteFadeSteps = 60 * 700 / actualFadeDuration;
+    constexpr int vanillaFadeDurationMs = 700;
+    const unsigned int fadeDurationMs = static_cast<int>(vanillaFadeDurationMs / settings.ui.anim_speed);
 
-    debugPrint("\nFade time is %u\nFade steps are %d\n", actualFadeDuration, gPaletteFadeSteps);
+    // Calculate fade steps needed to perform fading in about 700 ms.
+    gPaletteFadeSteps = static_cast<int>(referenceFadeSteps * fadeDurationMs / actualFadeDuration);
+
+    debugPrint("\nReference fade time: %ums, Target fade time: %dms, Fade steps: %d\n", actualFadeDuration, fadeDurationMs, gPaletteFadeSteps);
 }
 
 // NOTE: Collapsed.
@@ -70,7 +75,7 @@ void paletteExit()
     _palette_reset_();
 }
 
-// 0x493AD4
+// 0x493AD4 palette_fade_to
 void paletteFadeTo(unsigned char* palette)
 {
     bool colorCycleWasEnabled = colorCycleEnabled();
@@ -90,14 +95,14 @@ void paletteFadeTo(unsigned char* palette)
     }
 }
 
-// 0x493B48
+// 0x493B48 palette_set_to
 void paletteSetEntries(unsigned char* palette)
 {
     memcpy(gPalette, palette, sizeof(gPalette));
     _setSystemPalette(palette);
 }
 
-// 0x493B78
+// 0x493B78 palette_set_entries
 void paletteSetEntriesInRange(unsigned char* palette, int start, int end)
 {
     memcpy(gPalette + 3 * start, palette, 3 * (end - start + 1));

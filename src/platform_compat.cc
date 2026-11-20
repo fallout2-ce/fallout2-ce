@@ -2,11 +2,15 @@
 
 #include <string.h>
 
+#include <string>
+#include <unordered_map>
+
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #else
 #include <dirent.h>
 #include <sys/stat.h>
@@ -27,6 +31,80 @@
 #include <SDL.h>
 
 namespace fallout {
+
+static bool compatIsPathSeparator(char ch)
+{
+    return ch == '/' || ch == '\\';
+}
+
+static bool compatFileModeMayWrite(const char* mode)
+{
+    return mode != nullptr && (strchr(mode, 'w') != nullptr || strchr(mode, 'a') != nullptr || strchr(mode, '+') != nullptr);
+}
+
+#ifndef _WIN32
+typedef struct CompatDirectoryCacheEntry {
+    std::unordered_map<std::string, std::string> entries;
+} CompatDirectoryCacheEntry;
+
+static constexpr size_t kCompatDirectoryEntryCacheMaxSize = 1024;
+static std::unordered_map<std::string, CompatDirectoryCacheEntry> compatDirectoryEntryCache;
+
+static std::string compatLowercase(std::string value)
+{
+    for (char& ch : value) {
+        ch = static_cast<char>(SDL_tolower(static_cast<unsigned char>(ch)));
+    }
+    return value;
+}
+
+static void compatDirectoryEntryCacheClear()
+{
+    compatDirectoryEntryCache.clear();
+}
+
+static const CompatDirectoryCacheEntry* compatDirectoryEntryCacheGet(const std::string& directoryPath)
+{
+    auto existing = compatDirectoryEntryCache.find(directoryPath);
+    if (existing != compatDirectoryEntryCache.end()) {
+        return &(existing->second);
+    }
+
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir == nullptr) {
+        return nullptr;
+    }
+
+    if (compatDirectoryEntryCache.size() >= kCompatDirectoryEntryCacheMaxSize) {
+        compatDirectoryEntryCache.clear();
+    }
+
+    auto inserted = compatDirectoryEntryCache.emplace(directoryPath, CompatDirectoryCacheEntry());
+    CompatDirectoryCacheEntry& cacheEntry = inserted.first->second;
+
+    struct dirent* entry = readdir(dir);
+    while (entry != nullptr) {
+        cacheEntry.entries.emplace(compatLowercase(entry->d_name), entry->d_name);
+        entry = readdir(dir);
+    }
+
+    closedir(dir);
+
+    return &cacheEntry;
+}
+#else
+static void compatDirectoryEntryCacheClear()
+{
+}
+#endif
+
+static void compat_prepare_native_path(char* nativePath, const char* path)
+{
+    strncpy(nativePath, path, COMPAT_MAX_PATH - 1);
+    nativePath[COMPAT_MAX_PATH - 1] = '\0';
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+}
 
 int compat_stricmp(const char* string1, const char* string2)
 {
@@ -59,46 +137,48 @@ void compat_splitpath(const char* path, char* drive, char* dir, char* fname, cha
     _splitpath(path, drive, dir, fname, ext);
 #else
     const char* driveStart = path;
-    if (path[0] == '/' && path[1] == '/') {
-        path += 2;
-        while (*path != '\0' && *path != '/' && *path != '.') {
-            path++;
+    const char* pathAfterDrive = path;
+    if (pathAfterDrive[0] != '\0'
+        && pathAfterDrive[1] != '\0'
+        && compatIsPathSeparator(pathAfterDrive[0])
+        && compatIsPathSeparator(pathAfterDrive[1])) {
+        pathAfterDrive += 2;
+        while (*pathAfterDrive != '\0' && !compatIsPathSeparator(*pathAfterDrive) && *pathAfterDrive != '.') {
+            pathAfterDrive++;
         }
     }
 
     if (drive != nullptr) {
-        size_t driveSize = path - driveStart;
+        size_t driveSize = pathAfterDrive - driveStart;
         if (driveSize > COMPAT_MAX_DRIVE - 1) {
             driveSize = COMPAT_MAX_DRIVE - 1;
         }
-        strncpy(drive, path, driveSize);
+        strncpy(drive, driveStart, driveSize);
         drive[driveSize] = '\0';
     }
 
-    const char* dirStart = path;
-    const char* fnameStart = path;
-    const char* extStart = nullptr;
-
-    const char* end = path;
-    while (*end != '\0') {
-        if (*end == '/') {
-            fnameStart = end + 1;
-        } else if (*end == '.') {
-            extStart = end;
+    const char* fnameStart = pathAfterDrive;
+    for (const char* pch = pathAfterDrive; *pch != '\0'; pch++) {
+        if (compatIsPathSeparator(*pch)) {
+            fnameStart = pch + 1;
         }
-        end++;
     }
 
-    if (extStart == nullptr) {
-        extStart = end;
+    const char* end = pathAfterDrive + strlen(pathAfterDrive);
+    const char* extStart = end;
+    for (const char* pch = end; pch != fnameStart; pch--) {
+        if (pch[-1] == '.') {
+            extStart = pch - 1;
+            break;
+        }
     }
 
     if (dir != nullptr) {
-        size_t dirSize = fnameStart - dirStart;
+        size_t dirSize = fnameStart - pathAfterDrive;
         if (dirSize > COMPAT_MAX_DIR - 1) {
             dirSize = COMPAT_MAX_DIR - 1;
         }
-        strncpy(dir, path, dirSize);
+        strncpy(dir, pathAfterDrive, dirSize);
         dir[dirSize] = '\0';
     }
 
@@ -134,7 +214,7 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
             strcpy(path, drive);
             path = strchr(path, '\0');
 
-            if (path[-1] == '/') {
+            if (compatIsPathSeparator(path[-1])) {
                 path--;
             } else {
                 *path = '/';
@@ -144,14 +224,14 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
 
     if (dir != nullptr) {
         if (*dir != '\0') {
-            if (*dir != '/' && *path == '/') {
+            if (!compatIsPathSeparator(*dir) && compatIsPathSeparator(*path)) {
                 path++;
             }
 
             strcpy(path, dir);
             path = strchr(path, '\0');
 
-            if (path[-1] == '/') {
+            if (compatIsPathSeparator(path[-1])) {
                 path--;
             } else {
                 *path = '/';
@@ -160,14 +240,14 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
     }
 
     if (fname != nullptr && *fname != '\0') {
-        if (*fname != '/' && *path == '/') {
+        if (!compatIsPathSeparator(*fname) && compatIsPathSeparator(*path)) {
             path++;
         }
 
         strcpy(path, fname);
         path = strchr(path, '\0');
     } else {
-        if (*path == '/') {
+        if (compatIsPathSeparator(*path)) {
             path++;
         }
     }
@@ -203,15 +283,83 @@ long compat_filelength(int fd)
 
 int compat_mkdir(const char* path)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
 
 #ifdef _WIN32
-    return mkdir(nativePath);
+    int rc = mkdir(nativePath);
 #else
-    return mkdir(nativePath, 0755);
+    int rc = mkdir(nativePath, 0755);
+#endif
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
+}
+
+int compat_mkdir_recursive(const char* path)
+{
+    char drive[COMPAT_MAX_DRIVE];
+    compat_splitpath(path, drive, nullptr, nullptr, nullptr);
+
+    char pathCopy[COMPAT_MAX_PATH];
+    strcpy(pathCopy, path);
+
+    // Skip drive root (e.g. "C:\\" or leading "/") to avoid mkdir("") or mkdir("C:").
+    char* sep = pathCopy + strlen(drive);
+    if (*sep == '\\' || *sep == '/') sep++;
+    for (; *sep != '\0'; sep++) {
+        if (*sep == '\\' || *sep == '/') {
+            char saved = *sep;
+            *sep = '\0';
+            if (compat_mkdir(pathCopy) < 0) {
+                break;
+            }
+            *sep = saved;
+        }
+    }
+    return compat_mkdir(path);
+}
+
+bool compat_is_dir(const char* path)
+{
+    char nativePath[COMPAT_MAX_PATH];
+    compat_prepare_native_path(nativePath, path);
+
+#ifdef _WIN32
+    struct _stat info;
+    if (_stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return (info.st_mode & _S_IFDIR) != 0;
+#else
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+#endif
+}
+
+bool compat_file_exists(const char* filePath)
+{
+    char nativePath[COMPAT_MAX_PATH];
+    compat_prepare_native_path(nativePath, filePath);
+
+#ifdef _WIN32
+    struct _stat info;
+    if (_stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return (info.st_mode & _S_IFDIR) == 0;
+#else
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return !S_ISDIR(info.st_mode);
 #endif
 }
 
@@ -228,20 +376,34 @@ unsigned int compat_timeGetTime()
 
 FILE* compat_fopen(const char* path, const char* mode)
 {
+    bool mayWrite = compatFileModeMayWrite(mode);
+    if (mayWrite) {
+        compatDirectoryEntryCacheClear();
+    }
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
-    return fopen(nativePath, mode);
+    compat_prepare_native_path(nativePath, path);
+    FILE* stream = fopen(nativePath, mode);
+    if (mayWrite && stream != nullptr) {
+        compatDirectoryEntryCacheClear();
+    }
+    return stream;
 }
 
 gzFile compat_gzopen(const char* path, const char* mode)
 {
+    bool mayWrite = compatFileModeMayWrite(mode);
+    if (mayWrite) {
+        compatDirectoryEntryCacheClear();
+    }
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
-    return gzopen(nativePath, mode);
+    compat_prepare_native_path(nativePath, path);
+    gzFile stream = gzopen(nativePath, mode);
+    if (mayWrite && stream != nullptr) {
+        compatDirectoryEntryCacheClear();
+    }
+    return stream;
 }
 
 char* compat_fgets(char* buffer, int maxCount, FILE* stream)
@@ -276,26 +438,32 @@ char* compat_gzgets(gzFile stream, char* buffer, int maxCount)
 
 int compat_remove(const char* path)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
-    return remove(nativePath);
+    compat_prepare_native_path(nativePath, path);
+    int rc = remove(nativePath);
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativeOldFileName[COMPAT_MAX_PATH];
-    strcpy(nativeOldFileName, oldFileName);
-    compat_windows_path_to_native(nativeOldFileName);
-    compat_resolve_path(nativeOldFileName);
+    compat_prepare_native_path(nativeOldFileName, oldFileName);
 
     char nativeNewFileName[COMPAT_MAX_PATH];
-    strcpy(nativeNewFileName, newFileName);
-    compat_windows_path_to_native(nativeNewFileName);
-    compat_resolve_path(nativeNewFileName);
+    compat_prepare_native_path(nativeNewFileName, newFileName);
 
-    return rename(nativeOldFileName, nativeNewFileName);
+    int rc = rename(nativeOldFileName, nativeNewFileName);
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 void compat_windows_path_to_native(char* path)
@@ -315,16 +483,23 @@ void compat_resolve_path(char* path)
 {
 #ifndef _WIN32
     char* pch = path;
-
-    DIR* dir;
+    std::string directoryPath;
     if (pch[0] == '/') {
-        dir = opendir("/");
+        directoryPath = "/";
         pch++;
     } else {
-        dir = opendir(".");
+        directoryPath = ".";
     }
 
-    while (dir != nullptr) {
+    while (true) {
+        while (*pch == '/') {
+            pch++;
+        }
+
+        if (*pch == '\0') {
+            break;
+        }
+
         char* sep = strchr(pch, '/');
         size_t length;
         if (sep != nullptr) {
@@ -333,31 +508,25 @@ void compat_resolve_path(char* path)
             length = strlen(pch);
         }
 
-        bool found = false;
-
-        struct dirent* entry = readdir(dir);
-        while (entry != nullptr) {
-            if (strlen(entry->d_name) == length && compat_strnicmp(pch, entry->d_name, length) == 0) {
-                strncpy(pch, entry->d_name, length);
-                found = true;
-                break;
-            }
-            entry = readdir(dir);
-        }
-
-        closedir(dir);
-        dir = nullptr;
-
-        if (!found) {
+        const CompatDirectoryCacheEntry* directoryCacheEntry = compatDirectoryEntryCacheGet(directoryPath);
+        if (directoryCacheEntry == nullptr) {
             break;
         }
+
+        std::string component(pch, length);
+        auto cacheEntry = directoryCacheEntry->entries.find(compatLowercase(component));
+        if (cacheEntry == directoryCacheEntry->entries.end()) {
+            break;
+        }
+
+        strncpy(pch, cacheEntry->second.c_str(), length);
 
         if (sep == nullptr) {
             break;
         }
 
         *sep = '\0';
-        dir = opendir(path);
+        directoryPath = path;
         *sep = '/';
 
         pch = sep + 1;
@@ -368,9 +537,7 @@ void compat_resolve_path(char* path)
 int compat_access(const char* path, int mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return access(nativePath, mode);
 }
 

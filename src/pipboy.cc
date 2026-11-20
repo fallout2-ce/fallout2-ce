@@ -1,5 +1,7 @@
 #include "pipboy.h"
 
+#include <algorithm>
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +11,7 @@
 #include "color.h"
 #include "combat.h"
 #include "config.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "dbox.h"
@@ -34,10 +37,11 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
-#include "sfall_config.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
+#include "touch.h"
 #include "window_manager.h"
 #include "word_wrap.h"
 #include "worldmap.h"
@@ -78,7 +82,7 @@ const int PIPBOY_AUTOMAP_LINES = 19;
 const int PIPBOY_AUTOMAP_SUB_LINES = 5;
 const int PIPBOY_STATUS_QUESTLIST_LINES = 12;
 
-typedef enum Holiday {
+enum Holiday : int {
     HOLIDAY_NEW_YEAR,
     HOLIDAY_VALENTINES_DAY,
     HOLIDAY_FOOLS_DAY,
@@ -86,63 +90,73 @@ typedef enum Holiday {
     HOLIDAY_INDEPENDENCE_DAY,
     HOLIDAY_HALLOWEEN,
     HOLIDAY_THANKSGIVING_DAY,
-    HOLIDAY_CRISTMAS,
+    HOLIDAY_CHRISTMAS,
     HOLIDAY_COUNT,
-} Holiday;
+    HOLIDAY_FIRST = HOLIDAY_NEW_YEAR
+};
+
+inline Holiday operator++(Holiday& e, int)
+{
+    Holiday result = e;
+    e = static_cast<Holiday>(static_cast<int>(e) + 1);
+    return result;
+}
 
 // Options used to render Pipboy texts.
-typedef enum PipboyTextOptions {
+enum class PipboyTextOptions : unsigned int {
+    None = 0x00,
+
     // Specifies that text should be rendered in the center of the Pipboy
     // monitor.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_CENTER = 0x02,
+    AlignmentCenter = 0x02,
 
     // Specifies that text should be rendered in the beginning of the right
     // column in two-column layout.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN = 0x04,
+    AlignmentRightColumn = 0x04,
 
     // Specifies that text should be rendered in the center of the left column.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER = 0x10,
+    AlignmentLeftColumnCenter = 0x10,
 
     // Specifies that text should be rendered in the center of the right
     // column.
     //
     // This option is mutually exclusive with other alignment options.
-    PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER = 0x20,
+    AlignmentRightColumnCenter = 0x20,
 
     // Specifies that text should rendered with underline.
-    PIPBOY_TEXT_STYLE_UNDERLINE = 0x08,
+    Underline = 0x08,
 
     // Specifies that text should rendered with strike-through line.
-    PIPBOY_TEXT_STYLE_STRIKE_THROUGH = 0x40,
+    StrikeThrough = 0x40,
 
     // Specifies that text should be rendered with no (minimal) indentation.
-    PIPBOY_TEXT_NO_INDENT = 0x80,
-} PipboyTextOptions;
+    NoIndent = 0x80,
+};
 
-typedef enum PipboyRestDuration {
-    PIPBOY_REST_DURATION_TEN_MINUTES,
-    PIPBOY_REST_DURATION_THIRTY_MINUTES,
-    PIPBOY_REST_DURATION_ONE_HOUR,
-    PIPBOY_REST_DURATION_TWO_HOURS,
-    PIPBOY_REST_DURATION_THREE_HOURS,
-    PIPBOY_REST_DURATION_FOUR_HOURS,
-    PIPBOY_REST_DURATION_FIVE_HOURS,
-    PIPBOY_REST_DURATION_SIX_HOURS,
-    PIPBOY_REST_DURATION_UNTIL_MORNING,
-    PIPBOY_REST_DURATION_UNTIL_NOON,
-    PIPBOY_REST_DURATION_UNTIL_EVENING,
-    PIPBOY_REST_DURATION_UNTIL_MIDNIGHT,
-    PIPBOY_REST_DURATION_UNTIL_HEALED,
-    PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED,
-    PIPBOY_REST_DURATION_COUNT,
-    PIPBOY_REST_DURATION_COUNT_WITHOUT_PARTY = PIPBOY_REST_DURATION_COUNT - 1,
-} PipboyRestDuration;
+constexpr inline PipboyTextOptions operator&(PipboyTextOptions lhs, PipboyTextOptions rhs)
+{
+    return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline PipboyTextOptions operator|(PipboyTextOptions lhs, PipboyTextOptions rhs)
+{
+    return static_cast<PipboyTextOptions>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+static constexpr int PIPBOY_REST_DURATION_WAKE_HOUR_COUNT = PIPBOY_REST_DURATION_UNTIL_MIDNIGHT - PIPBOY_REST_DURATION_UNTIL_MORNING + 1;
+static constexpr int kDefaultPipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT] = {
+    8,
+    12,
+    18,
+    0,
+};
+static constexpr int kDefaultPipboyRestDurationBaseMessageId = 302;
 
 typedef enum PipboyFrm {
     PIPBOY_FRM_LITTLE_RED_BUTTON_UP,
@@ -185,11 +199,11 @@ typedef struct HolidayDescription {
     short textId;
 } HolidayDescription;
 
-typedef struct STRUCT_664350 {
+typedef struct MapDescription {
     char* name;
-    short field_4;
-    short field_6;
-} STRUCT_664350;
+    int mapOrElevation;
+    Map map;
+} MapDescription;
 
 typedef struct PipboyBomb {
     int x;
@@ -201,33 +215,42 @@ typedef struct PipboyBomb {
 
 typedef void PipboyRenderProc(int a1);
 
-static int pipboyWindowInit(int intent);
+static PipboyOpenIntent pipboyWindowInit(PipboyOpenIntent intent);
 static void pipboyWindowFree();
 static void _pip_init_();
 static void pipboyDrawNumber(int value, int digits, int x, int y);
 static void pipboyDrawDate();
-static void pipboyDrawText(const char* text, int a2, int a3);
+
+static void pipboyDrawText(const char* text, PipboyTextOptions flags, ColorWithFlags color);
+static inline void pipboyDrawText(const char* text, PipboyTextOptions flags, Color color)
+{
+    pipboyDrawText(text, flags, color | DRAW_TEXT_FLAG_NONE);
+}
+
 static int _save_pipboy(File* stream);
 static void pipboyWindowHandleStatus(int userInput);
-static void pipboyWindowRenderQuestLocationList(int a1);
-static void pipboyWindowQuestList(int a1);
+static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation);
+static void pipboyWindowQuestList(int selectedLocationIndex);
 static void pipboyRenderHolodiskText();
-static int pipboyWindowRenderHolodiskList(int a1);
+static void pipboyPlayHolodiskAudio();
+static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry);
 static int _qscmp(const void* a1, const void* a2);
-static void pipboyWindowHandleAutomaps(int a1);
-static int _PrintAMelevList(int a1);
-static int _PrintAMList(int a1);
-static void pipboyHandleVideoArchive(int a1);
-static int pipboyRenderVideoArchive(int a1);
+static void pipboyWindowHandleAutomaps(int userInput);
+static int _PrintAMelevList(int selectedMap);
+static int _PrintAMList(int selectedLocation);
+static void pipboyHandleVideoArchive(int eventCode);
+static int pipboyRenderVideoArchive(int selectedEntry);
 static void pipboyHandleAlarmClock(int eventCode);
-static void pipboyWindowRenderRestOptions(int a1);
+static void pipboyWindowRenderRestOptions(int selectedRestOption);
 static void pipboyDrawHitPoints();
-static void pipboyWindowCreateButtons(int a1, int a2, bool a3);
+static void pipboyWindowCreateButtons(int start, int count, bool createBottomNavigationButton);
 static void pipboyWindowDestroyButtons();
-static bool pipboyRest(int hours, int minutes, int kind);
+static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration = PIPBOY_REST_DURATION_DEFAULT);
 static bool _Check4Health(int minutes);
 static bool _AddHealth();
 static void _ClacTime(int* hours, int* minutes, int wakeUpHour);
+static int pipboyRestOptionWakeHour(int restOption);
+static void pipboyRestOptionsReset();
 static int pipboyRenderScreensaver();
 static int questInit();
 static void questFree();
@@ -235,7 +258,7 @@ static int questDescriptionCompare(const void* a1, const void* a2);
 static int holodiskInit();
 static void holodiskFree();
 
-// 0x496FC0
+// 0x496FC0 pip_rect
 const Rect gPipboyWindowContentRect = {
     PIPBOY_WINDOW_CONTENT_VIEW_X,
     PIPBOY_WINDOW_CONTENT_VIEW_Y,
@@ -243,42 +266,45 @@ const Rect gPipboyWindowContentRect = {
     PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_HEIGHT,
 };
 
-// 0x496FD0
-const int gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    8,
-    9,
-    82,
-    127,
-    128,
-    129,
-    130,
-    131,
-    132,
-    133,
-    226,
+// 0x496FD0 pipgrphs
+static constexpr InterfaceFrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::HitPointsNumbers,
+    InterfaceFrameId::PipBoyWindow,
+    InterfaceFrameId::PipBoyNoteAboutVats,
+    InterfaceFrameId::PipBoyMonthStrings,
+    InterfaceFrameId::PipBoyNoteNumbers,
+    InterfaceFrameId::PipBoySleepAlarmIn,
+    InterfaceFrameId::PipBoySleepAlarmOut,
+    InterfaceFrameId::PipBoyLogo,
+    InterfaceFrameId::PipBoyBomb,
 };
 
-// 0x51C128
+// 0x51C128 quests
 QuestDescription* gQuestDescriptions = nullptr;
 
-// 0x51C12C
+// 0x51C12C quest_count
 int gQuestsCount = 0;
 
-// 0x51C130
+// 0x51C130 holodisks
 HolodiskDescription* gHolodiskDescriptions = nullptr;
 
-// 0x51C134
+// 0x51C134 holodisks_count
 int gHolodisksCount = 0;
 
 // Number of rest options available.
 //
-// 0x51C138
+// 0x51C138 currentAlarmTypeCount
 int gPipboyRestOptionsCount = PIPBOY_REST_DURATION_COUNT;
 
-// 0x51C13C
+static int pipboyRestDurationBaseMessageId = kDefaultPipboyRestDurationBaseMessageId;
+static int pipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT];
+
+// 0x51C13C bk_enable_5
 bool gPipboyWindowIsoWasEnabled = false;
 
-// 0x51C140
+// 0x51C140 SpclDate
 const HolidayDescription gHolidayDescriptions[HOLIDAY_COUNT] = {
     { 1, 1, 100 },
     { 2, 14, 101 },
@@ -290,7 +316,7 @@ const HolidayDescription gHolidayDescriptions[HOLIDAY_COUNT] = {
     { 12, 25, 107 },
 };
 
-// 0x51C170
+// 0x51C170 PipFnctn
 PipboyRenderProc* _PipFnctn[5] = {
     pipboyWindowHandleStatus,
     pipboyWindowHandleAutomaps,
@@ -299,76 +325,76 @@ PipboyRenderProc* _PipFnctn[5] = {
     pipboyHandleAlarmClock,
 };
 
-// 0x664338
+// 0x664338 pipmesg
 MessageListItem gPipboyMessageListItem;
 
 // pipboy.msg
 //
-// 0x664348
+// 0x664348 pipboy_message_file
 MessageList gPipboyMessageList = { 0, nullptr };
 
-// 0x664350
-STRUCT_664350 _sortlist[24];
+// 0x664350 sortlist
+MapDescription _sortlist[24];
 
 // quests.msg
 //
-// 0x664410
+// 0x664410 quest_message_file
 MessageList gQuestsMessageList;
 
-// 0x664418
+// 0x664418 statcount
 int gPipboyQuestLocationsCount;
 
-// 0x66441C
+// 0x66441C scrn_buf
 unsigned char* gPipboyWindowBuffer;
 
-// 0x66444C
+// 0x66444C holocount
 int gPipboyWindowHolodisksCount;
 
-// 0x664450
+// 0x664450 mouse_y
 int gPipboyMouseY;
 
-// 0x664454
+// 0x664454 mouse_x
 int gPipboyMouseX;
 
-// 0x664458
+// 0x664458 wait_time
 unsigned int gPipboyLastEventTimestamp;
 
 // Index of the last page when rendering holodisk content.
 //
-// 0x66445C
+// 0x66445C holopages
 int gPipboyHolodiskLastPage;
 
-// 0x664460
+// 0x664460 HotLines
 int _HotLines[22];
 
-// 0x6644B8
+// 0x6644B8 button
 int _button;
 
-// 0x6644BC
+// 0x6644BC old_mouse_x
 int gPipboyPreviousMouseX;
 
-// 0x6644C0
+// 0x6644C0 old_mouse_y
 int gPipboyPreviousMouseY;
 
-// 0x6644C4
-int gPipboyWindow;
+// 0x6644C4 pip_win
+int gPipboyWindow = -1;
 
-// 0x6644F4
+// 0x6644F4 holodisk
 int _holodisk;
 
-// 0x6644F8
+// 0x6644F8 hot_line_count
 int gPipboyWindowButtonCount;
 
-// 0x6644FC
+// 0x6644FC savefont
 int gPipboyWindowOldFont;
 
-// 0x664500
+// 0x664500 proc_bail_flag
 bool _proc_bail_flag;
 
-// 0x664504
+// 0x664504 amlst_mode
 int main_sub_mode;
 
-// 0x664508
+// 0x664508 crnt_func
 int gPipboyTab;
 
 // automap location count
@@ -380,17 +406,19 @@ int _map_count;
 // adjusted index for pagination
 int realIndex;
 
-// 0x664510
+// 0x664510 hot_line_start
 int gPipboyWindowButtonStart;
 
-// 0x664514
+// 0x664514 cursor_line
 int gPipboyCurrentLine;
 
-// 0x664518
+// 0x664518 rest_time
 int _rest_time;
 
-// 0x66451C
-int _amcty_indx;
+static int restHealTime = 180;
+
+// 0x66451C amcty_indx
+Map _amcty_indx;
 
 // current page for holodisk entry pagination
 int _view_page;
@@ -410,16 +438,16 @@ int _view_page_questlist;
 // current page for main holodisk pagination
 int _view_page_holodisk;
 
-// 0x664524
+// 0x664524 bottom_line
 int gPipboyLinesCount;
 
-// 0x664528
+// 0x664528 hot_back_line
 unsigned char _hot_back_line;
 
-// 0x664529
+// 0x664529 holo_flag
 unsigned char _holo_flag;
 
-// 0x66452A
+// 0x66452A stat_flag
 unsigned char _stat_flag;
 
 void handlePipboyPageNavigation(
@@ -431,6 +459,9 @@ void handlePipboyPageNavigation(
     void (*updatePage)(void));
 
 static int gPipboyPrevTab;
+
+// Nesting depth of `pipboyRest` (it calls itself for the heal options).
+static int pipboyRestDepth = 0;
 
 static int totalPages; // for tracking between pipboyWindowHandleAutomaps and _PrintAMelevList/_PrintAMList and others for pagination
 
@@ -452,7 +483,7 @@ static void renderNavigationButtons(int _view_page, int totalPages, bool isSubPa
         // Single-page layout: Show a centered "Back" button only in sub-page mode
         if (isSubPage) {
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_CENTER, _colorTable[992]);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentCenter, COLOR_GREEN);
         }
         return; // no button if not subpage (default behavior)
     }
@@ -460,50 +491,53 @@ static void renderNavigationButtons(int _view_page, int totalPages, bool isSubPa
     if (isSubPage) {
         // Sub-page navigation (Back always on left, Done/More on right)
         const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-        pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, _colorTable[992]);
+        pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_GREEN);
 
         const char* text2 = (_view_page >= totalPages - 1)
             ? getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 214) // Done
             : getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200); // More
-        pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, _colorTable[992]);
+        pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_GREEN);
 
     } else {
         // Main-page navigation (Back only appears after first page, More only before last)
         if (_view_page > 0) {
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, _colorTable[992]);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_GREEN);
         } else {
             // 'greyed out' buttons - not clickable - just for style
             const char* text1 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 201);
-            pipboyDrawText(text1, PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER, _colorTable[8804]);
+            pipboyDrawText(text1, PipboyTextOptions::AlignmentLeftColumnCenter, COLOR_LIGHT_GREEN_2);
         }
         if (_view_page < totalPages - 1) {
             const char* text2 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200);
-            pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, _colorTable[992]);
+            pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_GREEN);
         } else {
             // 'greyed out' buttons - not clickable - just for style
             const char* text2 = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 200);
-            pipboyDrawText(text2, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER, _colorTable[8804]);
+            pipboyDrawText(text2, PipboyTextOptions::AlignmentRightColumnCenter, COLOR_LIGHT_GREEN_2);
         }
     }
 }
 
 // 0x497004
-int pipboyOpen(int intent)
+int pipboyOpen(PipboyOpenIntent intent)
 {
     if (!wmMapPipboyActive() && !pipboy_available_at_game_start) {
         // You aren't wearing the pipboy!
         const char* text = getmsg(&gMiscMessageList, &gPipboyMessageListItem, 7000);
-        showDialogBox(text, nullptr, 0, 192, 135, _colorTable[32328], nullptr, _colorTable[32328], 1);
+        showDialogBox(text, nullptr, 0, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, 1);
         return 0;
     }
 
-    ScopedGameMode gm(GameMode::kPipboy);
-
     intent = pipboyWindowInit(intent);
-    if (intent == -1) {
+    if (intent == PipboyOpenIntent::Invalid) {
         return -1;
     }
+
+    ScopedGameMode gm(GameMode::kPipboy);
+    windowRefresh(gPipboyWindow);
+
+    touch_set_touchscreen_mode(true);
 
     mouseGetPositionInWindow(gPipboyWindow, &gPipboyPreviousMouseX, &gPipboyPreviousMouseY);
     gPipboyLastEventTimestamp = getTicks();
@@ -513,9 +547,9 @@ int pipboyOpen(int intent)
 
         int keyCode = inputGetInput();
 
-        if (intent == PIPBOY_OPEN_INTENT_REST) {
+        if (intent == PipboyOpenIntent::Rest) {
             keyCode = 504;
-            intent = PIPBOY_OPEN_INTENT_UNSPECIFIED;
+            intent = PipboyOpenIntent::Unspecified;
         }
 
         mouseGetPositionInWindow(gPipboyWindow, &gPipboyMouseX, &gPipboyMouseY);
@@ -539,7 +573,7 @@ int pipboyOpen(int intent)
         }
 
         // SFALL: Close with 'Z'.
-        if (keyCode == 503 || keyCode == KEY_ESCAPE || keyCode == KEY_RETURN || keyCode == KEY_UPPERCASE_P || keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_Z || keyCode == KEY_LOWERCASE_Z || _game_user_wants_to_quit != 0) {
+        if (keyCode == 503 || keyCode == KEY_ESCAPE || keyCode == KEY_RETURN || keyCode == KEY_UPPERCASE_P || keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_Z || keyCode == KEY_LOWERCASE_Z || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -549,6 +583,9 @@ int pipboyOpen(int intent)
             // CE: Save previous tab selected so that the underlying handlers
             // (alarm clock in particular) can fallback if something goes wrong.
             gPipboyPrevTab = gPipboyTab;
+
+            // Switching tabs leaves the holodisk, so stop its narration.
+            pipboySoundStop();
 
             gPipboyTab = keyCode - 500;
             _view_page_automap_main = 0; // ensures button click to automaps renders first page
@@ -573,6 +610,8 @@ int pipboyOpen(int intent)
         sharedFpsLimiter.throttle();
     }
 
+    touch_set_touchscreen_mode(false);
+
     pipboyWindowFree();
 
     return 0;
@@ -583,11 +622,12 @@ int pipboyMessageListInit()
     pipboyMessageListFree();
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%s%s", asc_5186C8, "pipboy.msg");
+    snprintf(path, sizeof(path), "%s%s", gGameMsgPath, "pipboy.msg");
 
     if (!(messageListLoad(&gPipboyMessageList, path))) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, &gPipboyMessageList);
 
     return 0;
 }
@@ -595,13 +635,14 @@ int pipboyMessageListInit()
 void pipboyMessageListFree()
 {
     if (gPipboyMessageList.entries != nullptr) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, nullptr);
         messageListFree(&gPipboyMessageList);
     }
     messageListInit(&gPipboyMessageList);
 }
 
 // 0x497228
-static int pipboyWindowInit(int intent)
+static PipboyOpenIntent pipboyWindowInit(PipboyOpenIntent intent)
 {
     gPipboyWindowIsoWasEnabled = isoDisable();
 
@@ -628,17 +669,16 @@ static int pipboyWindowInit(int intent)
     _hot_back_line = 0;
 
     if (holodiskInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     if (pipboyMessageListInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     int index;
     for (index = 0; index < PIPBOY_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gPipboyFrmIds[index], 0, 0, 0);
-        if (!_pipboyFrmImages[index].lock(fid)) {
+        if (!_pipboyFrmImages[index].lock(kPipboyFrmIds[index])) {
             break;
         }
     }
@@ -650,18 +690,18 @@ static int pipboyWindowInit(int intent)
             _pipboyFrmImages[index].unlock();
         }
 
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     int pipboyWindowX = (screenGetWidth() - PIPBOY_WINDOW_WIDTH) / 2;
     int pipboyWindowY = (screenGetHeight() - PIPBOY_WINDOW_HEIGHT) / 2;
-    gPipboyWindow = windowCreate(pipboyWindowX, pipboyWindowY, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_HEIGHT, _colorTable[0], WINDOW_MODAL);
+    gPipboyWindow = windowCreate(pipboyWindowX, pipboyWindowY, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_HEIGHT, COLOR_BLACK, WINDOW_MODAL);
     if (gPipboyWindow == -1) {
         debugPrint("\n** Error opening pipboy window! **\n");
         for (int index = 0; index < PIPBOY_FRM_COUNT; index++) {
             _pipboyFrmImages[index].unlock();
         }
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     gPipboyWindowBuffer = windowGetBuffer(gPipboyWindow);
@@ -715,7 +755,7 @@ static int pipboyWindowInit(int intent)
         y += yOffsets[index];
     }
 
-    if (intent == PIPBOY_OPEN_INTENT_REST) {
+    if (intent == PipboyOpenIntent::Rest) {
         if (!critterCanDudeRest()) {
             blitBufferToBufferTrans(
                 _pipboyFrmImages[PIPBOY_FRM_LOGO].getData(),
@@ -730,26 +770,23 @@ static int pipboyWindowInit(int intent)
             int year;
             gameTimeGetDate(&month, &day, &year);
 
-            int holiday = 0;
-            for (; holiday < HOLIDAY_COUNT; holiday += 1) {
+            Holiday holiday = HOLIDAY_FIRST;
+            for (; holiday < HOLIDAY_COUNT; holiday++) {
                 const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
                 if (holidayDescription->month == month && holidayDescription->day == day) {
+                    const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
+                    const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
+                    char holidayNameCopy[256];
+                    strcpy(holidayNameCopy, holidayName);
+
+                    int len = fontGetStringWidth(holidayNameCopy);
+                    fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - len / 2,
+                        holidayNameCopy,
+                        350,
+                        PIPBOY_WINDOW_WIDTH,
+                        COLOR_GREEN);
                     break;
                 }
-            }
-
-            if (holiday != HOLIDAY_COUNT) {
-                const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
-                const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
-                char holidayNameCopy[256];
-                strcpy(holidayNameCopy, holidayName);
-
-                int len = fontGetStringWidth(holidayNameCopy);
-                fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - len / 2,
-                    holidayNameCopy,
-                    350,
-                    PIPBOY_WINDOW_WIDTH,
-                    _colorTable[992]);
             }
 
             windowRefresh(gPipboyWindow);
@@ -757,9 +794,9 @@ static int pipboyWindowInit(int intent)
             soundPlayFile("iisxxxx1");
 
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 215);
-            showDialogBox(text, nullptr, 0, 192, 135, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+            showDialogBox(text, nullptr, 0, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-            intent = PIPBOY_OPEN_INTENT_UNSPECIFIED;
+            intent = PipboyOpenIntent::Unspecified;
         }
     } else {
         blitBufferToBufferTrans(
@@ -775,33 +812,30 @@ static int pipboyWindowInit(int intent)
         int year;
         gameTimeGetDate(&month, &day, &year);
 
-        int holiday;
-        for (holiday = 0; holiday < HOLIDAY_COUNT; holiday += 1) {
+        Holiday holiday;
+        for (holiday = HOLIDAY_FIRST; holiday < HOLIDAY_COUNT; holiday++) {
             const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
             if (holidayDescription->month == month && holidayDescription->day == day) {
+                const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
+                const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
+                char holidayNameCopy[256];
+                strcpy(holidayNameCopy, holidayName);
+
+                int length = fontGetStringWidth(holidayNameCopy);
+                fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - length / 2,
+                    holidayNameCopy,
+                    350,
+                    PIPBOY_WINDOW_WIDTH,
+                    COLOR_GREEN);
                 break;
             }
-        }
-
-        if (holiday != HOLIDAY_COUNT) {
-            const HolidayDescription* holidayDescription = &(gHolidayDescriptions[holiday]);
-            const char* holidayName = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holidayDescription->textId);
-            char holidayNameCopy[256];
-            strcpy(holidayNameCopy, holidayName);
-
-            int length = fontGetStringWidth(holidayNameCopy);
-            fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (_pipboyFrmImages[PIPBOY_FRM_LOGO].getHeight() + 174) + 6 + _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth() / 2 + 323 - length / 2,
-                holidayNameCopy,
-                350,
-                PIPBOY_WINDOW_WIDTH,
-                _colorTable[992]);
         }
 
         windowRefresh(gPipboyWindow);
     }
 
     if (questInit() == -1) {
-        return -1;
+        return PipboyOpenIntent::Invalid;
     }
 
     soundPlayFile("pipon");
@@ -813,6 +847,8 @@ static int pipboyWindowInit(int intent)
 // 0x497828
 static void pipboyWindowFree()
 {
+    pipboySoundStop();
+
     if (settings.debug.show_script_messages) {
         debugPrint("\nScript <Map Update>");
     }
@@ -862,9 +898,8 @@ static void _pip_init_()
     // bypassed. CE implements only the latter approach, as it does not have any
     // side effects.
     int value = 0;
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PIPBOY_AVAILABLE_AT_GAMESTART, &value)) {
-        pipboy_available_at_game_start = value == 1 || value == 2;
-    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "pipboy", &value, 0);
+    pipboy_available_at_game_start = value == 1 || value == 2;
 }
 
 // NOTE: Uncollapsed 0x497918.
@@ -872,13 +907,24 @@ static void _pip_init_()
 // pip_init
 void pipboyInit()
 {
+    restHealTime = 180;
+    pipboyRestOptionsReset();
     _pip_init_();
 }
 
 // NOTE: Uncollapsed 0x497918.
 void pipboyReset()
 {
+    restHealTime = 180;
+    pipboyRestOptionsReset();
     _pip_init_();
+}
+
+void pipboySetRestHealTime(int minutes)
+{
+    if (minutes > 0) {
+        restHealTime = minutes;
+    }
 }
 
 // 0x49791C
@@ -909,34 +955,34 @@ static void pipboyDrawDate()
 }
 
 // 0x497A40
-static void pipboyDrawText(const char* text, int flags, int color)
+static void pipboyDrawText(const char* text, PipboyTextOptions flags, ColorWithFlags color)
 {
-    if ((flags & PIPBOY_TEXT_STYLE_UNDERLINE) != 0) {
-        color |= FONT_UNDERLINE;
+    if ((flags & PipboyTextOptions::Underline) != PipboyTextOptions::None) {
+        color |= DRAW_TEXT_FLAG_UNDERLINED;
     }
 
     int left = 8;
-    if ((flags & PIPBOY_TEXT_NO_INDENT) != 0) {
+    if ((flags & PipboyTextOptions::NoIndent) != PipboyTextOptions::None) {
         left -= 7;
     }
 
     int length = fontGetStringWidth(text);
 
-    if ((flags & PIPBOY_TEXT_ALIGNMENT_CENTER) != 0) {
+    if ((flags & PipboyTextOptions::AlignmentCenter) != PipboyTextOptions::None) {
         left = (350 - length) / 2;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentRightColumn) != PipboyTextOptions::None) {
         left += 175;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentLeftColumnCenter) != PipboyTextOptions::None) {
         left += 86 - length + 16;
-    } else if ((flags & PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER) != 0) {
+    } else if ((flags & PipboyTextOptions::AlignmentRightColumnCenter) != PipboyTextOptions::None) {
         left += 260 - length;
     }
 
     fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * (gPipboyCurrentLine * fontGetLineHeight() + PIPBOY_WINDOW_CONTENT_VIEW_Y) + PIPBOY_WINDOW_CONTENT_VIEW_X + left, text, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_WIDTH, color);
 
-    if ((flags & PIPBOY_TEXT_STYLE_STRIKE_THROUGH) != 0) {
+    if ((flags & PipboyTextOptions::StrikeThrough) != PipboyTextOptions::None) {
         int top = gPipboyCurrentLine * fontGetLineHeight() + 49;
-        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, color);
+        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, static_cast<Color>(color & COLOR_LAST));
     }
 
     if (gPipboyCurrentLine < gPipboyLinesCount) {
@@ -953,7 +999,7 @@ static void renderPagination(int currentPage, int totalPages)
         snprintf(formattedText, sizeof(formattedText), "%d %s %d", currentPage + 1, of, totalPages);
 
         int len = fontGetStringWidth(of);
-        fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * 47 + 616 + 604 - len, formattedText, 350, PIPBOY_WINDOW_WIDTH, _colorTable[992]);
+        fontDrawText(gPipboyWindowBuffer + PIPBOY_WINDOW_WIDTH * 47 + 616 + 604 - len, formattedText, 350, PIPBOY_WINDOW_WIDTH, COLOR_GREEN);
     }
 }
 
@@ -1008,6 +1054,17 @@ int pipboyLoad(File* stream)
     return _save_pipboy(stream);
 }
 
+// True while the alarm clock is passing time.
+bool pipboyIsResting()
+{
+    return pipboyRestDepth > 0;
+}
+
+int pipboyGetWindow()
+{
+    return windowGetWindow(gPipboyWindow) != nullptr ? gPipboyWindow : -1;
+}
+
 // 0x497BD8
 static void pipboyWindowHandleStatus(int userInput)
 {
@@ -1025,6 +1082,8 @@ static void pipboyWindowHandleStatus(int userInput)
 
         _holo_flag = 0;
         _holodisk = -1;
+        // Back to the holodisk list, so stop the narration.
+        pipboySoundStop();
         gPipboyWindowHolodisksCount = 0;
         _view_page = 0;
         _view_page_questlist = 0;
@@ -1042,7 +1101,7 @@ static void pipboyWindowHandleStatus(int userInput)
 
         if (gPipboyQuestLocationsCount == 0) {
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 203);
-            pipboyDrawText(text, 0, _colorTable[992]);
+            pipboyDrawText(text, PipboyTextOptions::None, COLOR_GREEN);
         }
 
         gPipboyWindowHolodisksCount = pipboyWindowRenderHolodiskList(-1);
@@ -1132,6 +1191,7 @@ static void pipboyWindowHandleStatus(int userInput)
                 inputPauseForTocks(200);
                 pipboyWindowDestroyButtons();
                 pipboyRenderHolodiskText();
+                pipboyPlayHolodiskAudio();
                 _holo_flag = 1;
             }
         }
@@ -1261,7 +1321,7 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
     const char* text2 = getmsg(&gMapMessageList, &gPipboyMessageListItem, questDescription->location);
     char formattedText[1024];
     snprintf(formattedText, sizeof(formattedText), "%s %s", text2, text1);
-    pipboyDrawText(formattedText, PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+    pipboyDrawText(formattedText, PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 3) {
         gPipboyCurrentLine = 3;
@@ -1306,14 +1366,14 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
                     char c = *ending;
                     *ending = '\0';
 
-                    int flags;
-                    int color;
+                    PipboyTextOptions flags;
+                    Color color;
                     if (gGameGlobalVars[questDescription->gvar] < questDescription->completedThreshold) {
-                        flags = 0;
-                        color = _colorTable[992];
+                        flags = PipboyTextOptions::None;
+                        color = COLOR_GREEN;
                     } else {
-                        flags = PIPBOY_TEXT_STYLE_STRIKE_THROUGH;
-                        color = _colorTable[8804];
+                        flags = PipboyTextOptions::StrikeThrough;
+                        color = COLOR_LIGHT_GREEN_2;
                     }
 
                     pipboyDrawText(beginning, flags, color);
@@ -1360,12 +1420,12 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
         gPipboyCurrentLine = 0;
     }
 
-    int flags = gPipboyWindowHolodisksCount != 0 ? PIPBOY_TEXT_ALIGNMENT_LEFT_COLUMN_CENTER : PIPBOY_TEXT_ALIGNMENT_CENTER;
-    flags |= PIPBOY_TEXT_STYLE_UNDERLINE;
+    PipboyTextOptions flags = gPipboyWindowHolodisksCount != 0 ? PipboyTextOptions::AlignmentLeftColumnCenter : PipboyTextOptions::AlignmentCenter;
+    flags = flags | PipboyTextOptions::Underline;
 
     // STATUS
     const char* statusText = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 202);
-    pipboyDrawText(statusText, flags, _colorTable[992]);
+    pipboyDrawText(statusText, flags, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
@@ -1396,6 +1456,13 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
     // Pagination logic
     int maxEntriesPerPage = PIPBOY_STATUS_QUEST_LINES;
     totalPages = (gPipboyQuestLocationsCount + maxEntriesPerPage - 1) / maxEntriesPerPage;
+    if (gPipboyQuestLocationsCount == 0) {
+        gPipboyWindowQuestsCurrentPageCount = 0;
+        renderPagination(_view_page_quest, totalPages);
+        renderNavigationButtons(_view_page_quest, totalPages, false);
+        return;
+    }
+
     int startIndex = _view_page_quest * maxEntriesPerPage;
     int endIndex = startIndex + maxEntriesPerPage;
 
@@ -1413,8 +1480,8 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
     for (int index = startIndex; index < endIndex; index++) {
         // Render the location at index
         const char* questLocation = gPipboyQuestLocations[index];
-        int color = (gPipboyCurrentLine - 1) / 2 == (selectedQuestLocation - 1) ? _colorTable[32747] : _colorTable[992];
-        pipboyDrawText(questLocation, 0, color);
+        Color color = (gPipboyCurrentLine - 1) / 2 == (selectedQuestLocation - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        pipboyDrawText(questLocation, PipboyTextOptions::None, color);
         gPipboyCurrentLine += 1;
     }
 
@@ -1468,7 +1535,7 @@ static void pipboyRenderHolodiskText()
     if (_view_page != 0) {
         int page = 0;
         int numberOfLines = 0;
-        for (; holodiskTextId < holodiskTextId + 500; holodiskTextId += 1) {
+        for (; holodiskTextId < holodisk->description + 500; holodiskTextId += 1) {
             const char* line = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodiskTextId);
             if (strcmp(line, "**END-DISK**") == 0) {
                 debugPrint("\nPIPBOY: Premature page end in holodisk page search!\n");
@@ -1493,7 +1560,7 @@ static void pipboyRenderHolodiskText()
         }
     } else {
         const char* name = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodisk->name);
-        pipboyDrawText(name, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+        pipboyDrawText(name, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
     }
 
     if (gPipboyHolodiskLastPage != 0) {
@@ -1513,7 +1580,7 @@ static void pipboyRenderHolodiskText()
         if (strcmp(text, "**END-PAR**") == 0) {
             gPipboyCurrentLine += 1;
         } else {
-            pipboyDrawText(text, PIPBOY_TEXT_NO_INDENT, _colorTable[992]);
+            pipboyDrawText(text, PipboyTextOptions::NoIndent, COLOR_GREEN);
         }
 
         holodiskTextId += 1;
@@ -1523,6 +1590,24 @@ static void pipboyRenderHolodiskText()
     renderNavigationButtons(_view_page, gPipboyHolodiskLastPage + 1, true);
 
     windowRefresh(gPipboyWindow);
+}
+
+// Plays the voiced narration attached to the holodisk's title entry in
+// pipboy.msg, if it has one. Turning pages keeps it playing, opening another
+// holodisk or closing the Pip-Boy stops it.
+static void pipboyPlayHolodiskAudio()
+{
+    pipboySoundStop();
+
+    MessageListItem messageListItem;
+    messageListItem.num = gHolodiskDescriptions[_holodisk].name;
+    if (!messageListGetItem(&gPipboyMessageList, &messageListItem)) {
+        return;
+    }
+
+    if (messageListItem.audio != nullptr && messageListItem.audio[0] != '\0') {
+        pipboySoundPlay(messageListItem.audio);
+    }
 }
 
 // 0x498C40
@@ -1557,9 +1642,9 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
         if (gGameGlobalVars[holodisk->gvar] == 0) continue;
 
         if (currentIndex >= startIdx && currentIndex < startIdx + maxEntriesPerPage) {
-            int color = ((gPipboyCurrentLine - 1) / 2 == selectedHolodiskEntry - 1) ? _colorTable[32747] : _colorTable[992];
+            Color color = ((gPipboyCurrentLine - 1) / 2 == selectedHolodiskEntry - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodisk->name);
-            pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN, color);
+            pipboyDrawText(text, PipboyTextOptions::AlignmentRightColumn, color);
             gPipboyCurrentLine++;
             displayedHolodisks++;
         }
@@ -1571,7 +1656,7 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
             gPipboyCurrentLine = 0;
         }
         const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 211); // DATA
-        pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+        pipboyDrawText(text, PipboyTextOptions::AlignmentRightColumnCenter | PipboyTextOptions::Underline, COLOR_GREEN);
     }
 
     return displayedHolodisks;
@@ -1581,8 +1666,8 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
 static int _qscmp(const void* a1,
     const void* a2)
 {
-    STRUCT_664350* v1 = (STRUCT_664350*)a1;
-    STRUCT_664350* v2 = (STRUCT_664350*)a2;
+    MapDescription* v1 = (MapDescription*)a1;
+    MapDescription* v2 = (MapDescription*)a2;
 
     return strcmp(v1->name, v2->name);
 }
@@ -1600,7 +1685,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
             PIPBOY_WINDOW_WIDTH);
 
         const char* title = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-        pipboyDrawText(title, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+        pipboyDrawText(title, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
         _location_count = _PrintAMList(-1); // get main page list count
 
@@ -1644,10 +1729,10 @@ static void pipboyWindowHandleAutomaps(int userInput)
             //_PrintAMList(userInput);
             // windowRefreshRect(gPipboyWindow, & gPipboyWindowContentRect);
             int realIndex = (_view_page_automap_main * PIPBOY_AUTOMAP_LINES) + (userInput - 1); // Adjust for pagination
-            _amcty_indx = _sortlist[realIndex].field_4;
+            _amcty_indx = static_cast<Map>(_sortlist[realIndex].mapOrElevation);
             _map_count = _PrintAMelevList(1);
             pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
             main_sub_mode = 1;
         }
@@ -1667,7 +1752,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, static_cast<MapElevation>(_sortlist[0].mapOrElevation));
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1675,7 +1760,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].field_6, _sortlist[userInput - 1].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, static_cast<MapElevation>(_sortlist[userInput - 1].mapOrElevation));
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
@@ -1694,21 +1779,24 @@ static int _PrintAMelevList(int selectedMap)
     int totalEntries = 0;
     int elevationsListSize = 0;
     const int maxEntriesPerPage = PIPBOY_AUTOMAP_SUB_LINES;
+    int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
+    if (_amcty_indx < 0 || _amcty_indx >= mapCount) {
+        return 0;
+    }
 
     // First pass: Count total valid entries
-    for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             totalEntries++;
         }
     }
 
-    int mapCount = wmMapMaxCount();
-    for (int map = 0; map < mapCount; map++) {
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 totalEntries++;
             }
@@ -1727,29 +1815,29 @@ static int _PrintAMelevList(int selectedMap)
     int currentIndex = 0;
 
     // Second pass: Build the list for the selected page
-    for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+    for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             if (currentIndex >= startIndex && currentIndex < endIndex) {
                 _sortlist[elevationsListSize].name = mapGetName(_amcty_indx, elevation);
-                _sortlist[elevationsListSize].field_4 = elevation;
-                _sortlist[elevationsListSize].field_6 = _amcty_indx;
+                _sortlist[elevationsListSize].mapOrElevation = elevation;
+                _sortlist[elevationsListSize].map = _amcty_indx;
                 elevationsListSize++;
             }
             currentIndex++;
         }
     }
 
-    for (int map = 0; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
+    for (Map map = MAP_FIRST; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
 
-        for (int elevation = 0; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
+        for (MapElevation elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT && elevationsListSize < maxEntriesPerPage; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (currentIndex >= startIndex && currentIndex < endIndex) {
                     _sortlist[elevationsListSize].name = mapGetName(map, elevation);
-                    _sortlist[elevationsListSize].field_4 = elevation;
-                    _sortlist[elevationsListSize].field_6 = map;
+                    _sortlist[elevationsListSize].mapOrElevation = elevation;
+                    _sortlist[elevationsListSize].map = map;
                     elevationsListSize++;
                 }
                 currentIndex++;
@@ -1770,14 +1858,14 @@ static int _PrintAMelevList(int selectedMap)
     }
 
     const char* msg = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-    pipboyDrawText(msg, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+    pipboyDrawText(msg, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
     }
 
     const char* name = mapDescriptionById(_amcty_indx);
-    pipboyDrawText(name, PIPBOY_TEXT_ALIGNMENT_CENTER, _colorTable[992]);
+    pipboyDrawText(name, PipboyTextOptions::AlignmentCenter, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 4) {
         gPipboyCurrentLine = 4;
@@ -1787,13 +1875,13 @@ static int _PrintAMelevList(int selectedMap)
 
     for (int index = 0; index < elevationsListSize; index++) { // draw locations list
 
-        int color;
+        Color color;
         if (gPipboyCurrentLine - 4 == selectedPipboyLine) {
-            color = _colorTable[32747];
+            color = COLOR_LIGHT_YELLOW;
         } else {
-            color = _colorTable[992];
+            color = COLOR_GREEN;
         }
-        pipboyDrawText(_sortlist[index].name, 0, color);
+        pipboyDrawText(_sortlist[index].name, PipboyTextOptions::None, color);
         gPipboyCurrentLine++;
     }
 
@@ -1816,10 +1904,10 @@ static int _PrintAMList(int selectedLocation)
 
     int count = 0;
 
-    int mapCount = wmMapMaxCount();
-    for (int map = 0; map < mapCount; map++) {
-        int elevation;
-        for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
+    int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
+        MapElevation elevation;
+        for (elevation = ELEVATION_FIRST; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (_automapDisplayMap(map) == 0) {
                     break;
@@ -1831,7 +1919,7 @@ static int _PrintAMList(int selectedLocation)
             int locationExistsIndex = 0;
             if (count != 0) {
                 for (int index = 0; index < count; index++) {
-                    if (mapAreSameArea(map, _sortlist[index].field_4)) {
+                    if (mapAreSameArea(map, static_cast<Map>(_sortlist[index].mapOrElevation))) {
                         break;
                     }
                     locationExistsIndex++;
@@ -1840,7 +1928,7 @@ static int _PrintAMList(int selectedLocation)
 
             if (locationExistsIndex == count) {
                 _sortlist[count].name = mapGetCityName(map);
-                _sortlist[count].field_4 = map;
+                _sortlist[count].mapOrElevation = map;
                 count++;
             }
         }
@@ -1885,7 +1973,7 @@ static int _PrintAMList(int selectedLocation)
 
     // Display header message
     const char* msg = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 205);
-    pipboyDrawText(msg, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+    pipboyDrawText(msg, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
@@ -1900,8 +1988,8 @@ static int _PrintAMList(int selectedLocation)
 
     // Print paginated locations
     for (int index = startIdx; index < endIdx; index++) {
-        int color = (gPipboyCurrentLine - 1 == selectedLocation) ? _colorTable[32747] : _colorTable[992];
-        pipboyDrawText(_sortlist[index].name, 0, color);
+        Color color = (gPipboyCurrentLine - 1 == selectedLocation) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        pipboyDrawText(_sortlist[index].name, PipboyTextOptions::None, color);
         gPipboyCurrentLine++;
     }
 
@@ -1912,29 +2000,30 @@ static int _PrintAMList(int selectedLocation)
 }
 
 // 0x49932C
-static void pipboyHandleVideoArchive(int a1)
+static void pipboyHandleVideoArchive(int eventCode)
 {
-    if (a1 == 1024) {
+    if (eventCode == 1024) {
         pipboyWindowDestroyButtons();
         _view_page = pipboyRenderVideoArchive(-1);
         pipboyWindowCreateButtons(2, _view_page, false);
-    } else if (a1 >= 0 && a1 <= _view_page) {
+    } else if (eventCode >= 0 && eventCode <= _view_page) {
         soundPlayFile("ib1p1xx1");
 
-        pipboyRenderVideoArchive(a1);
+        pipboyRenderVideoArchive(eventCode);
 
-        int movie;
-        for (movie = 2; movie < 16; movie++) {
+        int remainingMovieSelection = eventCode;
+        GameMovie movie;
+        for (movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
             if (gameMovieIsSeen(movie)) {
-                a1--;
-                if (a1 <= 0) {
+                remainingMovieSelection--;
+                if (remainingMovieSelection <= 0) {
                     break;
                 }
             }
         }
 
-        if (movie <= MOVIE_COUNT) {
-            gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
+        if (gameMovieIsValid(movie)) {
+            gameMoviePlay(movie, GameMovieFlags::FadeIn | GameMovieFlags::FadeOut | GameMovieFlags::PauseMusic);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");
         }
@@ -1947,15 +2036,14 @@ static void pipboyHandleVideoArchive(int a1)
 }
 
 // 0x4993DC
-static int pipboyRenderVideoArchive(int a1)
+static int pipboyRenderVideoArchive(int selectedEntry)
 {
     const char* text;
-    int i;
-    int v12;
+    int selectedEntryIndex;
     int msg_num;
-    int v5;
-    int v8;
-    int v9;
+    int visibleEntryCount;
+    int entryIndex;
+    Color color;
 
     blitBufferToBuffer(_pipboyFrmImages[PIPBOY_FRM_BACKGROUND].getData() + PIPBOY_WINDOW_WIDTH * PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_X,
         PIPBOY_WINDOW_CONTENT_VIEW_WIDTH,
@@ -1970,31 +2058,31 @@ static int pipboyRenderVideoArchive(int a1)
 
     // VIDEO ARCHIVES
     text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 206);
-    pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+    pipboyDrawText(text, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 2) {
         gPipboyCurrentLine = 2;
     }
 
-    v5 = 0;
-    v12 = a1 - 1;
+    visibleEntryCount = 0;
+    selectedEntryIndex = selectedEntry - 1;
 
     // 502 - Elder Speech
     // ...
     // 516 - Credits
     msg_num = 502;
 
-    for (i = 2; i < 16; i++) {
-        if (gameMovieIsSeen(i)) {
-            v8 = v5++;
-            if (v8 == v12) {
-                v9 = _colorTable[32747];
+    for (GameMovie movie = MOVIE_ELDER; movie < MOVIE_CREDITS; movie++) {
+        if (gameMovieIsSeen(movie)) {
+            entryIndex = visibleEntryCount++;
+            if (entryIndex == selectedEntryIndex) {
+                color = COLOR_LIGHT_YELLOW;
             } else {
-                v9 = _colorTable[992];
+                color = COLOR_GREEN;
             }
 
             text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, msg_num);
-            pipboyDrawText(text, 0, v9);
+            pipboyDrawText(text, PipboyTextOptions::None, color);
 
             gPipboyCurrentLine++;
         }
@@ -2004,7 +2092,7 @@ static int pipboyRenderVideoArchive(int a1)
 
     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
 
-    return v5;
+    return visibleEntryCount;
 }
 
 // 0x499518
@@ -2020,7 +2108,7 @@ static void pipboyHandleAlarmClock(int eventCode)
 
             // You cannot rest at this location!
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 215);
-            showDialogBox(text, nullptr, 0, 192, 135, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+            showDialogBox(text, nullptr, 0, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
             // CE: Restore previous tab to make sure clicks are processed by
             // appropriate handler (not the alarm clock).
@@ -2031,16 +2119,16 @@ static void pipboyHandleAlarmClock(int eventCode)
 
         pipboyWindowRenderRestOptions(eventCode - 3);
 
-        int duration = eventCode - 4;
+        PipboyRestDuration duration = static_cast<PipboyRestDuration>(eventCode - 4);
         int minutes = 0;
         int hours = 0;
 
         switch (duration) {
         case PIPBOY_REST_DURATION_TEN_MINUTES:
-            pipboyRest(0, 10, 0);
+            pipboyRest(0, 10);
             break;
         case PIPBOY_REST_DURATION_THIRTY_MINUTES:
-            pipboyRest(0, 30, 0);
+            pipboyRest(0, 30);
             break;
         case PIPBOY_REST_DURATION_ONE_HOUR:
         case PIPBOY_REST_DURATION_TWO_HOURS:
@@ -2048,27 +2136,20 @@ static void pipboyHandleAlarmClock(int eventCode)
         case PIPBOY_REST_DURATION_FOUR_HOURS:
         case PIPBOY_REST_DURATION_FIVE_HOURS:
         case PIPBOY_REST_DURATION_SIX_HOURS:
-            pipboyRest(duration - 1, 0, 0);
+            pipboyRest(duration - 1, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_MORNING:
-            _ClacTime(&hours, &minutes, 8);
-            pipboyRest(hours, minutes, 0);
-            break;
         case PIPBOY_REST_DURATION_UNTIL_NOON:
-            _ClacTime(&hours, &minutes, 12);
-            pipboyRest(hours, minutes, 0);
-            break;
         case PIPBOY_REST_DURATION_UNTIL_EVENING:
-            _ClacTime(&hours, &minutes, 18);
-            pipboyRest(hours, minutes, 0);
-            break;
-        case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT:
-            _ClacTime(&hours, &minutes, 0);
-            if (pipboyRest(hours, minutes, 0) == 0) {
+        case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT: {
+            int wakeUpHour = pipboyRestOptionWakeHour(duration);
+            _ClacTime(&hours, &minutes, wakeUpHour);
+            if (pipboyRest(hours, minutes) == 0 && wakeUpHour == 0) {
                 pipboyDrawNumber(0, 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
+                windowRefresh(gPipboyWindow);
             }
-            windowRefresh(gPipboyWindow);
             break;
+        }
         case PIPBOY_REST_DURATION_UNTIL_HEALED:
         case PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED:
             pipboyRest(0, 0, duration);
@@ -2082,7 +2163,7 @@ static void pipboyHandleAlarmClock(int eventCode)
 }
 
 // 0x4996B4
-static void pipboyWindowRenderRestOptions(int a1)
+static void pipboyWindowRenderRestOptions(int selectedRestOption)
 {
     const char* text;
 
@@ -2099,7 +2180,7 @@ static void pipboyWindowRenderRestOptions(int a1)
 
     // ALARM CLOCK
     text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 300);
-    pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_CENTER | PIPBOY_TEXT_STYLE_UNDERLINE, _colorTable[992]);
+    pipboyDrawText(text, PipboyTextOptions::AlignmentCenter | PipboyTextOptions::Underline, COLOR_GREEN);
 
     if (gPipboyLinesCount >= 5) {
         gPipboyCurrentLine = 5;
@@ -2113,10 +2194,10 @@ static void pipboyWindowRenderRestOptions(int a1)
         // 302 - Rest for ten minutes
         // ...
         // 315 - Rest until party is healed
-        text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 302 + option - 1);
-        int color = option == a1 ? _colorTable[32747] : _colorTable[992];
+        text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, pipboyRestDurationBaseMessageId + option - 1);
+        Color color = option == selectedRestOption ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
 
-        pipboyDrawText(text, 0, color);
+        pipboyDrawText(text, PipboyTextOptions::None, color);
 
         gPipboyCurrentLine++;
     }
@@ -2145,11 +2226,11 @@ static void pipboyDrawHitPoints()
     text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 301); // Hit Points
     snprintf(msg, sizeof(msg), "%s %d/%d", text, cur_hp, max_hp);
     len = fontGetStringWidth(msg);
-    fontDrawText(gPipboyWindowBuffer + 66 * PIPBOY_WINDOW_WIDTH + 254 + (350 - len) / 2, msg, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_WIDTH, _colorTable[992]);
+    fontDrawText(gPipboyWindowBuffer + 66 * PIPBOY_WINDOW_WIDTH + 254 + (350 - len) / 2, msg, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_WIDTH, COLOR_GREEN);
 }
 
 // 0x4998C0
-static void pipboyWindowCreateButtons(int start, int count, bool a3)
+static void pipboyWindowCreateButtons(int start, int count, bool createBottomNavigationButton)
 {
     fontSetCurrent(101);
 
@@ -2172,7 +2253,7 @@ static void pipboyWindowCreateButtons(int start, int count, bool a3)
         }
     }
 
-    if (a3) {
+    if (createBottomNavigationButton) {
         _button = buttonCreate(gPipboyWindow, 254, height * gPipboyLinesCount + PIPBOY_WINDOW_CONTENT_VIEW_Y, 350, height, -1, -1, -1, 528, nullptr, nullptr, nullptr, BUTTON_FLAG_TRANSPARENT);
     }
 }
@@ -2206,24 +2287,46 @@ static void pipboyWindowDestroyButtons()
     _hot_back_line = 0;
 }
 
-// 0x499A24
-static bool pipboyRest(int hours, int minutes, int duration)
+static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventType, int hours, int minutes, int healingMinutes, unsigned int& lastRestTimerGameTime)
 {
+    lastRestTimerGameTime = newGameTime;
+    bool rc = scriptHooks_RestTimer(newGameTime, eventType, hours, minutes);
+
+    gameTimeSetTime(newGameTime);
+
+    if (!wmRestModeNoHealing() && healingMinutes > 0 && _Check4Health(healingMinutes)) {
+        _AddHealth();
+    }
+
+    return rc;
+}
+
+// 0x499A24
+static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
+{
+    struct RestDepthGuard {
+        RestDepthGuard() { pipboyRestDepth++; }
+        ~RestDepthGuard() { pipboyRestDepth--; }
+    } restDepthGuard;
+
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
 
     bool rc = false;
+    unsigned int lastRestTimerGameTime = gameTimeGetTime();
 
-    if (duration == 0) {
+    if (duration == PIPBOY_REST_DURATION_DEFAULT) {
         int hoursInMinutes = hours * 60;
-        double v1 = (double)hoursInMinutes + (double)minutes;
-        double v2 = v1 * (1.0 / 1440.0) * 3.5 + 0.25;
-        double v3 = (double)minutes / v1 * v2;
+        double totalRestMinutes = (double)hoursInMinutes + (double)minutes;
+        double totalRestAnimationDuration = totalRestMinutes * (1.0 / 1440.0) * 3.5 + 0.25;
+        double minuteRestAnimationDuration = (double)minutes / totalRestMinutes * totalRestAnimationDuration;
+
+        // note: signed to maintain signed arithmetic in delay calculation
+        const int uiDelayMs = std::max(static_cast<int>(50.0 / settings.ui.anim_speed), 5);
         if (minutes != 0) {
             unsigned int gameTime = gameTimeGetTime();
 
-            double v4 = v3 * 20.0;
-            int v5 = 0;
-            for (int v5 = 0; v5 < (int)v4; v5++) {
+            double minuteRestIterations = minuteRestAnimationDuration * 20.0;
+            for (int iteration = 0; iteration < (int)minuteRestIterations; iteration++) {
                 sharedFpsLimiter.mark();
 
                 if (rc) {
@@ -2232,9 +2335,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
                 unsigned int start = getTicks();
 
-                unsigned int v6 = (unsigned int)((double)v5 / v4 * ((double)minutes * 600.0) + (double)gameTime);
+                unsigned int projectedGameTime = (unsigned int)((double)iteration / minuteRestIterations * ((double)minutes * 600.0) + (double)gameTime);
                 unsigned int nextEventTime = queueGetNextEventTime();
-                if (v6 >= nextEventTime) {
+                if (projectedGameTime >= nextEventTime) {
                     gameTimeSetTime(nextEventTime + 1);
                     if (queueProcessEvents()) {
                         rc = true;
@@ -2243,14 +2346,20 @@ static bool pipboyRest(int hours, int minutes, int duration)
                         break;
                     }
 
-                    if (_game_user_wants_to_quit != 0) {
+                    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
                 }
 
                 if (!rc) {
-                    gameTimeSetTime(v6);
-                    if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+                    rc = pipboyRestSetGameTime(projectedGameTime, REST_EVENT_TYPE_PROGRESS, hours, minutes, 0, lastRestTimerGameTime);
+                }
+
+                if (!rc) {
+                    int keyCode = inputGetInput();
+                    if (keyCode == KEY_ESCAPE) {
+                        rc = scriptHooks_RestTimer(lastRestTimerGameTime, REST_EVENT_TYPE_CANCEL, hours, minutes);
+                    } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
 
@@ -2258,7 +2367,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     pipboyDrawDate();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(50 - (getTicks() - start));
+                    // subtle: convert to signed to avoid underflow
+                    int elapsedMs = static_cast<int>(getTicks() - start);
+                    delay_ms(uiDelayMs - elapsedMs);
                 }
 
                 renderPresent();
@@ -2266,12 +2377,8 @@ static bool pipboyRest(int hours, int minutes, int duration)
             }
 
             if (!rc) {
-                gameTimeSetTime(gameTime + 600 * minutes);
-
-                if (_Check4Health(minutes)) {
-                    // NOTE: Uninline.
-                    _AddHealth();
-                }
+                RestEventType eventType = hours == 0 ? REST_EVENT_TYPE_COMPLETE : REST_EVENT_TYPE_PROGRESS;
+                rc = pipboyRestSetGameTime(gameTime + 600 * minutes, eventType, hours, minutes, minutes, lastRestTimerGameTime);
             }
 
             pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
@@ -2282,9 +2389,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
         if (hours != 0 && !rc) {
             unsigned int gameTime = gameTimeGetTime();
-            double v7 = (v2 - v3) * 20.0;
+            double hourRestIterations = (totalRestAnimationDuration - minuteRestAnimationDuration) * 20.0;
 
-            for (int hour = 0; hour < (int)v7; hour++) {
+            for (int hour = 0; hour < (int)hourRestIterations; hour++) {
                 sharedFpsLimiter.mark();
 
                 if (rc) {
@@ -2293,15 +2400,19 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
                 unsigned int start = getTicks();
 
-                if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
-                    rc = true;
+                unsigned int projectedGameTime = (unsigned int)((double)hour / hourRestIterations * (hours * GAME_TIME_TICKS_PER_HOUR) + gameTime);
+                if (!rc) {
+                    int keyCode = inputGetInput();
+                    if (keyCode == KEY_ESCAPE) {
+                        rc = scriptHooks_RestTimer(lastRestTimerGameTime, REST_EVENT_TYPE_CANCEL, hours, minutes);
+                    } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                        rc = true;
+                    }
                 }
 
-                unsigned int v8 = (unsigned int)((double)hour / v7 * (hours * GAME_TIME_TICKS_PER_HOUR) + gameTime);
                 unsigned int nextEventTime = queueGetNextEventTime();
-                if (!rc && v8 >= nextEventTime) {
+                if (!rc && projectedGameTime >= nextEventTime) {
                     gameTimeSetTime(nextEventTime + 1);
-
                     if (queueProcessEvents()) {
                         rc = true;
                         debugPrint("PIPBOY: Returning from Queue trigger...\n");
@@ -2309,26 +2420,23 @@ static bool pipboyRest(int hours, int minutes, int duration)
                         break;
                     }
 
-                    if (_game_user_wants_to_quit != 0) {
+                    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
                 }
 
                 if (!rc) {
-                    gameTimeSetTime(v8);
-
-                    int healthToAdd = (int)((double)hoursInMinutes / v7);
-                    if (_Check4Health(healthToAdd)) {
-                        // NOTE: Uninline.
-                        _AddHealth();
-                    }
+                    int healthToAdd = (int)((double)hoursInMinutes / hourRestIterations);
+                    rc = pipboyRestSetGameTime(projectedGameTime, REST_EVENT_TYPE_PROGRESS, hours, minutes, healthToAdd, lastRestTimerGameTime);
 
                     pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
                     pipboyDrawDate();
                     pipboyDrawHitPoints();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(50 - (getTicks() - start));
+                    // subtle: convert to signed to avoid underflow
+                    int elapsedMs = static_cast<int>(getTicks() - start);
+                    delay_ms(uiDelayMs - elapsedMs);
                 }
 
                 renderPresent();
@@ -2336,7 +2444,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
             }
 
             if (!rc) {
-                gameTimeSetTime(gameTime + GAME_TIME_TICKS_PER_HOUR * hours);
+                rc = pipboyRestSetGameTime(gameTime + GAME_TIME_TICKS_PER_HOUR * hours, REST_EVENT_TYPE_COMPLETE, hours, minutes, 0, lastRestTimerGameTime);
             }
 
             pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
@@ -2345,6 +2453,11 @@ static bool pipboyRest(int hours, int minutes, int duration)
             windowRefresh(gPipboyWindow);
         }
     } else if (duration == PIPBOY_REST_DURATION_UNTIL_HEALED || duration == PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED) {
+        if (wmRestModeNoHealing()) {
+            gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+            return rc;
+        }
+
         int currentHp = critterGetHitPoints(gDude);
         int maxHp = critterGetStat(gDude, STAT_MAXIMUM_HIT_POINTS);
         if (currentHp != maxHp
@@ -2355,10 +2468,10 @@ static bool pipboyRest(int hours, int minutes, int duration)
             int hoursToHeal = (int)((double)hpToHeal / (double)healingRate * 3.0);
             while (!rc && hoursToHeal != 0) {
                 if (hoursToHeal <= 24) {
-                    rc = pipboyRest(hoursToHeal, 0, 0);
+                    rc = pipboyRest(hoursToHeal, 0);
                     hoursToHeal = 0;
                 } else {
-                    rc = pipboyRest(24, 0, 0);
+                    rc = pipboyRest(24, 0);
                     hoursToHeal -= 24;
                 }
             }
@@ -2389,7 +2502,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     }
                 }
 
-                rc = pipboyRest(3, 0, 0);
+                rc = pipboyRest(3, 0);
             }
         } else {
             // No one needs healing.
@@ -2420,7 +2533,7 @@ static bool _Check4Health(int minutes)
 {
     _rest_time += minutes;
 
-    if (_rest_time < 180) {
+    if (_rest_time < restHealTime) {
         return false;
     }
 
@@ -2468,6 +2581,44 @@ static void _ClacTime(int* hours, int* minutes, int wakeUpHour)
     } else {
         *hours = 24;
     }
+}
+
+bool pipboyRestOptionMsgsSetBase(int baseMessageId)
+{
+    if (baseMessageId <= 0) {
+        return false;
+    }
+
+    pipboyRestDurationBaseMessageId = baseMessageId;
+    return true;
+}
+
+bool pipboyRestOptionSet(PipboyRestDuration restOption, int value)
+{
+    if (restOption < PIPBOY_REST_DURATION_UNTIL_MORNING || restOption > PIPBOY_REST_DURATION_UNTIL_MIDNIGHT) {
+        return false;
+    }
+
+    if (value < 0 || value > 23) {
+        return false;
+    }
+
+    pipboyRestDurationWakeHours[restOption - PIPBOY_REST_DURATION_UNTIL_MORNING] = value;
+    return true;
+}
+
+static int pipboyRestOptionWakeHour(int restOption)
+{
+    assert(restOption >= PIPBOY_REST_DURATION_UNTIL_MORNING);
+    assert(restOption <= PIPBOY_REST_DURATION_UNTIL_MIDNIGHT);
+
+    return pipboyRestDurationWakeHours[restOption - PIPBOY_REST_DURATION_UNTIL_MORNING];
+}
+
+static void pipboyRestOptionsReset()
+{
+    pipboyRestDurationBaseMessageId = kDefaultPipboyRestDurationBaseMessageId;
+    std::copy(kDefaultPipboyRestDurationWakeHours, kDefaultPipboyRestDurationWakeHours + PIPBOY_REST_DURATION_WAKE_HOUR_COUNT, pipboyRestDurationWakeHours);
 }
 
 // 0x49A0C8
@@ -2665,6 +2816,7 @@ static int questInit()
 
     File* stream = fileOpen("data\\quests.txt", "rt");
     if (stream == nullptr) {
+        messageListFree(&gQuestsMessageList);
         return -1;
     }
 
@@ -2732,12 +2884,14 @@ static int questInit()
     qsort(gQuestDescriptions, gQuestsCount, sizeof(*gQuestDescriptions), questDescriptionCompare);
 
     fileClose(stream);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, &gQuestsMessageList);
 
     return 0;
 
 err:
 
     fileClose(stream);
+    messageListFree(&gQuestsMessageList);
 
     return -1;
 }
@@ -2752,6 +2906,7 @@ static void questFree()
 
     gQuestsCount = 0;
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, nullptr);
     messageListFree(&gQuestsMessageList);
 }
 
