@@ -332,6 +332,21 @@ void initSettingsRegistry(bool isMapper)
     SETTING(running_burning_guy);
 #undef SECT
 
+#define SECT speed
+    SETTING(enabled);
+    SETTING_P(initial_percent, clamp(1, 1000));
+    SETTING_P(preset_0, clamp(1, 1000));
+    SETTING_P(preset_1, clamp(1, 1000));
+    SETTING_P(preset_2, clamp(1, 1000));
+    SETTING_P(preset_3, clamp(1, 1000));
+    SETTING_P(key_0, clamp(0, 255));
+    SETTING_P(key_1, clamp(0, 255));
+    SETTING_P(key_2, clamp(0, 255));
+    SETTING_P(key_3, clamp(0, 255));
+    SETTING_P(modifier_key, clamp(-3, 255));
+    SETTING_P(toggle_key, clamp(0, 255));
+#undef SECT
+
 #define SECT sound
     SETTING(initialize);
     SETTING(debug);

@@ -20,6 +20,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_speed.h"
 #include "input.h"
 #include "kb.h"
 #include "loadsave.h"
@@ -341,6 +342,7 @@ static void main_exit_system()
 // 0x480D4C
 static int _main_load_new(char* mapFileName)
 {
+    gameSpeedReset();
     _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     _main_show_death_scene = 0;
     gDude->flags &= ~OBJECT_FLAT;

@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <time.h>
 
 #include <algorithm>
@@ -20,7 +20,6 @@
 #include "db.h"
 #include "dbox.h"
 #include "debug.h"
-#include "delay.h"
 #include "display_monitor.h"
 #include "draw.h"
 #include "file_utils.h"
@@ -174,7 +173,6 @@ static void _ShowSlotList(LoadSaveWindowType windowType);
 static void _DrawInfoBox(int slot);
 static int _LoadTumbSlot(int slot);
 static int _GetComment(int slot);
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static int _DummyFunc(File* stream);
 static int _PrepLoad(File* stream);
 static int _EndLoad(File* stream);
@@ -320,7 +318,8 @@ static unsigned char* _snapshotBuf;
 static MessageListItem gLoadSaveMessageListItem;
 
 // 0x6142C0 dbleclkcntr
-static int _dbleclkcntr;
+static int doubleClickTick;
+static int doubleClickDelayMs = 1000;
 
 // 0x6142C4 lsgwin
 static int gLoadSaveWindow;
@@ -652,7 +651,7 @@ int lsgSaveGame(LoadSaveMode mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
 
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
     int doubleClickSlot = -1;
@@ -766,10 +765,13 @@ int lsgSaveGame(LoadSaveMode mode)
                 if (clickedSlot == doubleClickSlot) {
                     keyCode = kLoadSaveActionDone;
                     soundPlayFile("ib1p1xx1");
+                    doubleClickSlot = -1;
+                } else {
+                    doubleClickSlot = _slot_cursor;
+                    doubleClickTick = getTicks();
                 }
 
                 selectionChanged = true;
-                doubleClickSlot = _slot_cursor;
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
@@ -815,22 +817,32 @@ int lsgSaveGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -840,7 +852,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Prevent underflow
@@ -854,7 +865,6 @@ int lsgSaveGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -897,12 +907,6 @@ int lsgSaveGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
-                }
-
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
@@ -942,17 +946,14 @@ int lsgSaveGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::SaveGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
-
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
-
-            delay_ms(1000 / 24 - (getTicks() - tick));
         }
 
         if (rc == 1) {
@@ -1049,7 +1050,8 @@ int lsgSaveGame(LoadSaveMode mode)
                     _ShowSlotList(LoadSaveWindowType::SaveGame);
                     _DrawInfoBox(_slot_cursor);
                     windowRefresh(gLoadSaveWindow);
-                    _dbleclkcntr = 24;
+
+                    doubleClickTick = getTicks();
                 }
             }
         }
@@ -1260,7 +1262,7 @@ int lsgLoadGame(LoadSaveMode mode)
     if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
-    _dbleclkcntr = 24;
+    doubleClickTick = getTicks();
 
     int rc = -1;
 
@@ -1378,6 +1380,7 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 selectionChanged = true;
                 doubleClickSlot = _slot_cursor;
+                doubleClickTick = getTicks();
                 scrollDirection = LoadSaveScrollDirection::None;
             } break;
 
@@ -1417,22 +1420,32 @@ int lsgLoadGame(LoadSaveMode mode)
         if (scrollDirection != LoadSaveScrollDirection::None) {
             unsigned int scrollVelocity = 4;
             bool isScrolling = false;
-            int scrollCounter = 0;
+            unsigned int holdStartTick = getTicks();
+            unsigned int lastStepTick = 0;
+
             do {
                 sharedFpsLimiter.mark();
 
-                unsigned int start = getTicks();
-                scrollCounter += 1;
+                unsigned int now = getTicks();
+                bool shouldStep = false;
 
-                if ((!isScrolling && scrollCounter == 1) || (isScrolling && scrollCounter > 14.4)) {
+                if (!isScrolling) {
+                    shouldStep = true;
                     isScrolling = true;
+                    lastStepTick = now;
+                } else if (now - holdStartTick > 600) {
+                    unsigned int stepInterval = 1000 / scrollVelocity;
+                    if (now - lastStepTick >= stepInterval) {
+                        shouldStep = true;
+                        lastStepTick = now;
 
-                    if (scrollCounter > 14.4) {
-                        scrollVelocity += 1;
-                        if (scrollVelocity > 24) {
-                            scrollVelocity = 24;
+                        if (scrollVelocity < 24) {
+                            scrollVelocity += 1;
                         }
                     }
+                }
+
+                if (shouldStep) {
                     // handle scrolling between pages via buttons
                     if (scrollDirection == LoadSaveScrollDirection::Up) {
                         _slot_cursor--;
@@ -1442,7 +1455,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage > 0) {
                                 _currentSlotPage--;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = (_currentSlotPage * 10) + 9; // Move to the last slot of the previous page
                             } else {
                                 _slot_cursor = 0; // Don't go under
@@ -1457,7 +1469,6 @@ int lsgLoadGame(LoadSaveMode mode)
                             if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max pages: 0-9
                                 _currentSlotPage++;
                                 _ShowSlotList(LoadSaveWindowType::LoadGame);
-                                windowRefresh(gLoadSaveWindow);
                                 _slot_cursor = _currentSlotPage * 10; // Move to the first slot of the next page
                             } else {
                                 _slot_cursor = (saveLoadTotalSlots - 1); // Prevent overflow (last slot overall)
@@ -1498,12 +1509,6 @@ int lsgLoadGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                if (scrollCounter > 14.4) {
-                    delay_ms(1000 / scrollVelocity - (getTicks() - start));
-                } else {
-                    delay_ms(1000 / 24 - (getTicks() - start));
-                }
-
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
@@ -1542,13 +1547,12 @@ int lsgLoadGame(LoadSaveMode mode)
 
                 _DrawInfoBox(_slot_cursor);
                 _ShowSlotList(LoadSaveWindowType::LoadGame);
+
+                windowRefresh(gLoadSaveWindow);
             }
 
-            windowRefresh(gLoadSaveWindow);
-
-            _dbleclkcntr -= 1;
-            if (_dbleclkcntr == 0) {
-                _dbleclkcntr = 24;
+            if ((getTicks() - doubleClickTick) > doubleClickDelayMs) {
+                doubleClickTick = getTicks();
                 doubleClickSlot = -1;
             }
         }
@@ -2095,6 +2099,10 @@ static int lsgLoadGameInSlot(int slot)
         }
     }
 
+    // SFALL: The drug pids of the loaded drug effects (from sfallgv.sav, else
+    // found by the effects).
+    drugEffectEventsRestorePids();
+
     char ceSavePath[COMPAT_MAX_PATH];
     snprintf(ceSavePath, sizeof(ceSavePath), "%s\\SAVEGAME\\SLOT%.2d\\ce.sav", _patches, _slot_cursor + 1);
     ceLoadGameData(ceSavePath);
@@ -2594,7 +2602,6 @@ static int _LoadTumbSlot(int slot)
     return 0;
 }
 
-// 0x47ED5C
 static int _GetComment(int slot)
 {
     // Maintain original position in original resolution, otherwise center it.
@@ -2604,137 +2611,31 @@ static int _GetComment(int slot)
     int commentWindowY = screenGetHeight() != 480
         ? (screenGetHeight() - _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight()) / 2
         : LS_COMMENT_WINDOW_Y;
-    int window = windowCreate(commentWindowX,
+
+    std::string doneText = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 104);
+    std::string cancelText = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 105);
+    std::string title = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 130);
+
+    const char* currentDescription = (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied)
+        ? _LSData[slot].description
+        : "";
+
+    const char* newDescription = showDescriptionInputDialog(
+        title.data(),
+        currentDescription,
+        LOAD_SAVE_DESCRIPTION_LENGTH - 1,
+        commentWindowX,
         commentWindowY,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight(),
-        static_cast<ColorWithFlags>(256),
-        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (window == -1) {
-        return -1;
-    }
+        doneText.data(),
+        cancelText.data());
 
-    unsigned char* windowBuffer = windowGetBuffer(window);
-    memcpy(windowBuffer,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData(),
-        static_cast<size_t>(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight()) * _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth());
-
-    fontSetCurrent(103);
-
-    const char* msg;
-
-    // DONE
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 104);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 57 + 56,
-        msg,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    // CANCEL
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 105);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 57 + 181,
-        msg,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    // DESCRIPTION
-    msg = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 130);
-
-    char title[260];
-    stringCopy(title, msg);
-
-    int width = fontGetStringWidth(title);
-    fontDrawText(windowBuffer + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 7 + (_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() - width) / 2,
-        title,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
-        COLOR_DARK_YELLOW);
-
-    fontSetCurrent(101);
-
-    int btn;
-
-    // DONE
-    btn = buttonCreate(window,
-        34,
-        58,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        507,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_NORMAL].getData(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (btn != -1) {
-        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    // CANCEL
-    btn = buttonCreate(window,
-        160,
-        58,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getWidth(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getHeight(),
-        -1,
-        -1,
-        -1,
-        508,
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_NORMAL].getData(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getData(),
-        nullptr,
-        BUTTON_FLAG_TRANSPARENT);
-    if (btn != -1) {
-        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-    }
-
-    windowRefresh(window);
-
-    char description[LOAD_SAVE_DESCRIPTION_LENGTH];
-    if (_LSstatus[_slot_cursor] == LoadSaveSlotState::Occupied) {
-        strncpy(description, _LSData[slot].description, LOAD_SAVE_DESCRIPTION_LENGTH);
-    } else {
-        memset(description, '\0', LOAD_SAVE_DESCRIPTION_LENGTH);
-    }
-
-    int rc;
-
-    Color backgroundColor = static_cast<Color>(*(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24) & COLOR_LAST);
-    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0) == 0) {
-        strncpy(_LSData[slot].description, description, LOAD_SAVE_DESCRIPTION_LENGTH);
+    if (newDescription != nullptr) {
+        strncpy(_LSData[slot].description, newDescription, LOAD_SAVE_DESCRIPTION_LENGTH);
         _LSData[slot].description[LOAD_SAVE_DESCRIPTION_LENGTH - 1] = '\0';
-        rc = 1;
-    } else {
-        rc = 0;
+        return 1;
     }
 
-    windowDestroy(window);
-
-    return rc;
-}
-
-// 0x47F084
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
-{
-    std::string text(description);
-
-    TextInputOptions options;
-    options.doneKeyCode = doneKeyCode;
-    options.cancelKeyCode = cancelKeyCode;
-    options.cancelReturnCode = -1;
-    options.playReturnSound = false;
-    options.clearOnFirstBackspace = true;
-
-    int rc = runTextInput(win, text, maxLength, x, y, textColor, backgroundColor, flags, options);
-    if (rc == 0) {
-        strcpy(description, text.c_str());
-    }
-
-    return rc;
+    return 0;
 }
 
 // 0x47F48C

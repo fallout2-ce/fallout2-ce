@@ -1172,7 +1172,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         if (weaponAnimCode != WeaponAnimation::None) {
             const char* sfx = sfxBuildCharName(user, ANIM_PUT_AWAY, CharacterSoundEffect::Unused);
             animationRegisterPlaySoundEffect(user, sfx, -1);
-            animationRegisterAnimate(user, ANIM_PUT_AWAY, 0);
+            animationRegisterAnimate(user, ANIM_PUT_AWAY, -1);
         }
 
         AnimationType anim;
@@ -1185,8 +1185,9 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
             anim = ANIM_MAGIC_HANDS_MIDDLE;
         }
 
-        if (sceneryType != SCENERY_TYPE_STAIRS && item == nullptr) {
-            actionRegisterUseAnimObj(user, targetObj, &anim, -1);
+        // SFALL: Play magic hands for item use too, with the same sequence as pickup.
+        if (sceneryType != SCENERY_TYPE_STAIRS) {
+            actionRegisterUseAnimObj(user, targetObj, &anim, 0);
         }
 
         if (item != nullptr) {

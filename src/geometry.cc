@@ -214,10 +214,17 @@ void rectUnion(const Rect* s1, const Rect* s2, Rect* r)
 // 0x4C6C68 rect_inside_bound
 int rectIntersection(const Rect* s1, const Rect* s2, Rect* r)
 {
+    const bool invalid = s1->left > s1->right || s1->top > s1->bottom
+        || s2->left > s2->right || s2->top > s2->bottom;
+
     r->left = s1->left;
     r->top = s1->top;
     r->right = s1->right;
     r->bottom = s1->bottom;
+
+    if (invalid) {
+        return -1;
+    }
 
     if (s1->left <= s2->right && s2->left <= s1->right && s2->bottom >= s1->top && s2->top <= s1->bottom) {
         if (s2->left > s1->left) {

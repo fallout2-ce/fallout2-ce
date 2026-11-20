@@ -21,6 +21,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_speed.h"
 #include "game_vars.h"
 #include "input.h"
 #include "map.h"
@@ -217,6 +218,7 @@ static Rect gEndgameEndingFrameBounds;
 // 0x43F788 endgame_slideshow
 void endgamePlaySlideshow()
 {
+    ScopedGameSpeedPause speedPause;
     if (endgameEndingSlideshowWindowInit() == -1) {
         return;
     }

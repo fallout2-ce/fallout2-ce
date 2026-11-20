@@ -10,6 +10,10 @@
 
 namespace fallout {
 
+// Maximum number of rotations returned by the pathfinder. Non-null output
+// buffers passed to _make_path/pathfinderFindPath must hold this many entries.
+constexpr int kPathfinderMaxPathLength = 800;
+
 // Signature of animation callback accepting 2 parameters.
 typedef int(AnimationCallback)(void* a1, void* a2);
 

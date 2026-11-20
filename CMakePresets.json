@@ -113,6 +113,55 @@
             }
         },
         {
+            "name": "linux-armhf-base",
+            "hidden": true,
+            "inherits": [
+                "linux-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "arm-linux-gnueabihf-gcc",
+                "CMAKE_CXX_COMPILER": "arm-linux-gnueabihf-g++",
+                "CMAKE_SYSTEM_NAME": "Linux",
+                "CMAKE_SYSTEM_PROCESSOR": "arm"
+            }
+        },
+        {
+            "name": "linux-armhf-debug",
+            "inherits": [
+                "linux-armhf-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "linux-armhf-release",
+            "inherits": [
+                "linux-armhf-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "linux-arm64-debug",
+            "inherits": [
+                "linux-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "linux-arm64-release",
+            "inherits": [
+                "linux-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "freebsd-base",
             "hidden": true,
             "inherits": [
@@ -281,6 +330,22 @@
         {
             "name": "linux-x64-release",
             "configurePreset": "linux-x64-release"
+        },
+        {
+            "name": "linux-armhf-debug",
+            "configurePreset": "linux-armhf-debug"
+        },
+        {
+            "name": "linux-armhf-release",
+            "configurePreset": "linux-armhf-release"
+        },
+        {
+            "name": "linux-arm64-debug",
+            "configurePreset": "linux-arm64-debug"
+        },
+        {
+            "name": "linux-arm64-release",
+            "configurePreset": "linux-arm64-release"
         },
         {
             "name": "freebsd-x64-debug",
