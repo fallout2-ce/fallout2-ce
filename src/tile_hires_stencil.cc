@@ -43,6 +43,20 @@ static_assert(pixels_per_vertical_move % square_height == 0);
 static constexpr int square_grid_width = 500;
 static constexpr int square_grid_height = 300;
 
+// Solid is 0 so a cleared grid is fully black.
+enum class StencilSquare : unsigned char {
+    Solid = 0,
+    Clear,
+    OpenTop,
+    OpenBottom,
+    OpenBoth,
+};
+
+static_assert(static_cast<unsigned char>(StencilSquare::Solid) == 0);
+
+// This array holds information about which squares are visible
+static StencilSquare visible_squares[ELEVATION_COUNT][square_grid_width][square_grid_height];
+
 // Dimensions of the grid of squares were calculated by
 // going through all hex tiles and finding the lowest and highest x and y.
 // This way we can be sure that all hex tiles can be covered by squares.
@@ -60,24 +74,10 @@ static constexpr int squares_screen_width_half = screen_view_width / 2 / square_
 static constexpr int squares_screen_height_half = screen_view_height / 2 / square_height;
 // Horizontal visibility fits hex grid perfectly
 static_assert(screen_view_width % (2 * square_width) == 0);
-// (480-100) does not divide by the vertical square step. The remainder is split
-// into equal open strips above and below the fully covered squares.
+// In the vertical direction we have 10+10 pixels left per each direction
+// which is covered by squares but theoretically could be seen in the original game
 static constexpr int edge_strip = (screen_view_height % (2 * square_height)) / 2;
 static_assert(edge_strip == 10);
-
-// Solid is 0 so a cleared grid is fully black.
-enum class StencilSquare : unsigned char {
-    Solid = 0,
-    Clear,
-    OpenTop,
-    OpenBottom,
-    OpenBoth,
-};
-
-static_assert(static_cast<unsigned char>(StencilSquare::Solid) == 0);
-
-// This array holds information about which squares are visible
-static StencilSquare visible_squares[ELEVATION_COUNT][square_grid_width][square_grid_height];
 
 static bool gIsTileHiresStencilEnabled = false;
 
@@ -234,17 +234,15 @@ static void mark_screen_tiles_around_as_visible(int center_tile, const Point& sc
         ? vertical_end_full
         : vertical_start_full + squares_per_vertical_move;
 
-    // Fully covered rows are squareY-15 .. squareY+14. The row above shows its
-    // bottom strip; the row at squareY+15 shows its top strip.
+    // The row above the full view keeps its bottom strip, the row below keeps its top strip.
     const int topPartialRow = vertical_start_full - 1;
     const int bottomPartialRow = vertical_end_full;
-    int rowStart = vertical_start;
     if (vertical_start == vertical_start_full) {
-        rowStart = topPartialRow;
+        vertical_start = topPartialRow;
     }
 
     for (int x = horizontal_start; x <= horizontal_end; x++) {
-        for (int y = rowStart; y <= vertical_end; y++) {
+        for (int y = vertical_start; y <= vertical_end; y++) {
             StencilSquare value = StencilSquare::Clear;
             if (y == topPartialRow) {
                 value = StencilSquare::OpenBottom;
@@ -261,11 +259,9 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     if (!gIsTileHiresStencilEnabled || mapEdgeIsLoaded()) {
         return;
     }
-    // A loaded EDG file owns clamping and clipping. Stencil stays off.
-    if (!gTileBorderInitialized || gCenterTile < 0 || gCenterTile >= HEX_GRID_SIZE) {
-        return;
-    }
-    if (visited_tiles[gElevation][gCenterTile]) {
+    // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
+    // The stencil used as a backup when no EDG is present.
+    if (!gTileBorderInitialized || gCenterTile < 0 || gCenterTile >= HEX_GRID_SIZE || visited_tiles[gElevation][gCenterTile]) {
         return;
     }
 
@@ -292,8 +288,6 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         auto tileInfo = tiles_to_visit.back();
         tiles_to_visit.pop_back();
 
-        // tileFromScreenXY can hand back an index outside the grid. Check it
-        // before visited_tiles[] — an invalid tile must not count as scrollable.
         if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
             continue;
         }
@@ -472,40 +466,36 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
     for (int x = minSquareX; x <= maxSquareX; x++) {
         for (int y = minSquareY; y <= maxSquareY; y++) {
             StencilSquare cell = visible_squares[gElevation][x][y];
-            if (cell == StencilSquare::Clear) {
-                continue;
+            if (cell != StencilSquare::Clear) {
+                int screenX = x * square_width + screen_diff.x;
+                int screenY = y * square_height + screen_diff.y;
+
+                Rect squareRect;
+                squareRect.left = screenX;
+                squareRect.top = screenY;
+                squareRect.right = screenX + square_width - 1;
+                squareRect.bottom = screenY + square_height - 1;
+                if (cell == StencilSquare::OpenTop || cell == StencilSquare::OpenBoth) {
+                    squareRect.top += edge_strip;
+                }
+                if (cell == StencilSquare::OpenBottom || cell == StencilSquare::OpenBoth) {
+                    squareRect.bottom -= edge_strip;
+                }
+                if (squareRect.top > squareRect.bottom) {
+                    continue;
+                }
+
+                Rect intersection;
+                if (rectIntersection(rect, &squareRect, &intersection) == -1) {
+                    continue;
+                };
+
+                bufferFill(buffer + windowWidth * intersection.top + intersection.left,
+                    intersection.right - intersection.left + 1,
+                    intersection.bottom - intersection.top + 1,
+                    windowWidth,
+                    COLOR_FIRST);
             }
-
-            int screenX = x * square_width + screen_diff.x;
-            int screenY = y * square_height + screen_diff.y;
-
-            // Rect is inclusive. right/bottom are the last pixel of the square.
-            Rect squareRect;
-            squareRect.left = screenX;
-            squareRect.top = screenY;
-            squareRect.right = screenX + square_width - 1;
-            squareRect.bottom = screenY + square_height - 1;
-
-            if (cell == StencilSquare::OpenTop || cell == StencilSquare::OpenBoth) {
-                squareRect.top += edge_strip;
-            }
-            if (cell == StencilSquare::OpenBottom || cell == StencilSquare::OpenBoth) {
-                squareRect.bottom -= edge_strip;
-            }
-            if (squareRect.top > squareRect.bottom) {
-                continue;
-            }
-
-            Rect intersection;
-            if (rectIntersection(rect, &squareRect, &intersection) == -1) {
-                continue;
-            };
-
-            bufferFill(buffer + windowWidth * intersection.top + intersection.left,
-                intersection.right - intersection.left + 1,
-                intersection.bottom - intersection.top + 1,
-                windowWidth,
-                COLOR_FIRST);
         }
     }
 }
