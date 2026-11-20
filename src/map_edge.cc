@@ -72,8 +72,7 @@ static Size getIsoWindowSize()
 
 // Fill pixel-space fields of a zone from its stored tileRect corners.
 // Screen-size dependent — must be re-run if resolution changes.
-// keepPixelRect skips the tile conversion; pixelRect is already the content rect.
-static void calcEdgeData(EdgeZone* zone, bool keepPixelRect = false)
+static void calcEdgeData(EdgeZone* zone)
 {
     const auto [winWidth, winHeight] = getIsoWindowSize();
     const int winHalfWidth = winWidth / 2;
@@ -87,25 +86,28 @@ static void calcEdgeData(EdgeZone* zone, bool keepPixelRect = false)
     const int winHalfWidthSnapped = winHalfWidth - maxTileXAlignment;
     const int winHalfHeightSnapped = winHalfHeight - maxTileYAlignment;
 
-    if (!keepPixelRect) {
-        // Convert tileRect corners to pixel offsets.
-        // pixelRect = raw pixel-space rect before any contraction.
-        int px, py;
-
-        tileToPixelOffset(zone->tileRect.left, px, py);
-        zone->pixelRect.left = zone->scrollBorderRect.left = px;
-
-        tileToPixelOffset(zone->tileRect.top, px, py);
-        zone->pixelRect.top = zone->scrollBorderRect.top = py;
-
-        tileToPixelOffset(zone->tileRect.right, px, py);
-        zone->pixelRect.right = zone->scrollBorderRect.right = px;
-
-        tileToPixelOffset(zone->tileRect.bottom, px, py);
-        zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
-    } else {
+    int px, py;
+    // A synthetic zone already has pixelRect. Skip the tile conversion below.
+    if (syntheticEdge) {
         zone->scrollBorderRect = zone->pixelRect;
+        goto contractScrollBorder;
     }
+
+    // Convert tileRect corners to pixel offsets.
+    // pixelRect = raw pixel-space rect before any contraction.
+    tileToPixelOffset(zone->tileRect.left, px, py);
+    zone->pixelRect.left = zone->scrollBorderRect.left = px;
+
+    tileToPixelOffset(zone->tileRect.top, px, py);
+    zone->pixelRect.top = zone->scrollBorderRect.top = py;
+
+    tileToPixelOffset(zone->tileRect.right, px, py);
+    zone->pixelRect.right = zone->scrollBorderRect.right = px;
+
+    tileToPixelOffset(zone->tileRect.bottom, px, py);
+    zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
+
+contractScrollBorder:
 
     // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
     // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
@@ -412,13 +414,13 @@ void mapEdgeSetSyntheticPixelRect(MapElevation elevation, const Rect& pixelRect)
 
     EdgeZone zone {};
     zone.pixelRect = pixelRect;
-    calcEdgeData(&zone, true);
+    syntheticEdge = true;
+    calcEdgeData(&zone);
 
     EdgeElevationData& data = edgeData[elevation];
     data.zones.clear();
     data.zones.push_back(zone);
     currentEdgeZone = &data.zones.back();
-    syntheticEdge = true;
 }
 
 bool mapEdgeIsSynthetic()
@@ -555,7 +557,7 @@ void mapEdgeRecalc()
 {
     for (auto& data : edgeData) {
         for (auto& zone : data.zones) {
-            calcEdgeData(&zone, syntheticEdge);
+            calcEdgeData(&zone);
         }
     }
 }

@@ -720,7 +720,7 @@ static void tileRefreshMapper(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
-    if (!hasVisArea || mapEdgeIsSynthetic()) {
+    if (!hasVisArea) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 

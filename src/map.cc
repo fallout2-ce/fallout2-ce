@@ -1029,11 +1029,9 @@ static int mapLoad(File* stream)
         goto err;
     }
 
+    mapEdgeFree();
     if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
-    } else {
-        // Drop the previous map's synthetic limit. edg_support off does not load a file.
-        mapEdgeFree();
     }
     tile_hires_stencil_reset_cache();
 
@@ -1739,7 +1737,7 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    if (!hasVisArea || mapEdgeIsSynthetic()) {
+    if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
 

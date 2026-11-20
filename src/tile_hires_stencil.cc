@@ -66,8 +66,6 @@ static_assert(square_height * square_grid_height == 3600);
 // What can be seen on the screen in original resolution
 static constexpr int screen_view_width = 640;
 static constexpr int screen_view_height = 380;
-static constexpr int screen_view_half_width = screen_view_width / 2;
-static constexpr int screen_view_half_height = screen_view_height / 2;
 
 // How many squares can be seen in horizontal and vertical directions
 static constexpr int squares_screen_width_half = screen_view_width / 2 / square_width;
@@ -102,7 +100,7 @@ static void mark_square(int x, int y, StencilSquare value)
     }
 }
 
-static void clean_cache()
+void tile_hires_stencil_reset_cache()
 {
     memset(visited_tiles, 0, sizeof(visited_tiles));
     memset(visible_squares, 0, sizeof(visible_squares));
@@ -316,10 +314,10 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         int py;
         tileToPixelOffset(tileInfo.tile, px, py);
         Rect view;
-        view.left = px + screen_view_half_width;
-        view.right = px - screen_view_half_width;
-        view.top = py - screen_view_half_height;
-        view.bottom = py + screen_view_half_height;
+        view.left = px + screen_view_width / 2;
+        view.right = px - screen_view_width / 2;
+        view.top = py - screen_view_height / 2;
+        view.bottom = py + screen_view_height / 2;
         // Pixel X is inverted (left > right), same as an EDG pixelRect.
         if (!haveContent) {
             content = view;
@@ -518,11 +516,6 @@ void tile_hires_stencil_init()
     }
 
     debugPrint("tile_hires_stencil_init\n");
-}
-
-void tile_hires_stencil_reset_cache()
-{
-    clean_cache();
 }
 
 void tile_hires_stencil_on_map_load()
