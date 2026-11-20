@@ -1031,7 +1031,11 @@ static int mapLoad(File* stream)
 
     if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
+    } else {
+        // Drop the previous map's synthetic limit. edg_support off does not load a file.
+        mapEdgeFree();
     }
+    tile_hires_stencil_reset_cache();
 
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
@@ -1702,7 +1706,7 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    if (!hasVisArea) {
+    if (!hasVisArea || mapEdgeIsSynthetic()) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
 }
@@ -1735,7 +1739,7 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    if (!hasVisArea) {
+    if (!hasVisArea || mapEdgeIsSynthetic()) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
 

@@ -61,13 +61,23 @@ void mapEdgeFree();
 // Returns true if EDG data was successfully loaded for the current map.
 bool mapEdgeIsLoaded();
 
+// One zone whose pixelRect is the union of reachable vanilla views.
+// Used when no EDG file is loaded. Not written by mapEdgeSave, and ignored
+// when a file is already loaded.
+void mapEdgeSetSyntheticPixelRect(MapElevation elevation, const Rect& pixelRect);
+
+// True when the active zones came from mapEdgeSetSyntheticPixelRect.
+bool mapEdgeIsSynthetic();
+
 // Mapper-editing mode: when enabled, loaded EDG data is not enforced so edges can be edited.
 // The game leaves this off; the mapper turns it off only while play-testing.
 void mapEdgeSetMapperMode(bool enabled);
 bool mapEdgeIsMapperMode();
 
-// True when edge constraints are actively enforced: data loaded, not in mapper-editing mode,
-// and enabled by user settings (edg_support on, ignore_map_edges off).
+// True when edge constraints are actively enforced.
+// A loaded EDG file is enforced when edg_support is on. A synthetic zone is enforced
+// whenever one is installed. Neither applies in mapper-editing mode or when map edges
+// are ignored.
 bool mapEdgeIsEnabled();
 
 // Marks edge data as version 2 so squareRect/clipSides are written on save.

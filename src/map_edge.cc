@@ -21,6 +21,7 @@ constexpr int kTileHeight = 24;
 
 static EdgeElevationData edgeData[ELEVATION_COUNT];
 static bool edgeDataLoaded = false;
+static bool syntheticEdge = false;
 static bool mapperMode = false;
 static bool edgeVersion2 = false;
 static EdgeZone* currentEdgeZone = nullptr;
@@ -69,9 +70,11 @@ static Size getIsoWindowSize()
     return { rectGetWidth(&winRect), rectGetHeight(&winRect) };
 }
 
-// Fill pixel-space fields of a zone from its stored tileRect corners.
+// Fill pixel-space fields of a zone.
 // Screen-size dependent — must be re-run if resolution changes.
-static void calcEdgeData(EdgeZone* zone)
+// keepPixelRect: pixelRect is already the content rect (synthetic zone). Still
+// recomputes scrollBorderRect from it. File zones convert tileRect first.
+static void calcEdgeData(EdgeZone* zone, bool keepPixelRect = false)
 {
     const auto [winWidth, winHeight] = getIsoWindowSize();
     const int winHalfWidth = winWidth / 2;
@@ -85,21 +88,25 @@ static void calcEdgeData(EdgeZone* zone)
     const int winHalfWidthSnapped = winHalfWidth - maxTileXAlignment;
     const int winHalfHeightSnapped = winHalfHeight - maxTileYAlignment;
 
-    // Convert tileRect corners to pixel offsets.
-    // pixelRect = raw pixel-space rect before any contraction.
-    int px, py;
+    if (!keepPixelRect) {
+        // Convert tileRect corners to pixel offsets.
+        // pixelRect = raw pixel-space rect before any contraction.
+        int px, py;
 
-    tileToPixelOffset(zone->tileRect.left, px, py);
-    zone->pixelRect.left = zone->scrollBorderRect.left = px;
+        tileToPixelOffset(zone->tileRect.left, px, py);
+        zone->pixelRect.left = px;
 
-    tileToPixelOffset(zone->tileRect.top, px, py);
-    zone->pixelRect.top = zone->scrollBorderRect.top = py;
+        tileToPixelOffset(zone->tileRect.top, px, py);
+        zone->pixelRect.top = py;
 
-    tileToPixelOffset(zone->tileRect.right, px, py);
-    zone->pixelRect.right = zone->scrollBorderRect.right = px;
+        tileToPixelOffset(zone->tileRect.right, px, py);
+        zone->pixelRect.right = px;
 
-    tileToPixelOffset(zone->tileRect.bottom, px, py);
-    zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
+        tileToPixelOffset(zone->tileRect.bottom, px, py);
+        zone->pixelRect.bottom = py;
+    }
+
+    zone->scrollBorderRect = zone->pixelRect;
 
     // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
     // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
@@ -339,6 +346,12 @@ static bool writeEdgStream(File* stream)
 
 void mapEdgeSave(const char* mapName)
 {
+    // Synthetic limits exist only in memory. Writing them would create an EDG
+    // file the next load would treat as authored data.
+    if (syntheticEdge) {
+        return;
+    }
+
     int totalZones = 0;
     for (const EdgeElevationData& data : edgeData) {
         totalZones += static_cast<int>(data.zones.size());
@@ -378,6 +391,7 @@ void mapEdgeFree()
         data = EdgeElevationData {};
     }
     edgeDataLoaded = false;
+    syntheticEdge = false;
     currentEdgeZone = nullptr;
     currentTileXAlignment = 0;
     currentTileYAlignment = 0;
@@ -389,6 +403,28 @@ void mapEdgeFree()
 bool mapEdgeIsLoaded()
 {
     return edgeDataLoaded;
+}
+
+void mapEdgeSetSyntheticPixelRect(MapElevation elevation, const Rect& pixelRect)
+{
+    if (!elevationIsValid(elevation) || edgeDataLoaded) {
+        return;
+    }
+
+    EdgeZone zone {};
+    zone.pixelRect = pixelRect;
+    calcEdgeData(&zone, true);
+
+    EdgeElevationData& data = edgeData[elevation];
+    data.zones.clear();
+    data.zones.push_back(zone);
+    currentEdgeZone = &data.zones.back();
+    syntheticEdge = true;
+}
+
+bool mapEdgeIsSynthetic()
+{
+    return syntheticEdge;
 }
 
 void mapEdgeSetMapperMode(bool enabled)
@@ -403,8 +439,13 @@ bool mapEdgeIsMapperMode()
 
 bool mapEdgeIsEnabled()
 {
-    // Enforced when data is loaded, we're not editing in the mapper, and the user enabled it.
-    return edgeDataLoaded && !mapperMode && settings.ui.edg_support && !settings.ui.ignore_map_edges;
+    if (mapperMode || settings.ui.ignore_map_edges) {
+        return false;
+    }
+    if (syntheticEdge) {
+        return true;
+    }
+    return edgeDataLoaded && settings.ui.edg_support;
 }
 
 void mapEdgeUpgradeToVersion2()
@@ -520,7 +561,7 @@ void mapEdgeRecalc()
 {
     for (auto& data : edgeData) {
         for (auto& zone : data.zones) {
-            calcEdgeData(&zone);
+            calcEdgeData(&zone, syntheticEdge);
         }
     }
 }

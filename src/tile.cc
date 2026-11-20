@@ -551,6 +551,34 @@ void tileWindowRefresh()
     }
 }
 
+static void tileCommitCenter(int tile)
+{
+    int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
+    int tile_y = tile / gHexGridWidth;
+
+    _tile_y = tile_y;
+    _tile_offx = mapEdgeGetTileXAlignment() + (gTileWindowWidth - 32) / 2;
+    _tile_x = tile_x;
+    _tile_offy = mapEdgeGetTileYAlignment() + (gTileWindowHeight - 16) / 2;
+
+    if (tile_x & 1) {
+        _tile_x -= 1;
+        _tile_offx -= 32;
+    }
+
+    _square_x = _tile_x / 2;
+    _square_y = _tile_y / 2;
+    _square_offx = _tile_offx - 16;
+    _square_offy = _tile_offy - 2;
+
+    if (_tile_y & 1) {
+        _square_offy -= 12;
+        _square_offx -= 16;
+    }
+
+    gCenterTile = tile;
+}
+
 // 0x4B12F8 tile_set_center
 int tileSetCenter(int tile, int flags)
 {
@@ -621,29 +649,19 @@ int tileSetCenter(int tile, int flags)
         }
     }
 
-    _tile_y = tile_y;
-    _tile_offx = mapEdgeGetTileXAlignment() + (gTileWindowWidth - 32) / 2;
-    _tile_x = tile_x;
-    _tile_offy = mapEdgeGetTileYAlignment() + (gTileWindowHeight - 16) / 2;
-
-    if (tile_x & 1) {
-        _tile_x -= 1;
-        _tile_offx -= 32;
-    }
-
-    _square_x = _tile_x / 2;
-    _square_y = _tile_y / 2;
-    _square_offx = _tile_offx - 16;
-    _square_offy = _tile_offy - 2;
-
-    if (_tile_y & 1) {
-        _square_offy -= 12;
-        _square_offx -= 16;
-    }
-
-    gCenterTile = tile;
+    tileCommitCenter(tile);
 
     tile_hires_stencil_on_center_tile_or_elevation_change();
+
+    // A synthetic zone does not exist until the flood above. Clamp in this same
+    // call, before the one refresh. Real EDG files were already clamped above.
+    if (mapEdgeIsSynthetic() && !isScroll) {
+        int clamped = mapEdgeSelectZoneAndClamp(gCenterTile, gElevation);
+        if (!tileIsValid(clamped)) {
+            return -1;
+        }
+        tileCommitCenter(clamped);
+    }
 
     if ((flags & TILE_SET_CENTER_REFRESH_WINDOW) != 0) {
         // NOTE: Uninline.
@@ -702,7 +720,7 @@ static void tileRefreshMapper(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
-    if (!hasVisArea) {
+    if (!hasVisArea || mapEdgeIsSynthetic()) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
@@ -747,7 +765,7 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
-    if (!hasVisArea) {
+    if (!hasVisArea || mapEdgeIsSynthetic()) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
