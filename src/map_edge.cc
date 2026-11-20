@@ -70,10 +70,9 @@ static Size getIsoWindowSize()
     return { rectGetWidth(&winRect), rectGetHeight(&winRect) };
 }
 
-// Fill pixel-space fields of a zone.
+// Fill pixel-space fields of a zone from its stored tileRect corners.
 // Screen-size dependent — must be re-run if resolution changes.
-// keepPixelRect: pixelRect is already the content rect (synthetic zone). Still
-// recomputes scrollBorderRect from it. File zones convert tileRect first.
+// keepPixelRect skips the tile conversion; pixelRect is already the content rect.
 static void calcEdgeData(EdgeZone* zone, bool keepPixelRect = false)
 {
     const auto [winWidth, winHeight] = getIsoWindowSize();
@@ -94,19 +93,19 @@ static void calcEdgeData(EdgeZone* zone, bool keepPixelRect = false)
         int px, py;
 
         tileToPixelOffset(zone->tileRect.left, px, py);
-        zone->pixelRect.left = px;
+        zone->pixelRect.left = zone->scrollBorderRect.left = px;
 
         tileToPixelOffset(zone->tileRect.top, px, py);
-        zone->pixelRect.top = py;
+        zone->pixelRect.top = zone->scrollBorderRect.top = py;
 
         tileToPixelOffset(zone->tileRect.right, px, py);
-        zone->pixelRect.right = px;
+        zone->pixelRect.right = zone->scrollBorderRect.right = px;
 
         tileToPixelOffset(zone->tileRect.bottom, px, py);
-        zone->pixelRect.bottom = py;
+        zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
+    } else {
+        zone->scrollBorderRect = zone->pixelRect;
     }
-
-    zone->scrollBorderRect = zone->pixelRect;
 
     // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
     // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
@@ -439,13 +438,8 @@ bool mapEdgeIsMapperMode()
 
 bool mapEdgeIsEnabled()
 {
-    if (mapperMode || settings.ui.ignore_map_edges) {
-        return false;
-    }
-    if (syntheticEdge) {
-        return true;
-    }
-    return edgeDataLoaded && settings.ui.edg_support;
+    // Enforced when data is loaded, we're not editing in the mapper, and the user enabled it.
+    return !mapperMode && !settings.ui.ignore_map_edges && (syntheticEdge || (edgeDataLoaded && settings.ui.edg_support));
 }
 
 void mapEdgeUpgradeToVersion2()
