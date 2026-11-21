@@ -1685,6 +1685,10 @@ static void isoWindowRefreshRectGame(Rect* rect)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
     if (!hasVisArea) {
@@ -1707,8 +1711,11 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    // A loaded edge file owns the corners. Without a file hasVisArea is already
-    // set by the stencil rect above, so the old !hasVisArea check would skip this.
+    // Black the corners inside visArea that the original camera never reached.
+    // mapEdgeIsLoaded() means an .edg file was read. That edge is straight, so
+    // the stencil must not paint. The old check was !hasVisArea ("no rectangle,
+    // so paint"). The stencil rectangle above already sets hasVisArea, and that
+    // check would skip these corners.
     if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
@@ -1722,6 +1729,10 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
     if (!hasVisArea) {
