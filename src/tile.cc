@@ -764,6 +764,8 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
+    // A loaded edge file owns the corners. Without a file hasVisArea is already
+    // set by the stencil rect above, so the old !hasVisArea check would skip this.
     if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
