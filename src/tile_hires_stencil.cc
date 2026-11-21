@@ -501,249 +501,249 @@ void tile_hires_stencil_on_map_load()
 
 namespace {
 
-constexpr int kLimitTileWidth = 32;
-constexpr int kLimitTileHeight = 24;
+    constexpr int kLimitTileWidth = 32;
+    constexpr int kLimitTileHeight = 24;
 
-struct StencilLimit {
-    bool have;
-    Rect pixelRect;
-    Rect scrollBorderRect;
-    int windowWidth;
-    int windowHeight;
-};
-
-StencilLimit stencilLimits[ELEVATION_COUNT];
-int stencilAlignX = 0;
-int stencilAlignY = 0;
-int stencilMaxAlignX = 0;
-int stencilMaxAlignY = 0;
-Rect stencilVisibleArea = {};
-bool stencilHaveVisibleArea = false;
-
-void absolute_screen(int tile, int& sx, int& sy)
-{
-    int x = tile % HEX_GRID_WIDTH;
-    int y = tile / HEX_GRID_WIDTH;
-    int column = HEX_GRID_WIDTH - 1 - x;
-    sx = 48 * (column / 2) + 16 * y;
-    sy = 12 * (-(column / 2)) + 12 * y;
-    if (column & 1) {
-        sx += 32;
-    }
-}
-
-int tile_from_absolute_screen(int sx, int sy)
-{
-    struct Key {
-        int x;
-        int y;
-        bool operator==(const Key& other) const { return x == other.x && y == other.y; }
+    struct StencilLimit {
+        bool have;
+        Rect pixelRect;
+        Rect scrollBorderRect;
+        int windowWidth;
+        int windowHeight;
     };
-    struct Hash {
-        size_t operator()(const Key& key) const
-        {
-            return (static_cast<size_t>(key.x) << 16) ^ static_cast<unsigned>(key.y);
+
+    StencilLimit stencilLimits[ELEVATION_COUNT];
+    int stencilAlignX = 0;
+    int stencilAlignY = 0;
+    int stencilMaxAlignX = 0;
+    int stencilMaxAlignY = 0;
+    Rect stencilVisibleArea = {};
+    bool stencilHaveVisibleArea = false;
+
+    void absolute_screen(int tile, int& sx, int& sy)
+    {
+        int x = tile % HEX_GRID_WIDTH;
+        int y = tile / HEX_GRID_WIDTH;
+        int column = HEX_GRID_WIDTH - 1 - x;
+        sx = 48 * (column / 2) + 16 * y;
+        sy = 12 * (-(column / 2)) + 12 * y;
+        if (column & 1) {
+            sx += 32;
         }
-    };
-    static std::unordered_map<Key, int, Hash> inverse;
-    static bool ready = false;
-    if (!ready) {
-        inverse.reserve(HEX_GRID_SIZE);
-        for (int tile = 0; tile < HEX_GRID_SIZE; tile++) {
+    }
+
+    int tile_from_absolute_screen(int sx, int sy)
+    {
+        struct Key {
             int x;
             int y;
-            absolute_screen(tile, x, y);
-            inverse[{ x, y }] = tile;
+            bool operator==(const Key& other) const { return x == other.x && y == other.y; }
+        };
+        struct Hash {
+            size_t operator()(const Key& key) const
+            {
+                return (static_cast<size_t>(key.x) << 16) ^ static_cast<unsigned>(key.y);
+            }
+        };
+        static std::unordered_map<Key, int, Hash> inverse;
+        static bool ready = false;
+        if (!ready) {
+            inverse.reserve(HEX_GRID_SIZE);
+            for (int tile = 0; tile < HEX_GRID_SIZE; tile++) {
+                int x;
+                int y;
+                absolute_screen(tile, x, y);
+                inverse[{ x, y }] = tile;
+            }
+            ready = true;
         }
-        ready = true;
-    }
-    auto found = inverse.find({ sx, sy });
-    if (found == inverse.end()) {
-        return -1;
-    }
-    return found->second;
-}
-
-bool iso_window_size(int& width, int& height)
-{
-    Rect winRect;
-    if (windowGetRect(gIsoWindow, &winRect) == -1) {
-        return false;
-    }
-    width = rectGetWidth(&winRect);
-    height = rectGetHeight(&winRect);
-    return width > 0 && height > 0;
-}
-
-void contract_limit(StencilLimit& limit, int winWidth, int winHeight)
-{
-    const int winHalfWidth = winWidth / 2;
-    const int winHalfHeight = winHeight / 2;
-    stencilMaxAlignX = winHalfWidth % kLimitTileWidth;
-    stencilMaxAlignY = winHalfHeight % kLimitTileHeight;
-    const int winHalfWidthSnapped = winHalfWidth - stencilMaxAlignX;
-    const int winHalfHeightSnapped = winHalfHeight - stencilMaxAlignY;
-
-    limit.scrollBorderRect = limit.pixelRect;
-
-    long rectHalfWidth = (limit.scrollBorderRect.left - limit.scrollBorderRect.right) / 2;
-    if (rectHalfWidth < winHalfWidthSnapped) {
-        long remainder = rectHalfWidth % kLimitTileWidth;
-        long snapped = rectHalfWidth - remainder;
-        limit.scrollBorderRect.left -= snapped;
-        limit.scrollBorderRect.right += snapped + (remainder ? kLimitTileWidth : 0);
-    } else {
-        limit.scrollBorderRect.left -= winHalfWidthSnapped;
-        limit.scrollBorderRect.right += winHalfWidthSnapped;
+        auto found = inverse.find({ sx, sy });
+        if (found == inverse.end()) {
+            return -1;
+        }
+        return found->second;
     }
 
-    long rectHalfHeight = (limit.scrollBorderRect.bottom - limit.scrollBorderRect.top) / 2;
-    if (rectHalfHeight < winHalfHeightSnapped) {
-        long remainder = rectHalfHeight % kLimitTileHeight;
-        long snapped = rectHalfHeight - remainder;
-        limit.scrollBorderRect.top += snapped + (remainder ? kLimitTileHeight : 0);
-        limit.scrollBorderRect.bottom -= snapped;
-    } else {
-        limit.scrollBorderRect.top += winHalfHeightSnapped;
-        limit.scrollBorderRect.bottom -= winHalfHeightSnapped;
+    bool iso_window_size(int& width, int& height)
+    {
+        Rect winRect;
+        if (windowGetRect(gIsoWindow, &winRect) == -1) {
+            return false;
+        }
+        width = rectGetWidth(&winRect);
+        height = rectGetHeight(&winRect);
+        return width > 0 && height > 0;
     }
 
-    if ((limit.scrollBorderRect.left < limit.scrollBorderRect.right) || (limit.scrollBorderRect.left - limit.scrollBorderRect.right) == kLimitTileWidth) {
-        limit.scrollBorderRect.left = limit.scrollBorderRect.right;
-    }
-    if ((limit.scrollBorderRect.bottom < limit.scrollBorderRect.top) || (limit.scrollBorderRect.bottom - limit.scrollBorderRect.top) == kLimitTileHeight) {
-        limit.scrollBorderRect.bottom = limit.scrollBorderRect.top;
+    void contract_limit(StencilLimit& limit, int winWidth, int winHeight)
+    {
+        const int winHalfWidth = winWidth / 2;
+        const int winHalfHeight = winHeight / 2;
+        stencilMaxAlignX = winHalfWidth % kLimitTileWidth;
+        stencilMaxAlignY = winHalfHeight % kLimitTileHeight;
+        const int winHalfWidthSnapped = winHalfWidth - stencilMaxAlignX;
+        const int winHalfHeightSnapped = winHalfHeight - stencilMaxAlignY;
+
+        limit.scrollBorderRect = limit.pixelRect;
+
+        long rectHalfWidth = (limit.scrollBorderRect.left - limit.scrollBorderRect.right) / 2;
+        if (rectHalfWidth < winHalfWidthSnapped) {
+            long remainder = rectHalfWidth % kLimitTileWidth;
+            long snapped = rectHalfWidth - remainder;
+            limit.scrollBorderRect.left -= snapped;
+            limit.scrollBorderRect.right += snapped + (remainder ? kLimitTileWidth : 0);
+        } else {
+            limit.scrollBorderRect.left -= winHalfWidthSnapped;
+            limit.scrollBorderRect.right += winHalfWidthSnapped;
+        }
+
+        long rectHalfHeight = (limit.scrollBorderRect.bottom - limit.scrollBorderRect.top) / 2;
+        if (rectHalfHeight < winHalfHeightSnapped) {
+            long remainder = rectHalfHeight % kLimitTileHeight;
+            long snapped = rectHalfHeight - remainder;
+            limit.scrollBorderRect.top += snapped + (remainder ? kLimitTileHeight : 0);
+            limit.scrollBorderRect.bottom -= snapped;
+        } else {
+            limit.scrollBorderRect.top += winHalfHeightSnapped;
+            limit.scrollBorderRect.bottom -= winHalfHeightSnapped;
+        }
+
+        if ((limit.scrollBorderRect.left < limit.scrollBorderRect.right) || (limit.scrollBorderRect.left - limit.scrollBorderRect.right) == kLimitTileWidth) {
+            limit.scrollBorderRect.left = limit.scrollBorderRect.right;
+        }
+        if ((limit.scrollBorderRect.bottom < limit.scrollBorderRect.top) || (limit.scrollBorderRect.bottom - limit.scrollBorderRect.top) == kLimitTileHeight) {
+            limit.scrollBorderRect.bottom = limit.scrollBorderRect.top;
+        }
+
+        limit.windowWidth = winWidth;
+        limit.windowHeight = winHeight;
     }
 
-    limit.windowWidth = winWidth;
-    limit.windowHeight = winHeight;
-}
+    bool ensure_contracted(MapElevation elevation)
+    {
+        if (!elevationIsValid(elevation)) {
+            return false;
+        }
+        StencilLimit& limit = stencilLimits[elevation];
+        if (!limit.have) {
+            return false;
+        }
+        int width;
+        int height;
+        if (!iso_window_size(width, height)) {
+            return false;
+        }
+        if (limit.windowWidth != width || limit.windowHeight != height) {
+            contract_limit(limit, width, height);
+        }
+        return true;
+    }
 
-bool ensure_contracted(MapElevation elevation)
-{
-    if (!elevationIsValid(elevation)) {
-        return false;
+    void update_stencil_alignment(const StencilLimit& limit, int px, int py)
+    {
+        stencilAlignX = 0;
+        stencilAlignY = 0;
+        if (px == limit.scrollBorderRect.left) {
+            stencilAlignX = -stencilMaxAlignX;
+        } else if (px == limit.scrollBorderRect.right) {
+            stencilAlignX = stencilMaxAlignX;
+        }
+        if (py == limit.scrollBorderRect.top) {
+            stencilAlignY = -stencilMaxAlignY;
+        } else if (py == limit.scrollBorderRect.bottom) {
+            stencilAlignY = stencilMaxAlignY;
+        }
     }
-    StencilLimit& limit = stencilLimits[elevation];
-    if (!limit.have) {
-        return false;
+
+    bool tile_outside_legacy_border(int tile)
+    {
+        if (!gTileBorderInitialized) {
+            return false;
+        }
+        int tileX = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH;
+        int tileY = tile / HEX_GRID_WIDTH;
+        return tileX <= gTileBorderMinX || tileX >= gTileBorderMaxX || tileY <= gTileBorderMinY || tileY >= gTileBorderMaxY;
     }
-    int width;
-    int height;
-    if (!iso_window_size(width, height)) {
-        return false;
-    }
-    if (limit.windowWidth != width || limit.windowHeight != height) {
+
+    void build_limit(MapElevation elevation, int seed)
+    {
+        std::vector<char> seen(HEX_GRID_SIZE);
+        std::vector<int> pending;
+        pending.push_back(seed);
+
+        bool haveContent = false;
+        Rect content {};
+
+        while (!pending.empty()) {
+            int tile = pending.back();
+            pending.pop_back();
+            if (tile < 0 || tile >= HEX_GRID_SIZE || seen[tile]) {
+                continue;
+            }
+            seen[tile] = 1;
+            if (tile != seed) {
+                if (_obj_scroll_blocking_at(tile, elevation) == 0) {
+                    continue;
+                }
+                if (tile_outside_legacy_border(tile)) {
+                    continue;
+                }
+            }
+
+            int px;
+            int py;
+            tileToPixelOffset(tile, px, py);
+            Rect view;
+            view.left = px + screen_view_width / 2;
+            view.right = px - screen_view_width / 2;
+            view.top = py - screen_view_height / 2;
+            view.bottom = py + screen_view_height / 2;
+            if (!haveContent) {
+                content = view;
+                haveContent = true;
+            } else {
+                if (view.left > content.left) content.left = view.left;
+                if (view.right < content.right) content.right = view.right;
+                if (view.top < content.top) content.top = view.top;
+                if (view.bottom > content.bottom) content.bottom = view.bottom;
+            }
+
+            int sx;
+            int sy;
+            absolute_screen(tile, sx, sy);
+            const int stepX[4] = { -pixels_per_horizontal_move, pixels_per_horizontal_move, 0, 0 };
+            const int stepY[4] = { 0, 0, -pixels_per_vertical_move, pixels_per_vertical_move };
+            for (int direction = 0; direction < 4; direction++) {
+                pending.push_back(tile_from_absolute_screen(sx + stepX[direction], sy + stepY[direction]));
+            }
+        }
+
+        if (!haveContent) {
+            return;
+        }
+
+        int width;
+        int height;
+        if (!iso_window_size(width, height)) {
+            return;
+        }
+        StencilLimit& limit = stencilLimits[elevation];
+        limit.pixelRect = content;
+        limit.have = true;
         contract_limit(limit, width, height);
     }
-    return true;
-}
 
-void update_stencil_alignment(const StencilLimit& limit, int px, int py)
-{
-    stencilAlignX = 0;
-    stencilAlignY = 0;
-    if (px == limit.scrollBorderRect.left) {
-        stencilAlignX = -stencilMaxAlignX;
-    } else if (px == limit.scrollBorderRect.right) {
-        stencilAlignX = stencilMaxAlignX;
-    }
-    if (py == limit.scrollBorderRect.top) {
-        stencilAlignY = -stencilMaxAlignY;
-    } else if (py == limit.scrollBorderRect.bottom) {
-        stencilAlignY = stencilMaxAlignY;
-    }
-}
-
-bool tile_outside_legacy_border(int tile)
-{
-    if (!gTileBorderInitialized) {
-        return false;
-    }
-    int tileX = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH;
-    int tileY = tile / HEX_GRID_WIDTH;
-    return tileX <= gTileBorderMinX || tileX >= gTileBorderMaxX || tileY <= gTileBorderMinY || tileY >= gTileBorderMaxY;
-}
-
-void build_limit(MapElevation elevation, int seed)
-{
-    std::vector<char> seen(HEX_GRID_SIZE);
-    std::vector<int> pending;
-    pending.push_back(seed);
-
-    bool haveContent = false;
-    Rect content {};
-
-    while (!pending.empty()) {
-        int tile = pending.back();
-        pending.pop_back();
-        if (tile < 0 || tile >= HEX_GRID_SIZE || seen[tile]) {
-            continue;
+    void prepare_limit(MapElevation elevation, int seed)
+    {
+        if (!gIsTileHiresStencilEnabled || mapEdgeIsLoaded() || !elevationIsValid(elevation) || !tileIsValid(seed)) {
+            return;
         }
-        seen[tile] = 1;
-        if (tile != seed) {
-            if (_obj_scroll_blocking_at(tile, elevation) == 0) {
-                continue;
-            }
-            if (tile_outside_legacy_border(tile)) {
-                continue;
-            }
+        if (stencilLimits[elevation].have) {
+            ensure_contracted(elevation);
+            return;
         }
-
-        int px;
-        int py;
-        tileToPixelOffset(tile, px, py);
-        Rect view;
-        view.left = px + screen_view_width / 2;
-        view.right = px - screen_view_width / 2;
-        view.top = py - screen_view_height / 2;
-        view.bottom = py + screen_view_height / 2;
-        if (!haveContent) {
-            content = view;
-            haveContent = true;
-        } else {
-            if (view.left > content.left) content.left = view.left;
-            if (view.right < content.right) content.right = view.right;
-            if (view.top < content.top) content.top = view.top;
-            if (view.bottom > content.bottom) content.bottom = view.bottom;
-        }
-
-        int sx;
-        int sy;
-        absolute_screen(tile, sx, sy);
-        const int stepX[4] = { -pixels_per_horizontal_move, pixels_per_horizontal_move, 0, 0 };
-        const int stepY[4] = { 0, 0, -pixels_per_vertical_move, pixels_per_vertical_move };
-        for (int direction = 0; direction < 4; direction++) {
-            pending.push_back(tile_from_absolute_screen(sx + stepX[direction], sy + stepY[direction]));
-        }
+        build_limit(elevation, seed);
     }
-
-    if (!haveContent) {
-        return;
-    }
-
-    int width;
-    int height;
-    if (!iso_window_size(width, height)) {
-        return;
-    }
-    StencilLimit& limit = stencilLimits[elevation];
-    limit.pixelRect = content;
-    limit.have = true;
-    contract_limit(limit, width, height);
-}
-
-void prepare_limit(MapElevation elevation, int seed)
-{
-    if (!gIsTileHiresStencilEnabled || mapEdgeIsLoaded() || !elevationIsValid(elevation) || !tileIsValid(seed)) {
-        return;
-    }
-    if (stencilLimits[elevation].have) {
-        ensure_contracted(elevation);
-        return;
-    }
-    build_limit(elevation, seed);
-}
 
 } // namespace
 

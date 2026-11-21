@@ -28,7 +28,6 @@
 #include "kb.h"
 #include "map_edge.h"
 #include "mouse.h"
-#include "tile_hires_stencil.h"
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
@@ -39,6 +38,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
+#include "tile_hires_stencil.h"
 #include "window_manager.h"
 
 namespace fallout {
