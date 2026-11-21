@@ -28,6 +28,7 @@
 #include "kb.h"
 #include "map_edge.h"
 #include "mouse.h"
+#include "tile_hires_stencil.h"
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
@@ -1036,7 +1037,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
     if (gameMouseClickOnInterfaceBar()) {
         return;
     }
-    if (mapEdgeIsOverClippedArea(mouseX, mouseY)) {
+    if (mapEdgeIsOverClippedArea(mouseX, mouseY) || tile_hires_stencil_is_over_clipped_area(mouseX, mouseY)) {
         return;
     }
 
@@ -2818,7 +2819,7 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
     }
 
     if (dx == 0 && dy == 0) {
-        if (mapEdgeIsOverClippedArea(x, y)) {
+        if (mapEdgeIsOverClippedArea(x, y) || tile_hires_stencil_is_over_clipped_area(x, y)) {
             gameMouseObjectsHide();
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             return 0;

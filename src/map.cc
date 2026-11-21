@@ -792,6 +792,7 @@ int mapSetEnteringLocation(MapElevation elevation, int tile_num, Rotation rotati
 void mapNewMap()
 {
     mapEdgeFree();
+    tile_hires_stencil_reset_limits();
     mapSetElevation(ELEVATION_FIRST);
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
@@ -1029,11 +1030,10 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    mapEdgeFree();
     if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
     }
-    tile_hires_stencil_reset_cache();
+    tile_hires_stencil_reset_limits();
 
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
@@ -1687,6 +1687,9 @@ static void isoWindowRefreshRectGame(Rect* rect)
 
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(gElevation, &visArea);
+    }
 
     // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
@@ -1704,7 +1707,7 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    if (!hasVisArea || mapEdgeIsSynthetic()) {
+    if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
 }
@@ -1719,6 +1722,9 @@ static void isoWindowRefreshRectMapper(Rect* rect)
 
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(gElevation, &visArea);
+    }
 
     // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,

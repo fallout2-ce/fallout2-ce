@@ -21,7 +21,6 @@ constexpr int kTileHeight = 24;
 
 static EdgeElevationData edgeData[ELEVATION_COUNT];
 static bool edgeDataLoaded = false;
-static bool syntheticEdge = false;
 static bool mapperMode = false;
 static bool edgeVersion2 = false;
 static EdgeZone* currentEdgeZone = nullptr;
@@ -86,15 +85,10 @@ static void calcEdgeData(EdgeZone* zone)
     const int winHalfWidthSnapped = winHalfWidth - maxTileXAlignment;
     const int winHalfHeightSnapped = winHalfHeight - maxTileYAlignment;
 
-    int px, py;
-    // A synthetic zone already has pixelRect. Skip the tile conversion below.
-    if (syntheticEdge) {
-        zone->scrollBorderRect = zone->pixelRect;
-        goto contractScrollBorder;
-    }
-
     // Convert tileRect corners to pixel offsets.
     // pixelRect = raw pixel-space rect before any contraction.
+    int px, py;
+
     tileToPixelOffset(zone->tileRect.left, px, py);
     zone->pixelRect.left = zone->scrollBorderRect.left = px;
 
@@ -106,8 +100,6 @@ static void calcEdgeData(EdgeZone* zone)
 
     tileToPixelOffset(zone->tileRect.bottom, px, py);
     zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
-
-contractScrollBorder:
 
     // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
     // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
@@ -347,12 +339,6 @@ static bool writeEdgStream(File* stream)
 
 void mapEdgeSave(const char* mapName)
 {
-    // Synthetic limits exist only in memory. Writing them would create an EDG
-    // file the next load would treat as authored data.
-    if (syntheticEdge) {
-        return;
-    }
-
     int totalZones = 0;
     for (const EdgeElevationData& data : edgeData) {
         totalZones += static_cast<int>(data.zones.size());
@@ -392,7 +378,6 @@ void mapEdgeFree()
         data = EdgeElevationData {};
     }
     edgeDataLoaded = false;
-    syntheticEdge = false;
     currentEdgeZone = nullptr;
     currentTileXAlignment = 0;
     currentTileYAlignment = 0;
@@ -404,28 +389,6 @@ void mapEdgeFree()
 bool mapEdgeIsLoaded()
 {
     return edgeDataLoaded;
-}
-
-void mapEdgeSetSyntheticPixelRect(MapElevation elevation, const Rect& pixelRect)
-{
-    if (!elevationIsValid(elevation) || edgeDataLoaded) {
-        return;
-    }
-
-    EdgeZone zone {};
-    zone.pixelRect = pixelRect;
-    syntheticEdge = true;
-    calcEdgeData(&zone);
-
-    EdgeElevationData& data = edgeData[elevation];
-    data.zones.clear();
-    data.zones.push_back(zone);
-    currentEdgeZone = &data.zones.back();
-}
-
-bool mapEdgeIsSynthetic()
-{
-    return syntheticEdge;
 }
 
 void mapEdgeSetMapperMode(bool enabled)
@@ -441,7 +404,7 @@ bool mapEdgeIsMapperMode()
 bool mapEdgeIsEnabled()
 {
     // Enforced when data is loaded, we're not editing in the mapper, and the user enabled it.
-    return !mapperMode && !settings.ui.ignore_map_edges && (syntheticEdge || (edgeDataLoaded && settings.ui.edg_support));
+    return edgeDataLoaded && !mapperMode && settings.ui.edg_support && !settings.ui.ignore_map_edges;
 }
 
 void mapEdgeUpgradeToVersion2()

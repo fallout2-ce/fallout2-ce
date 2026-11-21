@@ -565,6 +565,9 @@ int tileSetCenter(int tile, int flags)
         // Forced positioning (teleport, load): clamp to edge boundary.
         tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
         if (!tileIsValid(tile)) return -1;
+    } else if (!isScroll) {
+        tile = tile_hires_stencil_clamp_center(tile, gElevation);
+        if (!tileIsValid(tile)) return -1;
     }
 
     bool boundaryModsSet = false;
@@ -602,6 +605,14 @@ int tileSetCenter(int tile, int flags)
                 boundaryModsSet = true;
                 flags |= TILE_SET_CENTER_REFRESH_WINDOW;
             }
+        } else if (isScroll && tile_hires_stencil_limits_active()) {
+            if (!tile_hires_stencil_tile_in_bounds(tile)) {
+                return -1;
+            }
+            if (tile_hires_stencil_set_boundary_mods(tile)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
+            }
         } else if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
             // Object scroll-blocker only applies when EDG isn't enforcing the boundary.
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
@@ -615,20 +626,16 @@ int tileSetCenter(int tile, int flags)
 
     // Legacy global borders are for maps without EDG data. EDG maps use their
     // own boundary/clamp logic above, which can validly land on this border.
-    if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileBorderInitialized && gTileScrollBlockingEnabled) {
+    if ((!edgeActive || !mapEdgeZoneIsSelected()) && !tile_hires_stencil_limits_active() && gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
     }
 
-    // The synthetic zone appears only after the flood below. One more pass writes
-    // the clamped center before the single refresh.
-    bool didSyntheticClamp = false;
-recommitCenter:
     _tile_y = tile_y;
-    _tile_offx = mapEdgeGetTileXAlignment() + (gTileWindowWidth - 32) / 2;
+    _tile_offx = mapEdgeGetTileXAlignment() + tile_hires_stencil_get_tile_x_alignment() + (gTileWindowWidth - 32) / 2;
     _tile_x = tile_x;
-    _tile_offy = mapEdgeGetTileYAlignment() + (gTileWindowHeight - 16) / 2;
+    _tile_offy = mapEdgeGetTileYAlignment() + tile_hires_stencil_get_tile_y_alignment() + (gTileWindowHeight - 16) / 2;
 
     if (tile_x & 1) {
         _tile_x -= 1;
@@ -647,21 +654,7 @@ recommitCenter:
 
     gCenterTile = tile;
 
-    if (!didSyntheticClamp) {
-        tile_hires_stencil_on_center_tile_or_elevation_change();
-
-        if (mapEdgeIsSynthetic() && !isScroll) {
-            int clamped = mapEdgeSelectZoneAndClamp(gCenterTile, gElevation);
-            if (!tileIsValid(clamped)) {
-                return -1;
-            }
-            didSyntheticClamp = true;
-            tile = clamped;
-            tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
-            tile_y = tile / gHexGridWidth;
-            goto recommitCenter;
-        }
-    }
+    tile_hires_stencil_on_center_tile_or_elevation_change();
 
     if ((flags & TILE_SET_CENTER_REFRESH_WINDOW) != 0) {
         // NOTE: Uninline.
@@ -694,6 +687,9 @@ static void tileRefreshMapper(Rect* rect, MapElevation elevation)
 
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(elevation, &visArea);
+    }
 
     Rect renderRect = rectToUpdate;
     bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
@@ -740,6 +736,9 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
 
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(elevation, &visArea);
+    }
 
     Rect renderRect = rectToUpdate;
     bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
@@ -765,7 +764,7 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
-    if (!hasVisArea || mapEdgeIsSynthetic()) {
+    if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
