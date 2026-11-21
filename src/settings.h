@@ -155,13 +155,15 @@ struct UISettings {
     // Whether to scale movies to fit the screen while preserving aspect ratio.
     bool movie_aspect_fit = true;
 
-    // Whether to load EDG files (HRP format) when loading maps. If loaded, they override default edge clipping and scroll blocking behavior.
+    // Load .edg files with maps. A loaded file sets where scrolling stops and draws a straight black edge.
+    // Once a file is loaded, the hi-res stencil stops working, so enable_high_resolution_stencil has no effect.
+    // A map with no .edg file uses the stencil when that option is on, and the old scroll blockers when it is off.
     bool edg_support = true;
 
     // Disables the player-centered map scroll limit.
     bool ignore_scroll_limit = false;
 
-    // Disables map edges, including vanilla scroll blockers and CE hi-res stencil.
+    // Turn map edges off. A loaded .edg file, the hi-res stencil, and the old scroll blockers are all disabled.
     bool ignore_map_edges = false;
 
     // iOS quick-actions toolbar above the interface bar. No-op on other platforms.
@@ -180,6 +182,10 @@ struct UISettings {
     // Whether to use high resolution art for dialog borders.
     bool dialog_border = true;
     int auto_quick_save = 0;
+    // On a map with no loaded .edg file, stop scrolling at the area the original 640x480 camera could
+    // reach, and black the corners inside that area which that camera never saw.
+    // If an .edg file is loaded, the stencil stops working, so this option has no effect.
+    // If ignore_map_edges is on, map edges are disabled, so this option is not used.
     bool enable_high_resolution_stencil = true;
     // Maximum number of columns in inventory and loot windows
     int inventory_columns = 1;
