@@ -28,6 +28,7 @@
 #include "queue.h"
 #include "random.h"
 #include "scripts.h"
+#include "settings.h"
 #include "skill.h"
 #include "stat.h"
 #include "string_parsers.h"
@@ -1182,6 +1183,15 @@ Object* partyMemberGetBestInSkill(Skill skill)
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
         if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
+            if (settings.qol.separate_npc_skill_limits) {
+                bool hasSlot = (object == gDude)
+                    ? PlayerSkillUsage::instance().hasFreeSlot(skill)
+                    : CritterSkillUsage::instance().hasFreeSlot(object->pid, skill);
+                if (!hasSlot) {
+                    continue;
+                }
+            }
+
             int value = skillGetValue(object, skill);
             if (value > bestValue) {
                 bestValue = value;

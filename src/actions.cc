@@ -1514,16 +1514,17 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
         }
 
         if (partyMember != nullptr) {
-            bool isDude = false;
-            if (objectGetDistanceBetween(gDude, target) <= 1) {
-                isDude = true;
-            }
+            bool isDude = objectGetDistanceBetween(gDude, target) <= 1;
 
-            char* msg = skillsGetGenericResponse(partyMember, isDude);
+            // Skip the companion's response when the player is forced to act and has no daily uses left.
+            bool showResponse = !isDude || !settings.qol.separate_npc_skill_limits || PlayerSkillUsage::instance().hasFreeSlot(skill);
+            if (showResponse) {
+                char* msg = skillsGetGenericResponse(partyMember, isDude);
 
-            Rect rect;
-            if (textObjectAdd(partyMember, msg, 101, COLOR_LIGHT_YELLOW, COLOR_BLACK, &rect) == 0) {
-                tileWindowRefreshRect(&rect, gElevation);
+                Rect rect;
+                if (textObjectAdd(partyMember, msg, 101, COLOR_LIGHT_YELLOW, COLOR_BLACK, &rect) == 0) {
+                    tileWindowRefreshRect(&rect, gElevation);
+                }
             }
 
             if (isDude) {
