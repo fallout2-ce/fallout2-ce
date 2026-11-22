@@ -688,12 +688,12 @@ namespace InterfaceFrameButtonGroups {
 
     inline constexpr InterfaceFrameButtonGroup InventoryButtonOut {
         InterfaceFrameId::InventoryButtonOutUp,
-        InterfaceFrameId::InventoryButtonOutDown,
+        InterfaceFrameId::InventoryButtonInUp,
         InterfaceFrameId::InventoryButtonUpDisabled,
     };
 
     inline constexpr InterfaceFrameButtonGroup InventoryButtonIn {
-        InterfaceFrameId::InventoryButtonInUp,
+        InterfaceFrameId::InventoryButtonOutDown,
         InterfaceFrameId::InventoryButtonInDown,
         InterfaceFrameId::InventoryButtonDownDisabled,
     };
@@ -877,57 +877,6 @@ namespace InterfaceFrameButtonGroups {
     inline constexpr InterfaceFrameButtonGroup CharacterEditorOptionsButton {
         InterfaceFrameId::OptionsButtonOff,
         InterfaceFrameId::OptionsButtonOn,
-    };
-
-    // Action menu icons
-    inline constexpr InterfaceFrameButtonGroup ActionCancel {
-        InterfaceFrameId::Cancel,
-        InterfaceFrameId::CancelHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionDrop {
-        InterfaceFrameId::Drop,
-        InterfaceFrameId::DropHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionInventory {
-        InterfaceFrameId::Inventory,
-        InterfaceFrameId::InventoryHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionLook {
-        InterfaceFrameId::Look,
-        InterfaceFrameId::LookHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionRotate {
-        InterfaceFrameId::Rotate,
-        InterfaceFrameId::RotateHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionTalk {
-        InterfaceFrameId::Talk,
-        InterfaceFrameId::TalkHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionUseGet {
-        InterfaceFrameId::UseGet,
-        InterfaceFrameId::UseGetHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionUnload {
-        InterfaceFrameId::Unload,
-        InterfaceFrameId::UnloadHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionSkill {
-        InterfaceFrameId::Skill,
-        InterfaceFrameId::SkillHighlighted,
-    };
-
-    inline constexpr InterfaceFrameButtonGroup ActionPush {
-        InterfaceFrameId::Push,
-        InterfaceFrameId::PushHighlighted,
     };
 
     // Party control
