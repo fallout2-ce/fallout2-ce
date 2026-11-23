@@ -588,11 +588,13 @@ struct InterfaceFrameButtonGroup {
     InterfaceFrmId down;
     InterfaceFrmId disabled;
 
-    constexpr bool isValid() const {
+    constexpr bool isValid() const
+    {
         return up.hasFid() && down.hasFid();
     }
 
-    constexpr bool hasDisabled() const {
+    constexpr bool hasDisabled() const
+    {
         return disabled.hasFid();
     }
 };
