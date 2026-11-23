@@ -4606,9 +4606,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 actionMenuItemsLength = 3;
                 actionMenuItems = _act_no_use;
             } else {
-                bool checkItemUsability = !isPartyMemberLootInventory
-                    || itemType == ITEM_TYPE_DRUG
-                    || itemType == ITEM_TYPE_CONTAINER;
+                bool checkItemUsability = !isPartyMemberLootInventory || itemType == ITEM_TYPE_DRUG;
                 if (checkItemUsability && (_obj_action_can_use(item) || _proto_action_can_use_on(item))) {
                     actionMenuItemsLength = 4;
                     actionMenuItems = _act_use;
