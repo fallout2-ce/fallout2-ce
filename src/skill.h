@@ -135,8 +135,6 @@ static_assert(sizeof(std::array<SkillUsageSlots, SKILL_COUNT>) == sizeof(int) * 
 // Tracks the player's daily skill usage slots (serialized in SAVE.DAT).
 class PlayerSkillUsage {
 public:
-    static PlayerSkillUsage& instance();
-
     const SkillUsageSlots& slots(Skill skill) const
     {
         return _slots[skill];
@@ -161,8 +159,6 @@ class CritterSkillUsage {
 public:
     using TableMap = std::map<int, CritterSkillUsageTable>;
 
-    static CritterSkillUsage& instance();
-
     const TableMap& tables() const
     {
         return _tables;
@@ -178,6 +174,9 @@ private:
     // Keyed by critter proto ID so companion quotas persist across maps and save/load.
     TableMap _tables;
 };
+
+extern PlayerSkillUsage playerSkillUsage;
+extern CritterSkillUsage critterSkillUsage;
 
 int skillGetGameDifficultyModifier(Skill skill);
 int skillsUsageSave(File* stream);

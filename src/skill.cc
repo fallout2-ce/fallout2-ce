@@ -223,11 +223,8 @@ bool SkillUsageSlots::hasAnyTimestamp() const
     return false;
 }
 
-CritterSkillUsage& CritterSkillUsage::instance()
-{
-    static CritterSkillUsage tracker;
-    return tracker;
-}
+PlayerSkillUsage playerSkillUsage;
+CritterSkillUsage critterSkillUsage;
 
 bool CritterSkillUsage::hasFreeSlot(int pid, Skill skill) const
 {
@@ -303,12 +300,6 @@ void CritterSkillUsage::clear()
     _tables.clear();
 }
 
-PlayerSkillUsage& PlayerSkillUsage::instance()
-{
-    static PlayerSkillUsage tracker;
-    return tracker;
-}
-
 std::optional<size_t> PlayerSkillUsage::findFreeSlot(Skill skill) const
 {
     return _slots[skill].findFreeUsageSlot(gameTimeGetTime());
@@ -357,15 +348,15 @@ static bool skillHasFreeUsageSlot(const Object* critter, Skill skill)
     }
 
     return shouldSelectPlayerSkill(critter)
-        ? PlayerSkillUsage::instance().hasFreeSlot(skill)
-        : CritterSkillUsage::instance().hasFreeSlot(critter->pid, skill);
+        ? playerSkillUsage.hasFreeSlot(skill)
+        : critterSkillUsage.hasFreeSlot(critter->pid, skill);
 }
 
 static bool skillRecordUse(const Object* critter, Skill skill)
 {
     return shouldSelectPlayerSkill(critter)
-        ? PlayerSkillUsage::instance().recordUse(skill)
-        : CritterSkillUsage::instance().recordUse(critter->pid, skill);
+        ? playerSkillUsage.recordUse(skill)
+        : critterSkillUsage.recordUse(critter->pid, skill);
 }
 
 // 0x668070 tag_skill
@@ -1675,21 +1666,21 @@ int skillGetGameDifficultyModifier(Skill skill)
 // 0x4ABF24
 int skill_use_slot_clear()
 {
-    PlayerSkillUsage::instance().clear();
-    CritterSkillUsage::instance().clear();
+    playerSkillUsage.clear();
+    critterSkillUsage.clear();
     return 0;
 }
 
 // 0x4ABF3C
 int skillsUsageSave(File* stream)
 {
-    return PlayerSkillUsage::instance().save(stream);
+    return playerSkillUsage.save(stream);
 }
 
 // 0x4ABF5C
 int skillsUsageLoad(File* stream)
 {
-    return PlayerSkillUsage::instance().load(stream);
+    return playerSkillUsage.load(stream);
 }
 
 // 0x4ABF7C

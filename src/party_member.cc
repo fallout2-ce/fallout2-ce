@@ -1185,8 +1185,8 @@ Object* partyMemberGetBestInSkill(Skill skill)
         if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && ProtoId(object).objectType() == OBJ_TYPE_CRITTER) {
             if (settings.qol.separate_npc_skill_limits) {
                 bool hasSlot = (object == gDude)
-                    ? PlayerSkillUsage::instance().hasFreeSlot(skill)
-                    : CritterSkillUsage::instance().hasFreeSlot(object->pid, skill);
+                    ? playerSkillUsage.hasFreeSlot(skill)
+                    : critterSkillUsage.hasFreeSlot(object->pid, skill);
                 if (!hasSlot) {
                     continue;
                 }

@@ -1517,7 +1517,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             bool isDude = objectGetDistanceBetween(gDude, target) <= 1;
 
             // Skip the companion's response when the player is forced to act and has no daily uses left.
-            bool showResponse = !isDude || !settings.qol.separate_npc_skill_limits || PlayerSkillUsage::instance().hasFreeSlot(skill);
+            bool showResponse = !isDude || !settings.qol.separate_npc_skill_limits || playerSkillUsage.hasFreeSlot(skill);
             if (showResponse) {
                 char* msg = skillsGetGenericResponse(partyMember, isDude);
 

@@ -139,7 +139,7 @@ static bool loadCritterSkillUsageSection(Config& config)
         tables[pid] = *table;
     }
 
-    CritterSkillUsage::instance().importTables(std::move(tables));
+    critterSkillUsage.importTables(std::move(tables));
     return true;
 }
 
@@ -155,11 +155,10 @@ bool ceSaveGameData(const char* path)
         return false;
     }
 
-    CritterSkillUsage& tracker = CritterSkillUsage::instance();
-    tracker.pruneExpired();
+    critterSkillUsage.pruneExpired();
 
     // Store one key per critter PID to avoid INI line-length limits.
-    for (const auto& [pid, table] : tracker.tables()) {
+    for (const auto& [pid, table] : critterSkillUsage.tables()) {
         std::string key = std::to_string(pid);
         std::string serialized = serializeCritterSkillUsage(table);
         if (!configSetString(config.get(), kSkillUsageSection, key.c_str(), serialized.c_str())) {
@@ -172,7 +171,7 @@ bool ceSaveGameData(const char* path)
 
 void ceLoadGameData(const char* path)
 {
-    CritterSkillUsage::instance().clear();
+    critterSkillUsage.clear();
 
     bool perksLoaded = false;
     if (compat_access(path, 0) == 0) {
