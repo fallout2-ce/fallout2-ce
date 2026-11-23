@@ -8,6 +8,7 @@
 #include "db.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "geometry.h"
 #include "input.h"
 #include "memory_manager.h"
@@ -804,7 +805,7 @@ static int _stepMovie()
     int stepResult = _MVE_rmStepMovie();
     if (stepResult != -1) {
         movieRenderSubtitles();
-        renderPresent();
+        scheduler.presentNow();
     }
 
     return stepResult;

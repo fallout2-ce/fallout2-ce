@@ -6,6 +6,8 @@
 #include "svga.h"
 #include "win32.h"
 
+#include <utility>
+
 namespace fallout {
 
 static int gMouseWheelDeltaX = 0;
@@ -15,6 +17,8 @@ static int mouseWindowMappingWindowHeight = 0;
 static int mouseWindowMappingLogicalWidth = 0;
 static int mouseWindowMappingLogicalHeight = 0;
 static bool mouseRelativeMode = false;
+static SDL_Point sampledMotion { };
+static unsigned int motionGeneration = 0;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
 
@@ -51,8 +55,15 @@ bool mouseDeviceUsesRelativeMode()
     return mouseRelativeMode;
 }
 
+unsigned int mouseDeviceMotionGeneration()
+{
+    return motionGeneration;
+}
+
 bool mouseDeviceInitMode()
 {
+    sampledMotion = { };
+    ++motionGeneration;
     // "Relative mode" means cursor position is owned by the application, and we move based on mouse deltas
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
     // Mouse sensitivity settings can only apply in relative mode.
@@ -100,6 +111,10 @@ bool mouseDeviceGetData(MouseData* mouseState)
         : SDL_GetMouseState(&(mouseState->x), &(mouseState->y));
     if (!mouseDeviceUsesRelativeMode()) {
         mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
+    } else {
+        const auto motion = std::exchange(sampledMotion, SDL_Point { });
+        mouseState->x += motion.x;
+        mouseState->y += motion.y;
     }
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     mouseState->buttons[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
@@ -110,6 +125,22 @@ bool mouseDeviceGetData(MouseData* mouseState)
     gMouseWheelDeltaY = 0;
 
     return true;
+}
+
+SDL_Point mouseDeviceSamplePosition()
+{
+    SDL_Point point;
+    if (mouseRelativeMode) {
+        // Reading SDL's relative motion consumes it. Keep the sum for the update.
+        SDL_GetRelativeMouseState(&point.x, &point.y);
+        sampledMotion.x += point.x;
+        sampledMotion.y += point.y;
+        return sampledMotion;
+    }
+
+    SDL_GetMouseState(&point.x, &point.y);
+    mouseDeviceMapWindowToLogicalPosition(&point.x, &point.y);
+    return point;
 }
 
 // 0x4E05A8

@@ -1,5 +1,10 @@
 #include "interpreter_lib.h"
 
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <functional>
+
 #include "color.h"
 #include "datafile.h"
 #include "debug.h"
@@ -11,6 +16,7 @@
 #include "mouse_manager.h"
 #include "movie.h"
 #include "nevs.h"
+#include "scheduler.h"
 #include "select_file_list.h"
 #include "sound.h"
 #include "svga.h"
@@ -38,8 +44,8 @@ static void opPrintRect(Program* program);
 static void opSelect(Program* program);
 static void opDisplay(Program* program);
 static void opDisplayRaw(Program* program);
-static void _interpretFadePaletteBK(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration, bool shouldProcessBk);
-static void interpretFadePalette(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration);
+static void _interpretFadePaletteBK(const unsigned char* oldPalette, unsigned char* newPalette, float duration, bool shouldProcessBk);
+static void interpretFadePalette(unsigned char* oldPalette, unsigned char* newPalette, float duration);
 static int intlibGetFadeIn();
 static void interpretFadeOut(float duration);
 static void interpretFadeIn(float duration);
@@ -407,56 +413,56 @@ void opDisplayRaw(Program* program)
 }
 
 // 0x46222C interpretFadePaletteBK
-static void _interpretFadePaletteBK(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration, int shouldProcessBk)
+static void _interpretFadePaletteBK(const unsigned char* oldPalette, unsigned char* newPalette, float duration, bool shouldProcessBk)
 {
-    unsigned int time;
-    unsigned int previousTime;
-    unsigned int delta;
-    int step;
-    int steps;
-    int index;
-    unsigned char palette[256 * 3];
-
-    time = getTicks();
-    previousTime = time;
-    steps = (int)duration;
-    step = 0;
-    delta = 0;
-
-    // TODO: Check if it needs throttling.
-    if (duration != 0.0) {
-        while (step < steps) {
-            if (delta != 0) {
-                for (index = 0; index < 768; index++) {
-                    palette[index] = oldPalette[index] - (oldPalette[index] - newPalette[index]) * step / steps;
-                }
-
-                _setSystemPalette(palette);
-                renderPresent();
-
-                previousTime = time;
-                step += delta;
-            }
-
-            if (shouldProcessBk) {
-                _process_bk();
-            }
-
-            time = getTicks();
-            delta = time - previousTime;
-        }
+    const int durationMs = static_cast<int>(duration);
+    if (durationMs <= 0) {
+        _setSystemPalette(newPalette);
+        scheduler.presentNow();
+        return;
     }
 
-    _setSystemPalette(newPalette);
-    renderPresent();
+    // The fade-out starts from the live palette, which _setSystemPalette rewrites.
+    std::array<unsigned char, COLOR_MAP_SIZE> initialPalette;
+    std::copy_n(oldPalette, initialPalette.size(), initialPalette.begin());
+
+    const auto start = getTicks();
+    bool finished = false;
+    const std::function<void()> draw = [&] {
+        if (finished) {
+            return;
+        }
+
+        const auto elapsed = getTicks() - start;
+        if (elapsed >= static_cast<unsigned int>(durationMs)) {
+            _setSystemPalette(newPalette);
+            finished = true;
+            return;
+        }
+
+        unsigned char palette[COLOR_MAP_SIZE];
+        for (int index = 0; index < COLOR_MAP_SIZE; ++index) {
+            const int from = initialPalette[index];
+            const int to = newPalette[index];
+            palette[index] = from + (to - from) * static_cast<int64_t>(elapsed) / durationMs;
+        }
+        _setSystemPalette(palette);
+    };
+
+    while (!finished) {
+        if (shouldProcessBk) {
+            _process_bk();
+        }
+        scheduler.finishUpdate(draw);
+    }
 }
 
 // NOTE: Unused.
 //
 // 0x462330 interpretFadePalette
-static void interpretFadePalette(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration)
+static void interpretFadePalette(unsigned char* oldPalette, unsigned char* newPalette, float duration)
 {
-    _interpretFadePaletteBK(oldPalette, newPalette, a3, duration, 1);
+    _interpretFadePaletteBK(oldPalette, newPalette, duration, true);
 }
 
 // NOTE: Unused.
@@ -475,7 +481,7 @@ static void interpretFadeOut(float duration)
     cursorWasHidden = cursorIsHidden();
     mouseHideCursor();
 
-    _interpretFadePaletteBK(_getSystemPalette(), gIntLibFadePalette, 64, duration, 1);
+    _interpretFadePaletteBK(_getSystemPalette(), gIntLibFadePalette, duration, true);
 
     if (!cursorWasHidden) {
         mouseShowCursor();
@@ -487,7 +493,7 @@ static void interpretFadeOut(float duration)
 // 0x462380 interpretFadeIn
 static void interpretFadeIn(float duration)
 {
-    _interpretFadePaletteBK(gIntLibFadePalette, _cmap, 64, duration, 1);
+    _interpretFadePaletteBK(gIntLibFadePalette, _cmap, duration, true);
 }
 
 // NOTE: Unused.
@@ -500,7 +506,7 @@ static void interpretFadeOutNoBK(float duration)
     cursorWasHidden = cursorIsHidden();
     mouseHideCursor();
 
-    _interpretFadePaletteBK(_getSystemPalette(), gIntLibFadePalette, 64, duration, 0);
+    _interpretFadePaletteBK(_getSystemPalette(), gIntLibFadePalette, duration, false);
 
     if (!cursorWasHidden) {
         mouseShowCursor();
@@ -512,7 +518,7 @@ static void interpretFadeOutNoBK(float duration)
 // 0x4623DC interpretFadeInNoBK
 static void interpretFadeInNoBK(float duration)
 {
-    _interpretFadePaletteBK(gIntLibFadePalette, _cmap, 64, duration, 0);
+    _interpretFadePaletteBK(gIntLibFadePalette, _cmap, duration, false);
 }
 
 // fadein

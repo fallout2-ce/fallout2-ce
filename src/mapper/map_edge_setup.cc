@@ -6,6 +6,7 @@
 
 #include "color.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "geometry.h"
 #include "input.h"
 #include "kb.h"
@@ -502,7 +503,6 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
 
         int mx;
@@ -566,8 +566,7 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 

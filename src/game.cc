@@ -23,6 +23,7 @@
 #include "draw.h"
 #include "endgame.h"
 #include "font_manager.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_dialog.h"
 #include "game_memory.h"
@@ -1278,18 +1279,13 @@ void showHelp()
                 windowShow(win);
 
                 while (inputGetInput() == -1 && _game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
-                    sharedFpsLimiter.mark();
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                    scheduler.finishUpdate();
                 }
 
                 while (mouseGetEvent() != MouseButtonEvent::None) {
-                    sharedFpsLimiter.mark();
-
                     inputGetInput();
 
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                    scheduler.finishUpdate();
                 }
 
                 paletteSetEntries(gPaletteBlack);

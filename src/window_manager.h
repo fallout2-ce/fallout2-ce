@@ -275,7 +275,6 @@ void windowRefresh(int win);
 void windowRefreshRect(int win, const Rect* rect);
 void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest);
 void windowRefreshAll(Rect* rect);
-void _win_get_mouse_buf(unsigned char* dest);
 bool windowIsValidWindowId(int win);
 Window* windowGetWindow(int win);
 unsigned char* windowGetBuffer(int win);

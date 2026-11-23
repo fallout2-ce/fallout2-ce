@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "delay.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
@@ -419,8 +420,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     bool skipGauge = false;
     int keyCode;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         keyCode = inputGetInput();
         if (keyCode == KEY_ESCAPE) {
             keyCode = elevatorGetLevelFromEscKey(elevator, *mapPtr);
@@ -440,8 +439,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (!skipGauge) {
@@ -466,8 +464,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             float targetGaugePosition = (float)keyCode * gaugeUnitsPerLevel;
             float currentGaugePosition = (float)(*elevationPtr) * gaugeUnitsPerLevel;
             do {
-                sharedFpsLimiter.mark();
-
                 unsigned int tick = getTicks();
                 currentGaugePosition += levelStep;
                 blitBufferToBuffer(
@@ -484,8 +480,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
                 delay_ms(delay - (getTicks() - tick));
                 _GNW95_process_message();
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while ((levelStep <= 0.0 || currentGaugePosition < targetGaugePosition) && (levelStep > 0.0 || currentGaugePosition > targetGaugePosition));
 
             inputPauseForTocks(200);

@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "display_monitor.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_config.h"
 #include "game_mouse.h"
@@ -3444,8 +3445,6 @@ static int wmWorldMapFunc(int a1)
     wmLastTravelTick = getTicks();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         // SFALL: WorldmapLoopHook.
@@ -3593,7 +3592,7 @@ static int wmWorldMapFunc(int a1)
                     mousePressed = true;
                     wmInterfaceRefresh();
                     renderFpsCounter();
-                    renderPresent();
+                    scheduler.presentNow();
                 }
             } else {
                 continue;
@@ -3749,8 +3748,7 @@ static int wmWorldMapFunc(int a1)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmInterfaceExit() == -1) {
@@ -6634,8 +6632,6 @@ static int wmTownMapFunc(Map* mapIdxPtr)
     CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
 
     for (;;) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
@@ -6710,8 +6706,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmTownMapExit() == -1) {
@@ -7548,7 +7543,7 @@ void wmBlinkRndEncounterIcon(bool special)
             return;
         }
 
-        renderPresent();
+        scheduler.presentNow();
         inputBlockForTocks(200);
     }
 

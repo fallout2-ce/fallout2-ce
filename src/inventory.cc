@@ -23,6 +23,7 @@
 #include "dialog.h"
 #include "display_monitor.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_dialog.h"
 #include "game_mouse.h"
@@ -1727,8 +1728,6 @@ void inventoryOpen()
     ScopedGameMode gm(GameMode::kInventory);
 
     for (;;) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
@@ -1791,8 +1790,7 @@ void inventoryOpen()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _inven_dude = _stack[0];
@@ -3253,8 +3251,6 @@ void inventoryOpenUseItemOn(Object* targetObj)
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
     ScopedGameMode gm(GameMode::kUseOn);
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -3333,8 +3329,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _exit_inventory(isoWasEnabled);
@@ -4539,8 +4534,6 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     MouseButtonEvent mouseEvent;
     do {
-        sharedFpsLimiter.mark();
-
         inputGetInput();
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
@@ -4558,8 +4551,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             return;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     } while ((mouseEvent & MouseButtonEvent::LeftButtonDownRepeat) != MouseButtonEvent::LeftButtonDownRepeat);
 
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_BLANK);
@@ -4686,8 +4678,6 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int menuItemIndex = 0;
     int previousMouseY = y;
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-
         inputGetInput();
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
@@ -4710,8 +4700,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             previousMouseY = y;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     buttonDestroy(btn);
@@ -5070,8 +5059,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
     int stealingXp = 0;
     int stealingXpBonus = 10;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -5261,8 +5248,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (critterCount != 0) {
@@ -5652,12 +5638,9 @@ static void _drag_item_loop(Object* item, bool immediate)
     }
 
     do {
-        sharedFpsLimiter.mark();
-
         inputGetInput();
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     } while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None);
 
     if (itemInventoryFrmImage.isLocked()) {
@@ -5977,8 +5960,6 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     int keyCode = -1;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -6189,8 +6170,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     itemMoveAll(hiddenBox, barterer);
@@ -6512,8 +6492,6 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
     bool isTyping = false;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode == KEY_ESCAPE) {
             inventoryQuantityWindowFree(inventoryWindowType);
@@ -6548,8 +6526,6 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
                         unsigned int delay = 100;
                         while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
-                            sharedFpsLimiter.mark();
-
                             if (value < max) {
                                 value++;
                             }
@@ -6562,8 +6538,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
                                 inputPauseForTocks(delay);
                             }
 
-                            renderPresent();
-                            sharedFpsLimiter.throttle();
+                            scheduler.finishUpdate();
                         }
                     } else {
                         if (value < max) {
@@ -6586,8 +6561,6 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
                         unsigned int delay = 100;
                         while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
-                            sharedFpsLimiter.mark();
-
                             if (value > min) {
                                 value--;
                             }
@@ -6600,8 +6573,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
                                 inputPauseForTocks(delay);
                             }
 
-                            renderPresent();
-                            sharedFpsLimiter.throttle();
+                            scheduler.finishUpdate();
                         }
                     } else {
                         if (value > min) {
@@ -6642,8 +6614,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     inventoryQuantityWindowFree(inventoryWindowType);

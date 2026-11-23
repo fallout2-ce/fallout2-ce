@@ -5,6 +5,7 @@
 #include "cycle.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
@@ -135,8 +136,6 @@ int showOptions()
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         if (keyCode == KEY_ESCAPE || keyCode == OPTIONS_MENU_BUTTON_DONE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
@@ -207,8 +206,7 @@ int showOptions()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     optionsWindowFree();
@@ -533,8 +531,6 @@ int showPause(bool preserveWorldState)
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         switch (keyCode) {
         case KEY_PLUS:
@@ -555,8 +551,7 @@ int showPause(bool preserveWorldState)
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (!preserveWorldState) {

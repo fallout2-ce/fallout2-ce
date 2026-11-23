@@ -12,6 +12,7 @@
 #include "dbox.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
@@ -414,8 +415,6 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         bool needsRefresh = false;
 
         // FIXME: There is minor bug in the interface - pressing H/L to toggle
@@ -497,8 +496,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
             needsRefresh = false;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (isoWasEnabled) {

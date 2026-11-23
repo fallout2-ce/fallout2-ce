@@ -7,6 +7,7 @@
 
 #include "color.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "input.h"
 #include "kb.h"
 #include "memory.h"
@@ -333,8 +334,6 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
     // Relative to `scrollOffset`.
     int previousSelectedItemIndex = -1;
     while (1) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         int mouseX;
         int mouseY;
@@ -539,8 +538,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -683,8 +681,6 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
     // NOTE: Original code is slightly different but does the same thing.
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         switch (inputGetInput()) {
         case KEY_ESCAPE:
         case 'n':
@@ -699,8 +695,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -757,9 +752,7 @@ int _win_msg(const char* string, int x, int y, ColorWithFlags color)
     windowRefresh(win);
 
     while (inputGetInput() != KEY_ESCAPE) {
-        sharedFpsLimiter.mark();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -1133,8 +1126,6 @@ int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFl
     // decremented in the loop body when key is not handled.
     bool isFirstKey = true;
     for (; cursorPos <= maxLength; cursorPos++) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode != -1) {
             if (keyCode == KEY_ESCAPE) {
@@ -1210,8 +1201,7 @@ int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFl
             cursorPos--;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     dest[cursorPos] = '\0';
@@ -1370,8 +1360,6 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
     mouseGetPosition(&mx1, &my1);
 
     while (1) {
-        sharedFpsLimiter.mark();
-
         input = inputGetInput();
         if (input != -1) {
             break;
@@ -1386,13 +1374,10 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     while (1) {
-        sharedFpsLimiter.mark();
-
         mouseGetPosition(&mx2, &my2);
 
         if (input == -2) {
@@ -1503,8 +1488,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
 
         input = inputGetInput();
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (menuBar != nullptr) {
@@ -1536,7 +1520,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             static_cast<Color>(color2 & COLOR_LAST));
         windowRefreshRect(menuBar->win, &(pulldown->rect));
 
-        renderPresent();
+        scheduler.presentNow();
     }
 
     windowDestroy(win);
@@ -1651,8 +1635,6 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
 
     bool done = false;
     while (cursorPos <= max_chars_wcursor && !done) {
-        sharedFpsLimiter.mark();
-
         int input = inputGetInput();
         if (input == KEY_RETURN) {
             done = true;
@@ -1710,8 +1692,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     *value = atoi(string);

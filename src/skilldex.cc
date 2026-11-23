@@ -8,6 +8,7 @@
 #include "cycle.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
@@ -121,8 +122,6 @@ SkilldexRC skilldexOpen()
 
     SkilldexRC rc = SKILLDEX_RC_ERROR;
     while (rc == SKILLDEX_RC_ERROR) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         // SFALL: Close with 'S'.
@@ -135,8 +134,7 @@ SkilldexRC skilldexOpen()
             rc = static_cast<SkilldexRC>(keyCode - 500);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc != SKILLDEX_RC_CANCELED) {

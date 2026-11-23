@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "dinput.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "input.h"
 #include "memory.h"
 #include "mouse.h"
@@ -29,7 +30,7 @@ namespace fallout {
 static void windowFree(int win);
 static void _win_buffering(bool bufferWindows);
 static void _win_move(int win_index, int x, int y);
-static void _win_clip(Window* window, RectListNode** rect, unsigned char* dest);
+static void _win_clip(Window* window, RectListNode** rect);
 static void win_drag(int win);
 static void _refresh_all(Rect* rect, unsigned char* dest);
 static Button* buttonGetButton(int btn, Window** out_win);
@@ -803,8 +804,6 @@ void windowRefreshRect(int win, const Rect* rect)
 // 0x4D6FD8
 void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
 {
-    // dest is only used when refreshing the portion of the screen containing the cursor (which is subsequently drawn on the buffer)
-
     RectListNode *refreshRectList, *clipRect, *screenRect, *nextRect;
     int dest_pitch;
 
@@ -841,7 +840,7 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
             }
 
             // computes clip boundaries for this window, considering all windows higher in z-index
-            _win_clip(window, &refreshRectList, dest);
+            _win_clip(window, &refreshRectList);
 
             if (window->id) {
                 // loop through all clip rectangles blitting to dest or screen
@@ -960,12 +959,6 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
 
                 screenRect = nextRect;
             }
-
-            if (!_doing_refresh_all && dest == nullptr && cursorIsHidden() == 0) {
-                if (_mouse_in(rect->left, rect->top, rect->right, rect->bottom)) {
-                    mouseShowCursor();
-                }
-            }
         } else {
             _rect_free(refreshRectList);
         }
@@ -981,7 +974,7 @@ void windowRefreshAll(Rect* rect)
 }
 
 // 0x4D75B0
-void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr, unsigned char* dest)
+void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr)
 {
     for (int index = gWindowIndexes[currentWindow->id] + 1; index < gWindowsLength; index++) {
         if (*rectListNodePtr == nullptr) {
@@ -998,14 +991,6 @@ void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr, unsigned c
                     _rect_clip_list(rectListNodePtr, &(window->rect));
                 }
             }
-        }
-    }
-
-    if (dest == _screen_buffer || dest == nullptr) {
-        if (cursorIsHidden() == 0) {
-            Rect rect;
-            mouseGetRect(&rect);
-            _rect_clip_list(rectListNodePtr, &rect);
         }
     }
 }
@@ -1036,8 +1021,6 @@ void win_drag(int win)
     _mouse_info();
 
     while ((mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-
         if (dx != 0 || dy != 0) {
             window->rect.left += dx;
             window->rect.top += dy;
@@ -1087,22 +1070,13 @@ void win_drag(int win)
             dy = _scr_size.bottom - window->rect.bottom;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if ((window->flags & WINDOW_MANAGED) != 0 && (window->rect.left & 3) != 0) {
         // move to a x-pixel multiple of 4
         _win_move(window->id, window->rect.left, window->rect.top);
     }
-}
-
-// 0x4D77F8
-void _win_get_mouse_buf(unsigned char* dest)
-{
-    Rect rect;
-    mouseGetRect(&rect);
-    _refresh_all(&rect, dest);
 }
 
 // 0x4D7814
@@ -1115,14 +1089,6 @@ void _refresh_all(Rect* rect, unsigned char* dest)
     }
 
     _doing_refresh_all = 0;
-
-    if (dest == nullptr) {
-        if (!cursorIsHidden()) {
-            if (_mouse_in(rect->left, rect->top, rect->right, rect->bottom)) {
-                mouseShowCursor();
-            }
-        }
-    }
 }
 
 // 0x4D7888

@@ -265,6 +265,7 @@ void initSettingsRegistry(bool isMapper)
 #undef SECT
 
 #define SECT screen
+    SETTING(max_fps);
     SETTING_P(resolution_x, clamp(640, 7680));
     SETTING_P(resolution_y, clamp(480, 4320));
     SETTING_P(windowed, clamp(WindowMode::Fullscreen, WindowMode::WindowedFullscreen));

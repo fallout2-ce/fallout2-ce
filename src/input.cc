@@ -47,6 +47,7 @@ typedef struct TickerListNode {
 } TickerListNode;
 
 static int dequeueInputEvent();
+static bool handleVideoEvent(const SDL_Event& event);
 static void screenshotBlitter(unsigned char* src, int src_pitch, int a3, int x, int y, int width, int height, int dest_x, int dest_y);
 static void buildNormalizedQwertyKeys();
 static void _GNW95_process_key(KeyboardData* data);
@@ -307,7 +308,10 @@ void inputEventQueueReset()
     gInputEventQueueReadIndex = -1;
     gInputEventQueueWriteIndex = 0;
     SDL_Event e;
-    while (SDL_PollEvent(&e)) { } // Clear all input events
+    while (SDL_PollEvent(&e)) {
+        // A modal input flush must still honor renderer recovery.
+        handleVideoEvent(e);
+    }
     sfall_kb_clear_synthetic_key_events();
 }
 
@@ -396,17 +400,9 @@ void takeScreenshot()
     WINDOWDRAWINGPROC old_src = _scr_blit;
     _scr_blit = screenshotBlitter;
 
-    WINDOWDRAWINGPROC old_mouse = _mouse_blit;
-    _mouse_blit = screenshotBlitter;
-
-    WindowDrawingProc2* old_mouse_trans = _mouse_blit_trans;
-    _mouse_blit_trans = nullptr;
-
     windowRefreshAll(&_scr_size);
-
-    _mouse_blit_trans = old_mouse_trans;
-    _mouse_blit = old_mouse;
     _scr_blit = old_src;
+    mouseDrawScreenshotCursor(gScreenshotBuffer, width, height);
 
     // Save screenshots with the palette currently presented on screen so the
     // exported colors match brightness-adjusted rendering.
@@ -611,19 +607,11 @@ unsigned int getRealTicks()
 // 0x4C937C
 void inputPauseForTocks(unsigned int delay)
 {
-    // NOTE: Uninline.
-    unsigned int start = getTicks();
-    unsigned int end = getTicks();
-
-    // NOTE: Uninline.
-    unsigned int diff = getTicksBetween(end, start);
-    while (diff < delay) {
+    const auto start = getTicks();
+    while (getTicksSince(start) < delay) {
         _process_bk();
-
-        end = getTicks();
-
-        // NOTE: Uninline.
-        diff = getTicksBetween(end, start);
+        // Keep servicing background work without spinning between timer ticks.
+        delay_ms(1);
     }
 }
 
@@ -998,6 +986,29 @@ int _GNW95_input_init()
     return 0;
 }
 
+static bool handleVideoEvent(const SDL_Event& event)
+{
+    switch (event.type) {
+    case SDL_RENDER_TARGETS_RESET:
+        handleRenderTargetsReset();
+        return true;
+    case SDL_RENDER_DEVICE_RESET:
+        handleRenderDeviceReset();
+        return true;
+    case SDL_WINDOWEVENT:
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+        if (event.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) {
+#else
+        if (event.window.event == SDL_WINDOWEVENT_MOVED) {
+#endif
+            handleWindowDisplayChanged();
+            return true;
+        }
+        break;
+    }
+    return false;
+}
+
 // 0x4C9CF0
 void _GNW95_process_message()
 {
@@ -1008,6 +1019,10 @@ void _GNW95_process_message()
     KeyboardData keyboardData;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
+        if (handleVideoEvent(e)) {
+            continue;
+        }
+
         switch (e.type) {
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:
@@ -1056,6 +1071,9 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
+                if (gSdlRenderer == nullptr) {
+                    handleRenderDeviceReset();
+                }
                 movieHandleFocusGained();
                 if (!mouseDeviceInitMode()) {
                     debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());

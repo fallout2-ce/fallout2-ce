@@ -1,13 +1,17 @@
 #include "svga.h"
 
+#include <algorithm>
+#include <bitset>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include <SDL.h>
 
 #include "color.h"
 #include "config.h"
+#include "debug.h"
 #include "dinput.h"
 #include "draw.h"
 #include "game.h"
@@ -43,8 +47,169 @@ SDL_Renderer* gSdlRenderer = nullptr;
 SDL_Texture* gSdlTexture = nullptr;
 SDL_Surface* gSdlTextureSurface = nullptr;
 
-// TODO: Remove once migration to update-render cycle is completed.
-FpsLimiter sharedFpsLimiter;
+// The counter is drawn during updates and measures frames actually presented.
+static unsigned int framesPresented = 0;
+static int displayRefreshRate = 0;
+
+namespace {
+
+    using PaletteIndices = std::bitset<COLOR_COUNT>;
+
+    SDL_Color toSdlPaletteColor(const unsigned char* rgb)
+    {
+        return {
+            static_cast<Uint8>(rgb[0] << 2),
+            static_cast<Uint8>(rgb[1] << 2),
+            static_cast<Uint8>(rgb[2] << 2),
+            255,
+        };
+    }
+
+    class IndexedColorUsage {
+    public:
+        void reset(int width, int height)
+        {
+            _columns = (width + kBlockSize - 1) / kBlockSize;
+            _rows = (height + kBlockSize - 1) / kBlockSize;
+            _blocks.assign(_columns * _rows, Block {});
+        }
+
+        void invalidate(const SDL_Surface& scene, const SDL_Rect& rect)
+        {
+            const SDL_Rect bounds { 0, 0, scene.w, scene.h };
+            SDL_Rect clipped;
+            if (!SDL_IntersectRect(&rect, &bounds, &clipped)) {
+                return;
+            }
+
+            const int lastColumn = (clipped.x + clipped.w - 1) / kBlockSize;
+            const int lastRow = (clipped.y + clipped.h - 1) / kBlockSize;
+            for (int row = clipped.y / kBlockSize; row <= lastRow; ++row) {
+                for (int column = clipped.x / kBlockSize; column <= lastColumn; ++column) {
+                    _blocks[row * _columns + column].valid = false;
+                }
+            }
+        }
+
+        SDL_Rect affectedBounds(const SDL_Surface& scene, const PaletteIndices& changed)
+        {
+            SDL_Rect bounds {};
+            const auto* pixels = static_cast<const unsigned char*>(scene.pixels);
+            for (int row = 0; row < _rows; ++row) {
+                for (int column = 0; column < _columns; ++column) {
+                    auto& block = _blocks[row * _columns + column];
+                    const int x = column * kBlockSize;
+                    const int y = row * kBlockSize;
+                    const SDL_Rect rect { x, y, std::min(kBlockSize, scene.w - x), std::min(kBlockSize, scene.h - y) };
+                    // Refresh the index mask only when a palette change needs
+                    // it and the indexed pixels in this block were rewritten.
+                    if (!block.valid) {
+                        block.indices.reset();
+                        for (int line = 0; line < rect.h; ++line) {
+                            const auto* source = pixels + (rect.y + line) * scene.pitch + rect.x;
+                            for (int offset = 0; offset < rect.w; ++offset) {
+                                block.indices.set(source[offset]);
+                            }
+                        }
+                        block.valid = true;
+                    }
+
+                    if ((block.indices & changed).any()) {
+                        SDL_UnionRect(&bounds, &rect, &bounds);
+                    }
+                }
+            }
+            return bounds;
+        }
+
+    private:
+        static constexpr int kBlockSize = 64;
+
+        struct Block {
+            PaletteIndices indices {};
+            bool valid = false;
+        };
+
+        int _columns = 0;
+        int _rows = 0;
+        std::vector<Block> _blocks;
+    };
+
+    IndexedColorUsage sceneColors;
+    PaletteIndices pendingPaletteChanges {};
+    SDL_Rect frameDamage {};
+    SDL_Rect uploadedCursorBounds {};
+    bool softwareRenderer = false;
+
+    void damageFrame(const SDL_Rect& rect)
+    {
+        SDL_UnionRect(&frameDamage, &rect, &frameDamage);
+    }
+
+    void damageScene(const SDL_Rect& rect)
+    {
+        sceneColors.invalidate(*gSdlSurface, rect);
+        damageFrame(rect);
+    }
+
+    void damageWholeFrame()
+    {
+        if (gSdlSurface != nullptr) {
+            frameDamage = { 0, 0, gSdlSurface->w, gSdlSurface->h };
+        }
+    }
+
+    bool updateFrameTexture(SDL_Point cursorPosition)
+    {
+        const auto cursorBounds = mouseGetCursorDrawBounds(cursorPosition);
+        // Rebuild both footprints from the indexed scene so the old cursor
+        // disappears when it moves, changes shape, or is hidden.
+        damageFrame(uploadedCursorBounds);
+        damageFrame(cursorBounds);
+
+        const SDL_Rect textureBounds { 0, 0, gSdlTextureSurface->w, gSdlTextureSurface->h };
+        SDL_Rect upload {};
+        SDL_IntersectRect(&frameDamage, &textureBounds, &upload);
+        if (pendingPaletteChanges.any() && !SDL_RectEquals(&upload, &textureBounds)) {
+            damageFrame(sceneColors.affectedBounds(*gSdlSurface, pendingPaletteChanges));
+            SDL_IntersectRect(&frameDamage, &textureBounds, &upload);
+        }
+        if (!SDL_RectEmpty(&upload)) {
+            SDL_Rect dest = upload;
+            if (SDL_BlitSurface(gSdlSurface, &upload, gSdlTextureSurface, &dest) != 0) {
+                return false;
+            }
+            mouseDrawCursor(*gSdlTextureSurface, *gSdlSurface->format->palette, cursorPosition);
+
+            const int pitch = gSdlTextureSurface->pitch;
+            const auto* pixels = static_cast<const unsigned char*>(gSdlTextureSurface->pixels)
+                + upload.y * pitch + upload.x * gSdlTextureSurface->format->BytesPerPixel;
+            if (SDL_UpdateTexture(gSdlTexture, &upload, pixels, pitch) != 0) {
+                return false;
+            }
+        }
+
+        uploadedCursorBounds = cursorBounds;
+        frameDamage = {};
+        pendingPaletteChanges.reset();
+        return true;
+    }
+
+    bool shouldClearOutput()
+    {
+        if (!softwareRenderer) {
+            return true;
+        }
+
+        // At 1:1 size the opaque scene overwrites every output pixel.
+        // Check the live size in case SDL has resized before input handles the event.
+        int width;
+        int height;
+        return SDL_GetRendererOutputSize(gSdlRenderer, &width, &height) != 0
+            || width != gSdlTextureSurface->w || height != gSdlTextureSurface->h;
+    }
+
+} // namespace
 
 // 0x4CAD08 init_mode_320_200
 int _init_mode_320_200()
@@ -144,10 +309,8 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     _scr_size.right = width - 1;
     _scr_size.bottom = height - 1;
 
-    _mouse_blit_trans = nullptr;
     _scr_blit = _GNW95_ShowRect;
     _zero_mem = _GNW95_zero_vid_mem;
-    _mouse_blit = _GNW95_ShowRect;
 
     return 0;
 }
@@ -192,6 +355,7 @@ int _GNW95_init_window(int width, int height, WindowMode mode, int scale)
 
             return -1;
         }
+        handleWindowDisplayChanged();
     }
 
     return 0;
@@ -228,6 +392,9 @@ int directDrawInit(int width, int height, int bpp)
     }
 
     SDL_SetPaletteColors(gSdlSurface->format->palette, colors, 0, 256);
+    sceneColors.reset(width, height);
+    pendingPaletteChanges.reset();
+    damageWholeFrame();
 
     return 0;
 }
@@ -238,26 +405,35 @@ void directDrawFree()
     if (gSdlSurface != nullptr) {
         SDL_FreeSurface(gSdlSurface);
         gSdlSurface = nullptr;
+        sceneColors.reset(0, 0);
+        pendingPaletteChanges.reset();
     }
 }
 
 // 0x4CB310 GNW95_SetPaletteEntries
 void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
 {
-    if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
-        SDL_Color colors[256];
+    if (gSdlSurface == nullptr || gSdlSurface->format->palette == nullptr) {
+        return;
+    }
+    auto* current = gSdlSurface->format->palette;
+    if (start < 0 || start > current->ncolors || count <= 0 || count > current->ncolors - start) {
+        return;
+    }
 
-        if (count != 0) {
-            for (int index = 0; index < count; index++) {
-                colors[index].r = palette[index * 3] << 2;
-                colors[index].g = palette[index * 3 + 1] << 2;
-                colors[index].b = palette[index * 3 + 2] << 2;
-                colors[index].a = 255;
-            }
+    SDL_Color colors[COLOR_COUNT];
+    PaletteIndices changed;
+    for (int index = 0; index < count; ++index) {
+        auto& color = colors[index];
+        color = toSdlPaletteColor(palette + index * COLOR_COMPONENTS_RGB);
+        const auto& old = current->colors[start + index];
+        if (color.r != old.r || color.g != old.g || color.b != old.b || color.a != old.a) {
+            changed.set(start + index);
         }
+    }
 
-        SDL_SetPaletteColors(gSdlSurface->format->palette, colors, start, count);
-        SDL_BlitSurface(gSdlSurface, nullptr, gSdlTextureSurface, nullptr);
+    if (changed.any() && SDL_SetPaletteColors(current, colors, start, count) == 0) {
+        pendingPaletteChanges |= changed;
     }
 }
 
@@ -265,17 +441,14 @@ void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
 void directDrawSetPalette(unsigned char* palette)
 {
     if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
-        SDL_Color colors[256];
+        SDL_Color colors[COLOR_COUNT];
 
-        for (int index = 0; index < 256; index++) {
-            colors[index].r = palette[index * 3] << 2;
-            colors[index].g = palette[index * 3 + 1] << 2;
-            colors[index].b = palette[index * 3 + 2] << 2;
-            colors[index].a = 255;
+        for (int index = 0; index < COLOR_COUNT; index++) {
+            colors[index] = toSdlPaletteColor(palette + index * COLOR_COMPONENTS_RGB);
         }
 
-        SDL_SetPaletteColors(gSdlSurface->format->palette, colors, 0, 256);
-        SDL_BlitSurface(gSdlSurface, nullptr, gSdlTextureSurface, nullptr);
+        SDL_SetPaletteColors(gSdlSurface->format->palette, colors, 0, COLOR_COUNT);
+        damageWholeFrame();
     }
 }
 
@@ -305,17 +478,7 @@ void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int
     (void)unused;
 
     blitBufferToBuffer(src + srcPitch * srcY + srcX, srcWidth, srcHeight, srcPitch, (unsigned char*)gSdlSurface->pixels + gSdlSurface->pitch * destY + destX, gSdlSurface->pitch);
-
-    SDL_Rect srcRect;
-    srcRect.x = destX;
-    srcRect.y = destY;
-    srcRect.w = srcWidth;
-    srcRect.h = srcHeight;
-
-    SDL_Rect destRect;
-    destRect.x = destX;
-    destRect.y = destY;
-    SDL_BlitSurface(gSdlSurface, &srcRect, gSdlTextureSurface, &destRect);
+    damageScene({ destX, destY, srcWidth, srcHeight });
 }
 
 // Clears drawing surface.
@@ -332,8 +495,7 @@ void _GNW95_zero_vid_mem()
         memset(surface, 0, gSdlSurface->w);
         surface += gSdlSurface->pitch;
     }
-
-    SDL_BlitSurface(gSdlSurface, nullptr, gSdlTextureSurface, nullptr);
+    damageScene({ 0, 0, gSdlSurface->w, gSdlSurface->h });
 }
 
 int screenGetWidth()
@@ -391,6 +553,12 @@ static bool createRenderer(int width, int height)
         return false;
     }
 
+    SDL_RendererInfo rendererInfo {};
+    softwareRenderer = SDL_GetRendererInfo(gSdlRenderer, &rendererInfo) == 0
+        && (rendererInfo.flags & SDL_RENDERER_SOFTWARE) != 0;
+
+    uploadedCursorBounds = {};
+    frameDamage = { 0, 0, width, height };
     return true;
 }
 
@@ -412,15 +580,56 @@ static void destroyRenderer()
     }
 }
 
-void handleWindowSizeChanged()
+int screenGetRefreshRate()
 {
+    return displayRefreshRate;
+}
+
+void handleWindowDisplayChanged()
+{
+    if (gSdlWindow == nullptr) {
+        return;
+    }
+
+    SDL_DisplayMode mode {};
+    if (!screenIsExclusiveFullscreen() || SDL_GetWindowDisplayMode(gSdlWindow, &mode) != 0 || mode.refresh_rate <= 0) {
+        const int display = std::max(SDL_GetWindowDisplayIndex(gSdlWindow), 0);
+        if (SDL_GetCurrentDisplayMode(display, &mode) != 0 || mode.refresh_rate <= 0) {
+            if (SDL_GetDesktopDisplayMode(display, &mode) != 0) {
+                mode.refresh_rate = 0;
+            }
+        }
+    }
+    displayRefreshRate = mode.refresh_rate;
+}
+
+void handleRenderTargetsReset()
+{
+    damageWholeFrame();
+}
+
+void handleRenderDeviceReset()
+{
+    if (gSdlWindow == nullptr || gSdlSurface == nullptr) {
+        return;
+    }
+
     movieHandleRendererReset();
     destroyRenderer();
-    if (createRenderer(screenGetWidth(), screenGetHeight())) {
-        // Repaint the newly created texture surface, just as on a window expose.
+    if (!createRenderer(screenGetWidth(), screenGetHeight())) {
+        debugPrint("Failed to restore SDL renderer: %s\n", SDL_GetError());
+        destroyRenderer();
+    }
+}
+
+void handleWindowSizeChanged()
+{
+    handleRenderDeviceReset();
+    if (gSdlRenderer != nullptr) {
         windowRefreshAll(&_scr_size);
     }
     mouseDeviceRefreshWindowMapping();
+    handleWindowDisplayChanged();
 }
 
 void renderFpsCounter()
@@ -430,20 +639,18 @@ void renderFpsCounter()
     }
 
     static unsigned int sampleStartTicks = 0;
-    static int sampleFrames = 0;
     static double fps = 0.0;
 
     unsigned int now = SDL_GetTicks();
     if (sampleStartTicks == 0) {
         sampleStartTicks = now;
+        framesPresented = 0;
     }
-
-    sampleFrames++;
 
     unsigned int elapsed = now - sampleStartTicks;
     if (elapsed >= 500) {
-        fps = sampleFrames * 1000.0 / elapsed;
-        sampleFrames = 0;
+        fps = framesPresented * 1000.0 / elapsed;
+        framesPresented = 0;
         sampleStartTicks = now;
     }
 
@@ -470,23 +677,23 @@ void renderFpsCounter()
     if (width > kPadding * 2 && height > kPadding * 2) {
         fontDrawText(static_cast<unsigned char*>(gSdlSurface->pixels) + gSdlSurface->pitch * kPadding + kPadding, text, width - kPadding * 2, gSdlSurface->pitch, COLOR_LIGHT_GREY);
     }
-
-    SDL_Rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = width;
-    rect.h = height;
-    SDL_BlitSurface(gSdlSurface, &rect, gSdlTextureSurface, &rect);
+    damageScene({ 0, 0, width, height });
 }
 
-void renderPresent()
+void renderFrame(SDL_Point cursorPosition)
 {
-    SDL_UpdateTexture(gSdlTexture, nullptr, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
-    SDL_RenderClear(gSdlRenderer);
+    if (gSdlTextureSurface == nullptr || gSdlSurface == nullptr || !updateFrameTexture(cursorPosition)) {
+        return;
+    }
+
+    if (shouldClearOutput()) {
+        SDL_RenderClear(gSdlRenderer);
+    }
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, nullptr, nullptr);
     // render movie SDL texture if present
     movieRenderDirectOverlay();
     SDL_RenderPresent(gSdlRenderer);
+    ++framesPresented;
 }
 
 } // namespace fallout

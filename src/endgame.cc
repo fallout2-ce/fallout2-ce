@@ -1,8 +1,10 @@
 #include "endgame.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <ctype.h>
+#include <functional>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -32,6 +34,7 @@
 #include "pipboy.h"
 #include "platform_compat.h"
 #include "random.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "stat.h"
 #include "svga.h"
@@ -396,16 +399,6 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             }
         }
 
-        int start;
-        int end;
-        if (direction == -1) {
-            start = width - sourceViewportWidth;
-            end = 0;
-        } else {
-            start = 0;
-            end = width - sourceViewportWidth;
-        }
-
         tickersDisable();
 
         bool subtitlesLoaded = panDistance > 0 && fadeDistance == 0;
@@ -416,62 +409,51 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             endgameEndingVoiceOverReset();
         }
 
-        unsigned int since = 0;
-        while (start != end) {
-            sharedFpsLimiter.mark();
+        using Clock = std::chrono::steady_clock;
+        const auto stepDuration = std::chrono::milliseconds(frameDelay);
+        const auto panStart = Clock::now();
+        const auto panEnd = panStart + stepDuration * panDistance;
+        const int fadeOutStartX = sourceViewportWidth - fadeDistance;
+        const bool reverse = direction == -1;
+        const int voiceOverStep = reverse ? panDistance - fadeOutStartX : fadeDistance;
+        double lastDarkeningFactor = 0.0;
+        int lastStep = -1;
+        const std::function<void()> draw = [&] {
+            // Sample the authored timeline so missed presentations cannot slow the pan.
+            const int elapsedSteps = static_cast<int>((Clock::now() - panStart) / stepDuration);
+            const int step = std::min(elapsedSteps, panDistance - 1);
+            if (step == lastStep) {
+                return;
+            }
 
-            int fadeOutStartX = sourceViewportWidth - fadeDistance;
+            const int x = reverse ? panDistance - step : step;
+            endgameEndingRenderFrame(backgroundData + x, sourceViewportWidth, height, width);
+            if (subtitlesLoaded) {
+                endgameEndingRefreshSubtitles();
+            }
+            windowRefresh(gEndgameEndingSlideshowWindow);
 
-            // TODO: Complex math, setup scene in debugger.
-            if (getTicksSince(since) >= frameDelay) {
-                endgameEndingRenderFrame(backgroundData + start, sourceViewportWidth, height, width);
-
-                if (subtitlesLoaded) {
-                    endgameEndingRefreshSubtitles();
+            if (fadeDistance > 0) {
+                const int fadeOffset = x <= fadeDistance ? x : fadeDistance - (x - fadeOutStartX);
+                const double darkeningFactor = std::clamp(static_cast<double>(fadeOffset) / fadeDistance, 0.0, 1.0);
+                if (darkeningFactor != lastDarkeningFactor) {
+                    unsigned char darkenedPalette[COLOR_MAP_SIZE];
+                    for (int index = 0; index < COLOR_MAP_SIZE; ++index) {
+                        darkenedPalette[index] = static_cast<unsigned char>(palette[index] * darkeningFactor);
+                    }
+                    paletteSetEntries(darkenedPalette);
+                    lastDarkeningFactor = darkeningFactor;
                 }
 
-                windowRefresh(gEndgameEndingSlideshowWindow);
-
-                since = getTicks();
-
-                if (fadeDistance > 0) {
-                    bool shouldDarkenPalette;
-                    double darkeningFactor;
-                    if (start > fadeDistance) {
-                        if (fadeOutStartX > start) {
-                            shouldDarkenPalette = false;
-                        } else {
-                            int fadeOffset = fadeDistance - (start - fadeOutStartX);
-                            darkeningFactor = (double)fadeOffset / (double)fadeDistance;
-                            shouldDarkenPalette = true;
-                        }
-                    } else {
-                        shouldDarkenPalette = true;
-                        darkeningFactor = (double)start / (double)fadeDistance;
-                    }
-
-                    if (shouldDarkenPalette) {
-                        unsigned char darkenedPalette[768];
-                        for (int index = 0; index < 768; index++) {
-                            darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
-                        }
-                        paletteSetEntries(darkenedPalette);
-                    }
-                }
-
-                start += direction;
-
-                if (fadeDistance > 0 && direction == 1 && (start == fadeDistance)) {
-                    // NOTE: Uninline.
-                    endgameEndingVoiceOverReset();
-                    subtitlesLoaded = true;
-                } else if (fadeDistance > 0 && direction == -1 && (start == fadeOutStartX)) {
-                    // NOTE: Uninline.
+                if (!subtitlesLoaded && voiceOverStep > 0 && step + 1 >= voiceOverStep) {
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
                 }
             }
+            lastStep = step;
+        };
 
+        while (Clock::now() < panEnd || lastStep < panDistance - 1) {
             soundContinueAll();
 
             if (inputGetInput() != -1) {
@@ -480,8 +462,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                 break;
             }
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate(draw);
         }
 
         tickersEnable();
@@ -493,12 +474,9 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 
     while (mouseGetEvent() != MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-
         inputGetInput();
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -543,8 +521,6 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
 
         int keyCode;
         while (true) {
-            sharedFpsLimiter.mark();
-
             keyCode = inputGetInput();
             if (keyCode != -1) {
                 break;
@@ -567,8 +543,7 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
             windowRefresh(gEndgameEndingSlideshowWindow);
             soundContinueAll();
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
 
         tickersEnable();
@@ -585,12 +560,9 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
         paletteFadeTo(gPaletteBlack);
 
         while (mouseGetEvent() != MouseButtonEvent::None) {
-            sharedFpsLimiter.mark();
-
             inputGetInput();
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     }
 

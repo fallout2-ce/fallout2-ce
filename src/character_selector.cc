@@ -14,6 +14,7 @@
 #include "db.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_sound.h"
 #include "input.h"
@@ -182,8 +183,6 @@ int characterSelectorOpen()
     int rc = 0;
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -259,8 +258,7 @@ int characterSelectorOpen()
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc == 2) {

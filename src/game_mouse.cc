@@ -20,6 +20,7 @@
 #include "critter.h"
 #include "dinput.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_sound.h"
 #include "input.h"
@@ -1280,8 +1281,6 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
                     int newMouseY = mouseY;
                     int actionIndex = 0;
                     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-                        sharedFpsLimiter.mark();
-
                         inputGetInput();
 
                         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
@@ -1307,8 +1306,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
                             newMouseY = updatedMouseY;
                         }
 
-                        renderPresent();
-                        sharedFpsLimiter.throttle();
+                        scheduler.finishUpdate();
                     }
 
                     isoEnable();
@@ -2883,7 +2881,7 @@ static void customMouseModeFrmsInit()
 void gameMouseRefreshImmediately()
 {
     gameMouseRefresh();
-    renderPresent();
+    scheduler.presentNow();
 }
 
 Object* gmouse_get_outlined_object()

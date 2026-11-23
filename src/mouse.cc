@@ -1,5 +1,7 @@
 #include "mouse.h"
 
+#include <algorithm>
+
 #if __APPLE__
 #include <TargetConditionals.h>
 #endif
@@ -9,10 +11,10 @@
 #include "input.h"
 #include "interface.h"
 #include "kb.h"
-#include "memory.h"
 #include "platform/ios/quick_toolbar.h"
 #include "svga.h"
 #include "touch.h"
+#include "win32.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -47,9 +49,6 @@ static unsigned char gMouseDefaultCursor[MOUSE_DEFAULT_CURSOR_SIZE] = {
 
 // 0x51E290 mouse_idling
 static int _mouse_idling = 0;
-
-// 0x51E294 mouse_buf
-static unsigned char* gMouseCursorData = nullptr;
 
 // 0x51E298 mouse_shape
 static unsigned char* _mouse_shape = nullptr;
@@ -117,17 +116,45 @@ static int _mouse_hotx;
 // 0x6AC7D4 mouse_idle_start_time
 static unsigned int _mouse_idle_start_time;
 
-// 0x6AC7D8 mouse_blit_trans
-WindowDrawingProc2* _mouse_blit_trans;
-
-// 0x6AC7DC mouse_blit
-WINDOWDRAWINGPROC _mouse_blit;
-
 // 0x6AC7E0 mouse_trans
 static char _mouse_trans;
 
 static int gMouseWheelX = 0;
 static int gMouseWheelY = 0;
+static bool pointerUsesTouch = false;
+
+namespace {
+
+    struct RelativeMotion {
+        double x;
+        double y;
+
+        SDL_Point pixels() const
+        {
+            return { static_cast<int>(x), static_cast<int>(y) };
+        }
+    };
+
+    RelativeMotion relativeRemainder {};
+    unsigned int relativeGeneration = 0;
+
+    RelativeMotion scaleRelativeMotion(SDL_Point delta, unsigned int generation)
+    {
+        // The device discards pending deltas when changing mouse mode. Any
+        // fractional movement left over from the old mode expires with them.
+        const auto remainder = generation == relativeGeneration ? relativeRemainder : RelativeMotion {};
+        return { delta.x * gMouseSensitivity + remainder.x, delta.y * gMouseSensitivity + remainder.y };
+    }
+
+    SDL_Point clipCursorPosition(SDL_Point position)
+    {
+        return {
+            std::clamp(position.x, _scr_size.left - _mouse_hotx, _scr_size.right - _mouse_hotx),
+            std::clamp(position.y, _scr_size.top - _mouse_hoty, _scr_size.bottom - _mouse_hoty),
+        };
+    }
+
+} // namespace
 
 // 0x4C9F40
 int mouseInit()
@@ -162,10 +189,7 @@ void mouseFree()
 {
     mouseDeviceUnacquire();
 
-    if (gMouseCursorData != nullptr) {
-        internal_free(gMouseCursorData);
-        gMouseCursorData = nullptr;
-    }
+    gMouseInitialized = false;
 
     if (_mouse_fptr != nullptr) {
         tickersRemove(_mouse_anim);
@@ -194,45 +218,14 @@ static void mousePrepareDefaultCursor()
 // 0x4CA0AC
 int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int hotX, int hotY, char transparentColor)
 {
-    Rect rect;
-    unsigned char* cursorFrame;
-    int hotXDelta;
-    int hotYDelta;
-
-    cursorFrame = frame;
-
     if (frame == nullptr) {
-        // NOTE: Original code looks tail recursion optimization.
         return mouseSetFrame(gMouseDefaultCursor, MOUSE_DEFAULT_CURSOR_WIDTH, MOUSE_DEFAULT_CURSOR_HEIGHT, MOUSE_DEFAULT_CURSOR_WIDTH, 1, 1, COLOR_BLACK);
-    }
-
-    bool cursorWasHidden = gCursorIsHidden;
-    if (!gCursorIsHidden && gMouseInitialized) {
-        gCursorIsHidden = true;
-        mouseGetRect(&rect);
-        windowRefreshAll(&rect);
-    }
-
-    if (width != gMouseCursorWidth || height != gMouseCursorHeight) {
-        unsigned char* buf = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
-        if (buf == nullptr) {
-            if (!cursorWasHidden) {
-                mouseShowCursor();
-            }
-            return -1;
-        }
-
-        if (gMouseCursorData != nullptr) {
-            internal_free(gMouseCursorData);
-        }
-
-        gMouseCursorData = buf;
     }
 
     gMouseCursorWidth = width;
     gMouseCursorHeight = height;
     gMouseCursorPitch = pitch;
-    _mouse_shape = cursorFrame;
+    _mouse_shape = frame;
     _mouse_trans = transparentColor;
 
     if (_mouse_fptr) {
@@ -240,21 +233,11 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
         _mouse_fptr = nullptr;
     }
 
-    hotXDelta = _mouse_hotx - hotX;
+    gMouseCursorX += _mouse_hotx - hotX;
+    gMouseCursorY += _mouse_hoty - hotY;
     _mouse_hotx = hotX;
-
-    gMouseCursorX += hotXDelta;
-
-    hotYDelta = _mouse_hoty - hotY;
     _mouse_hoty = hotY;
-
-    gMouseCursorY += hotYDelta;
-
     _mouse_clip();
-
-    if (!cursorWasHidden) {
-        mouseShowCursor();
-    }
 
     _raw_x = gMouseCursorX;
     _raw_y = gMouseCursorY;
@@ -278,96 +261,113 @@ static void _mouse_anim()
         }
 
         _mouse_shape = gMouseCursorWidth * _mouse_curr_frame * gMouseCursorHeight + _mouse_fptr;
-
-        if (!gCursorIsHidden) {
-            mouseShowCursor();
-        }
     }
 }
 
 // 0x4CA34C
 void mouseShowCursor()
 {
-    unsigned char* cursorData;
-    int clipX;
-    int clipWidth;
-    int clipY;
-    int clipHeight;
-    int cursorDataIndex;
-
-    cursorData = gMouseCursorData;
     if (gMouseInitialized) {
-        if (!_mouse_blit_trans || !gCursorIsHidden) {
-            _win_get_mouse_buf(gMouseCursorData);
-            cursorData = gMouseCursorData;
-            cursorDataIndex = 0;
-
-            for (int y = 0; y < gMouseCursorHeight; y++) {
-                for (int x = 0; x < gMouseCursorWidth; x++) {
-                    unsigned char pixel = _mouse_shape[y * gMouseCursorPitch + x];
-                    if (pixel != _mouse_trans) {
-                        cursorData[cursorDataIndex] = pixel;
-                    }
-                    cursorDataIndex++;
-                }
-            }
-        }
-
-        if (gMouseCursorX >= _scr_size.left) {
-            if (gMouseCursorWidth + gMouseCursorX - 1 <= _scr_size.right) {
-                clipWidth = gMouseCursorWidth;
-                clipX = 0;
-            } else {
-                clipX = 0;
-                clipWidth = _scr_size.right - gMouseCursorX + 1;
-            }
-        } else {
-            clipX = _scr_size.left - gMouseCursorX;
-            clipWidth = gMouseCursorWidth - (_scr_size.left - gMouseCursorX);
-        }
-
-        if (gMouseCursorY >= _scr_size.top) {
-            if (gMouseCursorHeight + gMouseCursorY - 1 <= _scr_size.bottom) {
-                clipY = 0;
-                clipHeight = gMouseCursorHeight;
-            } else {
-                clipY = 0;
-                clipHeight = _scr_size.bottom - gMouseCursorY + 1;
-            }
-        } else {
-            clipY = _scr_size.top - gMouseCursorY;
-            clipHeight = gMouseCursorHeight - (_scr_size.top - gMouseCursorY);
-        }
-
-        gMouseCursorData = cursorData;
-        if (_mouse_blit_trans && gCursorIsHidden) {
-            _mouse_blit_trans(_mouse_shape, gMouseCursorPitch, gMouseCursorHeight, clipX, clipY, clipWidth, clipHeight, clipX + gMouseCursorX, clipY + gMouseCursorY, _mouse_trans);
-        } else {
-            _mouse_blit(gMouseCursorData, gMouseCursorWidth, gMouseCursorHeight, clipX, clipY, clipWidth, clipHeight, clipX + gMouseCursorX, clipY + gMouseCursorY);
-        }
-
-        cursorData = gMouseCursorData;
         gCursorIsHidden = false;
     }
-    gMouseCursorData = cursorData;
 }
 
 // 0x4CA534
 void mouseHideCursor()
 {
-    Rect rect;
+    gCursorIsHidden = true;
+}
 
-    if (gMouseInitialized) {
-        if (!gCursorIsHidden) {
-            rect.left = gMouseCursorX;
-            rect.top = gMouseCursorY;
-            rect.right = gMouseCursorX + gMouseCursorWidth - 1;
-            rect.bottom = gMouseCursorY + gMouseCursorHeight - 1;
+SDL_Point mouseGetCursorDrawPosition()
+{
+    return { gMouseCursorX, gMouseCursorY };
+}
 
-            gCursorIsHidden = true;
-            windowRefreshAll(&rect);
+SDL_Point mouseSampleCursorDrawPosition()
+{
+    // Refresh SDL's device state. The input update will drain the event queue.
+    SDL_PumpEvents();
+
+    if (!gMouseInitialized || gCursorIsHidden || _mouse_disabled || pointerUsesTouch || !gProgramIsActive) {
+        return mouseGetCursorDrawPosition();
+    }
+
+    auto point = mouseDeviceSamplePosition();
+    if (mouseDeviceUsesRelativeMode()) {
+        const auto delta = scaleRelativeMotion(point, mouseDeviceMotionGeneration()).pixels();
+        point.x = gMouseCursorX + delta.x;
+        point.y = gMouseCursorY + delta.y;
+    } else {
+        point.x -= _mouse_hotx;
+        point.y -= _mouse_hoty;
+    }
+    return clipCursorPosition(point);
+}
+
+SDL_Rect mouseGetCursorDrawBounds(SDL_Point position)
+{
+    if (!gMouseInitialized || gCursorIsHidden || _mouse_shape == nullptr) {
+        return {};
+    }
+
+    return { position.x, position.y, gMouseCursorWidth, gMouseCursorHeight };
+}
+
+namespace {
+
+    struct CursorPalette {
+        const SDL_PixelFormat* format;
+        const SDL_Palette& palette;
+
+        Uint32 operator()(unsigned char index) const
+        {
+            const auto& color = palette.colors[index];
+            return SDL_MapRGB(format, color.r, color.g, color.b);
+        }
+    };
+
+    unsigned char cursorPaletteIndex(unsigned char index)
+    {
+        return index;
+    }
+
+    template <typename Pixel, typename MapColor>
+    void drawCursor(Pixel* pixels, int width, int height, int stride, SDL_Point position, MapColor mapColor)
+    {
+        const auto bounds = mouseGetCursorDrawBounds(position);
+        if (SDL_RectEmpty(&bounds)) {
+            return;
+        }
+
+        const int left = std::max(0, position.x);
+        const int top = std::max(0, position.y);
+        const int right = std::min(width, bounds.x + bounds.w);
+        const int bottom = std::min(height, bounds.y + bounds.h);
+        const auto transparent = static_cast<unsigned char>(_mouse_trans);
+
+        for (int y = top; y < bottom; ++y) {
+            auto* row = pixels + y * stride;
+            const auto* source = _mouse_shape + (y - position.y) * gMouseCursorPitch;
+            for (int x = left; x < right; ++x) {
+                const auto color = source[x - position.x];
+                if (color != transparent) {
+                    row[x] = mapColor(color);
+                }
+            }
         }
     }
+
+} // namespace
+
+void mouseDrawCursor(SDL_Surface& target, const SDL_Palette& palette, SDL_Point position)
+{
+    drawCursor(static_cast<Uint32*>(target.pixels), target.w, target.h, target.pitch / sizeof(Uint32), position,
+        CursorPalette { target.format, palette });
+}
+
+void mouseDrawScreenshotCursor(unsigned char* pixels, int width, int height)
+{
+    drawCursor(pixels, width, height, width, mouseGetCursorDrawPosition(), cursorPaletteIndex);
 }
 
 #if __APPLE__ && TARGET_OS_IOS
@@ -437,7 +437,8 @@ void _mouse_info()
     }
 
     Gesture gesture;
-    if (touch_get_gesture(&gesture)) {
+    pointerUsesTouch = touch_get_gesture(&gesture);
+    if (pointerUsesTouch) {
         static int prevx;
         static int prevy;
 
@@ -575,7 +576,7 @@ void _mouse_info()
     int y;
     MouseButtonEvent buttons = MouseButtonEvent::None;
 
-    MouseData mouseData;
+    MouseData mouseData { };
     if (mouseDeviceGetData(&mouseData)) {
         x = mouseData.x;
         y = mouseData.y;
@@ -595,8 +596,13 @@ void _mouse_info()
     // Mouse sensitivity only applies to relative movement. In windowed mode
     // SDL provides absolute coordinates that should not be scaled.
     if (mouseDeviceUsesRelativeMode()) {
-        x = (int)(x * gMouseSensitivity);
-        y = (int)(y * gMouseSensitivity);
+        const auto generation = mouseDeviceMotionGeneration();
+        const auto motion = scaleRelativeMotion({ x, y }, generation);
+        const auto delta = motion.pixels();
+        relativeRemainder = { motion.x - delta.x, motion.y - delta.y };
+        relativeGeneration = generation;
+        x = delta.x;
+        y = delta.y;
     }
 
     _mouse_simulate_input(x, y, buttons);
@@ -627,7 +633,13 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
         return;
     }
 
-    if (delta_x == 0 && delta_y == 0 && buttons == last_buttons) {
+    const bool relative = mouseDeviceUsesRelativeMode();
+    // Absolute coordinates include the screen origin and may be unchanged
+    // even when nonzero. Touch gestures can also supply relative movement.
+    const bool moved = relative || pointerUsesTouch
+        ? (delta_x != 0 || delta_y != 0)
+        : (delta_x != gMouseCursorX + _mouse_hotx || delta_y != gMouseCursorY + _mouse_hoty);
+    if (!moved && buttons == last_buttons) {
         if (last_buttons == MouseButtonEvent::None) {
             if (!_mouse_idling) {
                 _mouse_idle_start_time = getTicks();
@@ -684,13 +696,8 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
 
     _raw_buttons = gMouseEvent;
 
-    if (delta_x != 0 || delta_y != 0) {
-        Rect mouseRect;
-        mouseRect.left = gMouseCursorX;
-        mouseRect.top = gMouseCursorY;
-        mouseRect.right = gMouseCursorWidth + gMouseCursorX - 1;
-        mouseRect.bottom = gMouseCursorHeight + gMouseCursorY - 1;
-        if (mouseDeviceUsesRelativeMode()) {
+    if (moved) {
+        if (relative) {
             gMouseCursorX += delta_x;
             gMouseCursorY += delta_y;
         } else {
@@ -698,11 +705,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
         }
         _mouse_clip();
 
-        windowRefreshAll(&mouseRect);
-
-        mouseShowCursor();
-
-        if (mouseDeviceUsesRelativeMode()) {
+        if (relative) {
             _raw_x = gMouseCursorX;
             _raw_y = gMouseCursorY;
         } else {
@@ -710,19 +713,6 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
             _raw_y = delta_y;
         }
     }
-}
-
-// 0x4CA8C8
-bool _mouse_in(int left, int top, int right, int bottom)
-{
-    if (!gMouseInitialized) {
-        return false;
-    }
-
-    return gMouseCursorHeight + gMouseCursorY > top
-        && right >= gMouseCursorX
-        && gMouseCursorWidth + gMouseCursorX > left
-        && bottom >= gMouseCursorY;
 }
 
 // 0x4CA934
@@ -736,15 +726,6 @@ bool _mouse_click_in(int left, int top, int right, int bottom)
         && _mouse_hotx + gMouseCursorX <= right
         && _mouse_hotx + gMouseCursorX >= left
         && _mouse_hoty + gMouseCursorY <= bottom;
-}
-
-// 0x4CA9A0
-void mouseGetRect(Rect* rect)
-{
-    rect->left = gMouseCursorX;
-    rect->top = gMouseCursorY;
-    rect->right = gMouseCursorWidth + gMouseCursorX - 1;
-    rect->bottom = gMouseCursorHeight + gMouseCursorY - 1;
 }
 
 // 0x4CA9DC
@@ -767,17 +748,9 @@ void _mouse_set_position(int x, int y)
 // 0x4CAA38
 static void _mouse_clip()
 {
-    if (_mouse_hotx + gMouseCursorX < _scr_size.left) {
-        gMouseCursorX = _scr_size.left - _mouse_hotx;
-    } else if (_mouse_hotx + gMouseCursorX > _scr_size.right) {
-        gMouseCursorX = _scr_size.right - _mouse_hotx;
-    }
-
-    if (_mouse_hoty + gMouseCursorY < _scr_size.top) {
-        gMouseCursorY = _scr_size.top - _mouse_hoty;
-    } else if (_mouse_hoty + gMouseCursorY > _scr_size.bottom) {
-        gMouseCursorY = _scr_size.bottom - _mouse_hoty;
-    }
+    const auto position = clipCursorPosition(mouseGetCursorDrawPosition());
+    gMouseCursorX = position.x;
+    gMouseCursorY = position.y;
 }
 
 // 0x4CAAA0
@@ -830,6 +803,7 @@ void mouseSetSensitivity(double value)
 {
     if (value >= MOUSE_SENSITIVITY_MIN && value <= MOUSE_SENSITIVITY_MAX) {
         gMouseSensitivity = value;
+        relativeRemainder = {};
     }
 }
 
