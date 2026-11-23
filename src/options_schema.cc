@@ -1,5 +1,7 @@
 #include "options_schema.h"
 
+#include "debug.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
@@ -290,6 +292,30 @@ bool optionsSchemaParse(Config* config, std::vector<SettingDescriptor>* outDescr
         descriptors.push_back(std::move(desc));
     }
     *outDescriptors = std::move(descriptors);
+    return true;
+}
+
+bool optionsSchemaInit()
+{
+    constexpr char kSchemaPath[] = R"(config\options_schema.cfg)";
+    constexpr char kSchemaPatchPath[] = R"(config\options_schema#patch.cfg)";
+
+    ScopedConfig schemaConfig;
+    if (!schemaConfig || !configRead(schemaConfig.get(), kSchemaPath, true)) {
+        debugPrint("OPTIONS SCHEMA: Unable to load %s.\n", kSchemaPath);
+        return false;
+    }
+
+    configRead(schemaConfig.get(), kSchemaPatchPath, true);
+
+    std::vector<SettingDescriptor> descriptors;
+    if (!optionsSchemaParse(schemaConfig.get(), &descriptors)) {
+        debugPrint("OPTIONS SCHEMA: Invalid schema in %s.\n", kSchemaPath);
+        return false;
+    }
+
+    settingsApplySchemaDescriptors(descriptors);
+    debugPrint("OPTIONS SCHEMA: Loaded %zu descriptors from %s.\n", descriptors.size(), kSchemaPath);
     return true;
 }
 
