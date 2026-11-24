@@ -590,12 +590,12 @@ struct InterfaceFrameButtonGroup {
 
     constexpr bool isValid() const
     {
-        return up.valid() && down.valid();
+        return up.hasFid() && down.hasFid();
     }
 
     constexpr bool hasDisabled() const
     {
-        return disabled.valid();
+        return disabled.hasFid();
     }
 };
 
