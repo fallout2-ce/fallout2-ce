@@ -80,8 +80,14 @@ void InputSystem::sample()
     const int widgetCode = _win_check_all_buttons();
     if (widgetCode != -1) {
         post(widgetCode, InputSource::Widget);
-    } else if (const auto event = _keyboard.take()) {
-        post(decodeLegacyKey(*event), InputSource::Keyboard, event);
+    } else {
+        while (const auto event = _keyboard.take()) {
+            const int code = decodeLegacyKey(*event);
+            if (code != -1) {
+                post(code, InputSource::Keyboard, event);
+                break;
+            }
+        }
     }
 
     if (_commands.empty() && (mouseGetEvent() & (MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonUp)) != MouseButtonEvent::None) {
