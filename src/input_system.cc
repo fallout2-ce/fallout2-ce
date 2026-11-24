@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "clock.h"
 #include "dinput.h"
 #include "key_codes.h"
 #include "keyboard_layout.h"
@@ -27,6 +28,7 @@ bool InputSystem::initialize()
     }
 
     clear();
+    _nativeHookKeys.reset();
     _keyboard.setEnabled(true);
     platformInputInit();
     platformFlushKeyboard();
@@ -102,31 +104,87 @@ InputEvent InputSystem::take()
     return {};
 }
 
-void InputSystem::setTouchShift(bool held)
+bool InputSystem::leftShiftHookHeld() const
 {
-    const bool wasHeld = _keyboard.touchShiftHeld();
-    _keyboard.setTouchShift(held);
-    if (_keyboard.touchShiftHeld() != wasHeld) {
-        sfall_kb_handle_key_pressed(SDL_SCANCODE_LSHIFT, _keyboard.touchShiftHeld());
+    return _keyboard.touchShiftHeld() || _nativeHookKeys.test(SDL_SCANCODE_LSHIFT);
+}
+
+void InputSystem::syncLeftShiftHook(bool wasHeld)
+{
+    // The gesture and the native key both report DIK_LSHIFT to listeners.
+    const bool held = leftShiftHookHeld();
+    if (wasHeld != held) {
+        _leftShiftHookOverride = sfall_kb_handle_key_pressed(SDL_SCANCODE_LSHIFT, held);
     }
 }
 
-void InputSystem::cancelKeyboard()
+void InputSystem::setTouchShift(bool held)
 {
-    setTouchShift(false);
+    const bool wasHeld = leftShiftHookHeld();
+    _keyboard.setTouchShift(held);
+    syncLeftShiftHook(wasHeld);
+}
+
+void InputSystem::dispatchNativeKey(SDL_Scancode physical, bool pressed)
+{
+    if (!_keyboard.enabled() || physical <= SDL_SCANCODE_UNKNOWN || physical >= SDL_NUM_SCANCODES) {
+        return;
+    }
+
+    const bool isLeftShift = physical == SDL_SCANCODE_LSHIFT;
+    const bool wasShiftHeld = leftShiftHookHeld();
+    if (pressed) {
+        _nativeHookKeys.set(physical);
+        int override;
+        if (isLeftShift) {
+            syncLeftShiftHook(wasShiftHeld);
+            override = _leftShiftHookOverride;
+        } else {
+            override = sfall_kb_handle_key_pressed(physical, true);
+        }
+        // A hook that enters a modal loop can suspend input before returning.
+        if (_nativeHookKeys.test(physical)) {
+            const auto effective = override == -1 ? physical : static_cast<SDL_Scancode>(override);
+            _keyboard.press(physical, effective, getRealTicks());
+        }
+    } else if (_nativeHookKeys.test(physical)) {
+        _nativeHookKeys.reset(physical);
+        _keyboard.release(physical);
+        if (isLeftShift) {
+            syncLeftShiftHook(wasShiftHeld);
+        } else {
+            sfall_kb_handle_key_pressed(physical, false);
+        }
+    }
+}
+
+void InputSystem::cancelKeyboard(bool releaseNative)
+{
+    const bool wasShiftHeld = leftShiftHookHeld();
+    // Snapshot and clear first so a nested update cannot release these twice.
+    const auto held = releaseNative ? std::exchange(_nativeHookKeys, { }) : decltype(_nativeHookKeys) { };
     _keyboard.clear();
     _commands.discardIf([](const InputEvent& event) {
         return event.source == InputSource::Keyboard;
     });
+    syncLeftShiftHook(wasShiftHeld);
+    if (releaseNative) {
+        for (int key = 1; key < SDL_NUM_SCANCODES; ++key) {
+            if (key != SDL_SCANCODE_LSHIFT && held.test(key)) {
+                sfall_kb_handle_key_pressed(key, false);
+            }
+        }
+    }
 }
 
 void InputSystem::suspend()
 {
     cancelPointer();
-    cancelKeyboard();
     _commands.discardIf([](const InputEvent& event) {
         return event.source == InputSource::Touch;
     });
+
+    cancelKeyboard(true);
 }
 
 void InputSystem::cancelPointer()
@@ -140,9 +198,8 @@ void InputSystem::cancelPointer()
 void InputSystem::clear()
 {
     cancelPointer();
-    setTouchShift(false);
-    _keyboard.clear();
     _commands.clear();
+    cancelKeyboard();
 }
 
 } // namespace fallout

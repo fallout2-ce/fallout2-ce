@@ -1,6 +1,8 @@
 #ifndef FALLOUT_INPUT_SYSTEM_H_
 #define FALLOUT_INPUT_SYSTEM_H_
 
+#include <bitset>
+
 #include "input_event.h"
 #include "input_queue.h"
 #include "keyboard.h"
@@ -38,11 +40,18 @@ private:
     friend void dispatchPlatformEvents();
 
     void post(int code, InputSource source, std::optional<KeyboardEvent> keyboardEvent = std::nullopt);
-    void cancelKeyboard();
+    void dispatchNativeKey(SDL_Scancode physical, bool pressed);
+    bool leftShiftHookHeld() const;
+    void syncLeftShiftHook(bool wasHeld);
+    void cancelKeyboard(bool releaseNative = false);
     void cancelPointer();
     void clear();
 
     Keyboard _keyboard;
+    // A script may consume a press, so hook releases track physical keys
+    // independently of the keyboard's effective held keys.
+    std::bitset<SDL_NUM_SCANCODES> _nativeHookKeys;
+    int _leftShiftHookOverride = -1;
     InputQueue<InputEvent, 40> _commands;
     std::optional<InputEvent> _pointerEdge;
     Point _lastPosition{ -1, -1 };

@@ -14,7 +14,6 @@
 #include "game.h"
 #include "input_system.h"
 #include "movie.h"
-#include "sfall_kb_helpers.h"
 #include "sfall_script_hooks.h"
 #include "svga.h"
 #include "touch.h"
@@ -58,28 +57,22 @@ int SDLCALL collectVideoEvents(void* data, SDL_Event* event)
     return 1;
 }
 
-SDL_Scancode canonical(SDL_Scancode key)
+void syncNativeLocks(Keyboard& keyboard)
 {
-    return key == SDL_SCANCODE_KP_PERIOD ? SDL_SCANCODE_KP_DECIMAL : key;
-}
-
-void dispatchKey(Keyboard& keyboard, const SDL_KeyboardEvent& event)
-{
-    const auto physical = event.keysym.scancode;
-    if (!gProgramIsActive || !keyboard.enabled() || event.repeat
-        || physical <= SDL_SCANCODE_UNKNOWN || physical >= SDL_NUM_SCANCODES) {
-        return;
+    const auto native = SDL_GetModState();
+    std::uint16_t locks = 0;
+    if (native & KMOD_CAPS) {
+        locks |= KeyModifier::CapsLock;
     }
-
-    const bool pressed = event.type == SDL_KEYDOWN;
-    const int override = sfall_kb_handle_key_pressed(physical, pressed);
-    if (pressed) {
-        const auto effective = override == -1 ? physical : static_cast<SDL_Scancode>(override);
-        keyboard.press(physical, canonical(effective), getRealTicks());
-    } else {
-        // Scripts see the release. State follows the key selected on press.
-        keyboard.release(physical);
+    if (native & KMOD_NUM) {
+        locks |= KeyModifier::NumLock;
     }
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+    if (native & KMOD_SCROLL) {
+        locks |= KeyModifier::ScrollLock;
+    }
+#endif
+    keyboard.syncLocks(locks);
 }
 
 void notifyMouseHook(const SDL_MouseButtonEvent& event)
@@ -91,7 +84,7 @@ void notifyMouseHook(const SDL_MouseButtonEvent& event)
     }
 }
 
-void dispatchWindowEvent(const SDL_WindowEvent& event)
+void dispatchWindowEvent(Keyboard& keyboard, const SDL_WindowEvent& event)
 {
     switch (event.event) {
     case SDL_WINDOWEVENT_EXPOSED:
@@ -101,6 +94,7 @@ void dispatchWindowEvent(const SDL_WindowEvent& event)
         handleWindowSizeChanged();
         break;
     case SDL_WINDOWEVENT_FOCUS_GAINED:
+        syncNativeLocks(keyboard);
         gProgramIsActive = true;
         if (gSdlRenderer == nullptr) {
             handleRenderDeviceReset();
@@ -121,19 +115,6 @@ void dispatchWindowEvent(const SDL_WindowEvent& event)
     }
 }
 
-void flushQueuedKeyboard(bool keepKeyReleases)
-{
-    if (keepKeyReleases) {
-        SDL_FlushEvent(SDL_KEYDOWN);
-        SDL_FlushEvents(SDL_TEXTEDITING, SDL_TEXTINPUT);
-    } else {
-        SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
-    }
-    if (scriptTapType != 0) {
-        SDL_FlushEvent(scriptTapType);
-    }
-}
-
 } // namespace
 
 void platformInputInit()
@@ -147,20 +128,7 @@ void platformInputInit()
         }
     }
 
-    const auto native = SDL_GetModState();
-    std::uint16_t locks = 0;
-    if (native & KMOD_CAPS) {
-        locks |= KeyModifier::CapsLock;
-    }
-    if (native & KMOD_NUM) {
-        locks |= KeyModifier::NumLock;
-    }
-#if SDL_VERSION_ATLEAST(2, 0, 18)
-    if (native & KMOD_SCROLL) {
-        locks |= KeyModifier::ScrollLock;
-    }
-#endif
-    inputSystem._keyboard.syncLocks(locks);
+    syncNativeLocks(inputSystem._keyboard);
 }
 
 void enqueueScriptKey(SDL_Scancode key)
@@ -176,13 +144,18 @@ void enqueueScriptKey(SDL_Scancode key)
 
 void platformFlushKeyboard()
 {
-    flushQueuedKeyboard(false);
+    // Pending releases still have to pair with the hooks for native presses.
+    SDL_FlushEvent(SDL_KEYDOWN);
+    SDL_FlushEvents(SDL_TEXTEDITING, SDL_TEXTINPUT);
+    if (scriptTapType != 0) {
+        SDL_FlushEvent(scriptTapType);
+    }
 }
 
 void platformFlushInput(bool keepReleases)
 {
     SDL_PumpEvents();
-    flushQueuedKeyboard(keepReleases);
+    platformFlushKeyboard();
     if (keepReleases) {
         SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN);
         SDL_FlushEvent(SDL_MOUSEWHEEL);
@@ -212,7 +185,7 @@ void dispatchPlatformEvents()
         }
         if (event.type == scriptTapType && scriptTapType != 0) {
             if (gProgramIsActive) {
-                inputSystem._keyboard.tap(canonical(static_cast<SDL_Scancode>(event.user.code)));
+                inputSystem._keyboard.tap(static_cast<SDL_Scancode>(event.user.code));
             }
             continue;
         }
@@ -238,10 +211,12 @@ void dispatchPlatformEvents()
             break;
         case SDL_KEYDOWN:
         case SDL_KEYUP:
-            dispatchKey(inputSystem._keyboard, event.key);
+            if (gProgramIsActive && !event.key.repeat) {
+                inputSystem.dispatchNativeKey(event.key.keysym.scancode, event.type == SDL_KEYDOWN);
+            }
             break;
         case SDL_WINDOWEVENT:
-            dispatchWindowEvent(event.window);
+            dispatchWindowEvent(inputSystem._keyboard, event.window);
             break;
         case SDL_APP_WILLENTERBACKGROUND:
             inputSystem.suspend();

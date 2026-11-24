@@ -12,6 +12,11 @@ bool valid(SDL_Scancode key)
     return key > SDL_SCANCODE_UNKNOWN && key < SDL_NUM_SCANCODES;
 }
 
+SDL_Scancode canonicalScancode(SDL_Scancode key)
+{
+    return key == SDL_SCANCODE_KP_PERIOD ? SDL_SCANCODE_KP_DECIMAL : key;
+}
+
 KeyModifier lockFor(SDL_Scancode key)
 {
     switch (key) {
@@ -35,6 +40,7 @@ bool repeats(SDL_Scancode key)
 
 void Keyboard::press(SDL_Scancode physical, SDL_Scancode effective, std::uint32_t now)
 {
+    effective = canonicalScancode(effective);
     if (!_enabled || !valid(physical) || !valid(effective)) {
         return;
     }
@@ -73,6 +79,7 @@ void Keyboard::release(SDL_Scancode physical)
 
 void Keyboard::tap(SDL_Scancode effective)
 {
+    effective = canonicalScancode(effective);
     if (_enabled && valid(effective)) {
         toggleLock(effective);
         emit(SDL_SCANCODE_UNKNOWN, effective, KeyStroke::ScriptTap);
