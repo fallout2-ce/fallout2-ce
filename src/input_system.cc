@@ -127,7 +127,7 @@ void InputSystem::setTouchShift(bool held)
 
 void InputSystem::dispatchNativeKey(SDL_Scancode physical, bool pressed)
 {
-    if (!_keyboard.enabled() || physical <= SDL_SCANCODE_UNKNOWN || physical >= SDL_NUM_SCANCODES) {
+    if ((pressed && !_keyboard.enabled()) || physical <= SDL_SCANCODE_UNKNOWN || physical >= SDL_NUM_SCANCODES) {
         return;
     }
 
