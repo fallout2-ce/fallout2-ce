@@ -27,7 +27,8 @@ public:
     bool isKeyDown(SDL_Scancode key) const { return _keyboard.held(key); }
     bool keyboardEnabled() const { return _keyboard.enabled(); }
     void setKeyboardEnabled(bool enabled) { _keyboard.setEnabled(enabled); }
-    void setTouchShift(bool held) { _keyboard.setTouchShift(held); }
+    void setTouchShift(bool held);
+    bool touchShiftHeld() const { return _keyboard.touchShiftHeld(); }
 
 private:
     friend void platformInputInit();

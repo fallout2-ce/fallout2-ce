@@ -18,6 +18,7 @@ public:
     void setEnabled(bool enabled) { _enabled = enabled; }
 
     bool enabled() const { return _enabled; }
+    bool touchShiftHeld() const { return _touchShift; }
     bool held(SDL_Scancode effective) const;
     std::optional<KeyboardEvent> take() { return _events.pop(); }
 

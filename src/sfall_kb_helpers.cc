@@ -3,6 +3,7 @@
 #include <SDL.h>
 
 #include "game.h"
+#include "input_system.h"
 #include "platform_input.h"
 #include "sfall_script_hooks.h"
 
@@ -309,7 +310,8 @@ bool sfall_kb_is_key_pressed(int key)
     }
 
     const Uint8* state = SDL_GetKeyboardState(nullptr);
-    return state[scancode] != 0;
+    return state[scancode] != 0
+        || (scancode == SDL_SCANCODE_LSHIFT && inputSystem.touchShiftHeld());
 }
 
 void sfall_kb_press_key(int key)

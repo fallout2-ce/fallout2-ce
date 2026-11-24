@@ -8,6 +8,7 @@
 #include "mouse.h"
 #include "platform_input.h"
 #include "screenshot.h"
+#include "sfall_kb_helpers.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -93,8 +94,18 @@ InputEvent InputSystem::take()
     return {};
 }
 
+void InputSystem::setTouchShift(bool held)
+{
+    const bool wasHeld = _keyboard.touchShiftHeld();
+    _keyboard.setTouchShift(held);
+    if (_keyboard.touchShiftHeld() != wasHeld) {
+        sfall_kb_handle_key_pressed(SDL_SCANCODE_LSHIFT, _keyboard.touchShiftHeld());
+    }
+}
+
 void InputSystem::cancelKeyboard()
 {
+    setTouchShift(false);
     _keyboard.clear();
     _commands.discardIf([](const InputEvent& event) {
         return event.source == InputSource::Keyboard;
@@ -112,6 +123,7 @@ void InputSystem::suspend()
 
 void InputSystem::clear()
 {
+    setTouchShift(false);
     _keyboard.clear();
     _commands.clear();
     _pointerEdge.reset();
