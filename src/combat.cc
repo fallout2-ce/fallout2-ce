@@ -17,13 +17,15 @@
 #include "display_monitor.h"
 #include "draw.h"
 #include "elevator.h"
+#include "input_system.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "loadsave.h"
 #include "map.h"
 #include "memory.h"
@@ -36,7 +38,6 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
-#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -2699,7 +2700,7 @@ static void _combat_begin(Object* attacker)
 {
     _combat_turn_running = 0;
     animationStop();
-    tickersRemove(_dude_fidget);
+    removeUpdateCallback(_dude_fidget);
     _combat_elev = gElevation;
 
     if (!isInCombat()) {
@@ -2880,7 +2881,7 @@ static void _combat_over()
         }
     }
 
-    tickersAdd(_dude_fidget);
+    addUpdateCallback(_dude_fidget);
 
     for (int index = 0; index < _list_noncom + _list_com; index++) {
         Object* critter = _combat_list[index];
@@ -3250,7 +3251,7 @@ static void combatAttemptEnd()
 void _combat_turn_run()
 {
     while (_combat_turn_running > 0) {
-        _process_bk();
+        runBackgroundUpdate();
 
         scheduler.finishUpdate();
     }
@@ -3278,7 +3279,7 @@ static int _combat_input()
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // SFALL: CombatLoopHook.
         sfall_gl_scr_process_main();
@@ -3355,8 +3356,8 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
         obj->data.critter.combat.results &= ~DAM_LOSE_TURN;
     } else {
         if (obj == gDude) {
-            keyboardReset();
-            inputEventQueueReset();
+            inputSystem.resetKeyboard();
+            inputSystem.reset();
             interfaceRenderArmorClass(true);
 
             // SFALL: The turn resumed after loading keeps the free move
@@ -3525,7 +3526,7 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId ba
 static void waitForGorisAnimation(Object* critter)
 {
     while (animationIsBusy(critter)) {
-        _process_bk();
+        runBackgroundUpdate();
         scheduler.finishUpdate();
     }
 }
@@ -5867,7 +5868,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
 
     int eventCode;
     while (true) {
-        eventCode = inputGetInput();
+        eventCode = beginInteractiveUpdate().code;
 
         if (eventCode == KEY_ESCAPE) {
             break;

@@ -11,10 +11,10 @@
 #include "debug.h"
 #include "draw.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "inventory.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
 #include "memory.h"
@@ -272,7 +272,7 @@ static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType)
     windowRefresh(win);
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             // Write back only the flags that were visible (prevents stomping unrelated bits)
@@ -393,7 +393,7 @@ static int protoInstItemEdit(Object* obj)
     }
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -535,7 +535,7 @@ static int protoInstCritterEdit(Object* obj)
                 needRedraw = false;
             }
 
-            int key = inputGetInput();
+            int key = beginInteractiveUpdate().code;
 
             if (key == KEY_ESCAPE || key == KEY_RETURN) {
                 windowDestroy(winId);
@@ -612,7 +612,7 @@ static int protoInstWallEdit(Object* obj)
     }
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -644,7 +644,7 @@ static int protoInstTileEdit(Object* obj)
     }
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -674,7 +674,7 @@ static void protoInstMiscEdit(Object* obj)
     }
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -726,7 +726,7 @@ static int protoInstSceneryEdit(Object* obj)
     windowRefresh(winId);
 
     while (true) {
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);

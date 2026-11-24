@@ -8,7 +8,8 @@
 
 #include "debug.h"
 #include "game.h"
-#include "kb.h"
+#include "input_system.h"
+#include "key_codes.h"
 #include "settings.h"
 #include "sfall_kb_helpers.h"
 #include "win32.h"
@@ -43,7 +44,7 @@ static bool modifierIsPressed()
 
 static void updateControls()
 {
-    if (!settings.speed.enabled || !gProgramIsActive || keyboardIsDisabled()) {
+    if (!settings.speed.enabled || !gProgramIsActive || !inputSystem.keyboardEnabled()) {
         toggleHeld = false;
         return;
     }

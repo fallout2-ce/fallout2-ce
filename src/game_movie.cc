@@ -14,7 +14,7 @@
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "game_speed.h"
-#include "input.h"
+#include "game_update.h"
 #include "mouse.h"
 #include "movie.h"
 #include "movie_effect.h"
@@ -253,7 +253,7 @@ int gameMoviePlay(GameMovie movie, GameMovieFlags flags)
     MouseButtonEvent pressed = MouseButtonEvent::None;
     MouseButtonEvent buttons;
     do {
-        if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
+        if (!_moviePlaying() || _game_user_wants_to_quit || beginInteractiveUpdate().code != -1) {
             break;
         }
 

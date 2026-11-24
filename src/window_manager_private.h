@@ -9,6 +9,9 @@
 namespace fallout {
 
 typedef struct MenuBar MenuBar;
+struct InputEvent;
+
+InputEvent windowDispatchMenu(InputEvent input);
 
 typedef void(ListSelectionHandler)(const char* const* items, int index);
 

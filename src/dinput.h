@@ -31,7 +31,6 @@ bool mouseDeviceGetData(MouseData* mouseData);
 SDL_Point mouseDeviceSamplePosition();
 bool keyboardDeviceAcquire();
 bool keyboardDeviceUnacquire();
-bool keyboardDeviceReset();
 bool keyboardDeviceGetData(KeyboardData* keyboardData);
 bool mouseDeviceInit();
 void mouseDeviceFree();

@@ -16,8 +16,8 @@
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "memory.h"
 #include "message.h"
@@ -187,7 +187,7 @@ int characterSelectorOpen()
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         switch (keyCode) {
         case KEY_MINUS:

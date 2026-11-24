@@ -7,19 +7,21 @@
 #include <chrono>
 
 #include "art.h"
+#include "clock.h"
 #include "cycle.h"
 #include "dbox.h"
 #include "debug.h"
 #include "draw.h"
+#include "platform_input.h"
+#include "scheduler.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "pipboy.h"
-#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_config.h"
@@ -420,7 +422,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     bool skipGauge = false;
     int keyCode;
     while (!done) {
-        keyCode = inputGetInput();
+        keyCode = beginInteractiveUpdate().code;
         if (keyCode == KEY_ESCAPE) {
             keyCode = elevatorGetLevelFromEscKey(elevator, *mapPtr);
             skipGauge = true;
@@ -476,17 +478,17 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
                 windowRefresh(gElevatorWindow);
 
-                _GNW95_process_message();
+                dispatchPlatformEvents();
                 const auto elapsed = getTicks() - tick;
                 if (elapsed < delay) {
                     scheduler.presentFor(std::chrono::milliseconds(delay - elapsed));
                 }
-                _GNW95_process_message();
+                dispatchPlatformEvents();
 
                 scheduler.finishUpdate();
             } while ((levelStep <= 0.0 || currentGaugePosition < targetGaugePosition) && (levelStep > 0.0 || currentGaugePosition > targetGaugePosition));
 
-            inputPauseForTocks(200);
+            waitForGameTime(200, runBackgroundUpdate);
         }
     }
 

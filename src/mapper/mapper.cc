@@ -26,10 +26,10 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "graph_lib.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "inventory.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "light.h"
 #include "loadsave.h"
 #include "map.h"
@@ -1241,7 +1241,7 @@ void edit_mapper()
     interfaceBarHide();
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // ----------------------------------------------------------------
         // In play mode: forward input to game engine, then loop.
@@ -1410,23 +1410,23 @@ void edit_mapper()
         // Menu header delegation: if user clicked a menu header, read the
         // pulldown selection and map it to the real handler code.
         if (keyCode == kBtnMenuHeaderFile) {
-            int index = inputGetInput();
+            int index = beginInteractiveUpdate().code;
             if (index == -1) continue;
             keyCode = menu_val_0[index];
         } else if (keyCode == kBtnMenuHeaderTools) {
-            int index = inputGetInput();
+            int index = beginInteractiveUpdate().code;
             if (index == -1) continue;
             keyCode = menu_val_1[index];
         } else if (keyCode == kBtnMenuHeaderScripts) {
-            int index = inputGetInput();
+            int index = beginInteractiveUpdate().code;
             if (index == -1) continue;
             keyCode = menu_val_2[index];
         } else if (keyCode == kBtnMenuHeaderLibrarian) {
-            int index = inputGetInput();
+            int index = beginInteractiveUpdate().code;
             if (index == -1) continue;
             keyCode = menu_val_3[index];
         } else if (keyCode == kBtnMenuHeaderSettings) {
-            int index = inputGetInput();
+            int index = beginInteractiveUpdate().code;
             if (index == -1) continue;
             keyCode = menu_val_4[index];
         }

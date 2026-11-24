@@ -12,9 +12,9 @@
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "memory.h"
 #include "message.h"
@@ -122,7 +122,7 @@ SkilldexRC skilldexOpen()
 
     SkilldexRC rc = SKILLDEX_RC_ERROR;
     while (rc == SKILLDEX_RC_ERROR) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // SFALL: Close with 'S'.
         if (keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S || keyCode == 500 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
@@ -138,7 +138,7 @@ SkilldexRC skilldexOpen()
     }
 
     if (rc != SKILLDEX_RC_CANCELED) {
-        inputBlockForTocks(1000 / 9);
+        waitForGameTime(1000 / 9);
     }
 
     skilldexWindowFree();

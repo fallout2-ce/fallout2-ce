@@ -8,6 +8,7 @@
 
 #include "animation_defs.h"
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -18,10 +19,11 @@
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
+#include "input_system.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "mouse.h"
 #include "obj_types.h"
@@ -3072,7 +3074,7 @@ static void _object_anim_compact()
 // mode while Ctrl is held, or -1 when Ctrl is up or no attack is selected.
 int dudeMoveGetReservedActionPoints()
 {
-    if (!gPressedPhysicalKeys[SDL_SCANCODE_RCTRL] && !gPressedPhysicalKeys[SDL_SCANCODE_LCTRL]) {
+    if (!inputSystem.isKeyDown(SDL_SCANCODE_RCTRL) && !inputSystem.isKeyDown(SDL_SCANCODE_LCTRL)) {
         return -1;
     }
 
@@ -3283,7 +3285,7 @@ void _dude_fidget()
         return;
     }
 
-    unsigned int currentTime = _get_bk_time();
+    unsigned int currentTime = lastBackgroundUpdateTime();
     if (getTicksBetween(currentTime, lastTime) <= nextTime) {
         return;
     }

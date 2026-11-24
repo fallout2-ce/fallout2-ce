@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "clock.h"
 #include "db.h"
 #include "debug.h"
 #include "export.h"
-#include "input.h"
 #include "interpreter_lib.h"
 #include "memory_manager.h"
 #include "platform_compat.h"

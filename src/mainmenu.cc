@@ -5,22 +5,25 @@
 #include <string.h>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "content_config.h"
 #include "debug.h"
 #include "delay.h"
 #include "draw.h"
 #include "font_manager.h"
+#include "input_system.h"
+#include "platform_input.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mouse.h"
 #include "palette.h"
 #include "platform_compat.h"
 #include "preferences.h"
-#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -813,7 +816,7 @@ MainMenuOption mainMenuWindowHandleEvents()
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_EXIT;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         for (MainMenuButton buttonIndex = MAIN_MENU_BUTTON_FIRST; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
             int buttonKeyCode = mainMenuButtonSpecs[buttonIndex].keyCode;
@@ -823,7 +826,7 @@ MainMenuOption mainMenuWindowHandleEvents()
 
                 rc = mainMenuButtonSpecs[buttonIndex].returnValue;
 
-                if (buttonIndex == MAIN_MENU_BUTTON_CREDITS && (gPressedPhysicalKeys[SDL_SCANCODE_RSHIFT] != KEY_STATE_UP || gPressedPhysicalKeys[SDL_SCANCODE_LSHIFT] != KEY_STATE_UP)) {
+                if (buttonIndex == MAIN_MENU_BUTTON_CREDITS && (inputSystem.isKeyDown(SDL_SCANCODE_RSHIFT) || inputSystem.isKeyDown(SDL_SCANCODE_LSHIFT))) {
                     rc = MainMenuOption::Quotes;
                 }
 
@@ -975,7 +978,7 @@ static void mainMenuSetOverlayDimIntensity(int intensity)
 static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)
 {
     for (int step = 0; step < mainMenuOverlayDimAnimationSteps; step++) {
-        _GNW95_process_message();
+        dispatchPlatformEvents();
         _mouse_info();
 
         int intensity = startIntensity + (endIntensity - startIntensity) * (step + 1) / mainMenuOverlayDimAnimationSteps;

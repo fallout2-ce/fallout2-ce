@@ -1,5 +1,6 @@
 #include "interface.h"
 
+#include "clock.h"
 #include "platform/ios/quick_toolbar.h"
 
 #include <algorithm>
@@ -22,10 +23,10 @@
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
 #include "inventory.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
@@ -1496,7 +1497,7 @@ void interfaceBarEndButtonsShow(bool animated)
         int time = 0;
         int frame = 0;
         while (frame < frameCount) {
-            tickersExecute();
+            runUpdateCallbacks();
 
             if (getTicksSince(time) >= delay) {
                 unsigned char* src = artGetFrameData(art, frame);
@@ -1553,7 +1554,7 @@ void interfaceBarEndButtonsHide(bool animated)
         int frame = artGetFrameCount(art);
 
         while (frame != 0) {
-            tickersExecute();
+            runUpdateCallbacks();
 
             if (getTicksSince(time) >= delay) {
                 unsigned char* src = artGetFrameData(art, frame - 1);
@@ -1938,7 +1939,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
             break;
         }
 
-        inputGetInput();
+        beginInteractiveUpdate();
 
         scheduler.finishUpdate();
     }
@@ -2291,7 +2292,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
     }
 
     scheduler.presentNow();
-    inputBlockForTocks(delayMs);
+    waitForGameTime(delayMs);
     windowRefreshRect(gInterfaceBarWindow, numbersRect);
 }
 
@@ -2390,7 +2391,7 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
                 _mouse_info();
                 gameMouseRefresh();
                 scheduler.presentNow();
-                inputBlockForTocks(delay);
+                waitForGameTime(delay);
                 windowRefreshRect(gInterfaceBarWindow, &numbersRect);
             }
         }

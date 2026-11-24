@@ -6,13 +6,14 @@
 #include <string>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "draw.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "memory.h"
 #include "settings.h"
@@ -249,7 +250,7 @@ void displayMonitorAddMessage(const char* str)
     int knobWidth = fontGetStringWidth(knobString);
 
     if (!isInCombat()) {
-        unsigned int now = _get_bk_time();
+        unsigned int now = lastBackgroundUpdateTime();
         if (getTicksBetween(now, gDisplayMonitorLastBeepTimestamp) >= DISPLAY_MONITOR_BEEP_DELAY) {
             gDisplayMonitorLastBeepTimestamp = now;
             soundPlayFile("monitor");

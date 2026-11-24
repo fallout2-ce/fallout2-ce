@@ -9,9 +9,9 @@
 #include "db.h"
 #include "draw.h"
 #include "game.h"
-#include "input.h"
+#include "game_update.h"
 #include "interpreter_lib.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "memory_manager.h"
 #include "mouse.h"
 #include "mouse_manager.h"
@@ -513,7 +513,7 @@ bool scriptWindowActivateRegion(const char* regionName, int mouseEvent)
 // 0x4B6ED0
 int _getInput()
 {
-    int keyCode = inputGetInput();
+    int keyCode = beginInteractiveUpdate().code;
     if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
         showQuitConfirmationDialog();
     }

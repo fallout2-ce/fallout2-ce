@@ -14,6 +14,7 @@
 #include "animation.h"
 #include "art.h"
 #include "automap.h"
+#include "clock.h"
 #include "combat.h"
 #include "content_config.h"
 #include "critter.h"
@@ -27,7 +28,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "map_defs.h"
 #include "memory.h"
 #include "message.h"
@@ -995,11 +996,11 @@ static Program* scriptsCreateProgramByName(const char* name)
 static void _doBkProcesses()
 {
     if (!gBackgroundProcessTimeInitialized) {
-        gLastBackgroundProcessTime = _get_bk_time();
+        gLastBackgroundProcessTime = lastBackgroundUpdateTime();
         gBackgroundProcessTimeInitialized = 1;
     }
 
-    int currentTime = _get_bk_time();
+    int currentTime = lastBackgroundUpdateTime();
     if (gScriptsEnabled) {
         gLastBackgroundProcessTime = currentTime;
 
@@ -1068,7 +1069,7 @@ static void _script_chk_critters()
 // 0x4A3D84
 static void _script_chk_timed_events()
 {
-    int currentTime = _get_bk_time();
+    int currentTime = lastBackgroundUpdateTime();
 
     bool shouldProcessQueue = false;
     if (!isInCombat()) {
@@ -1994,7 +1995,7 @@ int _scr_game_init()
     gGameTime = 1;
     scriptsResetUniqueObjectIdCounter();
     gameTimeSetTime(gStartTimeTicks);
-    tickersAdd(_doBkProcesses);
+    addUpdateCallback(_doBkProcesses);
 
     if (scriptsSetDudeScript() == -1) {
         return -1;
@@ -2078,7 +2079,7 @@ int _scr_game_exit()
     _scr_message_free();
     _scr_remove_all();
     programListFree();
-    tickersRemove(_doBkProcesses);
+    removeUpdateCallback(_doBkProcesses);
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRIPT, nullptr);
     messageListFree(&gScrMessageList);
     if (scriptsClearDudeScript() == -1) {

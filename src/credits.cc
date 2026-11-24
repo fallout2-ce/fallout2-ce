@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "cycle.h"
 #include "db.h"
@@ -12,7 +13,7 @@
 #include "delay.h"
 #include "draw.h"
 #include "game_mouse.h"
-#include "input.h"
+#include "game_update.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
@@ -149,7 +150,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
                                     unsigned char* dest = intermediateBuffer + windowWidth * windowHeight - windowWidth + (windowWidth - stringWidth) / 2;
                                     unsigned char* src = stringBuffer;
                                     for (int index = 0; index < lineHeight; index++) {
-                                        if (inputGetInput() != -1) {
+                                        if (beginInteractiveUpdate().code != -1) {
                                             stop = true;
                                             break;
                                         }
@@ -189,7 +190,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
 
                                 if (!stop) {
                                     for (int index = 0; index < windowHeight; index++) {
-                                        if (inputGetInput() != -1) {
+                                        if (beginInteractiveUpdate().code != -1) {
                                             break;
                                         }
 

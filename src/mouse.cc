@@ -6,11 +6,13 @@
 #include <TargetConditionals.h>
 #endif
 
+#include "clock.h"
 #include "color.h"
 #include "dinput.h"
-#include "input.h"
+#include "game_update.h"
+#include "input_system.h"
 #include "interface.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "platform/ios/quick_toolbar.h"
 #include "svga.h"
 #include "touch.h"
@@ -192,7 +194,7 @@ void mouseFree()
     gMouseInitialized = false;
 
     if (_mouse_fptr != nullptr) {
-        tickersRemove(_mouse_anim);
+        removeUpdateCallback(_mouse_anim);
         _mouse_fptr = nullptr;
     }
 }
@@ -229,7 +231,7 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
     _mouse_trans = transparentColor;
 
     if (_mouse_fptr) {
-        tickersRemove(_mouse_anim);
+        removeUpdateCallback(_mouse_anim);
         _mouse_fptr = nullptr;
     }
 
@@ -410,7 +412,7 @@ static bool handleHudTapThrough(const Gesture& gesture)
             if (keyCode == -1) {
                 break;
             }
-            enqueueInputEvent(keyCode);
+            inputSystem.postWidget(keyCode);
             return true;
         }
     }
@@ -453,7 +455,7 @@ void _mouse_info()
             } else if (gesture.state == kEnded) {
                 int dy = gesture.y - swipeStartY;
                 if (dy > screenGetHeight() / 4) {
-                    enqueueInputEvent(KEY_ESCAPE);
+                    inputSystem.postTouchCommand(KEY_ESCAPE);
                 }
             }
             return;
@@ -465,30 +467,14 @@ void _mouse_info()
         // since iPadOS intercepts multi-finger vertical swipes.
         if (gesture.type == kLongPress && gesture.numberOfTouches == 4) {
             if (gesture.state == kBegan) {
-                enqueueInputEvent(KEY_F6);
+                inputSystem.postTouchCommand(KEY_F6);
             }
             return;
         }
 
-        // FO2tweaks' highlighting uses sfall's key_pressed(), which reads
-        // SDL's own SDL_GetKeyboardState. Engine-internal _kb_simulate_key
-        // bypasses that, so push real SDL_KEYDOWN/UP events instead.
         if (gesture.type == kLongPress && gesture.numberOfTouches == 3) {
-            static bool shiftHeld = false;
-            SDL_Event ev;
-            SDL_zero(ev);
-            ev.key.keysym.scancode = SDL_SCANCODE_LSHIFT;
-            ev.key.keysym.sym = SDLK_LSHIFT;
-            if (gesture.state == kBegan && !shiftHeld) {
-                ev.type = SDL_KEYDOWN;
-                ev.key.state = SDL_PRESSED;
-                SDL_PushEvent(&ev);
-                shiftHeld = true;
-            } else if (gesture.state == kEnded && shiftHeld) {
-                ev.type = SDL_KEYUP;
-                ev.key.state = SDL_RELEASED;
-                SDL_PushEvent(&ev);
-                shiftHeld = false;
+            if (gesture.state == kBegan || gesture.state == kEnded) {
+                inputSystem.setTouchShift(gesture.state == kBegan);
             }
             return;
         }

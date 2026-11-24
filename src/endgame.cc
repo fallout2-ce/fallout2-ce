@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "content_config.h"
 #include "credits.h"
@@ -25,7 +26,7 @@
 #include "game_sound.h"
 #include "game_speed.h"
 #include "game_vars.h"
-#include "input.h"
+#include "game_update.h"
 #include "map.h"
 #include "memory.h"
 #include "mouse.h"
@@ -249,10 +250,10 @@ void endgamePlayMovie()
     isoDisable();
     paletteFadeTo(gPaletteBlack);
     _endgame_maybe_done = 0;
-    tickersAdd(_endgame_movie_bk_process);
+    addUpdateCallback(_endgame_movie_bk_process);
     backgroundSoundSetEndCallback(_endgame_movie_callback);
     backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music0", "akiss"), GameSoundReadLimitMode::LimitAfter, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop);
-    inputPauseForTocks(3000);
+    waitForGameTime(3000, runBackgroundUpdate);
 
     endgamePlayConfiguredMovie();
 
@@ -267,7 +268,7 @@ void endgamePlayMovie()
 
     backgroundSoundDelete();
     backgroundSoundSetEndCallback(nullptr);
-    tickersRemove(_endgame_movie_bk_process);
+    removeUpdateCallback(_endgame_movie_bk_process);
     backgroundSoundDelete();
     colorPaletteLoad("color.pal");
     paletteFadeTo(_cmap);
@@ -296,7 +297,7 @@ static void endgamePlayConfiguredMovie()
     if (gameMovieExtendedIsValid(movie)) {
         // Match sfall's Fallout 1 endgame hook: let the endgame track play
         // through the movie and do not add another movie fade.
-        inputPauseForTocks(1500);
+        waitForGameTime(1500, runBackgroundUpdate);
         gameMoviePlay(movie, GameMovieFlags::None);
     }
 }
@@ -399,7 +400,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             }
         }
 
-        tickersDisable();
+        setUpdateCallbacksEnabled(false);
 
         bool subtitlesLoaded = panDistance > 0 && fadeDistance == 0;
         if (subtitlesLoaded) {
@@ -456,7 +457,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         while (Clock::now() < panEnd || lastStep < panDistance - 1) {
             soundContinueAll();
 
-            if (inputGetInput() != -1) {
+            if (beginInteractiveUpdate().code != -1) {
                 // NOTE: Uninline.
                 endgameEndingVoiceOverFree();
                 break;
@@ -465,7 +466,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             scheduler.finishUpdate(draw);
         }
 
-        tickersEnable();
+        setUpdateCallbacksEnabled(true);
         backgroundFrmImage.unlock();
 
         paletteFadeTo(gPaletteBlack);
@@ -474,7 +475,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 
     while (mouseGetEvent() != MouseButtonEvent::None) {
-        inputGetInput();
+        beginInteractiveUpdate();
 
         scheduler.finishUpdate();
     }
@@ -511,17 +512,17 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
 
         paletteFadeTo(_cmap);
 
-        inputPauseForTocks(500);
+        waitForGameTime(500, runBackgroundUpdate);
 
         // NOTE: Uninline.
         endgameEndingVoiceOverReset();
 
         unsigned int referenceTime = getTicks();
-        tickersDisable();
+        setUpdateCallbacksEnabled(false);
 
         int keyCode;
         while (true) {
-            keyCode = inputGetInput();
+            keyCode = beginInteractiveUpdate().code;
             if (keyCode != -1) {
                 break;
             }
@@ -546,7 +547,7 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
             scheduler.finishUpdate();
         }
 
-        tickersEnable();
+        setUpdateCallbacksEnabled(true);
         speechDelete();
         endgameEndingSubtitlesFree();
 
@@ -554,13 +555,13 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
         gEndgameEndingVoiceOverSubtitlesLoaded = false;
 
         if (keyCode == -1) {
-            inputPauseForTocks(500);
+            waitForGameTime(500, runBackgroundUpdate);
         }
 
         paletteFadeTo(gPaletteBlack);
 
         while (mouseGetEvent() != MouseButtonEvent::None) {
-            inputGetInput();
+            beginInteractiveUpdate();
 
             scheduler.finishUpdate();
         }
@@ -930,7 +931,7 @@ static void _endgame_movie_bk_process()
     if (_endgame_maybe_done) {
         backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music1", "10labone"), GameSoundReadLimitMode::LimitBefore, GameSoundStorageType::Stream, GameSoundLoopingMode::Loop);
         backgroundSoundSetEndCallback(nullptr);
-        tickersRemove(_endgame_movie_bk_process);
+        removeUpdateCallback(_endgame_movie_bk_process);
     }
 }
 

@@ -10,11 +10,12 @@
 #include "art_defs.h"
 #include "audio.h"
 #include "audio_channels.h"
+#include "clock.h"
 #include "combat.h"
 #include "content_config.h"
 #include "debug.h"
 #include "game_config.h"
-#include "input.h"
+#include "game_update.h"
 #include "item.h"
 #include "map.h"
 #include "memory.h"
@@ -302,7 +303,7 @@ int gameSoundInit()
         return -1;
     }
 
-    tickersAdd(_gsound_bkg_proc);
+    addUpdateCallback(_gsound_bkg_proc);
     gGameSoundInitialized = true;
 
     // SOUNDS
@@ -425,7 +426,7 @@ int gameSoundExit()
         return -1;
     }
 
-    tickersRemove(_gsound_bkg_proc);
+    removeUpdateCallback(_gsound_bkg_proc);
 
     // NOTE: Uninline.
     speechDelete();
@@ -2335,7 +2336,7 @@ int ambientSoundEffectEventProcess(Object* a1, void* data)
     if (ambientSoundEffectIndex != -1) {
         char* fileName;
         if (wmSfxIdxName(ambientSoundEffectIndex, &fileName) == 0) {
-            int v7 = _get_bk_time();
+            int v7 = lastBackgroundUpdateTime();
             if (getTicksBetween(v7, _lastTime_1) >= 5000) {
                 if (soundPlayFile(fileName) == -1) {
                     debugPrint("\nGsound: playing ambient map sfx: %s.  FAILED", fileName);

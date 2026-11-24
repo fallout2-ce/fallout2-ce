@@ -14,25 +14,27 @@
 #include "animation.h"
 #include "animation_defs.h"
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "content_config.h"
 #include "critter.h"
 #include "dinput.h"
 #include "draw.h"
+#include "input_system.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map_edge.h"
 #include "mouse.h"
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
-#include "scheduler.h"
 #include "settings.h"
 #include "skill.h"
 #include "skilldex.h"
@@ -59,6 +61,8 @@ constexpr inline ScrollableDirections operator|(ScrollableDirections lhs, Scroll
 static constexpr int REFRESH_BOUNCING_CURSOR = 0x01;
 static constexpr int REFRESH_HEX_CURSOR = 0x02;
 static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HEX_CURSOR;
+
+static bool ignoreNextLeftRelease;
 
 // 0x518BF8 gmouse_initialized
 static bool gGameMouseInitialized = false;
@@ -720,7 +724,7 @@ void gameMouseRefresh()
         return;
     }
 
-    unsigned int v3 = _get_bk_time();
+    unsigned int v3 = lastBackgroundUpdateTime();
     if (mouseX == gGameMouseLastX && mouseY == gGameMouseLastY) {
         // Pressing or releasing Ctrl changes where a move stops.
         if (_gmouse_3d_hover_test
@@ -1013,6 +1017,11 @@ bool gameMouseClickOnInterfaceBar()
     return _mouse_click_in(interfaceBarWindowRectLeft, interfaceBarWindowRect.top, interfaceBarWindowRectRight, interfaceBarWindowRect.bottom);
 }
 
+void gameMouseIgnoreNextLeftRelease()
+{
+    ignoreNextLeftRelease = true;
+}
+
 // 0x44BFA8 gmouse_handle_event
 void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
 {
@@ -1041,9 +1050,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
         return;
     }
 
-    // Check if we should block mouse button up events for inventoryOpenUseItemOn inventory window
-    if (gBlockMouseUpEvent && (mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
-        gBlockMouseUpEvent = false;
+    if (ignoreNextLeftRelease && (mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
+        ignoreNextLeftRelease = false;
         return;
     }
 
@@ -1065,7 +1073,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
                 actionPoints = -1;
             }
 
-            if (gPressedPhysicalKeys[SDL_SCANCODE_LSHIFT] || gPressedPhysicalKeys[SDL_SCANCODE_RSHIFT]) {
+            if (inputSystem.isKeyDown(SDL_SCANCODE_LSHIFT) || inputSystem.isKeyDown(SDL_SCANCODE_RSHIFT)) {
                 if (settings.preferences.running) {
                     _dude_move(actionPoints);
                     return;
@@ -1281,7 +1289,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
                     int newMouseY = mouseY;
                     int actionIndex = 0;
                     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-                        inputGetInput();
+                        beginInteractiveUpdate();
 
                         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                             actionMenuItems[actionIndex] = GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;

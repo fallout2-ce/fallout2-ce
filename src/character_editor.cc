@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "content_config.h"
@@ -19,15 +20,16 @@
 #include "debug.h"
 #include "delay.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "geometry.h"
 #include "graph_lib.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
@@ -38,7 +40,7 @@
 #include "perk.h"
 #include "platform_compat.h"
 #include "proto.h"
-#include "scheduler.h"
+#include "screenshot.h"
 #include "scripts.h"
 #include "settings.h"
 #include "skill.h"
@@ -893,7 +895,7 @@ int characterEditorShow(bool isCreationMode)
     int rc = -1;
     while (rc == -1) {
         _frame_time = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         convertMouseWheelToArrowKey(&keyCode);
 
@@ -3305,7 +3307,7 @@ static int characterEditorEditAge()
         flags = 0;
         int v32 = 0;
 
-        keyCode = inputGetInput();
+        keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == KEY_RETURN || keyCode == 500) {
             if (keyCode != 500) {
@@ -3411,7 +3413,7 @@ static int characterEditorEditAge()
                     delay_ms(1000 / 24 - (getTicks() - _frame_time));
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
                 if (keyCode == 503 || keyCode == 504 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     break;
                 }
@@ -3531,7 +3533,7 @@ static void characterEditorEditGender()
     while (true) {
         _frame_time = getTicks();
 
-        int eventCode = inputGetInput();
+        int eventCode = beginInteractiveUpdate().code;
 
         if (eventCode == KEY_RETURN || eventCode == 500) {
             if (eventCode == KEY_RETURN) {
@@ -3650,7 +3652,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
         }
 
         scheduler.finishUpdate();
-    } while (inputGetInput() != 518 && cont);
+    } while (beginInteractiveUpdate().code != 518 && cont);
 
     characterEditorDrawCard();
 }
@@ -3757,7 +3759,7 @@ static int characterEditorShowOptions()
 
         int rc = 0;
         while (rc == 0) {
-            int keyCode = inputGetInput();
+            int keyCode = beginInteractiveUpdate().code;
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 rc = 2;
@@ -5151,7 +5153,7 @@ static void characterEditorHandleAdjustSkillButtonPressed(int keyCode)
                 delay_ms(1000 / 24 - (getTicks() - _frame_time));
             }
 
-            int keyCode = inputGetInput();
+            int keyCode = beginInteractiveUpdate().code;
             if (keyCode != 522 && keyCode != 524 && rc != -1) {
                 scheduler.finishUpdate();
                 continue;
@@ -6126,7 +6128,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
 
     int rc = 0;
     while (rc == 0) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int v19 = 0;
 
         convertMouseWheelToArrowKey(&keyCode);
@@ -6271,7 +6273,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                     }
 
                     scheduler.finishUpdate();
-                } while (inputGetInput() != 574);
+                } while (beginInteractiveUpdate().code != 574);
 
                 break;
             case 573:
@@ -6313,7 +6315,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                         }
 
                         scheduler.finishUpdate();
-                    } while (inputGetInput() != 575);
+                    } while (beginInteractiveUpdate().code != 575);
                 } else {
                     do {
                         _frame_time = getTicks();
@@ -6344,7 +6346,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                         }
 
                         scheduler.finishUpdate();
-                    } while (inputGetInput() != 575);
+                    } while (beginInteractiveUpdate().code != 575);
                 }
                 break;
             case KEY_HOME:

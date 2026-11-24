@@ -2,7 +2,6 @@
 
 #include "debug.h"
 #include "settings.h"
-#include "sfall_kb_helpers.h"
 #include "svga.h"
 #include "win32.h"
 
@@ -99,12 +98,7 @@ bool mouseDeviceUnacquire()
 // 0x4E053C
 bool mouseDeviceGetData(MouseData* mouseState)
 {
-    // CE: This function is sometimes called outside loops calling `get_input`
-    // and subsequently `GNW95_process_message`, so mouse events might not be
-    // handled by SDL yet.
-    //
-    // TODO: Move mouse events processing into `GNW95_process_message` and
-    // update mouse position manually.
+    // Refresh device state while leaving event dispatch to the caller's loop.
     SDL_PumpEvents();
     Uint32 buttons = mouseDeviceUsesRelativeMode()
         ? SDL_GetRelativeMouseState(&(mouseState->x), &(mouseState->y))
@@ -152,14 +146,6 @@ bool keyboardDeviceAcquire()
 // 0x4E05D4
 bool keyboardDeviceUnacquire()
 {
-    return true;
-}
-
-// 0x4E05FC
-bool keyboardDeviceReset()
-{
-    SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
-    sfall_kb_clear_synthetic_key_events();
     return true;
 }
 

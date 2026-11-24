@@ -12,18 +12,19 @@
 #include "dbox.h"
 #include "debug.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "graph_lib.h"
-#include "input.h"
+#include "game_update.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "memory.h"
 #include "object.h"
 #include "platform_compat.h"
-#include "scheduler.h"
+#include "screenshot.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -419,7 +420,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
         // FIXME: There is minor bug in the interface - pressing H/L to toggle
         // high/low details does not update switch state.
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         switch (keyCode) {
         case KEY_TAB:
         case KEY_ESCAPE:

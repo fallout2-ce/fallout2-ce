@@ -12,10 +12,12 @@
 #include "color.h"
 #include "db.h"
 #include "debug.h"
+#include "input_system.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_mouse.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "map.h"
 #include "mapper/mapper.h"
 #include "mapper/mp_utils.h"
@@ -24,7 +26,6 @@
 #include "object.h"
 #include "proto.h"
 #include "proto_instance.h"
-#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -78,7 +79,7 @@ void place_entrance_hex()
     int y;
     int tile;
 
-    while (inputGetInput() != -2) {
+    while (beginInteractiveUpdate().code != -2) {
     }
 
     if ((mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
@@ -101,35 +102,31 @@ void place_entrance_hex()
 void pick_region(Rect* rect)
 {
     Rect temp;
-    int x;
-    int y;
-
     gameMouseSetCursor(MOUSE_CURSOR_PLUS);
     gameMouseObjectsHide();
 
     while (true) {
-        bool got = inputGetInput() == -2
+        bool got = beginInteractiveUpdate().code == -2
             && (mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None;
         scheduler.finishUpdate();
         if (got) break;
     }
 
-    get_input_position(&x, &y);
-    temp.left = x;
-    temp.top = y;
-    temp.right = x;
-    temp.bottom = y;
+    const auto start = inputSystem.lastPosition();
+    temp.left = start.x;
+    temp.top = start.y;
+    temp.right = start.x;
+    temp.bottom = start.y;
     *rect = temp;
 
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        inputGetInput();
+        beginInteractiveUpdate();
 
-        get_input_position(&x, &y);
-
-        if (x != temp.right || y != temp.bottom) {
+        const auto position = inputSystem.lastPosition();
+        if (position.x != temp.right || position.y != temp.bottom) {
             erase_rect(rect);
-            temp.right = x;
-            temp.bottom = y;
+            temp.right = position.x;
+            temp.bottom = position.y;
             sort_rect(rect, &temp);
             draw_rect(rect, COLOR_LIGHT_YELLOW);
         }
@@ -365,7 +362,7 @@ int pickHex()
     MapElevation elevation = gElevation;
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == -2) {
             MouseButtonEvent buttons = mouseGetEvent();
@@ -584,7 +581,7 @@ static void mp_run_placement_loop(PlaceFn place)
     _gmouse_disable(0);
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int mx, my;
         mouseGetPosition(&mx, &my);
         mpMouseCheckScrolling(mx, my);
@@ -594,12 +591,11 @@ static void mp_run_placement_loop(PlaceFn place)
         if (keyCode == -2) {
             MouseButtonEvent mouseEvent = mouseGetEvent();
             if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
-                int ix, iy;
-                get_input_position(&ix, &iy);
+                const auto position = inputSystem.lastPosition();
                 if (_mouse_click_in(0, 0,
                         _scr_size.right - _scr_size.left,
                         _scr_size.bottom - _scr_size.top - 100)) {
-                    place(ix, iy);
+                    place(position.x, position.y);
                     tileWindowRefresh();
                 }
             } else if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
@@ -938,7 +934,7 @@ void eraseObject()
     gameMouseObjectsHide();
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool exit = false;
 
         if (keyCode == -2) {
@@ -1129,7 +1125,7 @@ void mapper_shift_map()
     }
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool done = false;
 
         if (keyCode == -2) {

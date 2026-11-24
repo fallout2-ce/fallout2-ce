@@ -5,11 +5,12 @@
 #include <cstdint>
 #include <functional>
 
+#include "clock.h"
 #include "color.h"
 #include "datafile.h"
 #include "debug.h"
 #include "dialog.h"
-#include "input.h"
+#include "game_update.h"
 #include "interpreter_extra.h"
 #include "memory_manager.h"
 #include "mouse.h"
@@ -451,7 +452,7 @@ static void _interpretFadePaletteBK(const unsigned char* oldPalette, unsigned ch
 
     while (!finished) {
         if (shouldProcessBk) {
-            _process_bk();
+            runBackgroundUpdate();
         }
         scheduler.finishUpdate(draw);
     }

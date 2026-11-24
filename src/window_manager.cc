@@ -10,7 +10,8 @@
 #include "debug.h"
 #include "dinput.h"
 #include "draw.h"
-#include "input.h"
+#include "game_update.h"
+#include "input_system.h"
 #include "memory.h"
 #include "mouse.h"
 #include "palette.h"
@@ -207,10 +208,11 @@ WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, Vid
 
     _GNW_debug_init();
 
-    if (inputInit() == -1) {
+    if (!inputSystem.initialize()) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
     }
 
+    resetUpdateCallbacks();
     _GNW_intr_init();
 
     Window* window = gWindows[0] = (Window*)internal_malloc(sizeof(*window));
@@ -291,7 +293,8 @@ void windowManagerExit(void)
                 gVideoSystemExitProc();
             }
 
-            inputExit();
+            inputSystem.shutdown();
+            resetUpdateCallbacks();
             _GNW_rect_exit();
             textFontsExit();
             _colorsClose();
@@ -1016,7 +1019,7 @@ void win_drag(int win)
 
     Rect rect = window->rect;
 
-    tickersExecute();
+    runUpdateCallbacks();
 
     _mouse_info();
 
@@ -1043,7 +1046,7 @@ void win_drag(int win)
         }
 
         mouseGetPosition(&mx, &my);
-        tickersExecute();
+        runUpdateCallbacks();
 
         _mouse_info();
 
@@ -1250,18 +1253,23 @@ Button* buttonGetButton(int btn, Window** windowPtr)
 }
 
 // 0x4D7A34
-int _GNW_check_menu_bars(int input)
+InputEvent windowDispatchMenu(InputEvent input)
 {
+    if (input.source == InputSource::Pointer) {
+        return input;
+    }
     if (!gWindowSystemInitialized) {
-        return -1;
+        return {};
     }
 
     for (int index = gWindowsLength - 1; index >= 1; index--) {
         Window* window = gWindows[index];
         if (window->menuBar != nullptr) {
             for (int pulldownIndex = 0; pulldownIndex < window->menuBar->pulldownsLength; pulldownIndex++) {
-                if (input == window->menuBar->pulldowns[pulldownIndex].keyCode) {
-                    input = _GNW_process_menu(window->menuBar, pulldownIndex);
+                if (input.code == window->menuBar->pulldowns[pulldownIndex].keyCode) {
+                    input.code = _GNW_process_menu(window->menuBar, pulldownIndex);
+                    input.source = InputSource::Widget;
+                    input.keyboard.reset();
                     break;
                 }
             }
@@ -2299,7 +2307,7 @@ int buttonDisable(int btn)
 
         if (button == window->hoveredButton) {
             if (window->hoveredButton->mouseExitEventCode != -1) {
-                enqueueInputEvent(window->hoveredButton->mouseExitEventCode);
+                inputSystem.postWidget(window->hoveredButton->mouseExitEventCode);
             }
 
             window->hoveredButton = nullptr;
@@ -2357,7 +2365,7 @@ int _win_set_button_rest_state(int btn, bool checked, int flags)
 
         if (keyCode != -1) {
             if ((flags & 0x01) != 0) {
-                enqueueInputEvent(keyCode);
+                inputSystem.postWidget(keyCode);
             }
         }
     }
@@ -2595,11 +2603,11 @@ int _win_button_press_and_release(int btn)
         button->leftMouseDownProc(btn, button->leftMouseDownEventCode);
 
         if ((button->flags & BUTTON_FLAG_CALLBACK_PRESERVES_EVENT) != BUTTON_FLAG_NONE) {
-            enqueueInputEvent(button->leftMouseDownEventCode);
+            inputSystem.postWidget(button->leftMouseDownEventCode);
         }
     } else {
         if (button->leftMouseDownEventCode != -1) {
-            enqueueInputEvent(button->leftMouseDownEventCode);
+            inputSystem.postWidget(button->leftMouseDownEventCode);
         }
     }
 
@@ -2609,11 +2617,11 @@ int _win_button_press_and_release(int btn)
         button->leftMouseUpProc(btn, button->leftMouseUpEventCode);
 
         if ((button->flags & BUTTON_FLAG_CALLBACK_PRESERVES_EVENT) != BUTTON_FLAG_NONE) {
-            enqueueInputEvent(button->leftMouseUpEventCode);
+            inputSystem.postWidget(button->leftMouseUpEventCode);
         }
     } else {
         if (button->leftMouseUpEventCode != -1) {
-            enqueueInputEvent(button->leftMouseUpEventCode);
+            inputSystem.postWidget(button->leftMouseUpEventCode);
         }
     }
 

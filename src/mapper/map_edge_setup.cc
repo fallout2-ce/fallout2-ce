@@ -7,8 +7,8 @@
 #include "color.h"
 #include "draw.h"
 #include "geometry.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "map.h"
 #include "map_defs.h"
 #include "map_edge.h"
@@ -503,7 +503,7 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
 
     bool done = false;
     while (!done) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         int mx;
         int my;

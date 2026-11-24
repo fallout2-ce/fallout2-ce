@@ -1,3 +1,4 @@
+#include "clock.h"
 #include "options.h"
 
 #include <algorithm>
@@ -9,18 +10,19 @@
 #include "debug.h"
 #include "delay.h"
 #include "draw.h"
+#include "scheduler.h"
 #include "game.h"
 #include "game_config.h"
 #include "game_mouse.h"
 #include "game_sound.h"
 #include "graph_lib.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "message.h"
 #include "mouse.h"
 #include "palette.h"
-#include "scheduler.h"
+#include "screenshot.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -1295,7 +1297,7 @@ int doPreferences(bool animated)
 
     int rc = -1;
     while (rc == -1) {
-        int eventCode = inputGetInput();
+        int eventCode = beginInteractiveUpdate().code;
 
         switch (eventCode) {
         case KEY_RETURN:
@@ -1463,7 +1465,7 @@ static void _DoThing(int eventCode)
 
         if (valueChanged) {
             soundPlayFile("ib3p1xx1");
-            inputBlockForTocks(70);
+            waitForGameTime(70);
             soundPlayFile("ib3lu1x1");
             _UpdateThing(preferenceIndex);
             windowRefresh(gPreferencesWindow);
@@ -1496,7 +1498,7 @@ static void _DoThing(int eventCode)
 
         if (valueChanged) {
             soundPlayFile("ib2p1xx1");
-            inputBlockForTocks(70);
+            waitForGameTime(70);
             soundPlayFile("ib2lu1x1");
             _UpdateThing(preferenceIndex);
             windowRefresh(gPreferencesWindow);
@@ -1534,7 +1536,7 @@ static void _DoThing(int eventCode)
         int sfxVolumeExample = 0;
         int speechVolumeExample = 0;
         while (true) {
-            inputGetInput();
+            beginInteractiveUpdate();
 
             int tick = getTicks();
 

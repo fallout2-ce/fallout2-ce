@@ -10,6 +10,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -24,11 +25,11 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "inventory.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "lips.h"
 #include "map.h"
 #include "memory.h"
@@ -1029,14 +1030,14 @@ void gameDialogEndLips()
 // 0x4450EC
 int gameDialogEnable()
 {
-    tickersAdd(gameDialogTicker);
+    addUpdateCallback(gameDialogTicker);
     return 0;
 }
 
 // 0x4450FC
 int gameDialogDisable()
 {
-    tickersRemove(gameDialogTicker);
+    removeUpdateCallback(gameDialogTicker);
     return 0;
 }
 
@@ -1074,7 +1075,7 @@ int _gdialogInitFromScript(const HeadFrmId& headFrmId, HeadFidget reaction)
 
     // CE: Fix Barter button.
     _gdCreateHeadWindow();
-    tickersAdd(gameDialogTicker);
+    addUpdateCallback(gameDialogTicker);
     _gdSetupFidget(headFrmId, reaction);
     _gdialog_state = GAME_DIALOG_ACTIVE;
     _gmouse_disable_scrolling();
@@ -1115,7 +1116,7 @@ int _gdialogExitFromScript()
 
     gameDialogEndLips();
     dialogReviewEntriesClear();
-    tickersRemove(gameDialogTicker);
+    removeUpdateCallback(gameDialogTicker);
 
     touch_set_touchscreen_mode(false);
 
@@ -1615,7 +1616,7 @@ int gameDialogReviewWindowInit(int* win)
 
     windowRefresh(*win);
 
-    tickersRemove(gameDialogTicker);
+    removeUpdateCallback(gameDialogTicker);
 
     if (!_reviewBackgroundFrmImage.lock(InterfaceFrameId::DialogReviewBackground)) {
         gameDialogReviewWindowFree(win);
@@ -1628,7 +1629,7 @@ int gameDialogReviewWindowInit(int* win)
 // 0x445C18
 int gameDialogReviewWindowFree(int* win)
 {
-    tickersAdd(gameDialogTicker);
+    addUpdateCallback(gameDialogTicker);
 
     for (int index = 0; index < GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT; index++) {
         _reviewFrmImages[index].unlock();
@@ -1665,7 +1666,7 @@ int gameDialogShowReview()
     gameDialogReviewWindowUpdate(win, reviewStartIndex);
 
     while (true) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode == 17 || keyCode == 24 || keyCode == 324) {
             showQuitConfirmationDialog();
         }
@@ -2076,7 +2077,7 @@ int gameDialogProcessUI()
     int pageOffsets[10];
     pageOffsets[0] = 0;
     for (;;) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         convertMouseWheelToArrowKey(&keyCode);
 
@@ -2143,7 +2144,7 @@ int gameDialogProcessUI()
         }
 
         if (_gdReplyTooBig) {
-            unsigned int now = _get_bk_time();
+            unsigned int now = lastBackgroundUpdateTime();
             if (autoAdvance) {
                 if (getTicksBetween(now, tick) >= 10000 || keyCode == KEY_SPACE) {
                     pageCount++;
@@ -4057,7 +4058,7 @@ void partyMemberControlWindowHandleEvents()
 
     bool done = false;
     while (!done) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
                 showQuitConfirmationDialog();
@@ -4302,7 +4303,7 @@ void partyMemberCustomizationWindowHandleEvents()
 {
     bool done = false;
     while (!done) {
-        unsigned int keyCode = inputGetInput();
+        unsigned int keyCode = beginInteractiveUpdate().code;
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
                 showQuitConfirmationDialog();
@@ -4497,7 +4498,7 @@ int _gdCustomSelect(int option)
     bool done = false;
     unsigned int lastSelectionTimestamp = 0;
     while (!done) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
                 showQuitConfirmationDialog();

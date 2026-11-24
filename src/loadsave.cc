@@ -11,6 +11,7 @@
 #include "automap.h"
 #include "ce_save_game.h"
 #include "character_editor.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -28,10 +29,10 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "geometry.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
@@ -658,7 +659,7 @@ int lsgSaveGame(LoadSaveMode mode)
     int doubleClickSlot = -1;
     while (rc == -1) {
         unsigned int tick = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool selectionChanged = false;
         LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
 
@@ -904,7 +905,7 @@ int lsgSaveGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
 
                 renderFpsCounter();
                 scheduler.finishUpdate();
@@ -1264,7 +1265,7 @@ int lsgLoadGame(LoadSaveMode mode)
     int doubleClickSlot = -1;
     while (rc == -1) {
         unsigned int time = getTicks();
-        int keyCode = devAutoloadPending ? kLoadSaveActionDone : inputGetInput();
+        int keyCode = devAutoloadPending ? kLoadSaveActionDone : beginInteractiveUpdate().code;
         devAutoloadPending = false;
         bool selectionChanged = false;
         LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
@@ -1500,7 +1501,7 @@ int lsgLoadGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
 
                 renderFpsCounter();
                 scheduler.finishUpdate();

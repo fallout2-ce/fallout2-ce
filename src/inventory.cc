@@ -13,6 +13,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -27,11 +28,11 @@
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "interpreter_extra.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "light.h"
 #include "map.h"
 #include "message.h"
@@ -1728,7 +1729,7 @@ void inventoryOpen()
     ScopedGameMode gm(GameMode::kInventory);
 
     for (;;) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
         Rect normalRect = { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight };
@@ -3257,7 +3258,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
 
         _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_USE_ITEM_ON, nullptr };
         InventoryScroller useItemOnScroller {
@@ -3314,8 +3315,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
                             } else {
                                 _action_use_an_item_on_object(gDude, targetObj, inventoryItem->item);
                             }
-                            // fix for click through bug
-                            gBlockMouseUpEvent = true;
+                            gameMouseIgnoreNextLeftRelease();
                             keyCode = KEY_ESCAPE;
                         } else {
                             keyCode = -1;
@@ -4534,7 +4534,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     MouseButtonEvent mouseEvent;
     do {
-        inputGetInput();
+        beginInteractiveUpdate();
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
             _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
@@ -4678,7 +4678,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int menuItemIndex = 0;
     int previousMouseY = y;
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        inputGetInput();
+        beginInteractiveUpdate();
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
             _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
@@ -5067,7 +5067,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, nullptr };
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, _target_pud };
@@ -5638,7 +5638,7 @@ static void _drag_item_loop(Object* item, bool immediate)
     }
 
     do {
-        inputGetInput();
+        beginInteractiveUpdate();
 
         scheduler.finishUpdate();
     } while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None);
@@ -5964,7 +5964,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
             break;
         }
 
-        keyCode = inputGetInput();
+        keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         barterClampTableOffsets();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, nullptr };
@@ -6492,7 +6492,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
     bool isTyping = false;
     for (;;) {
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode == KEY_ESCAPE) {
             inventoryQuantityWindowFree(inventoryWindowType);
             return -1;
@@ -6531,11 +6531,11 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
                             }
 
                             _draw_amount(value, inventoryWindowType);
-                            inputGetInput();
+                            beginInteractiveUpdate();
 
                             if (delay > 1) {
                                 delay--;
-                                inputPauseForTocks(delay);
+                                waitForGameTime(delay, runBackgroundUpdate);
                             }
 
                             scheduler.finishUpdate();
@@ -6566,11 +6566,11 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
                             }
 
                             _draw_amount(value, inventoryWindowType);
-                            inputGetInput();
+                            beginInteractiveUpdate();
 
                             if (delay > 1) {
                                 delay--;
-                                inputPauseForTocks(delay);
+                                waitForGameTime(delay, runBackgroundUpdate);
                             }
 
                             scheduler.finishUpdate();
