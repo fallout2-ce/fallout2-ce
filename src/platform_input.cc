@@ -198,7 +198,9 @@ void dispatchPlatformEvents()
             break;
         case SDL_MOUSEMOTION:
         case SDL_MOUSEWHEEL:
-            handleMouseEvent(&event);
+            if (gProgramIsActive) {
+                handleMouseEvent(&event);
+            }
             break;
         case SDL_FINGERDOWN:
             touch_handle_start(&event.tfinger);

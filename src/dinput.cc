@@ -96,11 +96,13 @@ bool mouseDeviceUnacquire()
     return true;
 }
 
-void cancelMouseDeviceButtons()
+void cancelMouseDeviceInput()
 {
     // SDL may report buttons held across a reset. Wait for their releases
     // before exposing another press to the game.
     canceledButtons = SDL_GetMouseState(nullptr, nullptr);
+    gMouseWheelDeltaX = 0;
+    gMouseWheelDeltaY = 0;
 }
 
 // 0x4E053C
@@ -122,11 +124,8 @@ bool mouseDeviceGetData(MouseData* mouseState)
     buttons &= ~canceledButtons;
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     mouseState->buttons[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-    mouseState->wheelX = gMouseWheelDeltaX;
-    mouseState->wheelY = gMouseWheelDeltaY;
-
-    gMouseWheelDeltaX = 0;
-    gMouseWheelDeltaY = 0;
+    mouseState->wheelX = std::exchange(gMouseWheelDeltaX, 0);
+    mouseState->wheelY = std::exchange(gMouseWheelDeltaY, 0);
 
     return true;
 }

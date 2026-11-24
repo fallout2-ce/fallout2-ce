@@ -191,7 +191,7 @@ void InputSystem::cancelPointer()
 {
     _pointerEdge.reset();
     cancelTouchGestures();
-    cancelMouseButtons();
+    cancelMouseInput();
     cancelWindowButtonPresses();
 }
 

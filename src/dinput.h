@@ -28,7 +28,7 @@ void mouseDeviceSetLogicalPosition(int x, int y);
 bool mouseDeviceAcquire();
 bool mouseDeviceUnacquire();
 bool mouseDeviceGetData(MouseData* mouseData);
-void cancelMouseDeviceButtons();
+void cancelMouseDeviceInput();
 SDL_Point mouseDeviceSamplePosition();
 bool keyboardDeviceAcquire();
 bool keyboardDeviceUnacquire();

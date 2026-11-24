@@ -67,7 +67,7 @@ SDL_Point mouseSampleCursorDrawPosition();
 SDL_Rect mouseGetCursorDrawBounds(SDL_Point position);
 void mouseDrawCursor(SDL_Surface& target, const SDL_Palette& palette, SDL_Point position);
 void mouseDrawScreenshotCursor(unsigned char* pixels, int width, int height);
-void cancelMouseButtons();
+void cancelMouseInput();
 // Changes when any in-progress pointer interaction is canceled.
 unsigned int pointerCancellationGeneration();
 void _mouse_info();

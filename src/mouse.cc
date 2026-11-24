@@ -424,14 +424,16 @@ static bool handleHudTapThrough(const Gesture& gesture)
 }
 #endif
 
-void cancelMouseButtons()
+void cancelMouseInput()
 {
     ++pointerGeneration;
-    cancelMouseDeviceButtons();
+    cancelMouseDeviceInput();
     pointerUsesTouch = false;
     last_buttons = MouseButtonEvent::None;
     gMouseEvent = MouseButtonEvent::None;
     _raw_buttons = MouseButtonEvent::None;
+    gMouseWheelX = 0;
+    gMouseWheelY = 0;
 }
 
 unsigned int pointerCancellationGeneration()
