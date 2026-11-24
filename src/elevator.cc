@@ -4,12 +4,12 @@
 #include <string.h>
 
 #include <algorithm>
+#include <chrono>
 
 #include "art.h"
 #include "cycle.h"
 #include "dbox.h"
 #include "debug.h"
-#include "delay.h"
 #include "draw.h"
 #include "scheduler.h"
 #include "game_mouse.h"
@@ -448,7 +448,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         if (*elevationPtr != keyCode) {
             float levelStep = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
 
-            const int delay = std::max(static_cast<int>(levelStep * 276.92307f / settings.ui.anim_speed), 1);
+            const auto delay = static_cast<unsigned int>(std::max(static_cast<int>(levelStep * 276.92307f / settings.ui.anim_speed), 1));
 
             if (keyCode < *elevationPtr) {
                 levelStep = -levelStep;
@@ -477,7 +477,10 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
                 windowRefresh(gElevatorWindow);
 
                 _GNW95_process_message();
-                delay_ms(delay - (getTicks() - tick));
+                const auto elapsed = getTicks() - tick;
+                if (elapsed < delay) {
+                    scheduler.presentFor(std::chrono::milliseconds(delay - elapsed));
+                }
                 _GNW95_process_message();
 
                 scheduler.finishUpdate();

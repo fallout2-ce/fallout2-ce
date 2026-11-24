@@ -19,6 +19,9 @@ public:
     void finishDiscreteUpdate();
     void presentNow();
 
+    // Keep presenting during a real-time hold without advancing the update deadline.
+    void presentFor(std::chrono::milliseconds duration);
+
     // Evaluate a visual effect on presentation deadlines for a fixed duration.
     // The callback draws the state at the supplied progress, from 0 to 1.
     void animate(std::chrono::milliseconds duration, const std::function<void(double)>& draw);

@@ -68,6 +68,11 @@ void Scheduler::presentNow()
     _nextPresent = Clock::now() + presentationPeriod();
 }
 
+void Scheduler::presentFor(std::chrono::milliseconds duration)
+{
+    presentUntil(Clock::now() + duration, { });
+}
+
 void Scheduler::presentUntil(Clock::time_point end, const std::function<void()>& draw)
 {
     const auto period = presentationPeriod();
