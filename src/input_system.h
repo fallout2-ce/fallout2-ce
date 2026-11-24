@@ -13,6 +13,9 @@ public:
     void shutdown();
     void reset();
     void resetKeyboard();
+    // Discard posted commands and queued native presses while preserving
+    // sampled device state and the releases needed to clear it.
+    void flushCommands();
     void suspend();
 
     // SDL dispatch supplies device events. Sampling prepares commands for the

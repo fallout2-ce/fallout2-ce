@@ -53,6 +53,13 @@ void InputSystem::resetKeyboard()
     platformFlushKeyboard();
 }
 
+void InputSystem::flushCommands()
+{
+    _commands.clear();
+    _pointerEdge.reset();
+    platformFlushInput(true);
+}
+
 void InputSystem::post(int code, InputSource source, std::optional<KeyboardEvent> keyboardEvent)
 {
     if (code == -1 || handleScreenshotShortcut(code)) {

@@ -121,6 +121,19 @@ void dispatchWindowEvent(const SDL_WindowEvent& event)
     }
 }
 
+void flushQueuedKeyboard(bool keepKeyReleases)
+{
+    if (keepKeyReleases) {
+        SDL_FlushEvent(SDL_KEYDOWN);
+        SDL_FlushEvents(SDL_TEXTEDITING, SDL_TEXTINPUT);
+    } else {
+        SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
+    }
+    if (scriptTapType != 0) {
+        SDL_FlushEvent(scriptTapType);
+    }
+}
+
 } // namespace
 
 void platformInputInit()
@@ -163,18 +176,22 @@ void enqueueScriptKey(SDL_Scancode key)
 
 void platformFlushKeyboard()
 {
-    SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
-    if (scriptTapType != 0) {
-        SDL_FlushEvent(scriptTapType);
-    }
+    flushQueuedKeyboard(false);
 }
 
-void platformFlushInput()
+void platformFlushInput(bool keepReleases)
 {
     SDL_PumpEvents();
-    platformFlushKeyboard();
-    SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEWHEEL);
-    SDL_FlushEvents(SDL_FINGERDOWN, SDL_FINGERMOTION);
+    flushQueuedKeyboard(keepReleases);
+    if (keepReleases) {
+        SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN);
+        SDL_FlushEvent(SDL_MOUSEWHEEL);
+        SDL_FlushEvent(SDL_FINGERDOWN);
+        SDL_FlushEvent(SDL_FINGERMOTION);
+    } else {
+        SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEWHEEL);
+        SDL_FlushEvents(SDL_FINGERDOWN, SDL_FINGERMOTION);
+    }
 
     // A reset caller can present immediately. Dispatch recovery in queue order
     // after filtering has finished, with the remaining SDL events still queued.

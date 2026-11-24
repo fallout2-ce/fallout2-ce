@@ -1562,7 +1562,7 @@ int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex)
     } while (keyCode < -1);
 
     if (keyCode != -1) {
-        inputSystem.reset();
+        inputSystem.flushCommands();
         inputSystem.postWidget(keyCode);
         keyCode = menuBar->pulldowns[pulldownIndex].keyCode;
     }

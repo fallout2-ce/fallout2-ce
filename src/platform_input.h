@@ -16,7 +16,7 @@ void enqueueScriptKey(SDL_Scancode key);
 // Native setup and queue maintenance used during input lifecycle changes.
 void platformInputInit();
 void platformFlushKeyboard();
-void platformFlushInput();
+void platformFlushInput(bool keepReleases = false);
 
 } // namespace fallout
 
