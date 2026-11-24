@@ -409,6 +409,7 @@ static void createPartySlotButtons();
 static void handlePartySlotPickup(InvenSlot slot);
 static bool tryEquipPartyItem(Object* item, bool fromLeftPane);
 static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex);
+static int critterEquippedWeight(const CritterEquipped& equipped);
 static bool tryUnequipPartyItem(InvenSlot slot);
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item);
 static FrmId buildPartyDisplayFrmId();
@@ -1362,6 +1363,14 @@ static int inventoryWrapIndex(int index, int count, int direction)
     assert(count > 0);
     return (index + direction + count) % count;
 }
+static void recalculatePartyEquippedWeight()
+{
+    assert(hasPartySlots());
+
+    partyTargetEquipped->weight = critterEquippedWeight(*partyTargetEquipped);
+    partyRightEquippedWeight = partyTargetEquipped->weight;
+}
+
 static void refreshPartyEquippedAfterAction()
 {
     assert(hasPartySlots());
@@ -1487,7 +1496,9 @@ static bool tryReloadPartyWeapon(Object* ammo, int quantity, int slotIndex)
     }
 
     int keyCode = 2000 + slotIndex;
-    return _drop_ammo_into_weapon(partyBaseTarget, weapon, ammo, nullptr, quantity, keyCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
+    InventoryAmmoMoveResult result = _drop_ammo_into_weapon(partyBaseTarget, weapon, ammo, nullptr, quantity, keyCode);
+    recalculatePartyEquippedWeight();
+    return result == INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item)
@@ -3400,6 +3411,21 @@ Object* critterGetArmor(Object* critter)
 
 // Critter inventories are displayed without equipped items in almost all cases.  This is accomplished by
 // temporarily removing them when inventory is viewed.
+static int critterEquippedWeight(const CritterEquipped& equipped)
+{
+    int weight = 0;
+    if (equipped.leftHand != nullptr) {
+        weight += itemGetWeight(equipped.leftHand);
+    }
+    if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
+        weight += itemGetWeight(equipped.rightHand);
+    }
+    if (equipped.armor != nullptr) {
+        weight += itemGetWeight(equipped.armor);
+    }
+    return weight;
+}
+
 CritterEquipped critterStripEquipped(Object* critter)
 {
     CritterEquipped equipped;
@@ -3417,16 +3443,14 @@ CritterEquipped critterStripEquipped(Object* critter)
             equipped.armor = item;
         }
     }
+    equipped.weight = critterEquippedWeight(equipped);
     if (equipped.leftHand != nullptr) {
-        equipped.weight += itemGetWeight(equipped.leftHand);
         itemRemoveWithReason(critter, equipped.leftHand, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
     if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
-        equipped.weight += itemGetWeight(equipped.rightHand);
         itemRemoveWithReason(critter, equipped.rightHand, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
     if (equipped.armor != nullptr) {
-        equipped.weight += itemGetWeight(equipped.armor);
         itemRemoveWithReason(critter, equipped.armor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
     return equipped;
@@ -4850,6 +4874,9 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
         if (itemSlot == nullptr) {
             itemAdd(owner, item, 1);
+        }
+        if (hasPartySlots()) {
+            recalculatePartyEquippedWeight();
         }
         break;
     default:
