@@ -1,6 +1,7 @@
 #include "game_update.h"
 
 #include <list>
+#include <utility>
 
 #include "clock.h"
 #include "delay.h"
@@ -28,7 +29,7 @@ public:
     void remove(UpdateCallback* callback)
     {
         for (auto& entry : _callbacks) {
-            if (entry.callback == callback) {
+            if (entry.callback == callback && !entry.removed) {
                 // A callback can remove itself or another callback mid-pass.
                 entry.removed = true;
                 return;
@@ -43,19 +44,29 @@ public:
         }
 
         _timestamp = getTicks();
-        for (auto entry = _callbacks.begin(); entry != _callbacks.end();) {
+        Pass pass(_callbacks.begin(), _activePass);
+        while (pass.next != _callbacks.end()) {
+            // Additions go to the front and start on the next pass.
+            const auto entry = pass.next++;
             if (entry->removed) {
-                entry = _callbacks.erase(entry);
+                // A nested pass can remove the next entry of a suspended pass.
+                for (auto* outer = pass.outer; outer != nullptr; outer = outer->outer) {
+                    if (outer->next == entry) {
+                        ++outer->next;
+                    }
+                }
+                _callbacks.erase(entry);
             } else {
-                // Additions go to the front and start on the next pass.
-                const auto callback = entry++->callback;
-                callback();
+                entry->callback();
             }
         }
     }
 
     void reset()
     {
+        for (auto* pass = _activePass; pass != nullptr; pass = pass->outer) {
+            pass->next = _callbacks.end();
+        }
         _callbacks.clear();
         _enabled = true;
     }
@@ -69,7 +80,25 @@ private:
         bool removed = false;
     };
 
+    struct Pass {
+        Pass(std::list<Registration>::iterator first, Pass*& active)
+            : next(first)
+            , outer(std::exchange(active, this))
+            , _active(active)
+        {
+        }
+
+        ~Pass() { _active = outer; }
+
+        std::list<Registration>::iterator next;
+        Pass* outer;
+
+    private:
+        Pass*& _active;
+    };
+
     std::list<Registration> _callbacks;
+    Pass* _activePass = nullptr;
     unsigned int _timestamp = 0;
     bool _enabled = true;
 };
