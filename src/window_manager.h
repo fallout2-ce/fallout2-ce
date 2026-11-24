@@ -284,6 +284,7 @@ int windowGetWidth(int win);
 int windowGetHeight(int win);
 int windowGetRect(int win, Rect* rect);
 int _win_check_all_buttons();
+void cancelWindowButtonPresses();
 void programWindowSetTitle(const char* title);
 bool showMessageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, ButtonFlags flags = BUTTON_FLAG_NONE);

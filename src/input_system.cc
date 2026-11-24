@@ -9,6 +9,7 @@
 #include "platform_input.h"
 #include "screenshot.h"
 #include "sfall_kb_helpers.h"
+#include "touch.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -114,19 +115,27 @@ void InputSystem::cancelKeyboard()
 
 void InputSystem::suspend()
 {
+    cancelPointer();
     cancelKeyboard();
     _commands.discardIf([](const InputEvent& event) {
         return event.source == InputSource::Touch;
     });
+}
+
+void InputSystem::cancelPointer()
+{
     _pointerEdge.reset();
+    cancelTouchGestures();
+    cancelMouseButtons();
+    cancelWindowButtonPresses();
 }
 
 void InputSystem::clear()
 {
+    cancelPointer();
     setTouchShift(false);
     _keyboard.clear();
     _commands.clear();
-    _pointerEdge.reset();
 }
 
 } // namespace fallout

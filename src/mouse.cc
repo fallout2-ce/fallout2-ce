@@ -124,6 +124,7 @@ static char _mouse_trans;
 static int gMouseWheelX = 0;
 static int gMouseWheelY = 0;
 static bool pointerUsesTouch = false;
+static unsigned int pointerGeneration = 0;
 
 namespace {
 
@@ -423,6 +424,21 @@ static bool handleHudTapThrough(const Gesture& gesture)
 }
 #endif
 
+void cancelMouseButtons()
+{
+    ++pointerGeneration;
+    cancelMouseDeviceButtons();
+    pointerUsesTouch = false;
+    last_buttons = MouseButtonEvent::None;
+    gMouseEvent = MouseButtonEvent::None;
+    _raw_buttons = MouseButtonEvent::None;
+}
+
+unsigned int pointerCancellationGeneration()
+{
+    return pointerGeneration;
+}
+
 // 0x4CA59C
 void _mouse_info()
 {
@@ -612,9 +628,6 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
     // 0x6AC7E8
     static unsigned int previousLeftButtonTimestamp;
 
-    // 0x6AC7EC
-    static MouseButtonEvent previousEvent;
-
     if (!gMouseInitialized || gCursorIsHidden) {
         return;
     }
@@ -642,7 +655,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons)
 
     _mouse_idling = 0;
     last_buttons = buttons;
-    previousEvent = gMouseEvent;
+    const auto previousEvent = gMouseEvent;
     gMouseEvent = MouseButtonEvent::None;
 
     if ((previousEvent & MouseButtonEvent::LeftButtonDownRepeat) != MouseButtonEvent::None) {

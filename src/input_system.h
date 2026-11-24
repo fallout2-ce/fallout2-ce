@@ -36,6 +36,7 @@ private:
 
     void post(int code, InputSource source, std::optional<KeyboardEvent> keyboardEvent = std::nullopt);
     void cancelKeyboard();
+    void cancelPointer();
     void clear();
 
     Keyboard _keyboard;

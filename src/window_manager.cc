@@ -15,6 +15,7 @@
 #include "memory.h"
 #include "mouse.h"
 #include "palette.h"
+#include "platform_input.h"
 #include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
@@ -277,9 +278,13 @@ void windowManagerExit(void)
         if (gWindowSystemInitialized) {
             _GNW_intr_exit();
 
+            // Input shutdown can cancel button presses on live windows.
+            inputSystem.shutdown();
+
             for (int index = gWindowsLength - 1; index >= 0; index--) {
                 windowFree(gWindows[index]->id);
             }
+            gWindowsLength = 0;
 
             if (_GNW_texture != nullptr) {
                 internal_free(_GNW_texture);
@@ -293,7 +298,6 @@ void windowManagerExit(void)
                 gVideoSystemExitProc();
             }
 
-            inputSystem.shutdown();
             resetUpdateCallbacks();
             _GNW_rect_exit();
             textFontsExit();
@@ -1018,12 +1022,16 @@ void win_drag(int win)
     windowShow(win);
 
     Rect rect = window->rect;
+    const auto generation = pointerCancellationGeneration();
 
+    dispatchPlatformEvents();
     runUpdateCallbacks();
-
     _mouse_info();
 
-    while ((mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
+    constexpr auto heldButtons = MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonRepeat;
+    while (pointerCancellationGeneration() == generation
+        && (mouseGetEvent() & heldButtons) != MouseButtonEvent::None
+        && (mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
         if (dx != 0 || dy != 0) {
             window->rect.left += dx;
             window->rect.top += dy;
@@ -1046,8 +1054,8 @@ void win_drag(int win)
         }
 
         mouseGetPosition(&mx, &my);
+        dispatchPlatformEvents();
         runUpdateCallbacks();
-
         _mouse_info();
 
         dx = mx;
@@ -1208,6 +1216,23 @@ int windowGetRect(int win, Rect* rect)
     rectCopy(rect, &(window->rect));
 
     return 0;
+}
+
+void cancelWindowButtonPresses()
+{
+    for (int index = 1; index < gWindowsLength; ++index) {
+        Window* window = gWindows[index];
+        Button* button = window->clickedButton;
+        if (button == nullptr) {
+            continue;
+        }
+
+        window->clickedButton = nullptr;
+        auto* image = button == window->hoveredButton && button->hoverImage != nullptr
+            ? button->hoverImage
+            : button->normalImage;
+        _button_draw(button, window, image, true, nullptr, false);
+    }
 }
 
 // 0x4D797C

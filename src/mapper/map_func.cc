@@ -99,7 +99,7 @@ void place_entrance_hex()
 }
 
 // 0x4841C4
-void pick_region(Rect* rect)
+bool pick_region(Rect* rect)
 {
     Rect temp;
     gameMouseSetCursor(MOUSE_CURSOR_PLUS);
@@ -119,8 +119,12 @@ void pick_region(Rect* rect)
     temp.bottom = start.y;
     *rect = temp;
 
+    const auto generation = pointerCancellationGeneration();
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
         beginInteractiveUpdate();
+        if (pointerCancellationGeneration() != generation) {
+            break;
+        }
 
         const auto position = inputSystem.lastPosition();
         if (position.x != temp.right || position.y != temp.bottom) {
@@ -136,6 +140,7 @@ void pick_region(Rect* rect)
     erase_rect(rect);
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     gameMouseObjectsShow();
+    return pointerCancellationGeneration() == generation;
 }
 
 // 0x484294
@@ -753,7 +758,9 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
 void copyObject(int filterType)
 {
     Rect region;
-    pick_region(&region);
+    if (!pick_region(&region)) {
+        return;
+    }
 
     // Resolve the centering tile for the region.
     int centerTile = tileFromScreenXY(region.left, region.top);
@@ -878,7 +885,9 @@ void copyTile()
     constexpr int kMaxTiles = 60;
 
     Rect region;
-    pick_region(&region);
+    if (!pick_region(&region)) {
+        return;
+    }
 
     int srcTiles[kMaxTiles];
     int srcCount = squares_in_rect(&region, gElevation, srcTiles, kMaxTiles);

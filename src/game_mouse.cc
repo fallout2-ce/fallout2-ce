@@ -63,6 +63,7 @@ static constexpr int REFRESH_HEX_CURSOR = 0x02;
 static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HEX_CURSOR;
 
 static bool ignoreNextLeftRelease;
+static unsigned int ignoreLeftReleaseGeneration;
 
 // 0x518BF8 gmouse_initialized
 static bool gGameMouseInitialized = false;
@@ -1020,6 +1021,7 @@ bool gameMouseClickOnInterfaceBar()
 void gameMouseIgnoreNextLeftRelease()
 {
     ignoreNextLeftRelease = true;
+    ignoreLeftReleaseGeneration = pointerCancellationGeneration();
 }
 
 // 0x44BFA8 gmouse_handle_event
@@ -1050,6 +1052,9 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
         return;
     }
 
+    if (ignoreLeftReleaseGeneration != pointerCancellationGeneration()) {
+        ignoreNextLeftRelease = false;
+    }
     if (ignoreNextLeftRelease && (mouseEvent & MouseButtonEvent::LeftButtonUp) != MouseButtonEvent::None) {
         ignoreNextLeftRelease = false;
         return;
@@ -1288,8 +1293,13 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
 
                     int newMouseY = mouseY;
                     int actionIndex = 0;
+                    const auto generation = pointerCancellationGeneration();
                     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
                         beginInteractiveUpdate();
+                        if (pointerCancellationGeneration() != generation) {
+                            actionMenuItems[actionIndex] = GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;
+                            break;
+                        }
 
                         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                             actionMenuItems[actionIndex] = GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;

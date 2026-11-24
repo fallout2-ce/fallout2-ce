@@ -16,7 +16,8 @@ static int mouseWindowMappingWindowHeight = 0;
 static int mouseWindowMappingLogicalWidth = 0;
 static int mouseWindowMappingLogicalHeight = 0;
 static bool mouseRelativeMode = false;
-static SDL_Point sampledMotion {};
+static SDL_Point sampledMotion { };
+static Uint32 canceledButtons = 0;
 static unsigned int motionGeneration = 0;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
@@ -61,7 +62,7 @@ unsigned int mouseDeviceMotionGeneration()
 
 bool mouseDeviceInitMode()
 {
-    sampledMotion = {};
+    sampledMotion = { };
     ++motionGeneration;
     // "Relative mode" means cursor position is owned by the application, and we move based on mouse deltas
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
@@ -95,6 +96,13 @@ bool mouseDeviceUnacquire()
     return true;
 }
 
+void cancelMouseDeviceButtons()
+{
+    // SDL may report buttons held across a reset. Wait for their releases
+    // before exposing another press to the game.
+    canceledButtons = SDL_GetMouseState(nullptr, nullptr);
+}
+
 // 0x4E053C
 bool mouseDeviceGetData(MouseData* mouseState)
 {
@@ -106,10 +114,12 @@ bool mouseDeviceGetData(MouseData* mouseState)
     if (!mouseDeviceUsesRelativeMode()) {
         mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
     } else {
-        const auto motion = std::exchange(sampledMotion, SDL_Point {});
+        const auto motion = std::exchange(sampledMotion, SDL_Point { });
         mouseState->x += motion.x;
         mouseState->y += motion.y;
     }
+    canceledButtons &= buttons;
+    buttons &= ~canceledButtons;
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     mouseState->buttons[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     mouseState->wheelX = gMouseWheelDeltaX;
@@ -186,6 +196,10 @@ void handleMouseEvent(SDL_Event* event)
     if (event->type == SDL_MOUSEWHEEL) {
         gMouseWheelDeltaX += event->wheel.x;
         gMouseWheelDeltaY += event->wheel.y;
+    } else if (event->type == SDL_MOUSEBUTTONUP
+        && (event->button.button == SDL_BUTTON_LEFT || event->button.button == SDL_BUTTON_RIGHT)) {
+        // A new press can arrive before the next device sample.
+        canceledButtons &= ~SDL_BUTTON(event->button.button);
     }
 }
 

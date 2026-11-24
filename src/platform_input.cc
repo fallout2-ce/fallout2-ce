@@ -114,7 +114,6 @@ void dispatchWindowEvent(const SDL_WindowEvent& event)
         break;
     case SDL_WINDOWEVENT_FOCUS_LOST:
         gProgramIsActive = false;
-        cancelTouchGestures();
         inputSystem.suspend();
         mouseDeviceInitMode();
         audioEnginePause();
@@ -176,7 +175,6 @@ void platformFlushInput()
     platformFlushKeyboard();
     SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEWHEEL);
     SDL_FlushEvents(SDL_FINGERDOWN, SDL_FINGERMOTION);
-    cancelTouchGestures();
 
     // A reset caller can present immediately. Dispatch recovery in queue order
     // after filtering has finished, with the remaining SDL events still queued.
@@ -229,7 +227,6 @@ void dispatchPlatformEvents()
             dispatchWindowEvent(event.window);
             break;
         case SDL_APP_WILLENTERBACKGROUND:
-            cancelTouchGestures();
             inputSystem.suspend();
             break;
         case SDL_QUIT:
