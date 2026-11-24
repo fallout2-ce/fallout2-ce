@@ -128,10 +128,12 @@ int decodeLegacyKey(const KeyboardEvent& event)
     const auto modifiers = event.modifiers;
     const bool capsLockLetter = key >= SDL_SCANCODE_A && key <= SDL_SCANCODE_Z
         && (modifiers & KeyModifier::CapsLock) != 0;
-    const bool numLockDigit = key >= SDL_SCANCODE_KP_1 && key <= SDL_SCANCODE_KP_0
-        && (modifiers & KeyModifier::NumLock) != 0 && (modifiers & KeyModifier::Alt) == 0;
+    const bool numericKeypadKey = (key >= SDL_SCANCODE_KP_1 && key <= SDL_SCANCODE_KP_0)
+        || key == SDL_SCANCODE_KP_DECIMAL;
+    const bool numLockKey = numericKeypadKey && (modifiers & KeyModifier::NumLock) != 0
+        && (modifiers & KeyModifier::Alt) == 0;
     // Invert Shift for letter case or number-pad mode when the lock applies.
-    const bool shifted = ((modifiers & KeyModifier::Shift) != 0) != (capsLockLetter || numLockDigit);
+    const bool shifted = ((modifiers & KeyModifier::Shift) != 0) != (capsLockLetter || numLockKey);
     const auto& codes = qwerty[key];
 
     if (modifiers & KeyModifier::Control) {
