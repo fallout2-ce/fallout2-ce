@@ -40,6 +40,7 @@
 #include "text_object.h"
 #include "tile.h"
 #include "trait.h"
+#include "trait_defs.h"
 
 namespace fallout {
 

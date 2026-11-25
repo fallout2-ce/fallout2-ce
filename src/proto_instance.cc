@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "display_monitor.h"
 #include "game.h"
+#include "game_vars.h"
 #include "game_dialog.h"
 #include "game_sound.h"
 #include "geometry.h"

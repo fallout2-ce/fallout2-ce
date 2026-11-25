@@ -9,6 +9,7 @@
 #include "config.h"
 #include "debug.h"
 #include "game.h"
+#include "trait_defs.h"
 #include "message.h"
 #include "object.h"
 #include "platform_compat.h"

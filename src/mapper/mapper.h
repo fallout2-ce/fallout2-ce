@@ -1,6 +1,7 @@
 #ifndef FALLOUT_MAPPER_MAPPER_H_
 #define FALLOUT_MAPPER_MAPPER_H_
 
+#include "enums.h"
 #include "map.h"
 #include "obj_types.h"
 

@@ -2,10 +2,8 @@
 #define ACTIONS_H
 
 #include "combat_defs.h"
+#include "enums.h"
 #include "obj_types.h"
-#include "perk_defs.h"
-#include "proto_types.h"
-#include "skill_defs.h"
 
 namespace fallout {
 

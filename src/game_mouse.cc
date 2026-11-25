@@ -27,6 +27,7 @@
 #include "item.h"
 #include "kb.h"
 #include "map_edge.h"
+#include "map.h"
 #include "mouse.h"
 #include "object.h"
 #include "party_member.h"

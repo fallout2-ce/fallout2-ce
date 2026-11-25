@@ -1,11 +1,10 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
-#include "art_defs.h"
 #include "color.h"
 #include "config.h"
 #include "db.h"
-#include "map_defs.h"
+#include "enums.h"
 
 namespace fallout {
 

@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "proto_types.h"
+#include "enums.h"
 
 namespace fallout {
 

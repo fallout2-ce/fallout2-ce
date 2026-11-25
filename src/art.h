@@ -13,6 +13,7 @@
 #include "draw.h"
 #include "memory.h"
 #include "obj_types.h"
+#include "platform_compat.h"
 #include "proto_types.h"
 
 namespace fallout {

@@ -1,9 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "game_vars.h"
+#include "enums.h"
 #include "message.h"
-#include "skilldex.h"
 #include "touch.h"
 #include "window_manager.h"
 

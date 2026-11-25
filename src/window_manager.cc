@@ -7,6 +7,7 @@
 #include <SDL.h>
 
 #include "color.h"
+#include "db.h"
 #include "debug.h"
 #include "dinput.h"
 #include "draw.h"

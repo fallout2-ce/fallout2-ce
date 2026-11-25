@@ -1,18 +1,14 @@
 #ifndef FALLOUT_SFALL_SCRIPT_HOOKS_H_
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
-#include "animation_defs.h"
 #include "art.h"
+#include "combat_defs.h"
+#include "enums.h"
 #include "game.h"
 #include "interpreter.h"
-#include "interpreter_extra.h"
-#include "queue.h"
-#include "random.h"
-#include "scripts.h"
-#include "skill_defs.h"
-#include "worldmap.h"
+#include "obj_types.h"
 #include <initializer_list>
-#include <memory>
+#include <stddef.h>
 #include <string>
 #include <vector>
 

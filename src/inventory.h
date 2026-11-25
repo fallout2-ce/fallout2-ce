@@ -1,14 +1,12 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 
-#include "animation_defs.h"
 #include "art.h"
+#include "enums.h"
 #include "obj_types.h"
 #include "proto_types.h"
 
 namespace fallout {
-
-enum class InvenSlot : int;
 
 #define INVENTORY_SLOT_WIDTH 64
 #define INVENTORY_SLOT_HEIGHT 48

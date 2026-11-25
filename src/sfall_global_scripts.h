@@ -1,8 +1,8 @@
 #ifndef FALLOUT_SFALL_GLOBAL_SCRIPTS_H_
 #define FALLOUT_SFALL_GLOBAL_SCRIPTS_H_
 
+#include "enums.h"
 #include "interpreter.h"
-#include "scripts.h"
 
 namespace fallout {
 

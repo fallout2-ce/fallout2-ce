@@ -48,6 +48,7 @@
 #include "text_font.h"
 #include "tile.h"
 #include "trait.h"
+#include "trait_defs.h"
 #include "window_manager.h"
 
 namespace fallout {

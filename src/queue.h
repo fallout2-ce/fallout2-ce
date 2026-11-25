@@ -3,11 +3,9 @@
 
 #include <vector>
 
-#include "critter.h"
 #include "db.h"
+#include "enums.h"
 #include "obj_types.h"
-#include "perk_defs.h"
-#include "stat_defs.h"
 
 namespace fallout {
 

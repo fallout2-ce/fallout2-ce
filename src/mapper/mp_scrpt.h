@@ -1,8 +1,7 @@
 #ifndef FALLOUT_MAPPER_MP_SCRPTR_H_
 #define FALLOUT_MAPPER_MP_SCRPTR_H_
 
-#include "map_defs.h"
-#include "scripts.h"
+#include "enums.h"
 
 namespace fallout {
 

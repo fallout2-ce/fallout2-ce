@@ -3,7 +3,7 @@
 
 #include "combat_defs.h"
 #include "db.h"
-#include "game_movie.h"
+#include "enums.h"
 #include "interpreter.h"
 #include "obj_types.h"
 

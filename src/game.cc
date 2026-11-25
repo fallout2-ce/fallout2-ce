@@ -1,4 +1,5 @@
 #include "game.h"
+#include "game_vars.h"
 #include "platform/git_version.h"
 
 #include <stdio.h>

@@ -13,6 +13,7 @@
 #include "kb.h"
 #include "loadsave.h"
 #include "memory.h"
+#include "map.h"
 #include "message.h"
 #include "mouse.h"
 #include "preferences.h"

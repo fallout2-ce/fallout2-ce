@@ -1,9 +1,8 @@
 #ifndef PROTOTYPE_INSTANCES_H
 #define PROTOTYPE_INSTANCES_H
 
+#include "enums.h"
 #include "obj_types.h"
-#include "scripts.h"
-#include "skill_defs.h"
 
 namespace fallout {
 

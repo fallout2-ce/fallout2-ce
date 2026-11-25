@@ -1,7 +1,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include "map_defs.h"
+#include "enums.h"
 
 namespace fallout {
 

@@ -2,8 +2,8 @@
 #define DIALOG_H
 
 #include "color.h"
+#include "enums.h"
 #include "interpreter.h"
-#include "window_defs.h"
 
 namespace fallout {
 
