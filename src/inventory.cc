@@ -13,6 +13,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -27,11 +28,11 @@
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "interpreter_extra.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "light.h"
 #include "map.h"
 #include "message.h"
@@ -44,6 +45,7 @@
 #include "proto_instance.h"
 #include "random.h"
 #include "reaction.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_script_hooks.h"
@@ -391,7 +393,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
 static int inventoryQuantityWindowFree(int inventoryWindowType);
 static void inventoryDisplayMessage(int num);
 static bool _ctrl_pressed();
-static void _drag_item_loop(Object* item, bool immediate);
+static bool finishInventoryDrag(Object* item, bool immediate);
 static void inventoryNormalLayoutUpdate();
 static bool inventoryBackgroundLoad(FrmImage& image, InterfaceFrameId col1FrmId, const char* col2Name, int columns);
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, InterfaceFrameId col1FrmId, const char* col2Name);
@@ -1544,12 +1546,12 @@ static void handlePartySlotPickup(InvenSlot slot)
     windowRefreshRect(gInventoryWindow, &rect);
 
     bool immediate = _ctrl_pressed();
-    _drag_item_loop(item, immediate);
-
-    if (!immediate && inventoryLootMouseHitTestScroller(false)) {
-        tryMovePartyItemToLeftPane(slot, item);
-    } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
-        tryUnequipPartyItem(slot);
+    if (finishInventoryDrag(item, immediate)) {
+        if (!immediate && inventoryLootMouseHitTestScroller(false)) {
+            tryMovePartyItemToLeftPane(slot, item);
+        } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
+            tryUnequipPartyItem(slot);
+        }
     }
 
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
@@ -1727,9 +1729,7 @@ void inventoryOpen()
     ScopedGameMode gm(GameMode::kInventory);
 
     for (;;) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
         Rect normalRect = { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight };
@@ -1791,8 +1791,7 @@ void inventoryOpen()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _inven_dude = _stack[0];
@@ -2883,6 +2882,22 @@ static void _inven_update_lighting(Object* activeItem)
     }
 }
 
+static void refreshInventoryAfterDrag(int indexOffset)
+{
+    _adjust_fid();
+    inventoryRenderSummary();
+    _display_inventory(indexOffset, -1, INVENTORY_WINDOW_TYPE_NORMAL);
+    inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+    if (_inven_dude == gDude) {
+        Object* activeItem = interfaceGetCurrentHand() == HAND_LEFT
+            ? critterGetItem1(_inven_dude)
+            : critterGetItem2(_inven_dude);
+        if (activeItem != nullptr) {
+            _inven_update_lighting(activeItem);
+        }
+    }
+}
+
 // 0x470DB8
 static void _inven_pickup(int buttonCode, int indexOffset)
 {
@@ -2969,7 +2984,10 @@ static void _inven_pickup(int buttonCode, int indexOffset)
 
     // allow ctrl-click to quick unequip or equip item
     bool immediate = _ctrl_pressed();
-    _drag_item_loop(item, immediate);
+    if (!finishInventoryDrag(item, immediate)) {
+        refreshInventoryAfterDrag(indexOffset);
+        return;
+    }
 
     // drag into inventory list, or ctrl-click from slot
     if (pickUpFromSlot && (immediate || mouseHitTestInWindow(gInventoryWindow, inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight))) {
@@ -3007,11 +3025,8 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
 
-        if (immediate || itemIndex == -1) {
-            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_MAIN_BACKPACK, item, nullptr)) {
-                goto inventory_move_done;
-            }
-
+        if ((immediate || itemIndex == -1)
+            && scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_MAIN_BACKPACK, item, nullptr)) {
             // TODO: Holy shit, needs refactoring.
             *itemSlot = nullptr;
             if (itemAdd(_inven_dude, item, 1)) {
@@ -3063,7 +3078,8 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         if (itemGetType(item) == ITEM_TYPE_ARMOR) {
             Object* currentArmor = gInventoryArmor;
             if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_ARMOR_SLOT, item, currentArmor)) {
-                goto inventory_move_done;
+                refreshInventoryAfterDrag(indexOffset);
+                return;
             }
 
             int itemAddResult = 0;
@@ -3097,9 +3113,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     } else if (mouseHitTestInWindow(gInventoryWindow, inventoryLayout.bodyViewX, INVENTORY_PC_BODY_VIEW_Y, inventoryLayout.bodyViewX + INVENTORY_BODY_VIEW_WIDTH, INVENTORY_PC_BODY_VIEW_MAX_Y)) {
         if (_curr_stack == 0) {
             // Call the hook when dropping item on the PC portrait when not in a container.  Return value is irrelevant.
-            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT, item, nullptr)) {
-                goto inventory_move_done;
-            }
+            scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT, item, nullptr);
         } else {
             // If we are looking inside nested inventory (such as backpack item), we see this item in the PC Body View instead of the player.
             // So we drop item into it.
@@ -3107,23 +3121,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         }
     }
 
-inventory_move_done:
-    _adjust_fid();
-    inventoryRenderSummary();
-    _display_inventory(indexOffset, -1, INVENTORY_WINDOW_TYPE_NORMAL);
-    inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
-    if (_inven_dude == gDude) {
-        Object* item;
-        if (interfaceGetCurrentHand() == HAND_LEFT) {
-            item = critterGetItem1(_inven_dude);
-        } else {
-            item = critterGetItem2(_inven_dude);
-        }
-
-        if (item != nullptr) {
-            _inven_update_lighting(item);
-        }
-    }
+    refreshInventoryAfterDrag(indexOffset);
 }
 
 // 0x4714E0
@@ -3253,15 +3251,13 @@ void inventoryOpenUseItemOn(Object* targetObj)
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
     ScopedGameMode gm(GameMode::kUseOn);
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
         _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_USE_ITEM_ON, nullptr };
         InventoryScroller useItemOnScroller {
@@ -3318,8 +3314,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
                             } else {
                                 _action_use_an_item_on_object(gDude, targetObj, inventoryItem->item);
                             }
-                            // fix for click through bug
-                            gBlockMouseUpEvent = true;
+                            gameMouseIgnoreNextLeftRelease();
                             keyCode = KEY_ESCAPE;
                         } else {
                             keyCode = -1;
@@ -3333,8 +3328,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _exit_inventory(isoWasEnabled);
@@ -4537,11 +4531,13 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     ItemType itemType = itemGetType(item);
 
+    const auto generation = pointerCancellationGeneration();
     MouseButtonEvent mouseEvent;
     do {
-        sharedFpsLimiter.mark();
-
-        inputGetInput();
+        beginInteractiveUpdate();
+        if (pointerCancellationGeneration() != generation) {
+            return;
+        }
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
             _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
@@ -4558,8 +4554,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             return;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     } while ((mouseEvent & MouseButtonEvent::LeftButtonDownRepeat) != MouseButtonEvent::LeftButtonDownRepeat);
 
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_BLANK);
@@ -4686,9 +4681,10 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int menuItemIndex = 0;
     int previousMouseY = y;
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-
-        inputGetInput();
+        beginInteractiveUpdate();
+        if (pointerCancellationGeneration() != generation) {
+            break;
+        }
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
             _display_body(FrmId::Empty(), INVENTORY_WINDOW_TYPE_NORMAL);
@@ -4710,8 +4706,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             previousMouseY = y;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     buttonDestroy(btn);
@@ -4735,7 +4730,9 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     _display_inventory(_stack_offset[_curr_stack], -1, inventoryWindowType);
 
-    int actionMenuItem = actionMenuItems[menuItemIndex];
+    int actionMenuItem = pointerCancellationGeneration() == generation
+        ? actionMenuItems[menuItemIndex]
+        : GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;
     switch (actionMenuItem) {
     case GAME_MOUSE_ACTION_MENU_ITEM_DROP: {
         bool inventoryMoveAlreadyChecked = false;
@@ -5070,8 +5067,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
     int stealingXp = 0;
     int stealingXpBonus = 10;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -5080,7 +5075,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, nullptr };
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, _target_pud };
@@ -5261,8 +5256,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (critterCount != 0) {
@@ -5391,7 +5385,10 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     }
 
     bool immediate = _ctrl_pressed();
-    _drag_item_loop(item, immediate);
+    if (!finishInventoryDrag(item, immediate)) {
+        inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+        return INVENTORY_MOVE_RESULT_FAILED;
+    }
 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
 
@@ -5631,16 +5628,17 @@ static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer
     return inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, maxQuantity, suggestedValue);
 }
 
-// clicked on an inventory in preparation of dragging or immediate transfer
-static void _drag_item_loop(Object* item, bool immediate)
+// Complete a normal drag or approve an immediate Ctrl-click transfer.
+static bool finishInventoryDrag(Object* item, bool immediate)
 {
     if (immediate) {
         soundPlayFile("iputdown");
         // prevent item look from occuring after immediate move
         _im_value = -1;
-        return;
+        return true;
     }
 
+    const auto generation = pointerCancellationGeneration();
     FrmImage itemInventoryFrmImage;
     const FrmId itemInventoryFrmId = itemGetInventoryFrmId(item);
     if (itemInventoryFrmImage.lock(itemInventoryFrmId)) {
@@ -5652,18 +5650,18 @@ static void _drag_item_loop(Object* item, bool immediate)
     }
 
     do {
-        sharedFpsLimiter.mark();
+        beginInteractiveUpdate();
 
-        inputGetInput();
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    } while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None);
+        scheduler.finishUpdate();
+    } while (pointerCancellationGeneration() == generation
+        && (mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None);
 
     if (itemInventoryFrmImage.isLocked()) {
         itemInventoryFrmImage.unlock();
         soundPlayFile("iputdown");
     }
+
+    return pointerCancellationGeneration() == generation;
 }
 
 // 0x474DAC barter_move_inventory
@@ -5697,7 +5695,10 @@ static void barterMoveToTable(Object* item, int quantity, int slotIndex, int ind
     }
 
     bool immediate = _ctrl_pressed();
-    _drag_item_loop(item, immediate);
+    if (!finishInventoryDrag(item, immediate)) {
+        inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+        return;
+    }
 
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y)) {
@@ -5753,7 +5754,10 @@ static void barterMoveFromTable(Object* item, int quantity, int slotIndex, Objec
     }
 
     bool immediate = _ctrl_pressed();
-    _drag_item_loop(item, immediate);
+    if (!finishInventoryDrag(item, immediate)) {
+        inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+        return;
+    }
 
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y)) {
@@ -5977,13 +5981,11 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     int keyCode = -1;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
-        keyCode = inputGetInput();
+        keyCode = beginInteractiveUpdate().code;
         MouseButtonEvent mouseEvent = mouseGetEvent();
         barterClampTableOffsets();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, nullptr };
@@ -6189,8 +6191,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     itemMoveAll(hiddenBox, barterer);
@@ -6512,9 +6513,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
     bool isTyping = false;
     for (;;) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode == KEY_ESCAPE) {
             inventoryQuantityWindowFree(inventoryWindowType);
             return -1;
@@ -6548,22 +6547,19 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
                         unsigned int delay = 100;
                         while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
-                            sharedFpsLimiter.mark();
-
                             if (value < max) {
                                 value++;
                             }
 
                             _draw_amount(value, inventoryWindowType);
-                            inputGetInput();
+                            beginInteractiveUpdate();
 
                             if (delay > 1) {
                                 delay--;
-                                inputPauseForTocks(delay);
+                                waitForGameTime(delay, runBackgroundUpdate);
                             }
 
-                            renderPresent();
-                            sharedFpsLimiter.throttle();
+                            scheduler.finishUpdate();
                         }
                     } else {
                         if (value < max) {
@@ -6586,22 +6582,19 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
                         unsigned int delay = 100;
                         while ((mouseGetEvent() & MouseButtonEvent::LeftButtonRepeat) != MouseButtonEvent::None) {
-                            sharedFpsLimiter.mark();
-
                             if (value > min) {
                                 value--;
                             }
 
                             _draw_amount(value, inventoryWindowType);
-                            inputGetInput();
+                            beginInteractiveUpdate();
 
                             if (delay > 1) {
                                 delay--;
-                                inputPauseForTocks(delay);
+                                waitForGameTime(delay, runBackgroundUpdate);
                             }
 
-                            renderPresent();
-                            sharedFpsLimiter.throttle();
+                            scheduler.finishUpdate();
                         }
                     } else {
                         if (value > min) {
@@ -6642,8 +6635,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     inventoryQuantityWindowFree(inventoryWindowType);

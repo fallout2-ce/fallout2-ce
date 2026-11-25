@@ -16,8 +16,8 @@
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "memory.h"
 #include "message.h"
@@ -27,6 +27,7 @@
 #include "platform_compat.h"
 #include "preferences.h"
 #include "proto.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "skill.h"
 #include "stat.h"
@@ -182,13 +183,11 @@ int characterSelectorOpen()
     int rc = 0;
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         switch (keyCode) {
         case KEY_MINUS:
@@ -259,8 +258,7 @@ int characterSelectorOpen()
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc == 2) {

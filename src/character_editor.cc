@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "content_config.h"
@@ -22,12 +23,12 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "geometry.h"
 #include "graph_lib.h"
-#include "input.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
@@ -38,6 +39,8 @@
 #include "perk.h"
 #include "platform_compat.h"
 #include "proto.h"
+#include "scheduler.h"
+#include "screenshot.h"
 #include "scripts.h"
 #include "settings.h"
 #include "skill.h"
@@ -891,10 +894,8 @@ int characterEditorShow(bool isCreationMode)
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         _frame_time = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         convertMouseWheelToArrowKey(&keyCode);
 
@@ -1245,8 +1246,7 @@ int characterEditorShow(bool isCreationMode)
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc == 0) {
@@ -2284,7 +2284,7 @@ static void characterEditorDrawBigNumber(int x, int y, int flags, int value, int
                     onesBufferPtr,
                     windowWidth);
                 windowRefreshRect(windowHandle, &rect);
-                renderPresent();
+                scheduler.presentNow();
                 delay_ms(BIG_NUM_ANIMATION_DELAY - (getTicks() - _frame_time));
             }
 
@@ -2295,7 +2295,7 @@ static void characterEditorDrawBigNumber(int x, int y, int flags, int value, int
                 onesBufferPtr,
                 windowWidth);
             windowRefreshRect(windowHandle, &rect);
-            renderPresent();
+            scheduler.presentNow();
 
             if (previousValue / 10 != tens) {
                 _frame_time = getTicks();
@@ -2306,7 +2306,7 @@ static void characterEditorDrawBigNumber(int x, int y, int flags, int value, int
                     tensBufferPtr,
                     windowWidth);
                 windowRefreshRect(windowHandle, &rect);
-                renderPresent();
+                scheduler.presentNow();
                 delay_ms(BIG_NUM_ANIMATION_DELAY - (getTicks() - _frame_time));
             }
 
@@ -2317,7 +2317,7 @@ static void characterEditorDrawBigNumber(int x, int y, int flags, int value, int
                 tensBufferPtr,
                 windowWidth);
             windowRefreshRect(windowHandle, &rect);
-            renderPresent();
+            scheduler.presentNow();
         } else {
             blitBufferToBuffer(numbersGraphicBufferPtr + BIG_NUM_WIDTH * tens,
                 BIG_NUM_WIDTH,
@@ -3302,14 +3302,12 @@ static int characterEditorEditAge()
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         _frame_time = getTicks();
         change = 0;
         flags = 0;
         int v32 = 0;
 
-        keyCode = inputGetInput();
+        keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == KEY_RETURN || keyCode == 500) {
             if (keyCode != 500) {
@@ -3367,8 +3365,6 @@ static int characterEditorEditAge()
             _repFtime = 4;
 
             while (true) {
-                sharedFpsLimiter.mark();
-
                 _frame_time = getTicks();
 
                 v33++;
@@ -3417,13 +3413,12 @@ static int characterEditorEditAge()
                     delay_ms(1000 / 24 - (getTicks() - _frame_time));
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
                 if (keyCode == 503 || keyCode == 504 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     break;
                 }
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
         } else {
             windowRefresh(win);
@@ -3431,8 +3426,7 @@ static int characterEditorEditAge()
             delay_ms(1000 / 24 - (getTicks() - _frame_time));
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     critterSetBaseStat(gDude, STAT_AGE, savedAge);
@@ -3537,11 +3531,9 @@ static void characterEditorEditGender()
     _win_set_button_rest_state(btns[savedGender], 1, 0);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         _frame_time = getTicks();
 
-        int eventCode = inputGetInput();
+        int eventCode = beginInteractiveUpdate().code;
 
         if (eventCode == KEY_RETURN || eventCode == 500) {
             if (eventCode == KEY_RETURN) {
@@ -3580,8 +3572,7 @@ static void characterEditorEditGender()
 
         delay_ms(41 - (getTicks() - _frame_time));
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     characterEditorDrawGender();
@@ -3607,8 +3598,6 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
 
     bool cont = true;
     do {
-        sharedFpsLimiter.mark();
-
         _frame_time = getTicks();
         if (v11 <= 19.2) {
             v11++;
@@ -3662,9 +3651,8 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
             delay_ms(1000 / 24 - (getTicks() - _frame_time));
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    } while (inputGetInput() != 518 && cont);
+        scheduler.finishUpdate();
+    } while (beginInteractiveUpdate().code != 518 && cont);
 
     characterEditorDrawCard();
 }
@@ -3771,9 +3759,7 @@ static int characterEditorShowOptions()
 
         int rc = 0;
         while (rc == 0) {
-            sharedFpsLimiter.mark();
-
-            int keyCode = inputGetInput();
+            int keyCode = beginInteractiveUpdate().code;
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 rc = 2;
@@ -4061,8 +4047,7 @@ static int characterEditorShowOptions()
 
             windowRefresh(win);
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
 
         windowDestroy(win);
@@ -5082,8 +5067,6 @@ static void characterEditorHandleAdjustSkillButtonPressed(int keyCode)
 
     int repeatDelay = 0;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         _frame_time = getTicks();
         if (repeatDelay <= dbl_5018F0) {
             repeatDelay++;
@@ -5170,10 +5153,9 @@ static void characterEditorHandleAdjustSkillButtonPressed(int keyCode)
                 delay_ms(1000 / 24 - (getTicks() - _frame_time));
             }
 
-            int keyCode = inputGetInput();
+            int keyCode = beginInteractiveUpdate().code;
             if (keyCode != 522 && keyCode != 524 && rc != -1) {
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
                 continue;
             }
         }
@@ -6146,9 +6128,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
 
     int rc = 0;
     while (rc == 0) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int v19 = 0;
 
         convertMouseWheelToArrowKey(&keyCode);
@@ -6261,8 +6241,6 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                 gPerkDialogPreviousCurrentLine = -2;
 
                 do {
-                    sharedFpsLimiter.mark();
-
                     _frame_time = getTicks();
                     if (v19 <= dbl_5019BE) {
                         v19++;
@@ -6294,9 +6272,8 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                         delay_ms(1000 / _repFtime - (getTicks() - _frame_time));
                     }
 
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
-                } while (inputGetInput() != 574);
+                    scheduler.finishUpdate();
+                } while (beginInteractiveUpdate().code != 574);
 
                 break;
             case 573:
@@ -6305,8 +6282,6 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
 
                 if (count > 11) {
                     do {
-                        sharedFpsLimiter.mark();
-
                         _frame_time = getTicks();
                         if (v19 <= dbl_5019BE) {
                             v19++;
@@ -6339,13 +6314,10 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                             delay_ms(1000 / _repFtime - (getTicks() - _frame_time));
                         }
 
-                        renderPresent();
-                        sharedFpsLimiter.throttle();
-                    } while (inputGetInput() != 575);
+                        scheduler.finishUpdate();
+                    } while (beginInteractiveUpdate().code != 575);
                 } else {
                     do {
-                        sharedFpsLimiter.mark();
-
                         _frame_time = getTicks();
                         if (v19 <= dbl_5019BE) {
                             v19++;
@@ -6373,9 +6345,8 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
                             delay_ms(1000 / _repFtime - (getTicks() - _frame_time));
                         }
 
-                        renderPresent();
-                        sharedFpsLimiter.throttle();
-                    } while (inputGetInput() != 575);
+                        scheduler.finishUpdate();
+                    } while (beginInteractiveUpdate().code != 575);
                 }
                 break;
             case KEY_HOME:
@@ -6403,8 +6374,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     return rc;

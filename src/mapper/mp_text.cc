@@ -1,8 +1,8 @@
 #include "mapper/mp_text.h"
 
 #include "color.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_utils.h"
 #include "obj_types.h"
@@ -14,7 +14,7 @@ namespace fallout {
 int proto_build_all_texts()
 {
     for (ObjectType type = OBJ_TYPE_ITEM; type <= OBJ_TYPE_MISC; type++) {
-        if (inputGetInput() == KEY_ESCAPE) {
+        if (beginInteractiveUpdate().code == KEY_ESCAPE) {
             win_timed_msg("BUILD all Protos has been aborted!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             return 0;
         }

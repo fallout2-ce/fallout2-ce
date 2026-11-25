@@ -6,13 +6,14 @@
 
 #include "color.h"
 #include "draw.h"
+#include "game_update.h"
 #include "geometry.h"
-#include "input.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "map_defs.h"
 #include "map_edge.h"
 #include "mouse.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -502,8 +503,7 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         int mx;
         int my;
@@ -566,8 +566,7 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 

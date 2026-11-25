@@ -10,7 +10,7 @@ namespace fallout {
 void setup_map_dirs();
 void copy_proto_lists();
 void place_entrance_hex();
-void pick_region(Rect* rect);
+bool pick_region(Rect* rect);
 void sort_rect(Rect* a, Rect* b);
 void draw_rect(Rect* rect, unsigned char color);
 void erase_rect(Rect* rect);

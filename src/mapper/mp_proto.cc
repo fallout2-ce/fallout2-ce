@@ -7,12 +7,13 @@
 #include "combat_ai.h"
 #include "critter.h"
 #include "game_sound.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "key_codes.h"
 #include "mapper/mp_targt.h"
 #include "memory.h"
 #include "obj_types.h"
 #include "proto.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -172,9 +173,7 @@ int proto_choose_container_flags(Proto* proto)
     windowRefresh(win);
 
     while (1) {
-        sharedFpsLimiter.mark();
-
-        int input = inputGetInput();
+        int input = beginInteractiveUpdate().code;
         if (input == KEY_ESCAPE
             || input == KEY_BAR
             || input == KEY_RETURN) {
@@ -223,8 +222,7 @@ int proto_choose_container_flags(Proto* proto)
             windowRefresh(win);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -776,9 +774,7 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
     protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_BAR || key == KEY_RETURN) {
             windowDestroy(win);
@@ -817,8 +813,7 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
             protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 

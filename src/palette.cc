@@ -4,11 +4,8 @@
 
 #include "color.h"
 #include "cycle.h"
-#include "debug.h"
 #include "game_sound.h"
-#include "input.h"
 #include "settings.h"
-#include "svga.h"
 
 namespace fallout {
 
@@ -23,37 +20,12 @@ unsigned char gPaletteWhite[256 * 3];
 // 0x663FD0 black_palette
 unsigned char gPaletteBlack[256 * 3];
 
-// 0x6642D0 fade_steps
-static int gPaletteFadeSteps;
-
 // 0x493A00 palette_init
 void paletteInit()
 {
     memset(gPaletteBlack, 0, 256 * 3);
     memset(gPaletteWhite, 63, 256 * 3);
     memcpy(gPalette, _cmap, 256 * 3);
-
-    unsigned int tick = getTicks();
-    if (backgroundSoundIsEnabled() || speechIsEnabled()) {
-        colorPaletteSetTransitionCallback(soundContinueAll);
-    }
-
-    constexpr int referenceFadeSteps = 60;
-    colorPaletteFadeBetween(gPalette, gPalette, referenceFadeSteps);
-
-    colorPaletteSetTransitionCallback(nullptr);
-
-    // Actual fade duration will never be 0 since |colorPaletteFadeBetween| uses
-    // frame rate throttling.
-    unsigned int actualFadeDuration = getTicksSince(tick);
-
-    constexpr int vanillaFadeDurationMs = 700;
-    const unsigned int fadeDurationMs = static_cast<int>(vanillaFadeDurationMs / settings.ui.anim_speed);
-
-    // Calculate fade steps needed to perform fading in about 700 ms.
-    gPaletteFadeSteps = static_cast<int>(referenceFadeSteps * fadeDurationMs / actualFadeDuration);
-
-    debugPrint("\nReference fade time: %ums, Target fade time: %dms, Fade steps: %d\n", actualFadeDuration, fadeDurationMs, gPaletteFadeSteps);
 }
 
 // NOTE: Collapsed.
@@ -81,12 +53,10 @@ void paletteFadeTo(unsigned char* palette)
     bool colorCycleWasEnabled = colorCycleEnabled();
     colorCycleDisable();
 
-    if (backgroundSoundIsEnabled() || speechIsEnabled()) {
-        colorPaletteSetTransitionCallback(soundContinueAll);
-    }
-
-    colorPaletteFadeBetween(gPalette, palette, gPaletteFadeSteps);
-    colorPaletteSetTransitionCallback(nullptr);
+    constexpr int defaultFadeDurationMs = 700;
+    const auto durationMs = static_cast<unsigned int>(defaultFadeDurationMs / settings.ui.anim_speed);
+    const auto serviceSound = (backgroundSoundIsEnabled() || speechIsEnabled()) ? soundContinueAll : nullptr;
+    colorPaletteFadeBetween(gPalette, palette, durationMs, serviceSound);
 
     memcpy(gPalette, palette, 768);
 

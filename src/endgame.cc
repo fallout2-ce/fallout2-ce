@@ -1,14 +1,17 @@
 #include "endgame.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <ctype.h>
+#include <functional>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "content_config.h"
 #include "credits.h"
@@ -22,8 +25,8 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "game_speed.h"
+#include "game_update.h"
 #include "game_vars.h"
-#include "input.h"
 #include "map.h"
 #include "memory.h"
 #include "mouse.h"
@@ -32,6 +35,7 @@
 #include "pipboy.h"
 #include "platform_compat.h"
 #include "random.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "stat.h"
 #include "svga.h"
@@ -246,10 +250,10 @@ void endgamePlayMovie()
     isoDisable();
     paletteFadeTo(gPaletteBlack);
     _endgame_maybe_done = 0;
-    tickersAdd(_endgame_movie_bk_process);
+    addUpdateCallback(_endgame_movie_bk_process);
     backgroundSoundSetEndCallback(_endgame_movie_callback);
     backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music0", "akiss"), GameSoundReadLimitMode::LimitAfter, GameSoundStorageType::Stream, GameSoundLoopingMode::NoLoop);
-    inputPauseForTocks(3000);
+    waitForGameTime(3000, runBackgroundUpdate);
 
     endgamePlayConfiguredMovie();
 
@@ -264,7 +268,7 @@ void endgamePlayMovie()
 
     backgroundSoundDelete();
     backgroundSoundSetEndCallback(nullptr);
-    tickersRemove(_endgame_movie_bk_process);
+    removeUpdateCallback(_endgame_movie_bk_process);
     backgroundSoundDelete();
     colorPaletteLoad("color.pal");
     paletteFadeTo(_cmap);
@@ -293,7 +297,7 @@ static void endgamePlayConfiguredMovie()
     if (gameMovieExtendedIsValid(movie)) {
         // Match sfall's Fallout 1 endgame hook: let the endgame track play
         // through the movie and do not add another movie fade.
-        inputPauseForTocks(1500);
+        waitForGameTime(1500, runBackgroundUpdate);
         gameMoviePlay(movie, GameMovieFlags::None);
     }
 }
@@ -396,17 +400,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             }
         }
 
-        int start;
-        int end;
-        if (direction == -1) {
-            start = width - sourceViewportWidth;
-            end = 0;
-        } else {
-            start = 0;
-            end = width - sourceViewportWidth;
-        }
-
-        tickersDisable();
+        setUpdateCallbacksEnabled(false);
 
         bool subtitlesLoaded = panDistance > 0 && fadeDistance == 0;
         if (subtitlesLoaded) {
@@ -416,75 +410,63 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
             endgameEndingVoiceOverReset();
         }
 
-        unsigned int since = 0;
-        while (start != end) {
-            sharedFpsLimiter.mark();
+        using Clock = std::chrono::steady_clock;
+        const auto stepDuration = std::chrono::milliseconds(frameDelay);
+        const auto panStart = Clock::now();
+        const auto panEnd = panStart + stepDuration * panDistance;
+        const int fadeOutStartX = sourceViewportWidth - fadeDistance;
+        const bool reverse = direction == -1;
+        const int voiceOverStep = reverse ? panDistance - fadeOutStartX : fadeDistance;
+        double lastDarkeningFactor = 0.0;
+        int lastStep = -1;
+        const std::function<void()> draw = [&] {
+            // Sample the authored timeline so missed presentations cannot slow the pan.
+            const int elapsedSteps = static_cast<int>((Clock::now() - panStart) / stepDuration);
+            const int step = std::min(elapsedSteps, panDistance - 1);
+            if (step == lastStep) {
+                return;
+            }
 
-            int fadeOutStartX = sourceViewportWidth - fadeDistance;
+            const int x = reverse ? panDistance - step : step;
+            endgameEndingRenderFrame(backgroundData + x, sourceViewportWidth, height, width);
+            if (subtitlesLoaded) {
+                endgameEndingRefreshSubtitles();
+            }
+            windowRefresh(gEndgameEndingSlideshowWindow);
 
-            // TODO: Complex math, setup scene in debugger.
-            if (getTicksSince(since) >= frameDelay) {
-                endgameEndingRenderFrame(backgroundData + start, sourceViewportWidth, height, width);
-
-                if (subtitlesLoaded) {
-                    endgameEndingRefreshSubtitles();
+            if (fadeDistance > 0) {
+                const int fadeOffset = x <= fadeDistance ? x : fadeDistance - (x - fadeOutStartX);
+                const double darkeningFactor = std::clamp(static_cast<double>(fadeOffset) / fadeDistance, 0.0, 1.0);
+                if (darkeningFactor != lastDarkeningFactor) {
+                    unsigned char darkenedPalette[COLOR_MAP_SIZE];
+                    for (int index = 0; index < COLOR_MAP_SIZE; ++index) {
+                        darkenedPalette[index] = static_cast<unsigned char>(palette[index] * darkeningFactor);
+                    }
+                    paletteSetEntries(darkenedPalette);
+                    lastDarkeningFactor = darkeningFactor;
                 }
 
-                windowRefresh(gEndgameEndingSlideshowWindow);
-
-                since = getTicks();
-
-                if (fadeDistance > 0) {
-                    bool shouldDarkenPalette;
-                    double darkeningFactor;
-                    if (start > fadeDistance) {
-                        if (fadeOutStartX > start) {
-                            shouldDarkenPalette = false;
-                        } else {
-                            int fadeOffset = fadeDistance - (start - fadeOutStartX);
-                            darkeningFactor = (double)fadeOffset / (double)fadeDistance;
-                            shouldDarkenPalette = true;
-                        }
-                    } else {
-                        shouldDarkenPalette = true;
-                        darkeningFactor = (double)start / (double)fadeDistance;
-                    }
-
-                    if (shouldDarkenPalette) {
-                        unsigned char darkenedPalette[768];
-                        for (int index = 0; index < 768; index++) {
-                            darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
-                        }
-                        paletteSetEntries(darkenedPalette);
-                    }
-                }
-
-                start += direction;
-
-                if (fadeDistance > 0 && direction == 1 && (start == fadeDistance)) {
-                    // NOTE: Uninline.
-                    endgameEndingVoiceOverReset();
-                    subtitlesLoaded = true;
-                } else if (fadeDistance > 0 && direction == -1 && (start == fadeOutStartX)) {
-                    // NOTE: Uninline.
+                if (!subtitlesLoaded && voiceOverStep > 0 && step + 1 >= voiceOverStep) {
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
                 }
             }
+            lastStep = step;
+        };
 
+        while (Clock::now() < panEnd || lastStep < panDistance - 1) {
             soundContinueAll();
 
-            if (inputGetInput() != -1) {
+            if (beginInteractiveUpdate().code != -1) {
                 // NOTE: Uninline.
                 endgameEndingVoiceOverFree();
                 break;
             }
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate(draw);
         }
 
-        tickersEnable();
+        setUpdateCallbacksEnabled(true);
         backgroundFrmImage.unlock();
 
         paletteFadeTo(gPaletteBlack);
@@ -493,12 +475,9 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 
     while (mouseGetEvent() != MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
+        beginInteractiveUpdate();
 
-        inputGetInput();
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -533,19 +512,17 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
 
         paletteFadeTo(_cmap);
 
-        inputPauseForTocks(500);
+        waitForGameTime(500, runBackgroundUpdate);
 
         // NOTE: Uninline.
         endgameEndingVoiceOverReset();
 
         unsigned int referenceTime = getTicks();
-        tickersDisable();
+        setUpdateCallbacksEnabled(false);
 
         int keyCode;
         while (true) {
-            sharedFpsLimiter.mark();
-
-            keyCode = inputGetInput();
+            keyCode = beginInteractiveUpdate().code;
             if (keyCode != -1) {
                 break;
             }
@@ -567,11 +544,10 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
             windowRefresh(gEndgameEndingSlideshowWindow);
             soundContinueAll();
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
 
-        tickersEnable();
+        setUpdateCallbacksEnabled(true);
         speechDelete();
         endgameEndingSubtitlesFree();
 
@@ -579,18 +555,15 @@ static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const ch
         gEndgameEndingVoiceOverSubtitlesLoaded = false;
 
         if (keyCode == -1) {
-            inputPauseForTocks(500);
+            waitForGameTime(500, runBackgroundUpdate);
         }
 
         paletteFadeTo(gPaletteBlack);
 
         while (mouseGetEvent() != MouseButtonEvent::None) {
-            sharedFpsLimiter.mark();
+            beginInteractiveUpdate();
 
-            inputGetInput();
-
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     }
 
@@ -958,7 +931,7 @@ static void _endgame_movie_bk_process()
     if (_endgame_maybe_done) {
         backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music1", "10labone"), GameSoundReadLimitMode::LimitBefore, GameSoundStorageType::Stream, GameSoundLoopingMode::Loop);
         backgroundSoundSetEndCallback(nullptr);
-        tickersRemove(_endgame_movie_bk_process);
+        removeUpdateCallback(_endgame_movie_bk_process);
     }
 }
 

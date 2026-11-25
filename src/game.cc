@@ -1,4 +1,5 @@
 #include "game.h"
+#include "input_system.h"
 #include "platform/git_version.h"
 
 #include <stdio.h>
@@ -30,11 +31,11 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "game_speed.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "inventory.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "loadsave.h"
 #include "map.h"
 #include "memory.h"
@@ -52,6 +53,8 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
+#include "screenshot.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_arrays.h"
@@ -196,17 +199,6 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, Window
 
     // SFALL: Execute all code that should be executed ON game init
     sfallOnGameInit();
-
-    const char* language = settings.system.language.c_str();
-    if (compat_stricmp(language, FRENCH) == 0) {
-        keyboardSetLayout(KEYBOARD_LAYOUT_FRENCH);
-    } else if (compat_stricmp(language, GERMAN) == 0) {
-        keyboardSetLayout(KEYBOARD_LAYOUT_GERMAN);
-    } else if (compat_stricmp(language, ITALIAN) == 0) {
-        keyboardSetLayout(KEYBOARD_LAYOUT_ITALIAN);
-    } else if (compat_stricmp(language, SPANISH) == 0) {
-        keyboardSetLayout(KEYBOARD_LAYOUT_SPANISH);
-    }
 
     // SFALL: Allow to skip splash screen
     int skipOpeningMovies = settings.ui.skip_opening_movies;
@@ -651,8 +643,8 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         break;
     case KEY_TAB:
         if (interfaceBarEnabled()
-            && gPressedPhysicalKeys[SDL_SCANCODE_LALT] == 0
-            && gPressedPhysicalKeys[SDL_SCANCODE_RALT] == 0) {
+            && !inputSystem.isKeyDown(SDL_SCANCODE_LALT)
+            && !inputSystem.isKeyDown(SDL_SCANCODE_RALT)) {
             soundPlayFile("ib1p1xx1");
             automapShow(true, false);
         }
@@ -983,7 +975,7 @@ void gameUiDisable(int allowScrolling)
     if (!gGameUiDisabled) {
         gameMouseObjectsHide();
         _gmouse_disable(allowScrolling);
-        keyboardDisable();
+        inputSystem.setKeyboardEnabled(false);
         interfaceBarDisable();
         gGameUiDisabled = true;
     }
@@ -995,8 +987,8 @@ void gameUiEnable()
 {
     if (gGameUiDisabled) {
         interfaceBarEnable();
-        keyboardEnable();
-        keyboardReset();
+        inputSystem.setKeyboardEnabled(true);
+        inputSystem.resetKeyboard();
         _gmouse_enable();
         gameMouseObjectsShow();
         gGameUiDisabled = false;
@@ -1277,19 +1269,14 @@ void showHelp()
                 windowShow(overlay);
                 windowShow(win);
 
-                while (inputGetInput() == -1 && _game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
-                    sharedFpsLimiter.mark();
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                while (beginInteractiveUpdate().code == -1 && _game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
+                    scheduler.finishUpdate();
                 }
 
                 while (mouseGetEvent() != MouseButtonEvent::None) {
-                    sharedFpsLimiter.mark();
+                    beginInteractiveUpdate();
 
-                    inputGetInput();
-
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                    scheduler.finishUpdate();
                 }
 
                 paletteSetEntries(gPaletteBlack);

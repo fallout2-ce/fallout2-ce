@@ -10,10 +10,13 @@
 #include "debug.h"
 #include "dinput.h"
 #include "draw.h"
-#include "input.h"
+#include "game_update.h"
+#include "input_system.h"
 #include "memory.h"
 #include "mouse.h"
 #include "palette.h"
+#include "platform_input.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "win32.h"
@@ -29,7 +32,7 @@ namespace fallout {
 static void windowFree(int win);
 static void _win_buffering(bool bufferWindows);
 static void _win_move(int win_index, int x, int y);
-static void _win_clip(Window* window, RectListNode** rect, unsigned char* dest);
+static void _win_clip(Window* window, RectListNode** rect);
 static void win_drag(int win);
 static void _refresh_all(Rect* rect, unsigned char* dest);
 static Button* buttonGetButton(int btn, Window** out_win);
@@ -206,10 +209,11 @@ WindowManagerErr windowManagerInit(VideoSystemInitProc* videoSystemInitProc, Vid
 
     _GNW_debug_init();
 
-    if (inputInit() == -1) {
+    if (!inputSystem.initialize()) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
     }
 
+    resetUpdateCallbacks();
     _GNW_intr_init();
 
     Window* window = gWindows[0] = (Window*)internal_malloc(sizeof(*window));
@@ -274,9 +278,13 @@ void windowManagerExit(void)
         if (gWindowSystemInitialized) {
             _GNW_intr_exit();
 
+            // Input shutdown can cancel button presses on live windows.
+            inputSystem.shutdown();
+
             for (int index = gWindowsLength - 1; index >= 0; index--) {
                 windowFree(gWindows[index]->id);
             }
+            gWindowsLength = 0;
 
             if (_GNW_texture != nullptr) {
                 internal_free(_GNW_texture);
@@ -290,7 +298,7 @@ void windowManagerExit(void)
                 gVideoSystemExitProc();
             }
 
-            inputExit();
+            resetUpdateCallbacks();
             _GNW_rect_exit();
             textFontsExit();
             _colorsClose();
@@ -803,8 +811,6 @@ void windowRefreshRect(int win, const Rect* rect)
 // 0x4D6FD8
 void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
 {
-    // dest is only used when refreshing the portion of the screen containing the cursor (which is subsequently drawn on the buffer)
-
     RectListNode *refreshRectList, *clipRect, *screenRect, *nextRect;
     int dest_pitch;
 
@@ -841,7 +847,7 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
             }
 
             // computes clip boundaries for this window, considering all windows higher in z-index
-            _win_clip(window, &refreshRectList, dest);
+            _win_clip(window, &refreshRectList);
 
             if (window->id) {
                 // loop through all clip rectangles blitting to dest or screen
@@ -960,12 +966,6 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
 
                 screenRect = nextRect;
             }
-
-            if (!_doing_refresh_all && dest == nullptr && cursorIsHidden() == 0) {
-                if (_mouse_in(rect->left, rect->top, rect->right, rect->bottom)) {
-                    mouseShowCursor();
-                }
-            }
         } else {
             _rect_free(refreshRectList);
         }
@@ -981,7 +981,7 @@ void windowRefreshAll(Rect* rect)
 }
 
 // 0x4D75B0
-void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr, unsigned char* dest)
+void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr)
 {
     for (int index = gWindowIndexes[currentWindow->id] + 1; index < gWindowsLength; index++) {
         if (*rectListNodePtr == nullptr) {
@@ -998,14 +998,6 @@ void _win_clip(Window* currentWindow, RectListNode** rectListNodePtr, unsigned c
                     _rect_clip_list(rectListNodePtr, &(window->rect));
                 }
             }
-        }
-    }
-
-    if (dest == _screen_buffer || dest == nullptr) {
-        if (cursorIsHidden() == 0) {
-            Rect rect;
-            mouseGetRect(&rect);
-            _rect_clip_list(rectListNodePtr, &rect);
         }
     }
 }
@@ -1030,14 +1022,16 @@ void win_drag(int win)
     windowShow(win);
 
     Rect rect = window->rect;
+    const auto generation = pointerCancellationGeneration();
 
-    tickersExecute();
-
+    dispatchPlatformEvents();
+    runUpdateCallbacks();
     _mouse_info();
 
-    while ((mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-
+    constexpr auto heldButtons = MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonRepeat;
+    while (pointerCancellationGeneration() == generation
+        && (mouseGetEvent() & heldButtons) != MouseButtonEvent::None
+        && (mouseGetEvent() & MouseButtonEvent::AnyButtonUp) == MouseButtonEvent::None) {
         if (dx != 0 || dy != 0) {
             window->rect.left += dx;
             window->rect.top += dy;
@@ -1060,8 +1054,8 @@ void win_drag(int win)
         }
 
         mouseGetPosition(&mx, &my);
-        tickersExecute();
-
+        dispatchPlatformEvents();
+        runUpdateCallbacks();
         _mouse_info();
 
         dx = mx;
@@ -1087,22 +1081,13 @@ void win_drag(int win)
             dy = _scr_size.bottom - window->rect.bottom;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if ((window->flags & WINDOW_MANAGED) != 0 && (window->rect.left & 3) != 0) {
         // move to a x-pixel multiple of 4
         _win_move(window->id, window->rect.left, window->rect.top);
     }
-}
-
-// 0x4D77F8
-void _win_get_mouse_buf(unsigned char* dest)
-{
-    Rect rect;
-    mouseGetRect(&rect);
-    _refresh_all(&rect, dest);
 }
 
 // 0x4D7814
@@ -1115,14 +1100,6 @@ void _refresh_all(Rect* rect, unsigned char* dest)
     }
 
     _doing_refresh_all = 0;
-
-    if (dest == nullptr) {
-        if (!cursorIsHidden()) {
-            if (_mouse_in(rect->left, rect->top, rect->right, rect->bottom)) {
-                mouseShowCursor();
-            }
-        }
-    }
 }
 
 // 0x4D7888
@@ -1241,6 +1218,23 @@ int windowGetRect(int win, Rect* rect)
     return 0;
 }
 
+void cancelWindowButtonPresses()
+{
+    for (int index = 1; index < gWindowsLength; ++index) {
+        Window* window = gWindows[index];
+        Button* button = window->clickedButton;
+        if (button == nullptr) {
+            continue;
+        }
+
+        window->clickedButton = nullptr;
+        auto* image = button == window->hoveredButton && button->hoverImage != nullptr
+            ? button->hoverImage
+            : button->normalImage;
+        _button_draw(button, window, image, true, nullptr, false);
+    }
+}
+
 // 0x4D797C
 int _win_check_all_buttons()
 {
@@ -1284,18 +1278,23 @@ Button* buttonGetButton(int btn, Window** windowPtr)
 }
 
 // 0x4D7A34
-int _GNW_check_menu_bars(int input)
+InputEvent windowDispatchMenu(InputEvent input)
 {
+    if (input.source == InputSource::Pointer) {
+        return input;
+    }
     if (!gWindowSystemInitialized) {
-        return -1;
+        return {};
     }
 
     for (int index = gWindowsLength - 1; index >= 1; index--) {
         Window* window = gWindows[index];
         if (window->menuBar != nullptr) {
             for (int pulldownIndex = 0; pulldownIndex < window->menuBar->pulldownsLength; pulldownIndex++) {
-                if (input == window->menuBar->pulldowns[pulldownIndex].keyCode) {
-                    input = _GNW_process_menu(window->menuBar, pulldownIndex);
+                if (input.code == window->menuBar->pulldowns[pulldownIndex].keyCode) {
+                    input.code = _GNW_process_menu(window->menuBar, pulldownIndex);
+                    input.source = InputSource::Widget;
+                    input.keyboard.reset();
                     break;
                 }
             }
@@ -2333,7 +2332,7 @@ int buttonDisable(int btn)
 
         if (button == window->hoveredButton) {
             if (window->hoveredButton->mouseExitEventCode != -1) {
-                enqueueInputEvent(window->hoveredButton->mouseExitEventCode);
+                inputSystem.postWidget(window->hoveredButton->mouseExitEventCode);
             }
 
             window->hoveredButton = nullptr;
@@ -2391,7 +2390,7 @@ int _win_set_button_rest_state(int btn, bool checked, int flags)
 
         if (keyCode != -1) {
             if ((flags & 0x01) != 0) {
-                enqueueInputEvent(keyCode);
+                inputSystem.postWidget(keyCode);
             }
         }
     }
@@ -2629,11 +2628,11 @@ int _win_button_press_and_release(int btn)
         button->leftMouseDownProc(btn, button->leftMouseDownEventCode);
 
         if ((button->flags & BUTTON_FLAG_CALLBACK_PRESERVES_EVENT) != BUTTON_FLAG_NONE) {
-            enqueueInputEvent(button->leftMouseDownEventCode);
+            inputSystem.postWidget(button->leftMouseDownEventCode);
         }
     } else {
         if (button->leftMouseDownEventCode != -1) {
-            enqueueInputEvent(button->leftMouseDownEventCode);
+            inputSystem.postWidget(button->leftMouseDownEventCode);
         }
     }
 
@@ -2643,11 +2642,11 @@ int _win_button_press_and_release(int btn)
         button->leftMouseUpProc(btn, button->leftMouseUpEventCode);
 
         if ((button->flags & BUTTON_FLAG_CALLBACK_PRESERVES_EVENT) != BUTTON_FLAG_NONE) {
-            enqueueInputEvent(button->leftMouseUpEventCode);
+            inputSystem.postWidget(button->leftMouseUpEventCode);
         }
     } else {
         if (button->leftMouseUpEventCode != -1) {
-            enqueueInputEvent(button->leftMouseUpEventCode);
+            inputSystem.postWidget(button->leftMouseUpEventCode);
         }
     }
 

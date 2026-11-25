@@ -20,10 +20,11 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
+#include "input_system.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "loadsave.h"
 #include "map.h"
 #include "memory.h"
@@ -36,6 +37,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -2698,7 +2700,7 @@ static void _combat_begin(Object* attacker)
 {
     _combat_turn_running = 0;
     animationStop();
-    tickersRemove(_dude_fidget);
+    removeUpdateCallback(_dude_fidget);
     _combat_elev = gElevation;
 
     if (!isInCombat()) {
@@ -2879,7 +2881,7 @@ static void _combat_over()
         }
     }
 
-    tickersAdd(_dude_fidget);
+    addUpdateCallback(_dude_fidget);
 
     for (int index = 0; index < _list_noncom + _list_com; index++) {
         Object* critter = _combat_list[index];
@@ -3249,12 +3251,9 @@ static void combatAttemptEnd()
 void _combat_turn_run()
 {
     while (_combat_turn_running > 0) {
-        sharedFpsLimiter.mark();
+        runBackgroundUpdate();
 
-        _process_bk();
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -3264,8 +3263,6 @@ static int _combat_input()
     ScopedGameMode gm(GameMode::kPlayerTurn);
 
     while ((gCombatState & COMBAT_STATE_PLAYER_TURN) != 0) {
-        sharedFpsLimiter.mark();
-
         if ((gCombatState & COMBAT_STATE_EXIT_REQUESTED) != 0) {
             break;
         }
@@ -3282,7 +3279,7 @@ static int _combat_input()
             break;
         }
 
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // SFALL: CombatLoopHook.
         sfall_gl_scr_process_main();
@@ -3307,8 +3304,7 @@ static int _combat_input()
             gameHandleKey(keyCode, true);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     GameQuitRequest gameQuitRequest = _game_user_wants_to_quit;
@@ -3360,8 +3356,8 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
         obj->data.critter.combat.results &= ~DAM_LOSE_TURN;
     } else {
         if (obj == gDude) {
-            keyboardReset();
-            inputEventQueueReset();
+            inputSystem.resetKeyboard();
+            inputSystem.reset();
             interfaceRenderArmorClass(true);
 
             // SFALL: The turn resumed after loading keeps the free move
@@ -3530,10 +3526,8 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId ba
 static void waitForGorisAnimation(Object* critter)
 {
     while (animationIsBusy(critter)) {
-        sharedFpsLimiter.mark();
-        _process_bk();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        runBackgroundUpdate();
+        scheduler.finishUpdate();
     }
 }
 
@@ -5874,9 +5868,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
 
     int eventCode;
     while (true) {
-        sharedFpsLimiter.mark();
-
-        eventCode = inputGetInput();
+        eventCode = beginInteractiveUpdate().code;
 
         if (eventCode == KEY_ESCAPE) {
             break;
@@ -5890,8 +5882,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _gmouse_enable();

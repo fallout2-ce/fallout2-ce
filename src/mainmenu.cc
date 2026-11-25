@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "content_config.h"
 #include "debug.h"
@@ -13,13 +14,16 @@
 #include "font_manager.h"
 #include "game.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "geometry.h"
-#include "input.h"
-#include "kb.h"
+#include "input_system.h"
+#include "key_codes.h"
 #include "mouse.h"
 #include "palette.h"
 #include "platform_compat.h"
+#include "platform_input.h"
 #include "preferences.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -761,7 +765,7 @@ WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags o
 void mainMenuShowSubscreen(bool animate)
 {
     if (mainMenuWindowIsOverlayActive()) {
-        renderPresent();
+        scheduler.presentNow();
         mainMenuWindowShowOverlayDim();
     } else if (animate) {
         colorPaletteLoad("color.pal");
@@ -812,9 +816,7 @@ MainMenuOption mainMenuWindowHandleEvents()
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_EXIT;
         }
 
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         for (MainMenuButton buttonIndex = MAIN_MENU_BUTTON_FIRST; buttonIndex < MAIN_MENU_BUTTON_COUNT; buttonIndex++) {
             int buttonKeyCode = mainMenuButtonSpecs[buttonIndex].keyCode;
@@ -824,7 +826,7 @@ MainMenuOption mainMenuWindowHandleEvents()
 
                 rc = mainMenuButtonSpecs[buttonIndex].returnValue;
 
-                if (buttonIndex == MAIN_MENU_BUTTON_CREDITS && (gPressedPhysicalKeys[SDL_SCANCODE_RSHIFT] != KEY_STATE_UP || gPressedPhysicalKeys[SDL_SCANCODE_LSHIFT] != KEY_STATE_UP)) {
+                if (buttonIndex == MAIN_MENU_BUTTON_CREDITS && (inputSystem.isKeyDown(SDL_SCANCODE_RSHIFT) || inputSystem.isKeyDown(SDL_SCANCODE_LSHIFT))) {
                     rc = MainMenuOption::Quotes;
                 }
 
@@ -866,8 +868,7 @@ MainMenuOption mainMenuWindowHandleEvents()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (oldCursorIsHidden) {
@@ -971,13 +972,13 @@ static void mainMenuSetOverlayDimIntensity(int intensity)
     int height = windowGetHeight(gMainMenuWindow);
     _dark_trans_buf_to_buf(mainMenuOverlayDimmedBackup.data(), width, height, width, gMainMenuWindowBuffer, 0, 0, width, intensity);
     windowRefresh(gMainMenuWindow);
-    renderPresent();
+    scheduler.presentNow();
 }
 
 static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)
 {
     for (int step = 0; step < mainMenuOverlayDimAnimationSteps; step++) {
-        _GNW95_process_message();
+        dispatchPlatformEvents();
         _mouse_info();
 
         int intensity = startIntensity + (endIntensity - startIntensity) * (step + 1) / mainMenuOverlayDimAnimationSteps;

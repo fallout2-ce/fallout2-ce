@@ -8,6 +8,7 @@
 
 #include "art.h"
 #include "automap.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "config.h"
@@ -22,10 +23,10 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "geometry.h"
-#include "input.h"
 #include "interface.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "map.h"
 #include "memory.h"
 #include "message.h"
@@ -35,6 +36,8 @@
 #include "platform_compat.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
+#include "screenshot.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_script_hooks.h"
@@ -543,9 +546,7 @@ int pipboyOpen(PipboyOpenIntent intent)
     gPipboyLastEventTimestamp = getTicks();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         if (intent == PipboyOpenIntent::Rest) {
             keyCode = 504;
@@ -606,8 +607,7 @@ int pipboyOpen(PipboyOpenIntent intent)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     touch_set_touchscreen_mode(false);
@@ -1160,7 +1160,7 @@ static void pipboyWindowHandleStatus(int userInput)
                 PIPBOY_WINDOW_WIDTH);
             pipboyWindowRenderQuestLocationList(userInput); // Keep for location choice highlighting
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
-            inputPauseForTocks(200);
+            waitForGameTime(200, runBackgroundUpdate);
             _stat_flag = 1;
         } else {
             if (gPipboyWindowHolodisksCount != 0 && gPipboyWindowHolodisksCount >= userInput && gPipboyMouseX > 429) {
@@ -1188,7 +1188,7 @@ static void pipboyWindowHandleStatus(int userInput)
 
                 pipboyWindowRenderHolodiskList(userInput); // Keep for holodisk choice highlighting
                 windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
-                inputPauseForTocks(200);
+                waitForGameTime(200, runBackgroundUpdate);
                 pipboyWindowDestroyButtons();
                 pipboyRenderHolodiskText();
                 pipboyPlayHolodiskAudio();
@@ -2327,8 +2327,6 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
 
             double minuteRestIterations = minuteRestAnimationDuration * 20.0;
             for (int iteration = 0; iteration < (int)minuteRestIterations; iteration++) {
-                sharedFpsLimiter.mark();
-
                 if (rc) {
                     break;
                 }
@@ -2356,7 +2354,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
                 }
 
                 if (!rc) {
-                    int keyCode = inputGetInput();
+                    int keyCode = beginInteractiveUpdate().code;
                     if (keyCode == KEY_ESCAPE) {
                         rc = scriptHooks_RestTimer(lastRestTimerGameTime, REST_EVENT_TYPE_CANCEL, hours, minutes);
                     } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
@@ -2372,8 +2370,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
                     delay_ms(uiDelayMs - elapsedMs);
                 }
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (!rc) {
@@ -2392,8 +2389,6 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
             double hourRestIterations = (totalRestAnimationDuration - minuteRestAnimationDuration) * 20.0;
 
             for (int hour = 0; hour < (int)hourRestIterations; hour++) {
-                sharedFpsLimiter.mark();
-
                 if (rc) {
                     break;
                 }
@@ -2402,7 +2397,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
 
                 unsigned int projectedGameTime = (unsigned int)((double)hour / hourRestIterations * (hours * GAME_TIME_TICKS_PER_HOUR) + gameTime);
                 if (!rc) {
-                    int keyCode = inputGetInput();
+                    int keyCode = beginInteractiveUpdate().code;
                     if (keyCode == KEY_ESCAPE) {
                         rc = scriptHooks_RestTimer(lastRestTimerGameTime, REST_EVENT_TYPE_CANCEL, hours, minutes);
                     } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
@@ -2439,8 +2434,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
                     delay_ms(uiDelayMs - elapsedMs);
                 }
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (!rc) {
@@ -2655,12 +2649,10 @@ static int pipboyRenderScreensaver()
 
     int v31 = 50;
     while (true) {
-        sharedFpsLimiter.mark();
-
         unsigned int time = getTicks();
 
         mouseGetPositionInWindow(gPipboyWindow, &gPipboyMouseX, &gPipboyMouseY);
-        if (inputGetInput() != -1 || gPipboyPreviousMouseX != gPipboyMouseX || gPipboyPreviousMouseY != gPipboyMouseY) {
+        if (beginInteractiveUpdate().code != -1 || gPipboyPreviousMouseX != gPipboyMouseX || gPipboyPreviousMouseY != gPipboyMouseY) {
             break;
         }
 
@@ -2775,8 +2767,7 @@ static int pipboyRenderScreensaver()
             delay_ms(50 - (getTicks() - time));
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     blitBufferToBuffer(buf,

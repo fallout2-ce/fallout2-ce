@@ -1,36 +1,10 @@
-#ifndef FALLOUT_KB_H_
-#define FALLOUT_KB_H_
-
-#include <SDL.h>
-
-#include "dinput.h"
+#ifndef FALLOUT_KEY_CODES_H_
+#define FALLOUT_KEY_CODES_H_
 
 namespace fallout {
 
-#define KEY_STATE_UP 0
-#define KEY_STATE_DOWN 1
-#define KEY_STATE_REPEAT 2
-
-#define MODIFIER_KEY_STATE_NUM_LOCK 0x01
-#define MODIFIER_KEY_STATE_CAPS_LOCK 0x02
-#define MODIFIER_KEY_STATE_SCROLL_LOCK 0x04
-
-#define KEYBOARD_EVENT_MODIFIER_CAPS_LOCK 0x0001
-#define KEYBOARD_EVENT_MODIFIER_NUM_LOCK 0x0002
-#define KEYBOARD_EVENT_MODIFIER_SCROLL_LOCK 0x0004
-#define KEYBOARD_EVENT_MODIFIER_LEFT_SHIFT 0x0008
-#define KEYBOARD_EVENT_MODIFIER_RIGHT_SHIFT 0x0010
-#define KEYBOARD_EVENT_MODIFIER_LEFT_ALT 0x0020
-#define KEYBOARD_EVENT_MODIFIER_RIGHT_ALT 0x0040
-#define KEYBOARD_EVENT_MODIFIER_LEFT_CONTROL 0x0080
-#define KEYBOARD_EVENT_MODIFIER_RIGHT_CONTROL 0x0100
-#define KEYBOARD_EVENT_MODIFIER_ANY_SHIFT (KEYBOARD_EVENT_MODIFIER_LEFT_SHIFT | KEYBOARD_EVENT_MODIFIER_RIGHT_SHIFT)
-#define KEYBOARD_EVENT_MODIFIER_ANY_ALT (KEYBOARD_EVENT_MODIFIER_LEFT_ALT | KEYBOARD_EVENT_MODIFIER_RIGHT_ALT)
-#define KEYBOARD_EVENT_MODIFIER_ANY_CONTROL (KEYBOARD_EVENT_MODIFIER_LEFT_CONTROL | KEYBOARD_EVENT_MODIFIER_RIGHT_CONTROL)
-
-#define KEY_QUEUE_SIZE 64
-
-typedef enum Key {
+// Numeric keys expected by the original widgets, shortcuts, and scripts.
+enum Key : int {
     KEY_ESCAPE = '\x1b',
     KEY_TAB = '\x09',
     KEY_BACKSPACE = '\x08',
@@ -328,31 +302,8 @@ typedef enum Key {
 
     KEY_FIRST_INPUT_CHARACTER = KEY_SPACE,
     KEY_LAST_INPUT_CHARACTER = KEY_LOWERCASE_Z,
-} Key;
-
-typedef enum KeyboardLayout {
-    KEYBOARD_LAYOUT_QWERTY,
-    KEYBOARD_LAYOUT_FRENCH,
-    KEYBOARD_LAYOUT_GERMAN,
-    KEYBOARD_LAYOUT_ITALIAN,
-    KEYBOARD_LAYOUT_SPANISH,
-} KeyboardLayout;
-
-extern unsigned char gPressedPhysicalKeys[SDL_NUM_SCANCODES];
-extern int gKeyboardLayout;
-extern unsigned char gPressedPhysicalKeysCount;
-
-int keyboardInit();
-void keyboardFree();
-void keyboardReset();
-int _kb_getch();
-void keyboardDisable();
-void keyboardEnable();
-int keyboardIsDisabled();
-void keyboardSetLayout(int new_language);
-int keyboardGetLayout();
-void _kb_simulate_key(KeyboardData* data);
+};
 
 } // namespace fallout
 
-#endif /* FALLOUT_KB_H_ */
+#endif /* FALLOUT_KEY_CODES_H_ */

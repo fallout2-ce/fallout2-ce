@@ -8,14 +8,16 @@
 #include "game.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "graph_lib.h"
-#include "input.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "loadsave.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
 #include "preferences.h"
+#include "scheduler.h"
+#include "screenshot.h"
 #include "settings.h"
 #include "string_utils.h"
 #include "svga.h"
@@ -135,9 +137,7 @@ int showOptions()
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == KEY_ESCAPE || keyCode == OPTIONS_MENU_BUTTON_DONE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 0;
@@ -207,8 +207,7 @@ int showOptions()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     optionsWindowFree();
@@ -533,9 +532,7 @@ int showPause(bool preserveWorldState)
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         switch (keyCode) {
         case KEY_PLUS:
         case KEY_EQUAL:
@@ -555,8 +552,7 @@ int showPause(bool preserveWorldState)
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (!preserveWorldState) {

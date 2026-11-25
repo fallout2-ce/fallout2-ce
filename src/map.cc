@@ -10,6 +10,7 @@
 #include "art.h"
 #include "automap.h"
 #include "character_editor.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "content_config.h"
@@ -22,7 +23,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
 #include "light.h"
@@ -326,7 +327,7 @@ void mapInit()
     }
 
     mapNewMap();
-    tickersAdd(gameMouseRefresh);
+    addUpdateCallback(gameMouseRefresh);
     _gmouse_disable(0);
     windowShow(gIsoWindow);
 
@@ -338,7 +339,7 @@ void mapExit()
 {
     windowHide(gIsoWindow);
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
-    tickersRemove(gameMouseRefresh);
+    removeUpdateCallback(gameMouseRefresh);
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MAP, nullptr);
     if (!messageListFree(&gMapMessageList)) {
@@ -354,8 +355,8 @@ void isoEnable()
         if (!gameUiIsDisabled()) {
             _gmouse_enable();
         }
-        tickersAdd(_object_animate);
-        tickersAdd(_dude_fidget);
+        addUpdateCallback(_object_animate);
+        addUpdateCallback(_dude_fidget);
         _scr_enable_critters();
         gIsoEnabled = true;
     }
@@ -369,8 +370,8 @@ bool isoDisable()
     }
 
     _scr_disable_critters();
-    tickersRemove(_dude_fidget);
-    tickersRemove(_object_animate);
+    removeUpdateCallback(_dude_fidget);
+    removeUpdateCallback(_object_animate);
     _gmouse_disable(0);
     textObjectsDisable();
 

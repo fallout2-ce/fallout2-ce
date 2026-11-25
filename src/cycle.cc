@@ -1,7 +1,8 @@
 #include "cycle.h"
 
+#include "clock.h"
 #include "color.h"
-#include "input.h"
+#include "game_update.h"
 #include "palette.h"
 #include "settings.h"
 #include "svga.h"
@@ -125,7 +126,7 @@ void colorCycleInit()
         monitors[index] >>= 2;
     }
 
-    tickersAdd(colorCycleTicker);
+    addUpdateCallback(colorCycleTicker);
 
     gColorCycleInitialized = true;
     gColorCycleEnabled = true;
@@ -141,7 +142,7 @@ void colorCycleReset()
         last_cycle_medium = 0;
         last_cycle_fast = 0;
         last_cycle_very_fast = 0;
-        tickersAdd(colorCycleTicker);
+        addUpdateCallback(colorCycleTicker);
         gColorCycleEnabled = true;
     }
 }
@@ -150,7 +151,7 @@ void colorCycleReset()
 void colorCycleFree()
 {
     if (gColorCycleInitialized) {
-        tickersRemove(colorCycleTicker);
+        removeUpdateCallback(colorCycleTicker);
         gColorCycleInitialized = false;
         gColorCycleEnabled = false;
     }

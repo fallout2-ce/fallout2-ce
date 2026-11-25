@@ -14,8 +14,9 @@
 #include "debug.h"
 #include "game.h"
 #include "game_mouse.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "input_system.h"
+#include "key_codes.h"
 #include "map.h"
 #include "mapper/mapper.h"
 #include "mapper/mp_utils.h"
@@ -24,6 +25,7 @@
 #include "object.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -77,7 +79,7 @@ void place_entrance_hex()
     int y;
     int tile;
 
-    while (inputGetInput() != -2) {
+    while (beginInteractiveUpdate().code != -2) {
     }
 
     if ((mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
@@ -97,51 +99,48 @@ void place_entrance_hex()
 }
 
 // 0x4841C4
-void pick_region(Rect* rect)
+bool pick_region(Rect* rect)
 {
     Rect temp;
-    int x;
-    int y;
-
     gameMouseSetCursor(MOUSE_CURSOR_PLUS);
     gameMouseObjectsHide();
 
     while (true) {
-        sharedFpsLimiter.mark();
-        bool got = inputGetInput() == -2
+        bool got = beginInteractiveUpdate().code == -2
             && (mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None;
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
         if (got) break;
     }
 
-    get_input_position(&x, &y);
-    temp.left = x;
-    temp.top = y;
-    temp.right = x;
-    temp.bottom = y;
+    const auto start = inputSystem.lastPosition();
+    temp.left = start.x;
+    temp.top = start.y;
+    temp.right = start.x;
+    temp.bottom = start.y;
     *rect = temp;
 
+    const auto generation = pointerCancellationGeneration();
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
-        inputGetInput();
+        beginInteractiveUpdate();
+        if (pointerCancellationGeneration() != generation) {
+            break;
+        }
 
-        get_input_position(&x, &y);
-
-        if (x != temp.right || y != temp.bottom) {
+        const auto position = inputSystem.lastPosition();
+        if (position.x != temp.right || position.y != temp.bottom) {
             erase_rect(rect);
-            temp.right = x;
-            temp.bottom = y;
+            temp.right = position.x;
+            temp.bottom = position.y;
             sort_rect(rect, &temp);
             draw_rect(rect, COLOR_LIGHT_YELLOW);
         }
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     erase_rect(rect);
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     gameMouseObjectsShow();
+    return pointerCancellationGeneration() == generation;
 }
 
 // 0x484294
@@ -368,9 +367,7 @@ int pickHex()
     MapElevation elevation = gElevation;
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == -2) {
             MouseButtonEvent buttons = mouseGetEvent();
@@ -428,8 +425,7 @@ int pickHex()
             return -1;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -590,9 +586,7 @@ static void mp_run_placement_loop(PlaceFn place)
     _gmouse_disable(0);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int mx, my;
         mouseGetPosition(&mx, &my);
         mpMouseCheckScrolling(mx, my);
@@ -602,12 +596,11 @@ static void mp_run_placement_loop(PlaceFn place)
         if (keyCode == -2) {
             MouseButtonEvent mouseEvent = mouseGetEvent();
             if ((mouseEvent & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None) {
-                int ix, iy;
-                get_input_position(&ix, &iy);
+                const auto position = inputSystem.lastPosition();
                 if (_mouse_click_in(0, 0,
                         _scr_size.right - _scr_size.left,
                         _scr_size.bottom - _scr_size.top - 100)) {
-                    place(ix, iy);
+                    place(position.x, position.y);
                     tileWindowRefresh();
                 }
             } else if ((mouseEvent & MouseButtonEvent::RightButtonDown) != MouseButtonEvent::None) {
@@ -643,8 +636,7 @@ static void mp_run_placement_loop(PlaceFn place)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (exit) break;
     }
@@ -766,7 +758,9 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
 void copyObject(int filterType)
 {
     Rect region;
-    pick_region(&region);
+    if (!pick_region(&region)) {
+        return;
+    }
 
     // Resolve the centering tile for the region.
     int centerTile = tileFromScreenXY(region.left, region.top);
@@ -891,7 +885,9 @@ void copyTile()
     constexpr int kMaxTiles = 60;
 
     Rect region;
-    pick_region(&region);
+    if (!pick_region(&region)) {
+        return;
+    }
 
     int srcTiles[kMaxTiles];
     int srcCount = squares_in_rect(&region, gElevation, srcTiles, kMaxTiles);
@@ -947,9 +943,7 @@ void eraseObject()
     gameMouseObjectsHide();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool exit = false;
 
         if (keyCode == -2) {
@@ -1000,8 +994,7 @@ void eraseObject()
             exit = true;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (exit) break;
     }
@@ -1141,9 +1134,7 @@ void mapper_shift_map()
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool done = false;
 
         if (keyCode == -2) {
@@ -1174,8 +1165,7 @@ void mapper_shift_map()
             done = true;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (done) return;
     }

@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <string.h>
 
+#include "clock.h"
 #include "color.h"
 #include "debug.h"
 #include "draw.h"
-#include "input.h"
+#include "game_update.h"
 #include "memory.h"
 #include "object.h"
 #include "settings.h"
@@ -93,7 +94,7 @@ int textObjectsInit(unsigned char* windowBuffer, int width, int height)
     gTextObjectsWindowHeight = height;
     gTextObjectsCount = 0;
 
-    tickersAdd(textObjectsTicker);
+    addUpdateCallback(textObjectsTicker);
 
     gTextObjectsBaseDelay = (unsigned int)(settings.preferences.text_base_delay * 1000.0);
     gTextObjectsLineDelay = (unsigned int)(settings.preferences.text_line_delay * 1000.0);
@@ -117,7 +118,7 @@ int textObjectsReset()
     }
 
     gTextObjectsCount = 0;
-    tickersAdd(textObjectsTicker);
+    addUpdateCallback(textObjectsTicker);
 
     return 0;
 }
@@ -127,7 +128,7 @@ void textObjectsFree()
 {
     if (gTextObjectsInitialized) {
         textObjectsReset();
-        tickersRemove(textObjectsTicker);
+        removeUpdateCallback(textObjectsTicker);
         gTextObjectsInitialized = false;
     }
 }
@@ -289,7 +290,7 @@ int textObjectAdd(Object* object, char* string, int font, ColorWithFlags color, 
     textObjectsRemoveByOwner(object);
 
     textObject->owner = object;
-    textObject->time = _get_bk_time();
+    textObject->time = lastBackgroundUpdateTime();
 
     gTextObjects[gTextObjectsCount] = textObject;
     gTextObjectsCount++;
@@ -348,7 +349,7 @@ static void textObjectsTicker()
         TextObject* textObject = gTextObjects[index];
 
         unsigned int delay = gTextObjectsLineDelay * textObject->linesCount + gTextObjectsBaseDelay;
-        if ((textObject->flags & TextObjectFlags::MarkedForRemoval) != TextObjectFlags::None || (getTicksBetween(_get_bk_time(), textObject->time) >= delay)) {
+        if ((textObject->flags & TextObjectFlags::MarkedForRemoval) != TextObjectFlags::None || (getTicksBetween(lastBackgroundUpdateTime(), textObject->time) >= delay)) {
             tileToScreenXY(textObject->tile, &(textObject->x), &(textObject->y));
             textObject->x += textObject->sx;
             textObject->y += textObject->sy;

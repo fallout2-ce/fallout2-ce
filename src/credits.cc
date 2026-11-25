@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "art.h"
+#include "clock.h"
 #include "color.h"
 #include "cycle.h"
 #include "db.h"
@@ -12,12 +13,13 @@
 #include "delay.h"
 #include "draw.h"
 #include "game_mouse.h"
-#include "input.h"
+#include "game_update.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
 #include "palette.h"
 #include "platform_compat.h"
+#include "scheduler.h"
 #include "sound.h"
 #include "svga.h"
 #include "text_font.h"
@@ -148,9 +150,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
                                     unsigned char* dest = intermediateBuffer + windowWidth * windowHeight - windowWidth + (windowWidth - stringWidth) / 2;
                                     unsigned char* src = stringBuffer;
                                     for (int index = 0; index < lineHeight; index++) {
-                                        sharedFpsLimiter.mark();
-
-                                        if (inputGetInput() != -1) {
+                                        if (beginInteractiveUpdate().code != -1) {
                                             stop = true;
                                             break;
                                         }
@@ -180,8 +180,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
 
                                         src += windowWidth;
 
-                                        sharedFpsLimiter.throttle();
-                                        renderPresent();
+                                        scheduler.finishDiscreteUpdate();
                                     }
 
                                     if (stop) {
@@ -191,9 +190,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
 
                                 if (!stop) {
                                     for (int index = 0; index < windowHeight; index++) {
-                                        sharedFpsLimiter.mark();
-
-                                        if (inputGetInput() != -1) {
+                                        if (beginInteractiveUpdate().code != -1) {
                                             break;
                                         }
 
@@ -220,8 +217,7 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
 
                                         windowRefresh(window);
 
-                                        sharedFpsLimiter.throttle();
-                                        renderPresent();
+                                        scheduler.finishDiscreteUpdate();
                                     }
                                 }
 

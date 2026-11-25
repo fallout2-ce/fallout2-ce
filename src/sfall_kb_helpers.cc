@@ -3,10 +3,10 @@
 #include <SDL.h>
 
 #include "game.h"
+#include "input_system.h"
+#include "platform_input.h"
 #include "sfall_script_hooks.h"
-#include "svga.h"
 
-#include <deque>
 #include <unordered_map>
 
 namespace fallout {
@@ -274,7 +274,6 @@ static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
 };
 
 static std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
-static std::deque<std::pair<SDL_Scancode, bool>> syntheticKeyEvents;
 
 // Translates Sfall key code (DIK or VK constant) to SDL scancode.
 static SDL_Scancode get_scancode_from_key(int key)
@@ -311,7 +310,8 @@ bool sfall_kb_is_key_pressed(int key)
     }
 
     const Uint8* state = SDL_GetKeyboardState(nullptr);
-    return state[scancode] != 0;
+    return state[scancode] != 0
+        || (scancode == SDL_SCANCODE_LSHIFT && inputSystem.touchShiftHeld());
 }
 
 void sfall_kb_press_key(int key)
@@ -321,47 +321,7 @@ void sfall_kb_press_key(int key)
         return;
     }
 
-    SDL_Event event;
-    SDL_zero(event);
-
-    event.type = SDL_KEYDOWN;
-    event.key.timestamp = SDL_GetTicks();
-    event.key.windowID = gSdlWindow != nullptr ? SDL_GetWindowID(gSdlWindow) : 0;
-    event.key.state = SDL_PRESSED;
-    event.key.repeat = 0;
-    event.key.keysym.scancode = scancode;
-    event.key.keysym.sym = SDL_GetKeyFromScancode(scancode);
-    event.key.keysym.mod = SDL_GetModState();
-    if (SDL_PushEvent(&event) == 1) {
-        syntheticKeyEvents.emplace_back(scancode, true);
-    }
-
-    event.type = SDL_KEYUP;
-    event.key.timestamp = SDL_GetTicks();
-    event.key.state = SDL_RELEASED;
-    if (SDL_PushEvent(&event) == 1) {
-        syntheticKeyEvents.emplace_back(scancode, false);
-    }
-}
-
-bool sfall_kb_consume_synthetic_key_event(int sdlScanCode, bool pressed)
-{
-    if (syntheticKeyEvents.empty()) {
-        return false;
-    }
-
-    const auto& [expectedScanCode, expectedPressed] = syntheticKeyEvents.front();
-    if (expectedScanCode != static_cast<SDL_Scancode>(sdlScanCode) || expectedPressed != pressed) {
-        return false;
-    }
-
-    syntheticKeyEvents.pop_front();
-    return true;
-}
-
-void sfall_kb_clear_synthetic_key_events()
-{
-    syntheticKeyEvents.clear();
+    enqueueScriptKey(scancode);
 }
 
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)

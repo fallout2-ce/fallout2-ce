@@ -15,6 +15,7 @@
 #include "animation.h"
 #include "art.h"
 #include "automap.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -31,10 +32,10 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
@@ -44,6 +45,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_global_scripts.h"
@@ -3444,9 +3446,7 @@ static int wmWorldMapFunc(int a1)
     wmLastTravelTick = getTicks();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // SFALL: WorldmapLoopHook.
         sfall_gl_scr_process_worldmap();
@@ -3593,7 +3593,7 @@ static int wmWorldMapFunc(int a1)
                     mousePressed = true;
                     wmInterfaceRefresh();
                     renderFpsCounter();
-                    renderPresent();
+                    scheduler.presentNow();
                 }
             } else {
                 continue;
@@ -3749,8 +3749,7 @@ static int wmWorldMapFunc(int a1)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmInterfaceExit() == -1) {
@@ -5259,7 +5258,7 @@ static int wmInterfaceInit()
         wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm);
     }
 
-    tickersAdd(wmMouseBkProc);
+    addUpdateCallback(wmMouseBkProc);
 
     if (wmMakeTabsLabelList(&wmLabelList, &wmLabelCount) == -1) {
         return -1;
@@ -5284,7 +5283,7 @@ static int wmInterfaceExit()
     int i;
     TileInfo* tile;
 
-    tickersRemove(wmMouseBkProc);
+    removeUpdateCallback(wmMouseBkProc);
 
     _backgroundFrmImage.unlock();
 
@@ -6634,9 +6633,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
     CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
 
     for (;;) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
         }
@@ -6710,8 +6707,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmTownMapExit() == -1) {
@@ -6765,7 +6761,7 @@ static int wmTownMapInit()
         }
     }
 
-    tickersRemove(wmMouseBkProc);
+    removeUpdateCallback(wmMouseBkProc);
 
     if (wmTownMapRefresh() == -1) {
         return -1;
@@ -6838,7 +6834,7 @@ static int wmTownMapExit()
         return -1;
     }
 
-    tickersAdd(wmMouseBkProc);
+    addUpdateCallback(wmMouseBkProc);
 
     return 0;
 }
@@ -7548,8 +7544,8 @@ void wmBlinkRndEncounterIcon(bool special)
             return;
         }
 
-        renderPresent();
-        inputBlockForTocks(200);
+        scheduler.presentNow();
+        waitForGameTime(200);
     }
 
     wmGenData.encounterIconIsVisible = false;

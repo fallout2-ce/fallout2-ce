@@ -3,7 +3,6 @@
 
 #include <SDL.h>
 
-#include "fps_limiter.h"
 #include "geometry.h"
 
 namespace fallout {
@@ -17,7 +16,6 @@ extern SDL_Surface* gSdlSurface;
 extern SDL_Renderer* gSdlRenderer;
 extern SDL_Texture* gSdlTexture;
 extern SDL_Surface* gSdlTextureSurface;
-extern FpsLimiter sharedFpsLimiter;
 
 enum class WindowMode : int {
     Fullscreen = 0,
@@ -49,9 +47,13 @@ void _GNW95_zero_vid_mem();
 int screenGetWidth();
 int screenGetHeight();
 int screenGetVisibleHeight();
+int screenGetRefreshRate();
 void handleWindowSizeChanged();
+void handleWindowDisplayChanged();
+void handleRenderTargetsReset();
+void handleRenderDeviceReset();
 void renderFpsCounter();
-void renderPresent();
+void renderFrame(SDL_Point cursorPosition);
 bool screenIsExclusiveFullscreen();
 
 } // namespace fallout

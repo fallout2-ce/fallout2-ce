@@ -7,17 +7,20 @@
 
 #include "art.h"
 #include "character_editor.h"
+#include "clock.h"
 #include "color.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "geometry.h"
-#include "input.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "message.h"
 #include "mouse.h"
 #include "platform_compat.h"
+#include "platform_input.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -267,7 +270,6 @@ namespace {
                     bool firstStepDone = false;
 
                     while (1) {
-                        sharedFpsLimiter.mark();
                         unsigned int now = getTicks();
 
                         // 14.4 ticks(24 fps) = 600 ms
@@ -316,11 +318,10 @@ namespace {
                             break;
                         }
 
-                        int keyCode = inputGetInput();
+                        int keyCode = beginInteractiveUpdate().code;
                         if (keyCode == btnId::scrollUp || keyCode == btnId::scrollDown) break;
 
-                        renderPresent();
-                        sharedFpsLimiter.throttle();
+                        scheduler.finishUpdate();
                     }
                 } else {
                     if (onStep) onStep();
@@ -470,7 +471,7 @@ int runTextInput(int win, std::string& text, int maxLength, int x, int y,
     };
 
     redrawText();
-    renderPresent();
+    scheduler.presentNow();
 
     beginTextInput();
 
@@ -478,9 +479,7 @@ int runTextInput(int win, std::string& text, int maxLength, int x, int y,
     int rc = 1;
 
     while (rc == 1) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode != -1 && (keyCode & 0x80000000) == 0) {
             keyPressCount++;
         }
@@ -522,8 +521,7 @@ int runTextInput(int win, std::string& text, int maxLength, int x, int y,
             windowRefresh(win);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     endTextInput();
@@ -873,9 +871,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         if (keyCode == btnId::done) { // First button (Done/Yes)
             rc = 1;
@@ -898,8 +894,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             rc = 1;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (initializedButtons) {
@@ -961,10 +956,8 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int tick = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
@@ -1031,8 +1024,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
             rc = 1;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     messageListFree(&ctx.messageList);
@@ -1124,10 +1116,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int tick = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int scrollDirection = file::scrollDirection::none;
         int scrollCounter = 0;
         bool isScrolling = false;
@@ -1249,8 +1239,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             rc = 1;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     endTextInput();

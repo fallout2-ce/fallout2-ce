@@ -11,6 +11,7 @@
 #include "automap.h"
 #include "ce_save_game.h"
 #include "character_editor.h"
+#include "clock.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -27,11 +28,11 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_update.h"
 #include "geometry.h"
-#include "input.h"
 #include "interface.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
@@ -47,6 +48,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -656,10 +658,8 @@ int lsgSaveGame(LoadSaveMode mode)
     int rc = -1;
     int doubleClickSlot = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int tick = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         bool selectionChanged = false;
         LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
 
@@ -821,8 +821,6 @@ int lsgSaveGame(LoadSaveMode mode)
             unsigned int lastStepTick = 0;
 
             do {
-                sharedFpsLimiter.mark();
-
                 unsigned int now = getTicks();
                 bool shouldStep = false;
 
@@ -907,11 +905,10 @@ int lsgSaveGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
 
                 renderFpsCounter();
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode != 505 && keyCode != 503);
         } else {
             if (selectionChanged) {
@@ -1057,8 +1054,7 @@ int lsgSaveGame(LoadSaveMode mode)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
@@ -1203,7 +1199,7 @@ int lsgLoadGame(LoadSaveMode mode)
     if (_GetSlotList() == -1) {
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         windowRefresh(gLoadSaveWindow);
-        renderPresent();
+        scheduler.presentNow();
         if (mode == LoadSaveMode::FromMainMenu) {
             mainMenuShowSubscreen(true);
         }
@@ -1258,7 +1254,7 @@ int lsgLoadGame(LoadSaveMode mode)
     _ShowSlotList(LoadSaveWindowType::LoadGame);
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
-    renderPresent();
+    scheduler.presentNow();
     if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
@@ -1268,10 +1264,8 @@ int lsgLoadGame(LoadSaveMode mode)
 
     int doubleClickSlot = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int time = getTicks();
-        int keyCode = devAutoloadPending ? kLoadSaveActionDone : inputGetInput();
+        int keyCode = devAutoloadPending ? kLoadSaveActionDone : beginInteractiveUpdate().code;
         devAutoloadPending = false;
         bool selectionChanged = false;
         LoadSaveScrollDirection scrollDirection = LoadSaveScrollDirection::None;
@@ -1424,8 +1418,6 @@ int lsgLoadGame(LoadSaveMode mode)
             unsigned int lastStepTick = 0;
 
             do {
-                sharedFpsLimiter.mark();
-
                 unsigned int now = getTicks();
                 bool shouldStep = false;
 
@@ -1509,11 +1501,10 @@ int lsgLoadGame(LoadSaveMode mode)
                     windowRefresh(gLoadSaveWindow);
                 }
 
-                keyCode = inputGetInput();
+                keyCode = beginInteractiveUpdate().code;
 
                 renderFpsCounter();
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode != 505 && keyCode != 503);
         } else {
             if (selectionChanged) {
@@ -1590,8 +1581,7 @@ int lsgLoadGame(LoadSaveMode mode)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (mode == LoadSaveMode::FromMainMenu && rc == 0) {

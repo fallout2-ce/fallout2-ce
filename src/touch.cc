@@ -297,6 +297,17 @@ bool touch_get_gesture(Gesture* gesture)
     return true;
 }
 
+void cancelTouchGestures()
+{
+    for (auto& touch : touches) {
+        touch = {};
+    }
+    currentGesture = {};
+    while (!gestureEventsQueue.empty()) {
+        gestureEventsQueue.pop();
+    }
+}
+
 void touch_set_touchscreen_mode(const bool value)
 {
     gUseTouchscreenMode = value;

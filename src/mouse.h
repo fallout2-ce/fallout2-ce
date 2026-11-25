@@ -2,7 +2,11 @@
 #define FALLOUT_MOUSE_H_
 
 #include "geometry.h"
-#include "window_defs.h"
+
+struct SDL_Surface;
+struct SDL_Palette;
+struct SDL_Point;
+struct SDL_Rect;
 
 namespace fallout {
 
@@ -53,19 +57,22 @@ inline MouseButtonEvent& operator|=(MouseButtonEvent& lhs, MouseButtonEvent rhs)
 #define MOUSE_SENSITIVITY_MIN 0.25
 #define MOUSE_SENSITIVITY_MAX 2.5
 
-extern WindowDrawingProc2* _mouse_blit_trans;
-extern WINDOWDRAWINGPROC _mouse_blit;
-
 int mouseInit();
 void mouseFree();
 int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int hotX, int hotY, char transparentColor);
 void mouseShowCursor();
 void mouseHideCursor();
+SDL_Point mouseGetCursorDrawPosition();
+SDL_Point mouseSampleCursorDrawPosition();
+SDL_Rect mouseGetCursorDrawBounds(SDL_Point position);
+void mouseDrawCursor(SDL_Surface& target, const SDL_Palette& palette, SDL_Point position);
+void mouseDrawScreenshotCursor(unsigned char* pixels, int width, int height);
+void cancelMouseInput();
+// Changes when any in-progress pointer interaction is canceled.
+unsigned int pointerCancellationGeneration();
 void _mouse_info();
 void _mouse_simulate_input(int delta_x, int delta_y, MouseButtonEvent buttons);
-bool _mouse_in(int left, int top, int right, int bottom);
 bool _mouse_click_in(int left, int top, int right, int bottom);
-void mouseGetRect(Rect* rect);
 void mouseGetPosition(int* out_x, int* out_y);
 void _mouse_set_position(int x, int y);
 MouseButtonEvent mouseGetEvent();

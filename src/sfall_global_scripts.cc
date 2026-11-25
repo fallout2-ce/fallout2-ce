@@ -8,7 +8,7 @@
 
 #include "animation.h"
 #include "db.h"
-#include "input.h"
+#include "game_update.h"
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_config.h"
@@ -134,12 +134,12 @@ void sfall_gl_scr_exec_start_proc()
         }
     }
 
-    tickersAdd(sfall_gl_scr_process_input);
+    addUpdateCallback(sfall_gl_scr_process_input);
 }
 
 void sfall_gl_scr_remove_all()
 {
-    tickersRemove(sfall_gl_scr_process_input);
+    removeUpdateCallback(sfall_gl_scr_process_input);
 
     for (auto& scr : state->globalScripts) {
         scriptDetachedContextUnregister(scr.program);

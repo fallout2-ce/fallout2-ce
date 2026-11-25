@@ -8,6 +8,7 @@
 #include "art.h"
 #include "autorun.h"
 #include "character_selector.h"
+#include "clock.h"
 #include "color.h"
 #include "content_config.h"
 #include "credits.h"
@@ -21,8 +22,9 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "game_speed.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "input_system.h"
+#include "key_codes.h"
 #include "loadsave.h"
 #include "mainmenu.h"
 #include "map.h"
@@ -33,6 +35,7 @@
 #include "preferences.h"
 #include "proto.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -109,7 +112,7 @@ int falloutMain(int argc, char** argv)
     if (mainMenuWindowInit() == 0) {
         bool done = false;
         while (!done) {
-            keyboardReset();
+            inputSystem.resetKeyboard();
             if (!backgoundSoundIsPlaying()) {
                 _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GameSoundReadLimitMode::LimitBefore);
             }
@@ -420,9 +423,7 @@ static void mainLoop()
     scriptsEnable();
 
     while (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
 
         // SFALL: MainLoopHook.
         sfall_gl_scr_process_main();
@@ -444,8 +445,7 @@ static void mainLoop()
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     scriptsDisable();
@@ -508,16 +508,13 @@ static void showDeath()
             }
 
             while (mouseGetEvent() != MouseButtonEvent::None) {
-                sharedFpsLimiter.mark();
+                beginInteractiveUpdate();
 
-                inputGetInput();
-
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
-            keyboardReset();
-            inputEventQueueReset();
+            inputSystem.resetKeyboard();
+            inputSystem.reset();
 
             colorPaletteLoad("art\\intrface\\death.pal");
             Rect deathFrameBounds = blitBuffer2DCenteredAspectFit(backgroundFrmImage.getBuffer(),
@@ -569,17 +566,14 @@ static void showDeath()
 
             // SFALL: Fix the playback of the speech sound file for the death
             // screen.
-            inputBlockForTocks(100);
+            waitForGameTime(100);
 
             unsigned int time = getTicks();
             int keyCode;
             do {
-                sharedFpsLimiter.mark();
+                keyCode = beginInteractiveUpdate().code;
 
-                keyCode = inputGetInput();
-
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode == -1 && !_main_death_voiceover_done && getTicksSince(time) < delay);
 
             speechSetEndCallback(nullptr);
@@ -587,16 +581,13 @@ static void showDeath()
             speechDelete();
 
             while (mouseGetEvent() != MouseButtonEvent::None) {
-                sharedFpsLimiter.mark();
+                beginInteractiveUpdate();
 
-                inputGetInput();
-
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (keyCode == -1) {
-                inputPauseForTocks(500);
+                waitForGameTime(500, runBackgroundUpdate);
             }
 
             paletteFadeTo(gPaletteBlack);

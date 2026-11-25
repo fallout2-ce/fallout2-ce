@@ -5,12 +5,15 @@
 
 #include <algorithm>
 
+#include "clock.h"
 #include "color.h"
 #include "draw.h"
-#include "input.h"
-#include "kb.h"
+#include "game_update.h"
+#include "input_system.h"
+#include "key_codes.h"
 #include "memory.h"
 #include "mouse.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -333,9 +336,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
     // Relative to `scrollOffset`.
     int previousSelectedItemIndex = -1;
     while (1) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         int mouseX;
         int mouseY;
         mouseGetPosition(&mouseX, &mouseY);
@@ -539,8 +540,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -683,9 +683,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
     // NOTE: Original code is slightly different but does the same thing.
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
-        switch (inputGetInput()) {
+        switch (beginInteractiveUpdate().code) {
         case KEY_ESCAPE:
         case 'n':
         case 'N':
@@ -699,8 +697,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -756,10 +753,8 @@ int _win_msg(const char* string, int x, int y, ColorWithFlags color)
 
     windowRefresh(win);
 
-    while (inputGetInput() != KEY_ESCAPE) {
-        sharedFpsLimiter.mark();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+    while (beginInteractiveUpdate().code != KEY_ESCAPE) {
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -1133,9 +1128,7 @@ int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFl
     // decremented in the loop body when key is not handled.
     bool isFirstKey = true;
     for (; cursorPos <= maxLength; cursorPos++) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
+        int keyCode = beginInteractiveUpdate().code;
         if (keyCode != -1) {
             if (keyCode == KEY_ESCAPE) {
                 dest[cursorPos] = '\0';
@@ -1210,8 +1203,7 @@ int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFl
             cursorPos--;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     dest[cursorPos] = '\0';
@@ -1370,9 +1362,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
     mouseGetPosition(&mx1, &my1);
 
     while (1) {
-        sharedFpsLimiter.mark();
-
-        input = inputGetInput();
+        input = beginInteractiveUpdate().code;
         if (input != -1) {
             break;
         }
@@ -1386,13 +1376,10 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     while (1) {
-        sharedFpsLimiter.mark();
-
         mouseGetPosition(&mx2, &my2);
 
         if (input == -2) {
@@ -1501,10 +1488,9 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             windowRefresh(win);
         }
 
-        input = inputGetInput();
+        input = beginInteractiveUpdate().code;
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (menuBar != nullptr) {
@@ -1536,7 +1522,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorW
             static_cast<Color>(color2 & COLOR_LAST));
         windowRefreshRect(menuBar->win, &(pulldown->rect));
 
-        renderPresent();
+        scheduler.presentNow();
     }
 
     windowDestroy(win);
@@ -1576,8 +1562,8 @@ int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex)
     } while (keyCode < -1);
 
     if (keyCode != -1) {
-        inputEventQueueReset();
-        enqueueInputEvent(keyCode);
+        inputSystem.flushCommands();
+        inputSystem.postWidget(keyCode);
         keyCode = menuBar->pulldowns[pulldownIndex].keyCode;
     }
 
@@ -1651,9 +1637,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
 
     bool done = false;
     while (cursorPos <= max_chars_wcursor && !done) {
-        sharedFpsLimiter.mark();
-
-        int input = inputGetInput();
+        int input = beginInteractiveUpdate().code;
         if (input == KEY_RETURN) {
             done = true;
         } else if (input == KEY_BACKSPACE) {
@@ -1710,8 +1694,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     *value = atoi(string);
@@ -1754,7 +1737,7 @@ void _GNW_intr_init()
 // 0x4DD4A4
 void _GNW_intr_exit()
 {
-    tickersRemove(tm_watch_msgs);
+    removeUpdateCallback(tm_watch_msgs);
     while (tm_kill != -1) {
         tm_kill_msg();
     }
@@ -1819,7 +1802,7 @@ int win_timed_msg(const char* msg, ColorWithFlags color)
         tm_add = 0;
     } else if (tm_kill == -1) {
         tm_kill = 0;
-        tickersAdd(tm_watch_msgs);
+        addUpdateCallback(tm_watch_msgs);
     }
 
     return 0;
@@ -1858,7 +1841,7 @@ void tm_kill_msg()
         if (tm_kill == tm_add) {
             tm_add = 0;
             tm_kill = -1;
-            tickersRemove(tm_watch_msgs);
+            removeUpdateCallback(tm_watch_msgs);
         }
     }
 }
@@ -1900,7 +1883,7 @@ void tm_kill_out_of_order(int queue_index)
     if (tm_add == tm_kill) {
         tm_add = 0;
         tm_kill = -1;
-        tickersRemove(tm_watch_msgs);
+        removeUpdateCallback(tm_watch_msgs);
     }
 }
 

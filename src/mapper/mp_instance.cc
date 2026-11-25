@@ -11,16 +11,17 @@
 #include "debug.h"
 #include "draw.h"
 #include "game_sound.h"
-#include "input.h"
+#include "game_update.h"
 #include "inventory.h"
 #include "item.h"
-#include "kb.h"
+#include "key_codes.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
 #include "memory.h"
 #include "object.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -271,9 +272,7 @@ static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType)
     windowRefresh(win);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             // Write back only the flags that were visible (prevents stomping unrelated bits)
@@ -311,8 +310,7 @@ static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -395,9 +393,7 @@ static int protoInstItemEdit(Object* obj)
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -419,8 +415,7 @@ static int protoInstItemEdit(Object* obj)
             windowRefresh(winId);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -535,14 +530,12 @@ static int protoInstCritterEdit(Object* obj)
 
         bool needRedraw = false;
         while (true) {
-            sharedFpsLimiter.mark();
-
             if (needRedraw) {
                 windowRefresh(winId);
                 needRedraw = false;
             }
 
-            int key = inputGetInput();
+            int key = beginInteractiveUpdate().code;
 
             if (key == KEY_ESCAPE || key == KEY_RETURN) {
                 windowDestroy(winId);
@@ -601,8 +594,7 @@ static int protoInstCritterEdit(Object* obj)
                 break;
             }
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     }
 }
@@ -620,9 +612,7 @@ static int protoInstWallEdit(Object* obj)
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -637,8 +627,7 @@ static int protoInstWallEdit(Object* obj)
             selectNewScript(obj, SCRIPT_TYPE_ITEM, winId, 194);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -655,9 +644,7 @@ static int protoInstTileEdit(Object* obj)
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -670,8 +657,7 @@ static int protoInstTileEdit(Object* obj)
             if (applyLightEdit(obj)) windowRefresh(winId);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -688,9 +674,7 @@ static void protoInstMiscEdit(Object* obj)
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -703,8 +687,7 @@ static void protoInstMiscEdit(Object* obj)
             if (applyLightEdit(obj)) windowRefresh(winId);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -743,9 +726,7 @@ static int protoInstSceneryEdit(Object* obj)
     windowRefresh(winId);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
+        int key = beginInteractiveUpdate().code;
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             windowDestroy(winId);
@@ -796,8 +777,7 @@ static int protoInstSceneryEdit(Object* obj)
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
