@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cstddef>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -71,7 +72,7 @@ namespace {
         {
             _columns = (width + kBlockSize - 1) / kBlockSize;
             _rows = (height + kBlockSize - 1) / kBlockSize;
-            _blocks.assign(_columns * _rows, Block {});
+            _blocks.assign(static_cast<std::size_t>(_columns) * _rows, Block {});
         }
 
         void invalidate(const SDL_Surface& scene, const SDL_Rect& rect)
@@ -86,7 +87,7 @@ namespace {
             const int lastRow = (clipped.y + clipped.h - 1) / kBlockSize;
             for (int row = clipped.y / kBlockSize; row <= lastRow; ++row) {
                 for (int column = clipped.x / kBlockSize; column <= lastColumn; ++column) {
-                    _blocks[row * _columns + column].valid = false;
+                    blockAt(row, column).valid = false;
                 }
             }
         }
@@ -97,7 +98,7 @@ namespace {
             const auto* pixels = static_cast<const unsigned char*>(scene.pixels);
             for (int row = 0; row < _rows; ++row) {
                 for (int column = 0; column < _columns; ++column) {
-                    auto& block = _blocks[row * _columns + column];
+                    auto& block = blockAt(row, column);
                     const int x = column * kBlockSize;
                     const int y = row * kBlockSize;
                     const SDL_Rect rect { x, y, std::min(kBlockSize, scene.w - x), std::min(kBlockSize, scene.h - y) };
@@ -129,6 +130,11 @@ namespace {
             PaletteIndices indices {};
             bool valid = false;
         };
+
+        Block& blockAt(int row, int column)
+        {
+            return _blocks[static_cast<std::size_t>(row) * _columns + column];
+        }
 
         int _columns = 0;
         int _rows = 0;
