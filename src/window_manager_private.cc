@@ -7,11 +7,11 @@
 
 #include "color.h"
 #include "draw.h"
-#include "scheduler.h"
 #include "input.h"
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"

@@ -70,14 +70,14 @@ void Scheduler::presentNow()
 
 void Scheduler::presentFor(std::chrono::milliseconds duration)
 {
-    presentUntil(Clock::now() + duration, { });
+    presentUntil(Clock::now() + duration, {});
 }
 
 void Scheduler::presentUntil(Clock::time_point end, const std::function<void()>& draw)
 {
     const auto period = presentationPeriod();
     auto now = Clock::now();
-    if (_nextPresent == Clock::time_point { }) {
+    if (_nextPresent == Clock::time_point {}) {
         _nextPresent = now;
     }
 

@@ -6,7 +6,6 @@
 
 #include "color.h"
 #include "draw.h"
-#include "scheduler.h"
 #include "geometry.h"
 #include "input.h"
 #include "kb.h"
@@ -14,6 +13,7 @@
 #include "map_defs.h"
 #include "map_edge.h"
 #include "mouse.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"

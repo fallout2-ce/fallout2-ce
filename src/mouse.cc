@@ -576,7 +576,7 @@ void _mouse_info()
     int y;
     MouseButtonEvent buttons = MouseButtonEvent::None;
 
-    MouseData mouseData { };
+    MouseData mouseData {};
     if (mouseDeviceGetData(&mouseData)) {
         x = mouseData.x;
         y = mouseData.y;

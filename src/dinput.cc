@@ -17,7 +17,7 @@ static int mouseWindowMappingWindowHeight = 0;
 static int mouseWindowMappingLogicalWidth = 0;
 static int mouseWindowMappingLogicalHeight = 0;
 static bool mouseRelativeMode = false;
-static SDL_Point sampledMotion { };
+static SDL_Point sampledMotion {};
 static unsigned int motionGeneration = 0;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
@@ -62,7 +62,7 @@ unsigned int mouseDeviceMotionGeneration()
 
 bool mouseDeviceInitMode()
 {
-    sampledMotion = { };
+    sampledMotion = {};
     ++motionGeneration;
     // "Relative mode" means cursor position is owned by the application, and we move based on mouse deltas
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
@@ -112,7 +112,7 @@ bool mouseDeviceGetData(MouseData* mouseState)
     if (!mouseDeviceUsesRelativeMode()) {
         mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
     } else {
-        const auto motion = std::exchange(sampledMotion, SDL_Point { });
+        const auto motion = std::exchange(sampledMotion, SDL_Point {});
         mouseState->x += motion.x;
         mouseState->y += motion.y;
     }

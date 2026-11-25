@@ -13,7 +13,7 @@ public:
     // Legacy loops call this after one update. Present while waiting for the
     // next update to become due. Time-based effects can supply a callback
     // to prepare the scene immediately before each presentation.
-    void finishUpdate(const std::function<void()>& draw = { });
+    void finishUpdate(const std::function<void()>& draw = {});
 
     // Pace an authored sequence that presents one frame per update.
     void finishDiscreteUpdate();
@@ -32,8 +32,8 @@ private:
     Clock::time_point updateDeadline();
     void presentUntil(Clock::time_point end, const std::function<void()>& draw);
 
-    Clock::time_point _nextUpdate { };
-    Clock::time_point _nextPresent { };
+    Clock::time_point _nextUpdate {};
+    Clock::time_point _nextPresent {};
 };
 
 extern Scheduler scheduler;
