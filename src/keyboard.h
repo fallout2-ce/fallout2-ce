@@ -34,10 +34,10 @@ private:
     void toggleLock(SDL_Scancode key);
     std::uint16_t modifiers() const;
 
-    std::array<Press, SDL_NUM_SCANCODES> _presses{};
-    std::array<SDL_Scancode, SDL_NUM_SCANCODES> _active{};
+    std::array<Press, SDL_NUM_SCANCODES> _presses {};
+    std::array<SDL_Scancode, SDL_NUM_SCANCODES> _active {};
     // An effective key stays held for as long as any physical key owns it.
-    std::array<unsigned int, SDL_NUM_SCANCODES> _owners{};
+    std::array<unsigned int, SDL_NUM_SCANCODES> _owners {};
     std::size_t _count = 0;
     InputQueue<KeyboardEvent, 63> _events;
     std::uint16_t _locks = 0;

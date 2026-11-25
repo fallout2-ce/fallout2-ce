@@ -54,7 +54,7 @@ public:
 private:
     Event& at(std::size_t index) { return _events[(_head + index) % Capacity]; }
 
-    std::array<Event, Capacity> _events{};
+    std::array<Event, Capacity> _events {};
     std::size_t _head = 0;
     std::size_t _size = 0;
 };

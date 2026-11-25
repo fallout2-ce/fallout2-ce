@@ -24,96 +24,96 @@ namespace fallout {
 
 namespace {
 
-Uint32 scriptTapType;
+    Uint32 scriptTapType;
 
-using VideoHandler = void (*)();
+    using VideoHandler = void (*)();
 
-VideoHandler videoHandler(const SDL_Event& event)
-{
-    if (event.type == SDL_RENDER_TARGETS_RESET) {
-        return handleRenderTargetsReset;
-    }
-    if (event.type == SDL_RENDER_DEVICE_RESET) {
-        return handleRenderDeviceReset;
-    }
-    if (event.type == SDL_WINDOWEVENT) {
+    VideoHandler videoHandler(const SDL_Event& event)
+    {
+        if (event.type == SDL_RENDER_TARGETS_RESET) {
+            return handleRenderTargetsReset;
+        }
+        if (event.type == SDL_RENDER_DEVICE_RESET) {
+            return handleRenderDeviceReset;
+        }
+        if (event.type == SDL_WINDOWEVENT) {
 #if SDL_VERSION_ATLEAST(2, 0, 18)
-        if (event.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) {
+            if (event.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) {
 #else
-        if (event.window.event == SDL_WINDOWEVENT_MOVED) {
+            if (event.window.event == SDL_WINDOWEVENT_MOVED) {
 #endif
-            return handleWindowDisplayChanged;
+                return handleWindowDisplayChanged;
+            }
         }
+        return nullptr;
     }
-    return nullptr;
-}
 
-int SDLCALL collectVideoEvents(void* data, SDL_Event* event)
-{
-    if (const auto handle = videoHandler(*event)) {
-        static_cast<std::vector<VideoHandler>*>(data)->push_back(handle);
-        return 0;
+    int SDLCALL collectVideoEvents(void* data, SDL_Event* event)
+    {
+        if (const auto handle = videoHandler(*event)) {
+            static_cast<std::vector<VideoHandler>*>(data)->push_back(handle);
+            return 0;
+        }
+        return 1;
     }
-    return 1;
-}
 
-void syncNativeLocks(Keyboard& keyboard)
-{
-    const auto native = SDL_GetModState();
-    std::uint16_t locks = 0;
-    if (native & KMOD_CAPS) {
-        locks |= KeyModifier::CapsLock;
-    }
-    if (native & KMOD_NUM) {
-        locks |= KeyModifier::NumLock;
-    }
+    void syncNativeLocks(Keyboard& keyboard)
+    {
+        const auto native = SDL_GetModState();
+        std::uint16_t locks = 0;
+        if (native & KMOD_CAPS) {
+            locks |= KeyModifier::CapsLock;
+        }
+        if (native & KMOD_NUM) {
+            locks |= KeyModifier::NumLock;
+        }
 #if SDL_VERSION_ATLEAST(2, 0, 18)
-    if (native & KMOD_SCROLL) {
-        locks |= KeyModifier::ScrollLock;
-    }
+        if (native & KMOD_SCROLL) {
+            locks |= KeyModifier::ScrollLock;
+        }
 #endif
-    keyboard.syncLocks(locks);
-}
-
-void notifyMouseHook(const SDL_MouseButtonEvent& event)
-{
-    // sfall numbers right before middle, unlike SDL.
-    constexpr int hookButtons[] = { -1, 0, 2, 1, 3, 4, 5, 6, 7 };
-    if (gGameLoaded && event.button >= SDL_BUTTON_LEFT && event.button < std::size(hookButtons)) {
-        ScriptHookCall(HOOK_MOUSECLICK, 0, { event.type == SDL_MOUSEBUTTONDOWN ? 1 : 0, hookButtons[event.button] }).call();
+        keyboard.syncLocks(locks);
     }
-}
 
-void dispatchWindowEvent(Keyboard& keyboard, const SDL_WindowEvent& event)
-{
-    switch (event.event) {
-    case SDL_WINDOWEVENT_EXPOSED:
-        windowRefreshAll(&_scr_size);
-        break;
-    case SDL_WINDOWEVENT_SIZE_CHANGED:
-        handleWindowSizeChanged();
-        break;
-    case SDL_WINDOWEVENT_FOCUS_GAINED:
-        syncNativeLocks(keyboard);
-        gProgramIsActive = true;
-        if (gSdlRenderer == nullptr) {
-            handleRenderDeviceReset();
+    void notifyMouseHook(const SDL_MouseButtonEvent& event)
+    {
+        // sfall numbers right before middle, unlike SDL.
+        constexpr int hookButtons[] = { -1, 0, 2, 1, 3, 4, 5, 6, 7 };
+        if (gGameLoaded && event.button >= SDL_BUTTON_LEFT && event.button < std::size(hookButtons)) {
+            ScriptHookCall(HOOK_MOUSECLICK, 0, { event.type == SDL_MOUSEBUTTONDOWN ? 1 : 0, hookButtons[event.button] }).call();
         }
-        movieHandleFocusGained();
-        if (!mouseDeviceInitMode()) {
-            debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());
-        }
-        windowRefreshAll(&_scr_size);
-        audioEngineResume();
-        break;
-    case SDL_WINDOWEVENT_FOCUS_LOST:
-        gProgramIsActive = false;
-        inputSystem.suspend();
-        mouseDeviceInitMode();
-        audioEnginePause();
-        break;
     }
-}
+
+    void dispatchWindowEvent(Keyboard& keyboard, const SDL_WindowEvent& event)
+    {
+        switch (event.event) {
+        case SDL_WINDOWEVENT_EXPOSED:
+            windowRefreshAll(&_scr_size);
+            break;
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
+            handleWindowSizeChanged();
+            break;
+        case SDL_WINDOWEVENT_FOCUS_GAINED:
+            syncNativeLocks(keyboard);
+            gProgramIsActive = true;
+            if (gSdlRenderer == nullptr) {
+                handleRenderDeviceReset();
+            }
+            movieHandleFocusGained();
+            if (!mouseDeviceInitMode()) {
+                debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());
+            }
+            windowRefreshAll(&_scr_size);
+            audioEngineResume();
+            break;
+        case SDL_WINDOWEVENT_FOCUS_LOST:
+            gProgramIsActive = false;
+            inputSystem.suspend();
+            mouseDeviceInitMode();
+            audioEnginePause();
+            break;
+        }
+    }
 
 } // namespace
 
@@ -135,7 +135,7 @@ void enqueueScriptKey(SDL_Scancode key)
 {
     if (scriptTapType != 0) {
         // A tap is ordered with native events and has no held-key release.
-        SDL_Event event{};
+        SDL_Event event {};
         event.type = scriptTapType;
         event.user.code = key;
         SDL_PushEvent(&event);

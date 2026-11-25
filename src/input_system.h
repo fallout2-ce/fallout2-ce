@@ -54,7 +54,7 @@ private:
     int _leftShiftHookOverride = -1;
     InputQueue<InputEvent, 40> _commands;
     std::optional<InputEvent> _pointerEdge;
-    Point _lastPosition{ -1, -1 };
+    Point _lastPosition { -1, -1 };
 };
 
 extern InputSystem inputSystem;

@@ -6,9 +6,9 @@
 
 #include "color.h"
 #include "draw.h"
-#include "platform_compat.h"
 #include "memory.h"
 #include "mouse.h"
+#include "platform_compat.h"
 #include "svga.h"
 #include "window_manager.h"
 

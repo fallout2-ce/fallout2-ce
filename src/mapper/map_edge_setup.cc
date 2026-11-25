@@ -6,8 +6,8 @@
 
 #include "color.h"
 #include "draw.h"
-#include "geometry.h"
 #include "game_update.h"
+#include "geometry.h"
 #include "key_codes.h"
 #include "map.h"
 #include "map_defs.h"

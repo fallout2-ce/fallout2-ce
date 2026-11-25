@@ -4,37 +4,37 @@ namespace fallout {
 
 namespace {
 
-constexpr std::uint32_t kRepeatDelay = 500;
-constexpr std::uint32_t kRepeatInterval = 80;
+    constexpr std::uint32_t kRepeatDelay = 500;
+    constexpr std::uint32_t kRepeatInterval = 80;
 
-bool valid(SDL_Scancode key)
-{
-    return key > SDL_SCANCODE_UNKNOWN && key < SDL_NUM_SCANCODES;
-}
-
-SDL_Scancode canonicalScancode(SDL_Scancode key)
-{
-    return key == SDL_SCANCODE_KP_PERIOD ? SDL_SCANCODE_KP_DECIMAL : key;
-}
-
-KeyModifier lockFor(SDL_Scancode key)
-{
-    switch (key) {
-    case SDL_SCANCODE_CAPSLOCK:
-        return KeyModifier::CapsLock;
-    case SDL_SCANCODE_NUMLOCKCLEAR:
-        return KeyModifier::NumLock;
-    case SDL_SCANCODE_SCROLLLOCK:
-        return KeyModifier::ScrollLock;
-    default:
-        return static_cast<KeyModifier>(0);
+    bool valid(SDL_Scancode key)
+    {
+        return key > SDL_SCANCODE_UNKNOWN && key < SDL_NUM_SCANCODES;
     }
-}
 
-bool repeats(SDL_Scancode key)
-{
-    return lockFor(key) == 0 && (key < SDL_SCANCODE_LCTRL || key > SDL_SCANCODE_RGUI);
-}
+    SDL_Scancode canonicalScancode(SDL_Scancode key)
+    {
+        return key == SDL_SCANCODE_KP_PERIOD ? SDL_SCANCODE_KP_DECIMAL : key;
+    }
+
+    KeyModifier lockFor(SDL_Scancode key)
+    {
+        switch (key) {
+        case SDL_SCANCODE_CAPSLOCK:
+            return KeyModifier::CapsLock;
+        case SDL_SCANCODE_NUMLOCKCLEAR:
+            return KeyModifier::NumLock;
+        case SDL_SCANCODE_SCROLLLOCK:
+            return KeyModifier::ScrollLock;
+        default:
+            return static_cast<KeyModifier>(0);
+        }
+    }
+
+    bool repeats(SDL_Scancode key)
+    {
+        return lockFor(key) == 0 && (key < SDL_SCANCODE_LCTRL || key > SDL_SCANCODE_RGUI);
+    }
 
 } // namespace
 

@@ -18,7 +18,7 @@ enum class InputSource {
 
 struct InputEvent {
     int code = -1;
-    Point position{ -1, -1 };
+    Point position { -1, -1 };
     InputSource source = InputSource::None;
     std::optional<KeyboardEvent> keyboard;
 };

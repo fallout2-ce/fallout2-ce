@@ -93,7 +93,7 @@ void InputSystem::sample()
     if (_commands.empty() && (mouseGetEvent() & (MouseButtonEvent::AnyButtonDown | MouseButtonEvent::AnyButtonUp)) != MouseButtonEvent::None) {
         Point position;
         mouseGetPosition(&position.x, &position.y);
-        _pointerEdge = InputEvent{ -2, position, InputSource::Pointer, std::nullopt };
+        _pointerEdge = InputEvent { -2, position, InputSource::Pointer, std::nullopt };
     }
 }
 
@@ -168,7 +168,7 @@ void InputSystem::cancelKeyboard(bool releaseNative)
 {
     const bool wasShiftHeld = leftShiftHookHeld();
     // Snapshot and clear first so a nested update cannot release these twice.
-    const auto held = releaseNative ? std::exchange(_nativeHookKeys, { }) : decltype(_nativeHookKeys) { };
+    const auto held = releaseNative ? std::exchange(_nativeHookKeys, {}) : decltype(_nativeHookKeys) {};
     _keyboard.clear();
     _commands.discardIf([](const InputEvent& event) {
         return event.source == InputSource::Keyboard;
