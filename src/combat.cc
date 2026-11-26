@@ -3422,13 +3422,15 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
                 }
 
                 if (_combat_input() == -1) {
-                    gameUiDisable(1);
-                    gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
-                    obj->data.critter.combat.damageLastTurn = 0;
-                    interfaceBarEndButtonsRenderRedLights();
-                    _combat_outline_off();
-                    interfaceRenderActionPoints(-1, -1);
-                    interfaceRenderArmorClass(true);
+                    if (_combat_end_due_to_load == 0) {
+                        gameUiDisable(1);
+                        gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
+                        obj->data.critter.combat.damageLastTurn = 0;
+                        interfaceBarEndButtonsRenderRedLights();
+                        _combat_outline_off();
+                        interfaceRenderActionPoints(-1, -1);
+                        interfaceRenderArmorClass(true);
+                    }
                     _combat_free_move = 0;
                     return -1;
                 }
