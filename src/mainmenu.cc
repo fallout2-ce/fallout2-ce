@@ -17,6 +17,7 @@
 #include "input.h"
 #include "kb.h"
 #include "mouse.h"
+#include "object.h"
 #include "palette.h"
 #include "platform_compat.h"
 #include "preferences.h"

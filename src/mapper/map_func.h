@@ -2,6 +2,7 @@
 #define FALLOUT_MAPPER_MAP_FUNC_H_
 
 #include "art.h"
+#include "enums.h"
 #include "geometry.h"
 #include "obj_types.h"
 

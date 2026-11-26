@@ -26,6 +26,7 @@
 #include "interface.h"
 #include "item.h"
 #include "kb.h"
+#include "map.h"
 #include "map_edge.h"
 #include "mouse.h"
 #include "object.h"

@@ -1,8 +1,8 @@
 #ifndef COMBAT_DEFS_H
 #define COMBAT_DEFS_H
 
+#include "enums.h"
 #include "obj_types.h"
-#include "stat_defs.h"
 
 #define EXPLOSION_TARGET_COUNT (6)
 

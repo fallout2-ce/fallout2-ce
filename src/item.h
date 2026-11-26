@@ -3,20 +3,15 @@
 
 #include <vector>
 
-#include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
-#include "combat_defs.h"
 #include "db.h"
+#include "enums.h"
 #include "obj_types.h"
-#include "perk_defs.h"
 #include "proto_instance.h"
 #include "proto_types.h"
-#include "skill_defs.h"
 
 namespace fallout {
-
-enum class RemoveInventoryObjectHookReason;
 
 enum AttackType : int {
     ATTACK_TYPE_INVALID = -1,

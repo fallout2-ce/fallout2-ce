@@ -3,9 +3,9 @@
 
 #include "art.h"
 #include "db.h"
+#include "enums.h"
 #include "obj_types.h"
 #include "proto_types.h"
-#include "random.h"
 #include "stat_defs.h"
 
 namespace fallout {

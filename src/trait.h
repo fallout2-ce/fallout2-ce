@@ -3,9 +3,7 @@
 
 #include "art.h"
 #include "db.h"
-#include "skill_defs.h"
-#include "stat_defs.h"
-#include "trait_defs.h"
+#include "enums.h"
 
 namespace fallout {
 

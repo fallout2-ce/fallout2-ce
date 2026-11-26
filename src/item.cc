@@ -16,7 +16,9 @@
 #include "debug.h"
 #include "display_monitor.h"
 #include "game.h"
+#include "game_vars.h"
 #include "interface.h"
+#include "interpreter_extra.h"
 #include "inventory.h"
 #include "light.h"
 #include "map.h"
@@ -38,6 +40,7 @@
 #include "string_utils.h"
 #include "tile.h"
 #include "trait.h"
+#include "trait_defs.h"
 
 namespace fallout {
 

@@ -3,8 +3,8 @@
 
 #include <vector>
 
+#include "enums.h"
 #include "geometry.h"
-#include "map_defs.h"
 
 namespace fallout {
 

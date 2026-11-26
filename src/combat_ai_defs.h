@@ -1,8 +1,6 @@
 #ifndef COMBAT_AI_DEFS_H
 #define COMBAT_AI_DEFS_H
 
-#include "obj_types.h"
-
 namespace fallout {
 
 enum AreaAttackMode : int {

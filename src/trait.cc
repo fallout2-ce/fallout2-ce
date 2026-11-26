@@ -15,6 +15,7 @@
 #include "sfall_config.h"
 #include "skill.h"
 #include "stat.h"
+#include "trait_defs.h"
 
 #include <string>
 

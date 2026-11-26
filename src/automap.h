@@ -2,8 +2,8 @@
 #define AUTOMAP_H
 
 #include "db.h"
+#include "enums.h"
 #include "map_defs.h"
-#include "worldmap.h"
 
 namespace fallout {
 

@@ -18,6 +18,7 @@
 #include "game.h"
 #include "game_dialog.h"
 #include "game_sound.h"
+#include "game_vars.h"
 #include "geometry.h"
 #include "interface.h"
 #include "interpreter_extra.h"

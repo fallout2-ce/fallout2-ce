@@ -21,6 +21,7 @@
 #include "game_dialog.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_vars.h"
 #include "geometry.h"
 #include "interface.h"
 #include "inventory.h"
@@ -49,6 +50,7 @@
 #include "text_object.h"
 #include "tile.h"
 #include "trait.h"
+#include "trait_defs.h"
 #include "worldmap.h"
 
 namespace fallout {

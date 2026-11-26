@@ -1,7 +1,7 @@
 #ifndef FALLOUT_MAINMENU_H_
 #define FALLOUT_MAINMENU_H_
 
-#include "window_manager.h"
+#include "enums.h"
 
 namespace fallout {
 

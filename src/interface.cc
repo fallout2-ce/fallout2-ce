@@ -26,6 +26,7 @@
 #include "inventory.h"
 #include "item.h"
 #include "kb.h"
+#include "map.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"

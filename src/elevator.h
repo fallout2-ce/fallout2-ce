@@ -1,7 +1,7 @@
 #ifndef ELEVATOR_H
 #define ELEVATOR_H
 
-#include "worldmap.h"
+#include "enums.h"
 
 namespace fallout {
 

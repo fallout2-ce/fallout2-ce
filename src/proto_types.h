@@ -4,12 +4,10 @@
 #include <cassert>
 #include <type_traits>
 
-#include "art_defs.h"
+#include "enums.h"
 #include "obj_types.h"
-#include "perk_defs.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
-#include "worldmap.h"
 
 namespace fallout {
 

@@ -12,6 +12,7 @@
 #include "input.h"
 #include "kb.h"
 #include "loadsave.h"
+#include "map.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"

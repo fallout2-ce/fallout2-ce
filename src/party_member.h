@@ -3,13 +3,11 @@
 
 #include <vector>
 
-#include "combat_ai_defs.h"
 #include "config.h"
 #include "db.h"
+#include "enums.h"
 #include "obj_types.h"
 #include "proto_types.h"
-#include "scripts.h"
-#include "skill_defs.h"
 
 namespace fallout {
 

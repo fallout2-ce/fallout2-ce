@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "input.h"
+#include "map.h"
 #include "memory.h"
 #include "object.h"
 #include "settings.h"

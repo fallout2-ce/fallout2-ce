@@ -1,9 +1,8 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include "combat_defs.h"
 #include "db.h"
-#include "inventory.h"
+#include "enums.h"
 #include "obj_types.h"
 
 namespace fallout {

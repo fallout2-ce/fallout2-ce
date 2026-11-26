@@ -2,12 +2,10 @@
 #define FALLOUT_MAPPER_MP_PROTO_H_
 
 #include "art.h"
-#include "obj_types.h"
+#include "enums.h"
 #include "proto_types.h"
 
 namespace fallout {
-
-class Object;
 
 union Proto;
 typedef FrmId (*protoChooseFidCallback)(Proto* proto);

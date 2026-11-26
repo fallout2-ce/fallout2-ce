@@ -1,9 +1,9 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include "enums.h"
 #include "geometry.h"
 #include "map.h"
-#include "map_defs.h"
 #include "obj_types.h"
 
 namespace fallout {
