@@ -295,6 +295,7 @@ struct QolSettings {
     bool party_loot_and_barter = false;
     bool fast_ammo_load = true;
     bool move_landing_marker = true;
+    bool separate_npc_skill_limits = true;
 };
 
 struct MapperSettings {

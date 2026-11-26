@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <assert.h>
 
 #include "actions.h"
@@ -37,7 +38,6 @@
 
 namespace fallout {
 
-#define SKILLS_MAX_USES_PER_DAY (3)
 #define SKILLS_MAX_COST_LEVEL (512)
 #define SKILLS_MIN_RAW_POINTS (-128)
 #define SKILLS_MIN_VALUE (-999)
@@ -65,8 +65,12 @@ static void skillsLoadCustomConfig();
 static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key);
 static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key);
 static int skillGetCost(Skill skill, int skillValue);
-static int skillGetFreeUsageSlot(Skill skill);
 static int skill_use_slot_clear();
+
+// 0x4ABE44 -- unused
+// static int skillGetFreeUsageSlot(Skill skill);
+// 0x4ABEB8 -- unused
+// int skillUpdateLastUse(Skill skill)
 
 // Damage flags which can be repaired using "Repair" skill.
 //
@@ -151,8 +155,209 @@ int _gStealCount = 0;
 // 0x51D438 gStealSize
 int _gStealSize = 0;
 
-// 0x667F98 timesSkillUsed
-static int _timesSkillUsed[SKILL_COUNT][SKILLS_MAX_USES_PER_DAY];
+bool SkillUsageSlots::isTimestampActive(int timestamp, unsigned int now)
+{
+    if (timestamp == 0) {
+        return false;
+    }
+
+    int hoursSinceUse = (now - static_cast<unsigned int>(timestamp)) / GAME_TIME_TICKS_PER_HOUR;
+    return hoursSinceUse <= 24;
+}
+
+std::optional<size_t> SkillUsageSlots::findFreeUsageSlot(unsigned int now) const
+{
+    for (size_t slot = 0; slot < _data.size(); slot++) {
+        if (_data[slot] == 0) {
+            return slot;
+        }
+    }
+
+    int hoursSinceLastUsage = (now - static_cast<unsigned int>(_data.front())) / GAME_TIME_TICKS_PER_HOUR;
+    if (hoursSinceLastUsage <= 24) {
+        return std::nullopt;
+    }
+
+    return _data.size() - 1;
+}
+
+bool SkillUsageSlots::hasFreeUsageSlot(unsigned int now) const
+{
+    return findFreeUsageSlot(now).has_value();
+}
+
+bool SkillUsageSlots::recordUse(unsigned int now)
+{
+    auto slotOpt = findFreeUsageSlot(now);
+    if (!slotOpt.has_value()) {
+        return false;
+    }
+
+    auto slot = slotOpt.value();
+
+    if (_data[slot] != 0) {
+        std::move(_data.begin() + 1, _data.begin() + slot + 1, _data.begin());
+    }
+
+    _data[slot] = static_cast<int>(now);
+    return true;
+}
+
+bool SkillUsageSlots::hasActiveTimestamp(unsigned int now) const
+{
+    for (int timestamp : _data) {
+        if (isTimestampActive(timestamp, now)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SkillUsageSlots::hasAnyTimestamp() const
+{
+    for (int timestamp : _data) {
+        if (timestamp != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+PlayerSkillUsage playerSkillUsage;
+CritterSkillUsage critterSkillUsage;
+
+bool CritterSkillUsage::hasFreeSlot(int pid, Skill skill) const
+{
+    auto index = dailyLimitedSkillIndex(skill);
+    if (!index) {
+        return true;
+    }
+
+    auto it = _tables.find(pid);
+    if (it == _tables.end()) {
+        return true;
+    }
+
+    return it->second[*index].hasFreeUsageSlot(gameTimeGetTime());
+}
+
+bool CritterSkillUsage::recordUse(int pid, Skill skill)
+{
+    auto index = dailyLimitedSkillIndex(skill);
+    if (!index) {
+        return false;
+    }
+
+    CritterSkillUsageTable& table = _tables[pid];
+    return table[*index].recordUse(gameTimeGetTime());
+}
+
+void CritterSkillUsage::pruneExpired()
+{
+    unsigned int now = gameTimeGetTime();
+
+    for (auto it = _tables.begin(); it != _tables.end();) {
+        bool hasActiveSlot = false;
+        for (SkillUsageSlots& slots : it->second) {
+            if (slots.hasActiveTimestamp(now)) {
+                hasActiveSlot = true;
+            } else {
+                slots.clear();
+            }
+        }
+
+        if (hasActiveSlot) {
+            ++it;
+        } else {
+            it = _tables.erase(it);
+        }
+    }
+}
+
+void CritterSkillUsage::importTables(TableMap&& tables)
+{
+    for (auto it = tables.begin(); it != tables.end();) {
+        bool hasTimestamp = false;
+        for (const SkillUsageSlots& slots : it->second) {
+            if (slots.hasAnyTimestamp()) {
+                hasTimestamp = true;
+                break;
+            }
+        }
+
+        if (hasTimestamp) {
+            ++it;
+        } else {
+            it = tables.erase(it);
+        }
+    }
+
+    _tables = std::move(tables);
+}
+
+void CritterSkillUsage::clear()
+{
+    _tables.clear();
+}
+
+std::optional<size_t> PlayerSkillUsage::findFreeSlot(Skill skill) const
+{
+    return _slots[skill].findFreeUsageSlot(gameTimeGetTime());
+}
+
+bool PlayerSkillUsage::hasFreeSlot(Skill skill) const
+{
+    if (!isDailyLimitedSkill(skill)) {
+        return true;
+    }
+
+    return _slots[skill].hasFreeUsageSlot(gameTimeGetTime());
+}
+
+bool PlayerSkillUsage::recordUse(Skill skill)
+{
+    return _slots[skill].recordUse(gameTimeGetTime());
+}
+
+void PlayerSkillUsage::clear()
+{
+    for (SkillUsageSlots& slots : _slots) {
+        slots.clear();
+    }
+}
+
+int PlayerSkillUsage::save(File* stream) const
+{
+    return fileWriteInt32List(stream, const_cast<int*>(_slots.front().data()), SKILL_COUNT * kSkillMaxUsesPerDay);
+}
+
+int PlayerSkillUsage::load(File* stream)
+{
+    return fileReadInt32List(stream, _slots.front().data(), SKILL_COUNT * kSkillMaxUsesPerDay);
+}
+
+static bool shouldSelectPlayerSkill(const Object* critter)
+{
+    return critter == nullptr || critter == gDude || !settings.qol.separate_npc_skill_limits;
+}
+
+static bool skillHasFreeUsageSlot(const Object* critter, Skill skill)
+{
+    if (!isDailyLimitedSkill(skill)) {
+        return true;
+    }
+
+    return shouldSelectPlayerSkill(critter)
+        ? playerSkillUsage.hasFreeSlot(skill)
+        : critterSkillUsage.hasFreeSlot(critter->pid, skill);
+}
+
+static bool skillRecordUse(const Object* critter, Skill skill)
+{
+    return shouldSelectPlayerSkill(critter)
+        ? playerSkillUsage.recordUse(skill)
+        : critterSkillUsage.recordUse(critter->pid, skill);
+}
 
 // 0x668070 tag_skill
 static Skill gTaggedSkills[NUM_TAGGED_SKILLS];
@@ -870,7 +1075,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
 
     switch (skill) {
     case SKILL_FIRST_AID:
-        if (skillGetFreeUsageSlot(SKILL_FIRST_AID) == -1) {
+        if (!skillHasFreeUsageSlot(obj, SKILL_FIRST_AID)) {
             // 590: You've taxed your ability with that skill. Wait a while.
             // 591: You're too tired.
             // 592: The strain might kill you.
@@ -925,7 +1130,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
 
                 target->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
 
-                skillUpdateLastUse(SKILL_FIRST_AID);
+                skillRecordUse(obj, SKILL_FIRST_AID);
 
                 successCount = 1;
 
@@ -971,7 +1176,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
 
         break;
     case SKILL_DOCTOR:
-        if (skillGetFreeUsageSlot(SKILL_DOCTOR) == -1) {
+        if (!skillHasFreeUsageSlot(obj, SKILL_DOCTOR)) {
             // 590: You've taxed your ability with that skill. Wait a while.
             // 591: You're too tired.
             // 592: The strain might kill you.
@@ -1027,7 +1232,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                             // 521: You heal the %s.
                             prefix.num = (target == gDude ? 520 : 521);
 
-                            skillUpdateLastUse(SKILL_DOCTOR);
+                            skillRecordUse(obj, SKILL_DOCTOR);
 
                             successCount = 1;
                             skillUseSlotAdded = 1;
@@ -1077,7 +1282,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                 }
 
                 if (!skillUseSlotAdded) {
-                    skillUpdateLastUse(SKILL_DOCTOR);
+                    skillRecordUse(obj, SKILL_DOCTOR);
                 }
 
                 target->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
@@ -1161,7 +1366,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
             return -1;
         }
 
-        if (skillGetFreeUsageSlot(SKILL_REPAIR) == -1) {
+        if (!skillHasFreeUsageSlot(obj, SKILL_REPAIR)) {
             // 590: You've taxed your ability with that skill. Wait a while.
             // 591: You're too tired.
             // 592: The strain might kill you.
@@ -1212,7 +1417,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                         // 520: You heal your %s.
                         // 521: You heal the %s.
                         prefix.num = (target == gDude ? 520 : 521);
-                        skillUpdateLastUse(SKILL_REPAIR);
+                        skillRecordUse(obj, SKILL_REPAIR);
 
                         successCount = 1;
                         skillUseSlotAdded = 1;
@@ -1256,7 +1461,7 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
                 }
 
                 if (!skillUseSlotAdded) {
-                    skillUpdateLastUse(SKILL_REPAIR);
+                    skillRecordUse(obj, SKILL_REPAIR);
                 }
 
                 target->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
@@ -1456,62 +1661,26 @@ int skillGetGameDifficultyModifier(Skill skill)
     }
 }
 
-// 0x4ABE44
-static int skillGetFreeUsageSlot(Skill skill)
-{
-    for (int slot = 0; slot < SKILLS_MAX_USES_PER_DAY; slot++) {
-        if (_timesSkillUsed[skill][slot] == 0) {
-            return slot;
-        }
-    }
-
-    unsigned int time = gameTimeGetTime();
-    int hoursSinceLastUsage = (time - _timesSkillUsed[skill][0]) / GAME_TIME_TICKS_PER_HOUR;
-    if (hoursSinceLastUsage <= 24) {
-        return -1;
-    }
-
-    return SKILLS_MAX_USES_PER_DAY - 1;
-}
-
-// 0x4ABEB8
-int skillUpdateLastUse(Skill skill)
-{
-    int slot = skillGetFreeUsageSlot(skill);
-    if (slot == -1) {
-        return -1;
-    }
-
-    if (_timesSkillUsed[skill][slot] != 0) {
-        for (int i = 0; i < slot; i++) {
-            _timesSkillUsed[skill][i] = _timesSkillUsed[skill][i + 1];
-        }
-    }
-
-    _timesSkillUsed[skill][slot] = gameTimeGetTime();
-
-    return 0;
-}
-
 // NOTE: Inlined.
 //
 // 0x4ABF24
 int skill_use_slot_clear()
 {
-    memset(_timesSkillUsed, 0, sizeof(_timesSkillUsed));
+    playerSkillUsage.clear();
+    critterSkillUsage.clear();
     return 0;
 }
 
 // 0x4ABF3C
 int skillsUsageSave(File* stream)
 {
-    return fileWriteInt32List(stream, (int*)_timesSkillUsed, SKILL_COUNT * SKILLS_MAX_USES_PER_DAY);
+    return playerSkillUsage.save(stream);
 }
 
 // 0x4ABF5C
 int skillsUsageLoad(File* stream)
 {
-    return fileReadInt32List(stream, (int*)_timesSkillUsed, SKILL_COUNT * SKILLS_MAX_USES_PER_DAY);
+    return playerSkillUsage.load(stream);
 }
 
 // 0x4ABF7C

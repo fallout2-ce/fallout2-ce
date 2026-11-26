@@ -401,6 +401,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(party_loot_and_barter);
     SETTING(fast_ammo_load);
     SETTING(move_landing_marker);
+    SETTING(separate_npc_skill_limits);
 #undef SECT
 
     if (isMapper) {
