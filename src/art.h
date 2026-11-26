@@ -583,6 +583,311 @@ using ArtPtr = InternalPtr<Art>;
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
+// Frm groups (work in progress — structure and naming are subject to change as UI helpers evolve)
+struct InterfaceFrameButtonGroup {
+    InterfaceFrmId up;
+    InterfaceFrmId down;
+    InterfaceFrmId disabled;
+
+    constexpr bool isValid() const
+    {
+        return up.hasFid() && down.hasFid();
+    }
+
+    constexpr bool hasDisabled() const
+    {
+        return disabled.hasFid();
+    }
+};
+
+namespace InterfaceFrameButtonGroups {
+    // Common buttons
+    inline constexpr InterfaceFrameButtonGroup BigRedButton {
+        InterfaceFrameId::BigRedButtonUp,
+        InterfaceFrameId::BigRedButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup LittleRedButton {
+        InterfaceFrameId::LittleRedButtonUp,
+        InterfaceFrameId::LittleRedButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup AutoSwitch {
+        InterfaceFrameId::AutoUp,
+        InterfaceFrameId::AutoDown,
+    };
+
+    // Main interface & HUD
+    inline constexpr InterfaceFrameButtonGroup AutomapButton {
+        InterfaceFrameId::AutomapButtonUp,
+        InterfaceFrameId::AutomapButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup OptionsButton {
+        InterfaceFrameId::OptionsButtonUp,
+        InterfaceFrameId::OptionsButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup InventoryButton {
+        InterfaceFrameId::InventoryButtonUp,
+        InterfaceFrameId::InventoryButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup InventoryButtonOut {
+        InterfaceFrameId::InventoryButtonOutUp,
+        InterfaceFrameId::InventoryButtonInUp,
+        InterfaceFrameId::InventoryButtonUpDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup InventoryButtonIn {
+        InterfaceFrameId::InventoryButtonOutDown,
+        InterfaceFrameId::InventoryButtonInDown,
+        InterfaceFrameId::InventoryButtonDownDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterButton {
+        InterfaceFrameId::CharacterButtonUp,
+        InterfaceFrameId::CharacterButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PipBoyButton {
+        InterfaceFrameId::PipBoyButtonUp,
+        InterfaceFrameId::PipBoyButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup SingleAttackBig {
+        InterfaceFrameId::SingleAttackBigUp,
+        InterfaceFrameId::SingleAttackBigDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup EndTurnButton {
+        InterfaceFrameId::EndTurnButtonUp,
+        InterfaceFrameId::EndTurnButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup EndCombatButton {
+        InterfaceFrameId::EndCombatButtonUp,
+        InterfaceFrameId::EndCombatButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup SkilldexButton {
+        InterfaceFrameId::SkilldexOffButton,
+        InterfaceFrameId::SkilldexOnButton,
+    };
+
+    // Arrows & navigation
+    inline constexpr InterfaceFrameButtonGroup LeftArrow {
+        InterfaceFrameId::LeftArrowUp,
+        InterfaceFrameId::LeftArrowDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup RightArrow {
+        InterfaceFrameId::RightArrowUp,
+        InterfaceFrameId::RightArrowDown,
+    };
+
+    // Dialog screen
+    inline constexpr InterfaceFrameButtonGroup DialogBigDownArrow {
+        InterfaceFrameId::DialogBigDownArrowUp,
+        InterfaceFrameId::DialogBigDownArrowDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogBigUpArrow {
+        InterfaceFrameId::DialogBigUpArrowUp,
+        InterfaceFrameId::DialogBigUpArrowDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogBigDoneButton {
+        InterfaceFrameId::DialogBigDoneButtonUp,
+        InterfaceFrameId::DialogBigDoneButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogDownButton {
+        InterfaceFrameId::DialogDownButtonUp,
+        InterfaceFrameId::DialogDownButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogUpButton {
+        InterfaceFrameId::DialogUpButtonUp,
+        InterfaceFrameId::DialogUpButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogRedButton {
+        InterfaceFrameId::DialogRedButtonUp,
+        InterfaceFrameId::DialogRedButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup DialogRestButton {
+        InterfaceFrameId::DialogRestButtonUp,
+        InterfaceFrameId::DialogRestButtonDown,
+    };
+
+    // Main menu & preferences
+    inline constexpr InterfaceFrameButtonGroup MainMenuButton {
+        InterfaceFrameId::MainMenuButtonUp,
+        InterfaceFrameId::MainMenuButtonDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PreferencesSlider {
+        InterfaceFrameId::PreferencesSliderOff,
+        InterfaceFrameId::PreferencesSliderOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PreferencesX {
+        InterfaceFrameId::PreferencesXOut,
+        InterfaceFrameId::PreferencesXIn,
+    };
+
+    // Pip-Boy & map
+    inline constexpr InterfaceFrameButtonGroup PipBoySleepAlarm {
+        InterfaceFrameId::PipBoySleepAlarmOut,
+        InterfaceFrameId::PipBoySleepAlarmIn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup MapElevatorButton {
+        InterfaceFrameId::MapElevatorButtonOut,
+        InterfaceFrameId::MapElevatorButtonIn,
+    };
+
+    // Inventory & loot
+    inline constexpr InterfaceFrameButtonGroup AllButton {
+        InterfaceFrameId::AllButtonUnpressed,
+        InterfaceFrameId::AllButtonPressed,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup InventoryLootAll {
+        InterfaceFrameId::InventoryLootAllUp,
+        InterfaceFrameId::InventoryLootAllDown,
+    };
+
+    // Character editor
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorAge {
+        InterfaceFrameId::CharacterEditorAgeOff,
+        InterfaceFrameId::CharacterEditorAgeOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorDownArrow {
+        InterfaceFrameId::CharacterEditorDownArrowOff,
+        InterfaceFrameId::CharacterEditorDownArrowOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorUpArrow {
+        InterfaceFrameId::CharacterEditorUpArrowOff,
+        InterfaceFrameId::CharacterEditorUpArrowOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorName {
+        InterfaceFrameId::CharacterEditorNameOff,
+        InterfaceFrameId::CharacterEditorNameOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorSex {
+        InterfaceFrameId::CharacterEditorSexOff,
+        InterfaceFrameId::CharacterEditorSexOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorFemale {
+        InterfaceFrameId::CharacterEditorFemaleOff,
+        InterfaceFrameId::CharacterEditorFemaleOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorMale {
+        InterfaceFrameId::CharacterEditorMaleOff,
+        InterfaceFrameId::CharacterEditorMaleOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorSpecialNegative {
+        InterfaceFrameId::CharacterEditorSpecialNegativeOff,
+        InterfaceFrameId::CharacterEditorSpecialNegativeOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorSpecialPositive {
+        InterfaceFrameId::CharacterEditorSpecialPositiveOff,
+        InterfaceFrameId::CharacterEditorSpecialPositiveOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorStrengthNegative {
+        InterfaceFrameId::CharacterEditorStrengthNegativeOff,
+        InterfaceFrameId::CharacterEditorStrengthNegativeOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorStrengthPositive {
+        InterfaceFrameId::CharacterEditorStrengthPositiveOff,
+        InterfaceFrameId::CharacterEditorStrengthPositiveOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorTaggedSkills {
+        InterfaceFrameId::CharacterEditorTaggedSkillsOff,
+        InterfaceFrameId::CharacterEditorTaggedSkillsOn,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup CharacterEditorOptionsButton {
+        InterfaceFrameId::OptionsButtonOff,
+        InterfaceFrameId::OptionsButtonOn,
+    };
+
+    // Party control
+    inline constexpr InterfaceFrameButtonGroup PartyAggressive {
+        InterfaceFrameId::PartyAggressiveUp,
+        InterfaceFrameId::PartyAggressiveDown,
+        InterfaceFrameId::PartyAggressiveDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyBerserk {
+        InterfaceFrameId::PartyBerserkUp,
+        InterfaceFrameId::PartyBerserkDown,
+        InterfaceFrameId::PartyBerserkDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyCoward {
+        InterfaceFrameId::PartyCowardUp,
+        InterfaceFrameId::PartyCowardDown,
+        InterfaceFrameId::PartyCowardDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyCustom {
+        InterfaceFrameId::PartyCustomUp,
+        InterfaceFrameId::PartyCustomDown,
+        InterfaceFrameId::PartyCustomDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyDefensive {
+        InterfaceFrameId::PartyDefensiveUp,
+        InterfaceFrameId::PartyDefensiveDown,
+        InterfaceFrameId::PartyDefensiveDisabled,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyAttack {
+        InterfaceFrameId::PartyAttackUp,
+        InterfaceFrameId::PartyAttackDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyBurst {
+        InterfaceFrameId::PartyBurstUp,
+        InterfaceFrameId::PartyBurstDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyChem {
+        InterfaceFrameId::PartyChemUp,
+        InterfaceFrameId::PartyChemDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyDistance {
+        InterfaceFrameId::PartyDistanceUp,
+        InterfaceFrameId::PartyDistanceDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyRun {
+        InterfaceFrameId::PartyRunUp,
+        InterfaceFrameId::PartyRunDown,
+    };
+
+    inline constexpr InterfaceFrameButtonGroup PartyWeapon {
+        InterfaceFrameId::PartyWeaponUp,
+        InterfaceFrameId::PartyWeaponDown,
+    };
+} // namespace InterfaceFrameButtonGroups
+
 // RAII helper for locking one selected frame from FID-backed or path-backed art.
 // lock/unlock use caches instead of just loading/unloading directly.
 class FrmImage {
