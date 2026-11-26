@@ -2169,6 +2169,14 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
             break;
         }
 
+        // SFALL: Skip an empty Solar Scorcher when there is not enough light
+        // to recharge it.
+        if (ProtoId(weapon) == ItemProtoTypeId::SolarScorcher
+            && ammoGetQuantity(weapon) == 0
+            && !aiHaveAmmo(critter, weapon, nullptr)) {
+            continue;
+        }
+
         if (weapon == rightHandWeapon) {
             continue;
         }
@@ -2183,7 +2191,10 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
             continue;
         }
 
-        if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) == ATTACK_TYPE_RANGED) {
+        // SFALL: Powered melee/unarmed weapons also need ammo. Throwing
+        // weapons use the weapon itself rather than a separate ammo supply.
+        if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) != ATTACK_TYPE_THROW
+            && weapon->data.item.weapon.ammoTypePid >= 0) {
             if (!weaponHasAmmoForAttack(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
                 if (!aiHaveAmmo(critter, weapon, nullptr)) {
                     continue;
