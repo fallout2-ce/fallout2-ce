@@ -3853,7 +3853,7 @@ static void objectDeallocate(Object** objectPtr)
         return;
     }
 
-    gameMouseObjectFreed(*objectPtr);
+    _gmouse_remove_item_outline(*objectPtr);
 
     internal_free(*objectPtr);
 

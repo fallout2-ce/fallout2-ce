@@ -2854,15 +2854,6 @@ void _gmouse_remove_item_outline(Object* object)
     }
 }
 
-// Drop a stale highlight pointer when the object itself is being freed.
-// Do not touch the object: outline cleanup would be a use-after-free.
-void gameMouseObjectFreed(Object* object)
-{
-    if (gGameMouseHighlightedItem == object) {
-        gGameMouseHighlightedItem = nullptr;
-    }
-}
-
 // 0x44E580 gmObjIsValidTarget
 int objectIsDoor(Object* object)
 {

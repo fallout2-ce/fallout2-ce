@@ -116,7 +116,6 @@ int gameMouseRenderActionMenuItems(int x, int y, const GameMouseActionMenuItem* 
 int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex);
 void gameMouseLoadItemHighlight();
 void _gmouse_remove_item_outline(Object* object);
-void gameMouseObjectFreed(Object* object);
 
 void gameMouseRefreshImmediately();
 void gameMouseRenderLandingMarkerLabel(unsigned char* buffer, int pitch, const Rect* rect);
