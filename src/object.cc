@@ -3853,6 +3853,8 @@ static void objectDeallocate(Object** objectPtr)
         return;
     }
 
+    gameMouseObjectFreed(*objectPtr);
+
     internal_free(*objectPtr);
 
     *objectPtr = nullptr;
