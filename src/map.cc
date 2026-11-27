@@ -792,6 +792,7 @@ int mapSetEnteringLocation(MapElevation elevation, int tile_num, Rotation rotati
 void mapNewMap()
 {
     mapEdgeFree();
+    tile_hires_stencil_reset_limits();
     mapSetElevation(ELEVATION_FIRST);
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
@@ -1032,6 +1033,7 @@ static int mapLoad(File* stream)
     if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
     }
+    tile_hires_stencil_reset_limits();
 
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
@@ -1683,8 +1685,15 @@ static void isoWindowRefreshRectGame(Rect* rect)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(gElevation, &visArea);
+    }
 
     // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
@@ -1702,7 +1711,12 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    if (!hasVisArea) {
+    // Black the corners inside visArea that the original camera never reached.
+    // mapEdgeIsLoaded() means an .edg file was read. That edge is straight, so
+    // the stencil must not paint. The old check was !hasVisArea ("no rectangle,
+    // so paint"). The stencil rectangle above already sets hasVisArea, and that
+    // check would skip these corners.
+    if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
 }
@@ -1715,8 +1729,15 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(gElevation, &visArea);
+    }
 
     // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,

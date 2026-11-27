@@ -565,6 +565,9 @@ int tileSetCenter(int tile, int flags)
         // Forced positioning (teleport, load): clamp to edge boundary.
         tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
         if (!tileIsValid(tile)) return -1;
+    } else if (!isScroll) {
+        tile = tile_hires_stencil_clamp_center(tile, gElevation);
+        if (!tileIsValid(tile)) return -1;
     }
 
     bool boundaryModsSet = false;
@@ -602,6 +605,14 @@ int tileSetCenter(int tile, int flags)
                 boundaryModsSet = true;
                 flags |= TILE_SET_CENTER_REFRESH_WINDOW;
             }
+        } else if (isScroll && tile_hires_stencil_limits_active()) {
+            if (!tile_hires_stencil_tile_in_bounds(tile)) {
+                return -1;
+            }
+            if (tile_hires_stencil_set_boundary_mods(tile)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
+            }
         } else if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
             // Object scroll-blocker only applies when EDG isn't enforcing the boundary.
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
@@ -615,16 +626,16 @@ int tileSetCenter(int tile, int flags)
 
     // Legacy global borders are for maps without EDG data. EDG maps use their
     // own boundary/clamp logic above, which can validly land on this border.
-    if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileBorderInitialized && gTileScrollBlockingEnabled) {
+    if ((!edgeActive || !mapEdgeZoneIsSelected()) && !tile_hires_stencil_limits_active() && gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
     }
 
     _tile_y = tile_y;
-    _tile_offx = mapEdgeGetTileXAlignment() + (gTileWindowWidth - 32) / 2;
+    _tile_offx = mapEdgeGetTileXAlignment() + tile_hires_stencil_get_tile_x_alignment() + (gTileWindowWidth - 32) / 2;
     _tile_x = tile_x;
-    _tile_offy = mapEdgeGetTileYAlignment() + (gTileWindowHeight - 16) / 2;
+    _tile_offy = mapEdgeGetTileYAlignment() + tile_hires_stencil_get_tile_y_alignment() + (gTileWindowHeight - 16) / 2;
 
     if (tile_x & 1) {
         _tile_x -= 1;
@@ -674,8 +685,15 @@ static void tileRefreshMapper(Rect* rect, MapElevation elevation)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(elevation, &visArea);
+    }
 
     Rect renderRect = rectToUpdate;
     bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
@@ -720,8 +738,15 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
         return;
     }
 
+    // visArea is the screen rectangle where the map may be drawn. Outside it the
+    // buffer stays black. An .edg file supplies it when one was loaded. With no
+    // file the stencil supplies the same rectangle from the area the original
+    // 640x380 camera could reach.
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+    if (!hasVisArea) {
+        hasVisArea = tile_hires_stencil_compute_visible_area(elevation, &visArea);
+    }
 
     Rect renderRect = rectToUpdate;
     bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
@@ -747,7 +772,12 @@ static void tileRefreshGame(Rect* rect, MapElevation elevation)
     tileRenderRoofsInRect(&renderRect, elevation);
     _obj_render_post_roof(&renderRect, elevation);
 
-    if (!hasVisArea) {
+    // Black the corners inside visArea that the original camera never reached.
+    // mapEdgeIsLoaded() means an .edg file was read. That edge is straight, so
+    // the stencil must not paint. The old check was !hasVisArea ("no rectangle,
+    // so paint"). The stencil rectangle above already sets hasVisArea, and that
+    // check would skip these corners.
+    if (!mapEdgeIsLoaded()) {
         tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 

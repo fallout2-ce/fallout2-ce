@@ -39,6 +39,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
+#include "tile_hires_stencil.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -1037,7 +1038,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, MouseButtonEvent mouseEvent)
     if (gameMouseClickOnInterfaceBar()) {
         return;
     }
-    if (mapEdgeIsOverClippedArea(mouseX, mouseY)) {
+    if (mapEdgeIsOverClippedArea(mouseX, mouseY) || tile_hires_stencil_is_over_clipped_area(mouseX, mouseY)) {
         return;
     }
 
@@ -2819,7 +2820,7 @@ int gameMouseHandleScrolling(int x, int y, MouseCursorType cursor)
     }
 
     if (dx == 0 && dy == 0) {
-        if (mapEdgeIsOverClippedArea(x, y)) {
+        if (mapEdgeIsOverClippedArea(x, y) || tile_hires_stencil_is_over_clipped_area(x, y)) {
             gameMouseObjectsHide();
             gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             return 0;
