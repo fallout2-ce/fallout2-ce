@@ -35,6 +35,7 @@
 #include "platform_compat.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_script_hooks.h"
@@ -543,8 +544,6 @@ int pipboyOpen(PipboyOpenIntent intent)
     gPipboyLastEventTimestamp = getTicks();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         if (intent == PipboyOpenIntent::Rest) {
@@ -606,8 +605,7 @@ int pipboyOpen(PipboyOpenIntent intent)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     touch_set_touchscreen_mode(false);
@@ -2327,8 +2325,6 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
 
             double minuteRestIterations = minuteRestAnimationDuration * 20.0;
             for (int iteration = 0; iteration < (int)minuteRestIterations; iteration++) {
-                sharedFpsLimiter.mark();
-
                 if (rc) {
                     break;
                 }
@@ -2372,8 +2368,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
                     delay_ms(uiDelayMs - elapsedMs);
                 }
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (!rc) {
@@ -2392,8 +2387,6 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
             double hourRestIterations = (totalRestAnimationDuration - minuteRestAnimationDuration) * 20.0;
 
             for (int hour = 0; hour < (int)hourRestIterations; hour++) {
-                sharedFpsLimiter.mark();
-
                 if (rc) {
                     break;
                 }
@@ -2439,8 +2432,7 @@ static bool pipboyRest(int hours, int minutes, PipboyRestDuration duration)
                     delay_ms(uiDelayMs - elapsedMs);
                 }
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (!rc) {
@@ -2655,8 +2647,6 @@ static int pipboyRenderScreensaver()
 
     int v31 = 50;
     while (true) {
-        sharedFpsLimiter.mark();
-
         unsigned int time = getTicks();
 
         mouseGetPositionInWindow(gPipboyWindow, &gPipboyMouseX, &gPipboyMouseY);
@@ -2775,8 +2765,7 @@ static int pipboyRenderScreensaver()
             delay_ms(50 - (getTicks() - time));
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     blitBufferToBuffer(buf,

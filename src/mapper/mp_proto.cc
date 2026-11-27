@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "obj_types.h"
 #include "proto.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -172,8 +173,6 @@ int proto_choose_container_flags(Proto* proto)
     windowRefresh(win);
 
     while (1) {
-        sharedFpsLimiter.mark();
-
         int input = inputGetInput();
         if (input == KEY_ESCAPE
             || input == KEY_BAR
@@ -223,8 +222,7 @@ int proto_choose_container_flags(Proto* proto)
             windowRefresh(win);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     windowDestroy(win);
@@ -776,8 +774,6 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
     protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int key = inputGetInput();
 
         if (key == KEY_ESCAPE || key == KEY_BAR || key == KEY_RETURN) {
@@ -817,8 +813,7 @@ int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, pro
             protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 

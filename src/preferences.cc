@@ -20,6 +20,7 @@
 #include "message.h"
 #include "mouse.h"
 #include "palette.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -1294,8 +1295,6 @@ int doPreferences(bool animated)
 
     int rc = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         int eventCode = inputGetInput();
 
         switch (eventCode) {
@@ -1336,8 +1335,7 @@ int doPreferences(bool animated)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     mainMenuFadeOutForMenuReturn(animated);
@@ -1536,8 +1534,6 @@ static void _DoThing(int eventCode)
         int sfxVolumeExample = 0;
         int speechVolumeExample = 0;
         while (true) {
-            sharedFpsLimiter.mark();
-
             inputGetInput();
 
             int tick = getTicks();
@@ -1548,7 +1544,7 @@ static void _DoThing(int eventCode)
                 soundPlayFile("ib1lu1x1");
                 _UpdateThing(preferenceIndex);
                 windowRefresh(gPreferencesWindow);
-                renderPresent();
+                scheduler.presentNow();
                 _changed = true;
                 return;
             }
@@ -1641,8 +1637,7 @@ static void _DoThing(int eventCode)
 
             delay_ms(35 - (getTicks() - tick));
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     } else if (preferenceIndex == 19) {
         gPreferencesPlayerSpeedup1 ^= 1;

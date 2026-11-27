@@ -21,6 +21,7 @@
 #include "palette.h"
 #include "platform_compat.h"
 #include "preferences.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -762,7 +763,7 @@ WindowFlags mainMenuSubscreenWindowFlags(WindowFlags defaultFlags, WindowFlags o
 void mainMenuShowSubscreen(bool animate)
 {
     if (mainMenuWindowIsOverlayActive()) {
-        renderPresent();
+        scheduler.presentNow();
         mainMenuWindowShowOverlayDim();
     } else if (animate) {
         colorPaletteLoad("color.pal");
@@ -812,8 +813,6 @@ MainMenuOption mainMenuWindowHandleEvents()
             gMainMenuExitRequested = false;
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_EXIT;
         }
-
-        sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
 
@@ -867,8 +866,7 @@ MainMenuOption mainMenuWindowHandleEvents()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (oldCursorIsHidden) {
@@ -972,7 +970,7 @@ static void mainMenuSetOverlayDimIntensity(int intensity)
     int height = windowGetHeight(gMainMenuWindow);
     _dark_trans_buf_to_buf(mainMenuOverlayDimmedBackup.data(), width, height, width, gMainMenuWindowBuffer, 0, 0, width, intensity);
     windowRefresh(gMainMenuWindow);
-    renderPresent();
+    scheduler.presentNow();
 }
 
 static void mainMenuAnimateOverlayDim(int startIntensity, int endIntensity)

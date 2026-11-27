@@ -33,6 +33,7 @@
 #include "preferences.h"
 #include "proto.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -420,8 +421,6 @@ static void mainLoop()
     scriptsEnable();
 
     while (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         // SFALL: MainLoopHook.
@@ -444,8 +443,7 @@ static void mainLoop()
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     scriptsDisable();
@@ -508,12 +506,9 @@ static void showDeath()
             }
 
             while (mouseGetEvent() != MouseButtonEvent::None) {
-                sharedFpsLimiter.mark();
-
                 inputGetInput();
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             keyboardReset();
@@ -574,12 +569,9 @@ static void showDeath()
             unsigned int time = getTicks();
             int keyCode;
             do {
-                sharedFpsLimiter.mark();
-
                 keyCode = inputGetInput();
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode == -1 && !_main_death_voiceover_done && getTicksSince(time) < delay);
 
             speechSetEndCallback(nullptr);
@@ -587,12 +579,9 @@ static void showDeath()
             speechDelete();
 
             while (mouseGetEvent() != MouseButtonEvent::None) {
-                sharedFpsLimiter.mark();
-
                 inputGetInput();
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
 
             if (keyCode == -1) {

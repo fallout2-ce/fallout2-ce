@@ -46,6 +46,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_global_scripts.h"
@@ -3446,8 +3447,6 @@ static int wmWorldMapFunc(int a1)
     wmLastTravelTick = getTicks();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         // SFALL: WorldmapLoopHook.
@@ -3595,7 +3594,7 @@ static int wmWorldMapFunc(int a1)
                     mousePressed = true;
                     wmInterfaceRefresh();
                     renderFpsCounter();
-                    renderPresent();
+                    scheduler.presentNow();
                 }
             } else {
                 continue;
@@ -3751,8 +3750,7 @@ static int wmWorldMapFunc(int a1)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmInterfaceExit() == -1) {
@@ -6636,8 +6634,6 @@ static int wmTownMapFunc(Map* mapIdxPtr)
     CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
 
     for (;;) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
@@ -6712,8 +6708,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (wmTownMapExit() == -1) {
@@ -7550,7 +7545,7 @@ void wmBlinkRndEncounterIcon(bool special)
             return;
         }
 
-        renderPresent();
+        scheduler.presentNow();
         inputBlockForTocks(200);
     }
 

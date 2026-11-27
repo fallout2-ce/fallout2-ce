@@ -96,6 +96,7 @@ struct SystemSettings {
 };
 
 struct ScreenSettings {
+    int max_fps = 60;
     int resolution_x = 640;
     int resolution_y = 480;
     WindowMode windowed = WindowMode::Fullscreen;

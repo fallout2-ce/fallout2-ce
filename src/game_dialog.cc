@@ -39,6 +39,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "skill.h"
@@ -1664,8 +1665,6 @@ int gameDialogShowReview()
     gameDialogReviewWindowUpdate(win, reviewStartIndex);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode == 17 || keyCode == 24 || keyCode == 324) {
             showQuitConfirmationDialog();
@@ -1692,8 +1691,7 @@ int gameDialogShowReview()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (gameDialogReviewWindowFree(&win) == -1) {
@@ -2078,8 +2076,6 @@ int gameDialogProcessUI()
     int pageOffsets[10];
     pageOffsets[0] = 0;
     for (;;) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         convertMouseWheelToArrowKey(&keyCode);
@@ -2221,8 +2217,7 @@ int gameDialogProcessUI()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     _gdReenterLevel -= 1;
@@ -2860,16 +2855,13 @@ void gameDialogWaitForFidgetToComplete()
     debugPrint("Waiting for fidget to complete...\n");
 
     while (artGetFrameCount(gameDialogFidgetFrm) > gameDialogFidgetFrmCurrentFrame) {
-        sharedFpsLimiter.mark();
-
         if (getTicksSince(gameDialogFidgetLastUpdateTimestamp) >= gameDialogFidgetUpdateDelay) {
             gameDialogRenderTalkingHead(gameDialogFidgetFrm, gameDialogFidgetFrmCurrentFrame);
             gameDialogFidgetLastUpdateTimestamp = getTicks();
             gameDialogFidgetFrmCurrentFrame++;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     gameDialogFidgetFrmCurrentFrame = 0;
@@ -2911,16 +2903,13 @@ void _gdPlayTransition(HeadAnimation anim)
     int frame = 0;
     unsigned int time = 0;
     while (frame < artGetFrameCount(headFrm)) {
-        sharedFpsLimiter.mark();
-
         if (getTicksSince(time) >= delay) {
             gameDialogRenderTalkingHead(headFrm, frame);
             time = getTicks();
             frame++;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (artUnlock(headFrmHandle) == -1) {
@@ -3282,10 +3271,6 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
         }
 
         for (; strips >= 0; strips--) {
-            if (!instantScrollUp) {
-                sharedFpsLimiter.mark();
-            }
-
             soundContinueAll();
             blitBufferToBuffer(windowFrmData,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3300,8 +3285,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
 
             if (!instantScrollUp) {
                 delay_ms(delayMs);
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             }
         }
     } else {
@@ -3312,8 +3296,6 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
 
         int bgRowsRead = 0;
         for (int top = 0; top < windowHeight;) {
-            sharedFpsLimiter.mark();
-
             soundContinueAll();
 
             int curStripHeight = std::min(stripHeight, windowHeight - top);
@@ -3353,8 +3335,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
 
             delay_ms(delayMs);
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     }
 }
@@ -4076,8 +4057,6 @@ void partyMemberControlWindowHandleEvents()
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
@@ -4151,8 +4130,7 @@ void partyMemberControlWindowHandleEvents()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -4324,8 +4302,6 @@ void partyMemberCustomizationWindowHandleEvents()
 {
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         unsigned int keyCode = inputGetInput();
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
@@ -4346,8 +4322,7 @@ void partyMemberCustomizationWindowHandleEvents()
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -4522,8 +4497,6 @@ int _gdCustomSelect(int option)
     bool done = false;
     unsigned int lastSelectionTimestamp = 0;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         if (keyCode != -1) {
             if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
@@ -4623,8 +4596,7 @@ int _gdCustomSelect(int option)
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     fontSetCurrent(oldFont);

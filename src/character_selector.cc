@@ -27,6 +27,7 @@
 #include "platform_compat.h"
 #include "preferences.h"
 #include "proto.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "skill.h"
 #include "stat.h"
@@ -183,8 +184,6 @@ int characterSelectorOpen()
     int rc = 0;
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
@@ -260,8 +259,7 @@ int characterSelectorOpen()
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc == 2) {

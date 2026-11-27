@@ -34,6 +34,7 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "proto_types.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "skill.h"
 #include "stat.h"
@@ -1496,7 +1497,6 @@ void interfaceBarEndButtonsShow(bool animated)
         int time = 0;
         int frame = 0;
         while (frame < frameCount) {
-            sharedFpsLimiter.mark();
             tickersExecute();
 
             if (getTicksSince(time) >= delay) {
@@ -1511,8 +1511,7 @@ void interfaceBarEndButtonsShow(bool animated)
             }
             gameMouseRefresh();
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     } else {
         unsigned char* src = artGetFrameData(art, frameCount - 1);
@@ -1555,7 +1554,6 @@ void interfaceBarEndButtonsHide(bool animated)
         int frame = artGetFrameCount(art);
 
         while (frame != 0) {
-            sharedFpsLimiter.mark();
             tickersExecute();
 
             if (getTicksSince(time) >= delay) {
@@ -1571,8 +1569,7 @@ void interfaceBarEndButtonsHide(bool animated)
             }
             gameMouseRefresh();
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
         }
     } else {
         unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset;
@@ -1938,16 +1935,13 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
 
     while (gInterfaceBarSwapHandsInProgress) {
-        sharedFpsLimiter.mark();
-
         if (_game_user_wants_to_quit) {
             break;
         }
 
         inputGetInput();
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
@@ -2297,7 +2291,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
         gameMouseRefresh();
     }
 
-    renderPresent();
+    scheduler.presentNow();
     inputBlockForTocks(delayMs);
     windowRefreshRect(gInterfaceBarWindow, numbersRect);
 }
@@ -2396,7 +2390,7 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
                 blitBufferToBuffer(previousValue >= 0 ? plusSrc : minusSrc, 6, 17, 360, signDest, gInterfaceBarWidth);
                 _mouse_info();
                 gameMouseRefresh();
-                renderPresent();
+                scheduler.presentNow();
                 inputBlockForTocks(delay);
                 windowRefreshRect(gInterfaceBarWindow, &numbersRect);
             }

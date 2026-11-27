@@ -82,8 +82,7 @@ extern Color _colorTable[COLOR_PALETTE_SIZE_15BIT];
 
 Color _calculateColor(int intensity, Color color);
 int Color2RGB(Color c);
-void colorPaletteFadeBetween(unsigned char* oldPalette, unsigned char* newPalette, int steps);
-void colorPaletteSetTransitionCallback(ColorTransitionCallback* callback);
+void colorPaletteFadeBetween(const unsigned char* oldPalette, const unsigned char* newPalette, unsigned int durationMs, ColorTransitionCallback* serviceSound);
 void _setSystemPalette(unsigned char* palette);
 unsigned char* _getSystemPalette();
 void _setSystemPaletteEntries(unsigned char* palette, int start, int end);

@@ -7,6 +7,7 @@
 
 #include "db.h"
 #include "memory.h"
+#include "scheduler.h"
 #include "svga.h"
 
 namespace fallout {
@@ -37,9 +38,6 @@ static bool _colorsInited = false;
 
 // 0x51DF18 currentGamma
 static double gBrightness = 1.0;
-
-// 0x51DF20 colorFadeBkFuncP
-static ColorTransitionCallback* gColorPaletteTransitionCallback = nullptr;
 
 // 0x51DF30 colorNameMangler
 static ColorFileNameManger* gColorFileNameMangler = nullptr;
@@ -92,38 +90,23 @@ int Color2RGB(Color c)
 // Performs animated palette transition.
 //
 // 0x4C7320 fadeSystemPalette
-void colorPaletteFadeBetween(unsigned char* oldPalette, unsigned char* newPalette, int steps)
+void colorPaletteFadeBetween(const unsigned char* oldPalette, const unsigned char* newPalette, unsigned int durationMs, ColorTransitionCallback* serviceSound)
 {
-    for (int step = 0; step < steps; step++) {
-        sharedFpsLimiter.mark();
+    unsigned int nextSoundMs = 0;
 
+    scheduler.animate(std::chrono::milliseconds(durationMs), [&](double progress) {
         unsigned char palette[COLOR_MAP_SIZE];
-
         for (int index = 0; index < COLOR_MAP_SIZE; index++) {
-            palette[index] = oldPalette[index] - (oldPalette[index] - newPalette[index]) * step / steps;
+            palette[index] = static_cast<unsigned char>(oldPalette[index] + (newPalette[index] - oldPalette[index]) * progress);
         }
 
-        if (gColorPaletteTransitionCallback != nullptr) {
-            if (step % 128 == 0) {
-                gColorPaletteTransitionCallback();
-            }
+        const auto elapsedMs = static_cast<unsigned int>(durationMs * progress);
+        if (serviceSound != nullptr && elapsedMs >= nextSoundMs) {
+            serviceSound();
+            nextSoundMs = elapsedMs + 50;
         }
-
         _setSystemPalette(palette);
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    }
-
-    sharedFpsLimiter.mark();
-    _setSystemPalette(newPalette);
-    renderPresent();
-    sharedFpsLimiter.throttle();
-}
-
-// 0x4C73D4 colorSetFadeBkFunc
-void colorPaletteSetTransitionCallback(ColorTransitionCallback* callback)
-{
-    gColorPaletteTransitionCallback = callback;
+    });
 }
 
 // 0x4C73E4 setSystemPalette

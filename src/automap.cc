@@ -23,6 +23,7 @@
 #include "memory.h"
 #include "object.h"
 #include "platform_compat.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -414,8 +415,6 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
-
         bool needsRefresh = false;
 
         // FIXME: There is minor bug in the interface - pressing H/L to toggle
@@ -497,8 +496,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
             needsRefresh = false;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (isoWasEnabled) {

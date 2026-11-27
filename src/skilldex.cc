@@ -20,6 +20,7 @@
 #include "message.h"
 #include "object.h"
 #include "platform_compat.h"
+#include "scheduler.h"
 #include "skill.h"
 #include "string_utils.h"
 #include "svga.h"
@@ -121,8 +122,6 @@ SkilldexRC skilldexOpen()
 
     SkilldexRC rc = SKILLDEX_RC_ERROR;
     while (rc == SKILLDEX_RC_ERROR) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         // SFALL: Close with 'S'.
@@ -135,8 +134,7 @@ SkilldexRC skilldexOpen()
             rc = static_cast<SkilldexRC>(keyCode - 500);
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (rc != SKILLDEX_RC_CANCELED) {

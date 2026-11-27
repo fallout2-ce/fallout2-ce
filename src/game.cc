@@ -53,6 +53,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_arrays.h"
@@ -1279,18 +1280,13 @@ void showHelp()
                 windowShow(win);
 
                 while (inputGetInput() == -1 && _game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
-                    sharedFpsLimiter.mark();
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                    scheduler.finishUpdate();
                 }
 
                 while (mouseGetEvent() != MouseButtonEvent::None) {
-                    sharedFpsLimiter.mark();
-
                     inputGetInput();
 
-                    renderPresent();
-                    sharedFpsLimiter.throttle();
+                    scheduler.finishUpdate();
                 }
 
                 paletteSetEntries(gPaletteBlack);

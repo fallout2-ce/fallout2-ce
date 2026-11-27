@@ -13,6 +13,7 @@
 #include "map_defs.h"
 #include "map_edge.h"
 #include "mouse.h"
+#include "scheduler.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -502,7 +503,6 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
 
     bool done = false;
     while (!done) {
-        sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
 
         int mx;
@@ -566,8 +566,7 @@ static void runEditLoop(int win, int winX, int winY, int winW, int winH,
             }
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 

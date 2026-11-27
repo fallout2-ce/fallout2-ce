@@ -24,6 +24,7 @@
 #include "object.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -107,11 +108,9 @@ void pick_region(Rect* rect)
     gameMouseObjectsHide();
 
     while (true) {
-        sharedFpsLimiter.mark();
         bool got = inputGetInput() == -2
             && (mouseGetEvent() & MouseButtonEvent::LeftButtonDown) != MouseButtonEvent::None;
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
         if (got) break;
     }
 
@@ -123,7 +122,6 @@ void pick_region(Rect* rect)
     *rect = temp;
 
     while ((mouseGetEvent() & MouseButtonEvent::LeftButtonUp) == MouseButtonEvent::None) {
-        sharedFpsLimiter.mark();
         inputGetInput();
 
         get_input_position(&x, &y);
@@ -135,8 +133,7 @@ void pick_region(Rect* rect)
             sort_rect(rect, &temp);
             draw_rect(rect, COLOR_LIGHT_YELLOW);
         }
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     erase_rect(rect);
@@ -368,8 +365,6 @@ int pickHex()
     MapElevation elevation = gElevation;
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
 
         if (keyCode == -2) {
@@ -428,8 +423,7 @@ int pickHex()
             return -1;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 }
 
@@ -590,8 +584,6 @@ static void mp_run_placement_loop(PlaceFn place)
     _gmouse_disable(0);
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         int mx, my;
         mouseGetPosition(&mx, &my);
@@ -643,8 +635,7 @@ static void mp_run_placement_loop(PlaceFn place)
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (exit) break;
     }
@@ -947,8 +938,6 @@ void eraseObject()
     gameMouseObjectsHide();
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         bool exit = false;
 
@@ -1000,8 +989,7 @@ void eraseObject()
             exit = true;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (exit) break;
     }
@@ -1141,8 +1129,6 @@ void mapper_shift_map()
     }
 
     while (true) {
-        sharedFpsLimiter.mark();
-
         int keyCode = inputGetInput();
         bool done = false;
 
@@ -1174,8 +1160,7 @@ void mapper_shift_map()
             done = true;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
 
         if (done) return;
     }

@@ -47,6 +47,7 @@
 #include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -1240,7 +1241,6 @@ void edit_mapper()
     interfaceBarHide();
 
     while (true) {
-        sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
 
         // ----------------------------------------------------------------
@@ -1264,8 +1264,7 @@ void edit_mapper()
                 scriptsHandleRequests();
                 mapHandleTransition();
 
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
                 continue;
             }
         }
@@ -1287,8 +1286,7 @@ void edit_mapper()
         }
 
         if (keyCode == -1) {
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
             continue;
         }
 
@@ -1405,8 +1403,7 @@ void edit_mapper()
                 }
             }
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
+            scheduler.finishUpdate();
             continue;
         }
 
@@ -2234,8 +2231,7 @@ void edit_mapper()
             break;
         }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
 exitLoop:

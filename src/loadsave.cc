@@ -47,6 +47,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "scheduler.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -656,8 +657,6 @@ int lsgSaveGame(LoadSaveMode mode)
     int rc = -1;
     int doubleClickSlot = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int tick = getTicks();
         int keyCode = inputGetInput();
         bool selectionChanged = false;
@@ -821,8 +820,6 @@ int lsgSaveGame(LoadSaveMode mode)
             unsigned int lastStepTick = 0;
 
             do {
-                sharedFpsLimiter.mark();
-
                 unsigned int now = getTicks();
                 bool shouldStep = false;
 
@@ -910,8 +907,7 @@ int lsgSaveGame(LoadSaveMode mode)
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode != 505 && keyCode != 503);
         } else {
             if (selectionChanged) {
@@ -1057,8 +1053,7 @@ int lsgSaveGame(LoadSaveMode mode)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
@@ -1203,7 +1198,7 @@ int lsgLoadGame(LoadSaveMode mode)
     if (_GetSlotList() == -1) {
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         windowRefresh(gLoadSaveWindow);
-        renderPresent();
+        scheduler.presentNow();
         if (mode == LoadSaveMode::FromMainMenu) {
             mainMenuShowSubscreen(true);
         }
@@ -1258,7 +1253,7 @@ int lsgLoadGame(LoadSaveMode mode)
     _ShowSlotList(LoadSaveWindowType::LoadGame);
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
-    renderPresent();
+    scheduler.presentNow();
     if (mode == LoadSaveMode::FromMainMenu) {
         mainMenuShowSubscreen(true);
     }
@@ -1268,8 +1263,6 @@ int lsgLoadGame(LoadSaveMode mode)
 
     int doubleClickSlot = -1;
     while (rc == -1) {
-        sharedFpsLimiter.mark();
-
         unsigned int time = getTicks();
         int keyCode = devAutoloadPending ? kLoadSaveActionDone : inputGetInput();
         devAutoloadPending = false;
@@ -1424,8 +1417,6 @@ int lsgLoadGame(LoadSaveMode mode)
             unsigned int lastStepTick = 0;
 
             do {
-                sharedFpsLimiter.mark();
-
                 unsigned int now = getTicks();
                 bool shouldStep = false;
 
@@ -1512,8 +1503,7 @@ int lsgLoadGame(LoadSaveMode mode)
                 keyCode = inputGetInput();
 
                 renderFpsCounter();
-                renderPresent();
-                sharedFpsLimiter.throttle();
+                scheduler.finishUpdate();
             } while (keyCode != 505 && keyCode != 503);
         } else {
             if (selectionChanged) {
@@ -1590,8 +1580,7 @@ int lsgLoadGame(LoadSaveMode mode)
         }
 
         renderFpsCounter();
-        renderPresent();
-        sharedFpsLimiter.throttle();
+        scheduler.finishUpdate();
     }
 
     if (mode == LoadSaveMode::FromMainMenu && rc == 0) {

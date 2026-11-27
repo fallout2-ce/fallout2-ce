@@ -14,6 +14,7 @@
 #include "movie_effect.h"
 #include "movie_lib.h"
 #include "platform_compat.h"
+#include "scheduler.h"
 #include "settings.h"
 #include "sound.h"
 #include "svga.h"
@@ -804,7 +805,7 @@ static int _stepMovie()
     int stepResult = _MVE_rmStepMovie();
     if (stepResult != -1) {
         movieRenderSubtitles();
-        renderPresent();
+        scheduler.presentNow();
     }
 
     return stepResult;
