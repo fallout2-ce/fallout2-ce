@@ -3853,6 +3853,8 @@ static void objectDeallocate(Object** objectPtr)
         return;
     }
 
+    _gmouse_remove_item_outline(*objectPtr);
+
     internal_free(*objectPtr);
 
     *objectPtr = nullptr;
